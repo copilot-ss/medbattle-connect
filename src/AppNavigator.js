@@ -4,11 +4,13 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { supabase } from './lib/supabaseClient';
+import { ensureUserRecord } from './services/userService';
 import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
 import LeaderboardScreen from './screens/LeaderboardScreen';
 import QuizScreen from './screens/QuizScreen';
 import ResultScreen from './screens/ResultScreen';
+import SettingsScreen from './screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -68,6 +70,28 @@ export default function AppNavigator() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!session?.user) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function syncUserProfile() {
+      const result = await ensureUserRecord(session.user);
+
+      if (!cancelled && !result.ok && result.error) {
+        console.warn('Konnte Nutzerprofil nicht anlegen:', result.error);
+      }
+    }
+
+    syncUserProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?.id]);
+
   if (initializing) {
     return (
       <View
@@ -92,6 +116,7 @@ export default function AppNavigator() {
             <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
             <Stack.Screen name="Quiz" component={QuizScreen} />
             <Stack.Screen name="Result" component={ResultScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
           </>
         ) : (
           <Stack.Screen name="Auth" component={AuthScreen} />

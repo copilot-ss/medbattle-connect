@@ -106,27 +106,25 @@ function StatPill({ label, value }) {
 }
 
 export default function ResultScreen({ route, navigation }) {
-  const { score = 0, total = 0, userId = null } = route.params ?? {};
+  const {
+    score = 0,
+    total = 0,
+    userId = null,
+    difficulty = 'Mittel',
+    difficultyKey = 'mittel',
+    questionLimit = total,
+  } = route.params ?? {};
 
+  const totalQuestions = total || questionLimit || 0;
   const percentage = useMemo(() => {
-    if (!total) {
+    if (!totalQuestions) {
       return 0;
     }
-    return Math.round((score / total) * 100);
-  }, [score, total]);
+    return Math.round((score / totalQuestions) * 100);
+  }, [score, totalQuestions]);
 
   const badge = useMemo(() => findBadge(percentage), [percentage]);
   const accuracyValue = Math.max(0, Math.min(percentage, 100));
-  const playerTag = useMemo(() => {
-    if (!userId) {
-      return null;
-    }
-    const value = String(userId);
-    if (value.length <= 12) {
-      return value;
-    }
-    return `${value.slice(0, 8)}...${value.slice(-4)}`;
-  }, [userId]);
 
   return (
     <View
@@ -244,9 +242,9 @@ export default function ResultScreen({ route, navigation }) {
               marginBottom: 14,
             }}
           >
-            <StatPill label="Score" value={`${score}/${total}`} />
+            <StatPill label="Score" value={`${score}/${totalQuestions}`} />
             <StatPill label="Trefferquote" value={`${accuracyValue}%`} />
-            <StatPill label="Serie" value={percentage >= 80 ? 'Heiss' : 'Weiter'} />
+            <StatPill label="Level" value={difficulty} />
           </View>
 
           <View
@@ -267,20 +265,10 @@ export default function ResultScreen({ route, navigation }) {
           </View>
         </View>
 
-        {playerTag ? (
-          <Text
-            style={{
-              color: 'rgba(203, 213, 225, 0.7)',
-              fontSize: 12,
-              marginTop: 16,
-            }}
-          >
-            Spieler-ID: {playerTag}
-          </Text>
-        ) : null}
-
         <Pressable
-          onPress={() => navigation.replace('Quiz')}
+          onPress={() =>
+            navigation.replace('Quiz', { difficulty: difficultyKey })
+          }
           style={{
             marginTop: 28,
             width: '100%',
