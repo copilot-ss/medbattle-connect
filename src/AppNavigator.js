@@ -1,19 +1,76 @@
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { supabase } from './lib/supabaseClient';
+import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
+import LeaderboardScreen from './screens/LeaderboardScreen';
 import QuizScreen from './screens/QuizScreen';
 import ResultScreen from './screens/ResultScreen';
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
+  const [session, setSession] = useState(null);
+  const [initializing, setInitializing] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!mounted) {
+        return;
+      }
+      if (error) {
+        console.warn('Konnte Sitzung nicht abrufen:', error.message);
+      }
+      setSession(data?.session ?? null);
+      setInitializing(false);
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        setSession(newSession);
+        setInitializing(false);
+      }
+    );
+
+    return () => {
+      mounted = false;
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  if (initializing) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: '#fff',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <ActivityIndicator size="large" color="#2563EB" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Quiz" component={QuizScreen} />
-        <Stack.Screen name="Result" component={ResultScreen} />
+        {session ? (
+          <>
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+            <Stack.Screen name="Quiz" component={QuizScreen} />
+            <Stack.Screen name="Result" component={ResultScreen} />
+          </>
+        ) : (
+          <Stack.Screen name="Auth" component={AuthScreen} />
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );
