@@ -19,16 +19,41 @@ export default function AppNavigator() {
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (!mounted) {
-        return;
+    async function initializeSession() {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+
+        if (!mounted) {
+          return;
+        }
+
+        if (error) {
+          console.warn('Konnte Sitzung nicht abrufen:', error.message);
+        }
+
+        setSession(data?.session ?? null);
+      } catch (err) {
+        console.error('Fehler beim Initialisieren der Sitzung:', err);
+
+        if (mounted) {
+          setSession(null);
+        }
+
+        if (err?.name === 'SyntaxError') {
+          try {
+            await supabase.auth.signOut({ scope: 'local' });
+          } catch (signOutError) {
+            console.warn('Konnte fehlerhafte Sitzung nicht entfernen:', signOutError);
+          }
+        }
+      } finally {
+        if (mounted) {
+          setInitializing(false);
+        }
       }
-      if (error) {
-        console.warn('Konnte Sitzung nicht abrufen:', error.message);
-      }
-      setSession(data?.session ?? null);
-      setInitializing(false);
-    });
+    }
+
+    initializeSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, newSession) => {

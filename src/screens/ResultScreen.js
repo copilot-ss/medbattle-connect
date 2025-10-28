@@ -22,7 +22,7 @@ const BADGES = [
     min: 80,
     max: 94,
     title: 'Surgery Ace',
-    subtitle: 'Fast makellos – noch ein Run für den Legendenstatus.',
+    subtitle: 'Fast makellos - noch ein Run fuer den Legendenstatus.',
     color: '#22C55E',
     glow: '#4ADE80',
     spotlight: true,
@@ -125,7 +125,7 @@ export default function ResultScreen({ route, navigation }) {
     if (value.length <= 12) {
       return value;
     }
-    return `${value.slice(0, 8)}…${value.slice(-4)}`;
+    return `${value.slice(0, 8)}...${value.slice(-4)}`;
   }, [userId]);
 
   return (
@@ -246,7 +246,7 @@ export default function ResultScreen({ route, navigation }) {
           >
             <StatPill label="Score" value={`${score}/${total}`} />
             <StatPill label="Trefferquote" value={`${accuracyValue}%`} />
-            <StatPill label="Serie" value={percentage >= 80 ? '🔥' : '💊'} />
+            <StatPill label="Serie" value={percentage >= 80 ? 'Heiss' : 'Weiter'} />
           </View>
 
           <View
@@ -296,7 +296,7 @@ export default function ResultScreen({ route, navigation }) {
           }}
         >
           <Text style={{ color: '#0F172A', fontSize: 18, fontWeight: '700' }}>
-            Nächste Challenge
+            Naechste Challenge
           </Text>
         </Pressable>
 
@@ -321,7 +321,7 @@ export default function ResultScreen({ route, navigation }) {
           onPress={() => navigation.navigate('Home')}
           style={{ marginTop: 16 }}
         >
-          <Text style={{ color: '#94A3B8', fontSize: 14 }}>Zurück zur Basis</Text>
+          <Text style={{ color: '#94A3B8', fontSize: 14 }}>Zurueck zur Basis</Text>
         </Pressable>
       </View>
 

@@ -19,7 +19,7 @@ function formatUserId(value) {
     return value;
   }
 
-  return `${value.slice(0, 4)}…${value.slice(-4)}`;
+  return `${value.slice(0, 4)}...${value.slice(-4)}`;
 }
 
 function renderSeparator() {
