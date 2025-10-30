@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  ActivityIndicator,
+  BackHandler,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabaseClient';
 import { fetchQuestions, submitScore } from '../services/quizService';
 
@@ -40,6 +47,7 @@ export default function QuizScreen({ navigation, route }) {
   const [userId, setUserId] = useState(null);
   const [selectedOption, setSelectedOption] = useState(null);
   const [isAnswerLocked, setIsAnswerLocked] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const feedbackTimerRef = useRef(null);
   const difficulty =
     typeof route?.params?.difficulty === 'string'
@@ -60,6 +68,41 @@ export default function QuizScreen({ navigation, route }) {
     paddingVertical: 32,
   };
   const totalQuestions = questions.length;
+
+  useEffect(() => {
+    navigation.setOptions({ gestureEnabled: false });
+    return () => {
+      navigation.setOptions({ gestureEnabled: true });
+    };
+  }, [navigation]);
+
+  const handleExitRequest = useCallback(() => {
+    if (feedbackTimerRef.current) {
+      clearTimeout(feedbackTimerRef.current);
+      feedbackTimerRef.current = null;
+    }
+    setSelectedOption(null);
+    setIsAnswerLocked(false);
+    setShowExitConfirm(true);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleExitRequest();
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress
+      );
+
+      return () => {
+        subscription.remove();
+      };
+    }, [handleExitRequest])
+  );
 
   useEffect(() => {
     return () => {
@@ -150,8 +193,13 @@ export default function QuizScreen({ navigation, route }) {
   }, []);
 
   const finalizeQuiz = useCallback(
-    async (finalScoreValue) => {
-      if (userId) {
+    async (
+      finalScoreValue,
+      { total = totalQuestions, submit = true } = {}
+    ) => {
+      const effectiveTotal = Math.max(1, total);
+
+      if (submit && userId) {
         try {
           const result = await submitScore(
             userId,
@@ -169,40 +217,42 @@ export default function QuizScreen({ navigation, route }) {
         }
       }
 
-      const streakKey = STREAK_STORAGE_KEYS[normalizedDifficulty] ?? null;
-      const mistakes = totalQuestions - finalScoreValue;
-      const shouldIncrease =
-        normalizedDifficulty === 'leicht'
-          ? true
-          : normalizedDifficulty === 'mittel'
-          ? mistakes <= 1
-          : mistakes === 0;
+      if (submit) {
+        const streakKey = STREAK_STORAGE_KEYS[normalizedDifficulty] ?? null;
+        const mistakes = totalQuestions - finalScoreValue;
+        const shouldIncrease =
+          normalizedDifficulty === 'leicht'
+            ? true
+            : normalizedDifficulty === 'mittel'
+            ? mistakes <= 1
+            : mistakes === 0;
 
-      try {
-        let streak = shouldIncrease ? 1 : 0;
+        try {
+          let streak = shouldIncrease ? 1 : 0;
 
-        if (streakKey) {
-          const raw = await AsyncStorage.getItem(streakKey);
-          const current = raw ? parseInt(raw, 10) : 0;
-          const nextStreak = shouldIncrease ? current + 1 : 0;
-          streak = Number.isFinite(nextStreak) ? nextStreak : 0;
-          await AsyncStorage.setItem(streakKey, String(streak));
+          if (streakKey) {
+            const raw = await AsyncStorage.getItem(streakKey);
+            const current = raw ? parseInt(raw, 10) : 0;
+            const nextStreak = shouldIncrease ? current + 1 : 0;
+            streak = Number.isFinite(nextStreak) ? nextStreak : 0;
+            await AsyncStorage.setItem(streakKey, String(streak));
+          }
+
+          const existing =
+            typeof globalThis.__medbattleStreaks === 'object' &&
+            globalThis.__medbattleStreaks !== null
+              ? { ...DEFAULT_STREAKS, ...globalThis.__medbattleStreaks }
+              : { ...DEFAULT_STREAKS };
+          existing[normalizedDifficulty] = streak;
+          globalThis.__medbattleStreaks = existing;
+        } catch (err) {
+          console.warn('Konnte Streak nicht aktualisieren:', err);
         }
-
-        const existing =
-          typeof globalThis.__medbattleStreaks === 'object' &&
-          globalThis.__medbattleStreaks !== null
-            ? { ...DEFAULT_STREAKS, ...globalThis.__medbattleStreaks }
-            : { ...DEFAULT_STREAKS };
-        existing[normalizedDifficulty] = streak;
-        globalThis.__medbattleStreaks = existing;
-      } catch (err) {
-        console.warn('Konnte Streak nicht aktualisieren:', err);
       }
 
       navigation.navigate('Result', {
         score: finalScoreValue,
-        total: totalQuestions,
+        total: effectiveTotal,
         userId,
         difficulty: difficultyLabel,
         difficultyKey: normalizedDifficulty,
@@ -210,14 +260,26 @@ export default function QuizScreen({ navigation, route }) {
       });
     },
     [
-      userId,
-      normalizedDifficulty,
-      totalQuestions,
       difficultyLabel,
-      questionLimit,
       navigation,
+      normalizedDifficulty,
+      questionLimit,
+      totalQuestions,
+      userId,
     ]
   );
+
+  const handleExitCancel = useCallback(() => {
+    setShowExitConfirm(false);
+  }, []);
+
+  const handleExitConfirm = useCallback(() => {
+    setShowExitConfirm(false);
+    finalizeQuiz(score, {
+      total: index > 0 ? index : 1,
+      submit: false,
+    });
+  }, [finalizeQuiz, index, score]);
 
   if (loading) {
     return (
@@ -306,7 +368,7 @@ export default function QuizScreen({ navigation, route }) {
         setIsAnswerLocked(false);
         setIndex((prev) => prev + 1);
       } else {
-        finalizeQuiz(finalScoreValue);
+        finalizeQuiz(finalScoreValue, { submit: true });
       }
     }, 900);
   }
@@ -342,20 +404,19 @@ export default function QuizScreen({ navigation, route }) {
             Battle laufend
           </Text>
         </View>
-        <View
+        <Pressable
+          onPress={handleExitRequest}
           style={{
-            backgroundColor: 'rgba(96, 165, 250, 0.2)',
+            paddingHorizontal: 16,
+            paddingVertical: 10,
             borderRadius: 12,
-            paddingHorizontal: 14,
-            paddingVertical: 8,
             borderWidth: 1,
-            borderColor: 'rgba(96, 165, 250, 0.4)',
+            borderColor: 'rgba(239, 68, 68, 0.6)',
+            backgroundColor: 'rgba(239, 68, 68, 0.15)',
           }}
         >
-          <Text style={{ color: '#BFDBFE', fontSize: 14, fontWeight: '600' }}>
-            Score {score}
-          </Text>
-        </View>
+          <Text style={{ color: '#FCA5A5', fontWeight: '700' }}>Beenden</Text>
+        </Pressable>
       </View>
 
       <View
@@ -449,6 +510,88 @@ export default function QuizScreen({ navigation, route }) {
           );
         })}
       </View>
+
+      {showExitConfirm ? (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: 'rgba(2, 6, 23, 0.85)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+          }}
+        >
+          <View
+            style={{
+              width: '100%',
+              maxWidth: 340,
+              backgroundColor: '#0F172A',
+              borderRadius: 20,
+              padding: 24,
+              borderWidth: 1,
+              borderColor: 'rgba(148, 163, 184, 0.25)',
+              gap: 16,
+            }}
+          >
+            <Text
+              style={{
+                color: '#F8FAFC',
+                fontSize: 20,
+                fontWeight: '700',
+              }}
+            >
+              Battle beenden?
+            </Text>
+            <Text style={{ color: '#CBD5F5', fontSize: 14, lineHeight: 20 }}>
+              Nicht beantwortete Fragen zaehlen nicht. Moechtest du wirklich abbrechen?
+            </Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                gap: 12,
+              }}
+            >
+              <Pressable
+                onPress={handleExitCancel}
+                style={{
+                  flex: 1,
+                  backgroundColor: 'rgba(34, 197, 94, 0.25)',
+                  borderRadius: 14,
+                  paddingVertical: 12,
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: 'rgba(34, 197, 94, 0.55)',
+                }}
+              >
+                <Text style={{ color: '#BBF7D0', fontWeight: '700' }}>
+                  Weiter spielen
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={handleExitConfirm}
+                style={{
+                  flex: 1,
+                  backgroundColor: 'rgba(239, 68, 68, 0.25)',
+                  borderRadius: 14,
+                  paddingVertical: 12,
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: 'rgba(239, 68, 68, 0.6)',
+                }}
+              >
+                <Text style={{ color: '#FCA5A5', fontWeight: '700' }}>
+                  Ja, beenden
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }

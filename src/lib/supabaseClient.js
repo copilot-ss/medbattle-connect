@@ -1,25 +1,14 @@
-import { Platform } from 'react-native';
-import { setupURLPolyfill } from 'react-native-url-polyfill';
+import 'react-native-get-random-values';
+import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
-// Trage hier deine Supabase-Zugangsdaten ein. Idealerweise setzt du
-// EXPO_PUBLIC_SUPABASE_URL und EXPO_PUBLIC_SUPABASE_ANON_KEY in einer .env.
-const SUPABASE_URL =
-  process.env.EXPO_PUBLIC_SUPABASE_URL ?? 'https://DEINPROJECT.supabase.co';
-const SUPABASE_ANON_KEY =
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? 'DEIN_ANON_KEY';
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-if (Platform.OS !== 'web') {
-  setupURLPolyfill();
-}
-
-if (
-  SUPABASE_URL.includes('DEINPROJECT') ||
-  SUPABASE_ANON_KEY === 'DEIN_ANON_KEY'
-) {
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.warn(
-    'Supabase ist noch nicht konfiguriert. Bitte setze EXPO_PUBLIC_SUPABASE_URL und EXPO_PUBLIC_SUPABASE_ANON_KEY.'
+    'Supabase fehlt: Bitte EXPO_PUBLIC_SUPABASE_URL und EXPO_PUBLIC_SUPABASE_ANON_KEY in .env setzen.'
   );
 }
 
@@ -27,21 +16,12 @@ const safeAsyncStorage = {
   async getItem(key) {
     try {
       const value = await AsyncStorage.getItem(key);
-
       if (!value || value === 'null' || !value.trim()) {
-        if (value !== null) {
-          await AsyncStorage.removeItem(key);
-        }
+        if (value !== null) await AsyncStorage.removeItem(key);
         return null;
       }
-
-      try {
-        JSON.parse(value);
-        return value;
-      } catch (_err) {
-        await AsyncStorage.removeItem(key);
-        return null;
-      }
+      try { JSON.parse(value); return value; }
+      catch { await AsyncStorage.removeItem(key); return null; }
     } catch (err) {
       console.warn('Konnte Supabase-Sitzung nicht lesen:', err);
       return null;
@@ -49,27 +29,23 @@ const safeAsyncStorage = {
   },
   async setItem(key, value) {
     try {
-      const serialized =
-        typeof value === 'string' ? value : JSON.stringify(value);
-      await AsyncStorage.setItem(key, serialized);
+      const v = typeof value === 'string' ? value : JSON.stringify(value);
+      await AsyncStorage.setItem(key, v);
     } catch (err) {
       console.warn('Konnte Supabase-Sitzung nicht speichern:', err);
     }
   },
   async removeItem(key) {
-    try {
-      await AsyncStorage.removeItem(key);
-    } catch (err) {
-      console.warn('Konnte Supabase-Sitzung nicht loeschen:', err);
-    }
+    try { await AsyncStorage.removeItem(key); }
+    catch (err) { console.warn('Konnte Supabase-Sitzung nicht löschen:', err); }
   },
 };
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+export const supabase = createClient(SUPABASE_URL ?? '', SUPABASE_ANON_KEY ?? '', {
   auth: {
     storage: safeAsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    detectSessionInUrl: false, // RN/Expo
   },
 });

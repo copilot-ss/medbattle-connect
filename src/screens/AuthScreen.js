@@ -7,9 +7,62 @@ import {
   ActivityIndicator,
   Linking,
 } from 'react-native';
+import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
+
+const OAUTH_REDIRECT = AuthSession.makeRedirectUri({
+  useProxy: true,
+  scheme: 'medbattle',
+ });
+ // console.log('OAuth redirect:', OAUTH_REDIRECT);
 
 import { supabase } from '../lib/supabaseClient';
 import { ensureUserRecord } from '../services/userService';
+
+
+async function loginOAuth(provider, setMessage, setLoading) {
+  try {
+    setMessage(null);
+    setLoading(true);
+
+    // alte, evtl. kaputte Session löschen
+    await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+
+    // URL holen, Browser NICHT automatisch öffnen lassen
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: OAUTH_REDIRECT, skipBrowserRedirect: true },
+    });
+    if (error) throw error;
+    if (!data?.url) throw new Error('Kein OAuth-URL erhalten.');
+
+    // Browser-Flow starten
+    const res = await WebBrowser.openAuthSessionAsync(data.url, OAUTH_REDIRECT);
+    if (res.type === 'success' && res.url) {
+      // Tokens aus Rückgabe-URL lesen
+      const url = res.url;
+      const hash = url.includes('#') ? url.split('#')[1] : '';
+      const qs   = url.includes('?') ? url.split('?')[1].split('#')[0] : '';
+      const params = new URLSearchParams(`${qs}&${hash}`);
+
+      const access_token  = params.get('access_token');
+      const refresh_token = params.get('refresh_token');
+
+      if (access_token && refresh_token) {
+        await supabase.auth.setSession({ access_token, refresh_token });
+        // optional: Profil syncen
+        // await syncAuthenticatedUserProfile();  // falls die Funktion hier sichtbar ist
+        return;
+      }
+    }
+
+    throw new Error('Kein Token nach OAuth erhalten.');
+  } catch (err) {
+    setMessage(err.message ?? 'OAuth fehlgeschlagen.');
+  } finally {
+    setLoading(false);
+  }
+}
 
 function normalizeEmail(value) {
   return value.trim().toLowerCase();
@@ -302,12 +355,25 @@ export default function AuthScreen() {
       </Pressable>
 
       <Pressable onPress={toggleMode} disabled={loading}>
-        <Text style={{ color: '#2563EB', textAlign: 'center', fontSize: 15 }}>
-          {isSignUp
-            ? 'Schon einen Account? Hier einloggen.'
-            : 'Noch keinen Account? Jetzt erstellen.'}
-        </Text>
-      </Pressable>
-    </View>
-  );
-}
+  <Text style={{ color: '#2563EB', textAlign: 'center', fontSize: 15 }}>
+    {isSignUp ? 'Schon einen Account? Hier einloggen.' : 'Noch keinen Account? Jetzt erstellen.'}
+  </Text>
+</Pressable>
+
+<View style={{ marginTop: 24, gap: 10 }}>
+  <Pressable
+    onPress={() => loginOAuth('google', setMessage, setLoading)}
+    disabled={loading}
+    style={{ backgroundColor: '#DB4437', paddingVertical: 12, borderRadius: 10, alignItems: 'center' }}>
+    <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Mit Google anmelden</Text>
+  </Pressable>
+
+  <Pressable
+    onPress={() => loginOAuth('facebook', setMessage, setLoading)}
+    disabled={loading}
+    style={{ backgroundColor: '#1877F2', paddingVertical: 12, borderRadius: 10, alignItems: 'center' }}>
+    <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Mit Facebook anmelden</Text>
+  </Pressable>
+</View>
+    </View>);
+    }

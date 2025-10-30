@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "MedBattle",
+    "slug": "medbattle",
+    "scheme": "medbattle",
+    "owner": "sjigalin",
+    "ios": { "bundleIdentifier": "com.sjigalin.medbattle" },
+    "android": { "package": "com.sjigalin.medbattle" }
+  }
+}
