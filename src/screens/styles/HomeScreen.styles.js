@@ -123,7 +123,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 12,
   },
-  difficultyList: {\n  marginBottom: 0,\n  rowGap: 14,\n  gap: 14,\n},,
+  difficultyList: {
+    marginBottom: 0,
+    rowGap: 14,
+  },
   difficultyCard: {
     backgroundColor: '#0F172A',
     borderRadius: 18,
@@ -184,6 +187,31 @@ const styles = StyleSheet.create({
   },
   flexSpacer: {
     flex: 1,
+  },
+  multiplayerButton: {
+    backgroundColor: '#0F172A',
+    borderRadius: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.35)',
+    marginBottom: 16,
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
+  },
+  multiplayerTitle: {
+    color: '#BFDBFE',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  multiplayerSubtitle: {
+    color: '#94A3B8',
+    fontSize: 13,
+    lineHeight: 20,
+    marginTop: 4,
   },
   startButton: {
     backgroundColor: '#2563EB',

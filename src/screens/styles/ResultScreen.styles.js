@@ -118,6 +118,53 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 6,
   },
+  multiplayerCard: {
+    width: '100%',
+    marginTop: 20,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.35)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+  },
+  multiplayerTitle: {
+    color: '#BFDBFE',
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  multiplayerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  multiplayerColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  multiplayerLabel: {
+    color: '#94A3B8',
+    fontSize: 13,
+    marginBottom: 4,
+  },
+  multiplayerScore: {
+    color: '#38BDF8',
+    fontSize: 26,
+    fontWeight: '800',
+  },
+  multiplayerDivider: {
+    width: 1,
+    height: '70%',
+    backgroundColor: 'rgba(148, 163, 184, 0.35)',
+  },
+  multiplayerMeta: {
+    color: '#94A3B8',
+    fontSize: 13,
+    textAlign: 'center',
+  },
   primaryButton: {
     marginTop: 28,
     width: '100%',

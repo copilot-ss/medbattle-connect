@@ -142,6 +142,12 @@ export default function HomeScreen({ navigation }) {
     });
   }
 
+  function openMultiplayerLobby() {
+    navigation.navigate('MultiplayerLobby', {
+      difficulty: selectedDifficulty,
+    });
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -229,6 +235,24 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       <View style={styles.flexSpacer} />
+
+      <Pressable
+        onPress={openMultiplayerLobby}
+        style={[
+          styles.multiplayerButton,
+          selectedCard
+            ? {
+                borderColor: selectedCard.accent,
+                shadowColor: selectedCard.accent,
+              }
+            : null,
+        ]}
+      >
+        <Text style={styles.multiplayerTitle}>Online Duell</Text>
+        <Text style={styles.multiplayerSubtitle}>
+          Starte oder joine ein Live-Battle gegen andere Spieler:innen.
+        </Text>
+      </Pressable>
 
       <Pressable
         onPress={startQuiz}

@@ -110,6 +110,13 @@ export default function ResultScreen({ route, navigation }) {
     difficulty = 'Mittel',
     difficultyKey = 'mittel',
     questionLimit = total,
+    isMultiplayer = false,
+    matchId = null,
+    matchStatus = null,
+    opponentScore = null,
+    opponentName = null,
+    matchJoinCode = null,
+    playerRole = null,
   } = route.params ?? {};
 
   const totalQuestions = total || questionLimit || 0;
@@ -122,6 +129,31 @@ export default function ResultScreen({ route, navigation }) {
 
   const badge = useMemo(() => findBadge(percentage), [percentage]);
   const accuracyValue = Math.max(0, Math.min(percentage, 100));
+  const opponentDisplayName = useMemo(
+    () =>
+      opponentName && typeof opponentName === 'string'
+        ? opponentName
+        : 'Gegner',
+    [opponentName]
+  );
+  const opponentScoreValue = Number.isFinite(opponentScore)
+    ? opponentScore
+    : null;
+  const matchStatusLabel = useMemo(() => {
+    if (!isMultiplayer) {
+      return null;
+    }
+    switch (matchStatus) {
+      case 'completed':
+        return 'Match abgeschlossen';
+      case 'cancelled':
+        return 'Match abgebrochen';
+      case 'waiting':
+        return 'Warte auf Gegner';
+      default:
+        return 'Match laeuft noch';
+    }
+  }, [isMultiplayer, matchStatus]);
 
   return (
     <View style={styles.container}>
@@ -163,6 +195,31 @@ export default function ResultScreen({ route, navigation }) {
             />
           </View>
         </View>
+
+        {isMultiplayer ? (
+          <View style={styles.multiplayerCard}>
+            <Text style={styles.multiplayerTitle}>Duell Ergebnis</Text>
+            <View style={styles.multiplayerRow}>
+              <View style={styles.multiplayerColumn}>
+                <Text style={styles.multiplayerLabel}>
+                  Du {playerRole ? `(${playerRole === 'guest' ? 'Gast' : 'Host'})` : ''}
+                </Text>
+                <Text style={styles.multiplayerScore}>{score}</Text>
+              </View>
+              <View style={styles.multiplayerDivider} />
+              <View style={styles.multiplayerColumn}>
+                <Text style={styles.multiplayerLabel}>{opponentDisplayName}</Text>
+                <Text style={styles.multiplayerScore}>
+                  {opponentScoreValue ?? '—'}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.multiplayerMeta}>
+              {matchStatusLabel}
+              {matchJoinCode ? ` • Code ${matchJoinCode}` : ''}
+            </Text>
+          </View>
+        ) : null}
 
         <Pressable
           onPress={() => navigation.replace('Quiz', { difficulty: difficultyKey })}

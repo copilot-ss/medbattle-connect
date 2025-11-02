@@ -9,6 +9,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabaseClient';
+import useMultiplayerMatch from '../hooks/useMultiplayerMatch';
 import { fetchQuestions, submitScore } from '../services/quizService';
 import styles from './styles/QuizScreen.styles';
 
@@ -55,6 +56,11 @@ export default function QuizScreen({ navigation, route }) {
   const timerIntervalRef = useRef(null);
   const [timeLeftMs, setTimeLeftMs] = useState(TIMER_DURATION);
   const [timedOut, setTimedOut] = useState(false);
+  const matchId =
+    typeof route?.params?.matchId === 'string' ? route.params.matchId : null;
+  const initialJoinCode =
+    typeof route?.params?.joinCode === 'string' ? route.params.joinCode : null;
+  const isMultiplayer = Boolean(matchId);
   const difficulty =
     typeof route?.params?.difficulty === 'string'
       ? route.params.difficulty
@@ -66,10 +72,51 @@ export default function QuizScreen({ navigation, route }) {
     : 'mittel';
   const difficultyLabel =
     DIFFICULTY_LABELS[normalizedDifficulty] ?? DIFFICULTY_LABELS.mittel;
-  const questionLimit = 5;
-  const totalQuestions = questions.length;
+  const {
+    loading: matchLoading,
+    error: matchError,
+    match: matchData,
+    role: matchRole,
+    questions: matchQuestions,
+    player: matchPlayerState,
+    opponent: matchOpponentState,
+    status: matchStatus,
+    joinCode: matchJoinCode,
+    recordAnswer: recordMatchAnswer,
+    surrender: surrenderMatch,
+  } = useMultiplayerMatch(matchId, userId, {
+    expectedDifficulty: normalizedDifficulty,
+  });
+  const questionLimit = isMultiplayer
+    ? Array.isArray(matchQuestions) && matchQuestions.length
+      ? matchQuestions.length
+      : 5
+    : 5;
+  const activeQuestions = isMultiplayer
+    ? Array.isArray(matchQuestions)
+      ? matchQuestions
+      : []
+    : questions;
+  const totalQuestions = activeQuestions.length;
+  const activeIndex = isMultiplayer
+    ? matchPlayerState?.index ?? 0
+    : index;
+  const activeScore = isMultiplayer
+    ? matchPlayerState?.score ?? score
+    : score;
   const currentQuestion =
-    totalQuestions > 0 && index < totalQuestions ? questions[index] : null;
+    totalQuestions > 0 && activeIndex < totalQuestions
+      ? activeQuestions[activeIndex]
+      : null;
+  const hasQuestions = totalQuestions > 0;
+  const resolvedError = isMultiplayer
+    ? matchError
+      ? matchError.message ?? 'Match konnte nicht geladen werden.'
+      : error
+    : error;
+  const showLoading =
+    isMultiplayer ? (matchLoading || loading) && !hasQuestions : loading;
+  const resolvedMatchStatus = matchData?.status ?? matchStatus ?? null;
   const progressPercent = useMemo(() => {
     const ratio = Math.max(0, Math.min(1, timeLeftMs / TIMER_DURATION));
     return `${(ratio * 100).toFixed(1)}%`;
@@ -133,6 +180,10 @@ export default function QuizScreen({ navigation, route }) {
   }, [clearQuestionTimers]);
 
   useEffect(() => {
+    if (isMultiplayer) {
+      return;
+    }
+
     async function loadQuestions() {
       try {
         setLoading(true);
@@ -183,7 +234,24 @@ export default function QuizScreen({ navigation, route }) {
     setIndex(0);
     setScore(0);
     loadQuestions();
-  }, [TIMER_DURATION, clearQuestionTimers, normalizedDifficulty]);
+  }, [TIMER_DURATION, clearQuestionTimers, isMultiplayer, normalizedDifficulty, questionLimit]);
+
+  useEffect(() => {
+    if (!isMultiplayer) {
+      return;
+    }
+
+    if (Array.isArray(matchQuestions)) {
+      setQuestions(matchQuestions);
+    }
+
+    setLoading(Boolean(matchLoading));
+    setError(
+      matchError
+        ? matchError.message ?? 'Match konnte nicht geladen werden.'
+        : null
+    );
+  }, [isMultiplayer, matchError, matchLoading, matchQuestions]);
 
   useEffect(() => {
     let mounted = true;
@@ -216,15 +284,22 @@ export default function QuizScreen({ navigation, route }) {
   const finalizeQuiz = useCallback(
     async (
       finalScoreValue,
-      { total = totalQuestions, submit = true } = {}
+      {
+        total = totalQuestions,
+        submit = true,
+        wasSurrender = false,
+      } = {}
     ) => {
       const effectiveTotal = Math.max(1, total);
+      const resolvedScore = Number.isFinite(finalScoreValue)
+        ? finalScoreValue
+        : activeScore;
 
-      if (submit && userId) {
+      if (submit && userId && (!isMultiplayer || !wasSurrender)) {
         try {
           const result = await submitScore(
             userId,
-            finalScoreValue,
+            resolvedScore,
             normalizedDifficulty
           );
           if (!result?.ok) {
@@ -238,9 +313,9 @@ export default function QuizScreen({ navigation, route }) {
         }
       }
 
-      if (submit) {
+      if (submit && !isMultiplayer) {
         const streakKey = STREAK_STORAGE_KEYS[normalizedDifficulty] ?? null;
-        const mistakes = totalQuestions - finalScoreValue;
+        const mistakes = totalQuestions - resolvedScore;
         const shouldIncrease =
           normalizedDifficulty === 'leicht'
             ? true
@@ -272,16 +347,32 @@ export default function QuizScreen({ navigation, route }) {
       }
 
       navigation.navigate('Result', {
-        score: finalScoreValue,
+        score: resolvedScore,
         total: effectiveTotal,
         userId,
         difficulty: difficultyLabel,
         difficultyKey: normalizedDifficulty,
         questionLimit,
+        isMultiplayer,
+        matchId,
+        matchStatus: resolvedMatchStatus,
+        opponentScore: matchOpponentState?.score ?? null,
+        opponentName: matchOpponentState?.username ?? null,
+        matchJoinCode: matchJoinCode ?? initialJoinCode ?? null,
+        playerRole: matchRole,
       });
     },
     [
+      activeScore,
       difficultyLabel,
+      initialJoinCode,
+      isMultiplayer,
+      matchJoinCode,
+      matchOpponentState?.score,
+      matchOpponentState?.username,
+      matchRole,
+      resolvedMatchStatus,
+      matchId,
       navigation,
       normalizedDifficulty,
       questionLimit,
@@ -298,11 +389,30 @@ export default function QuizScreen({ navigation, route }) {
   const handleExitConfirm = useCallback(() => {
     clearQuestionTimers();
     setShowExitConfirm(false);
+    if (isMultiplayer) {
+      surrenderMatch().finally(() => {
+        finalizeQuiz(activeScore, {
+          total: activeIndex > 0 ? activeIndex : 1,
+          submit: false,
+          wasSurrender: true,
+        });
+      });
+      return;
+    }
     finalizeQuiz(score, {
       total: index > 0 ? index : 1,
       submit: false,
     });
-  }, [clearQuestionTimers, finalizeQuiz, index, score]);
+  }, [
+    activeIndex,
+    activeScore,
+    clearQuestionTimers,
+    finalizeQuiz,
+    index,
+    isMultiplayer,
+    score,
+    surrenderMatch,
+  ]);
 
   const answer = useCallback(
     async (option, { timedOut: timedOutTrigger = false } = {}) => {
@@ -311,6 +421,11 @@ export default function QuizScreen({ navigation, route }) {
       }
 
       clearQuestionTimers();
+      const questionSnapshot = currentQuestion;
+      const currentIndex = activeIndex;
+      const soloBaseScore = score;
+      const matchBaseScore = activeScore;
+      const elapsedMs = Math.max(0, TIMER_DURATION - timeLeftMs);
 
       if (timedOutTrigger) {
         setTimedOut(true);
@@ -319,14 +434,15 @@ export default function QuizScreen({ navigation, route }) {
         setTimedOut(false);
       }
 
-      const isCorrect = option === currentQuestion.correct_answer;
-      const finalScoreValue = isCorrect ? score + 1 : score;
+      const isCorrect = option === questionSnapshot.correct_answer;
+      const nextSoloScore = isCorrect ? soloBaseScore + 1 : soloBaseScore;
+      const nextMatchScore = isCorrect ? matchBaseScore + 1 : matchBaseScore;
 
       setSelectedOption(timedOutTrigger ? null : option);
       setIsAnswerLocked(true);
 
-      if (isCorrect) {
-        setScore(finalScoreValue);
+      if (!isMultiplayer && isCorrect) {
+        setScore(nextSoloScore);
       }
 
       if (feedbackTimerRef.current) {
@@ -334,30 +450,68 @@ export default function QuizScreen({ navigation, route }) {
       }
 
       feedbackTimerRef.current = setTimeout(() => {
-        feedbackTimerRef.current = null;
-        setSelectedOption(null);
+        const processAnswer = async () => {
+          feedbackTimerRef.current = null;
+          setSelectedOption(null);
 
-        if (index + 1 < totalQuestions) {
+          if (isMultiplayer) {
+            const result = await recordMatchAnswer({
+              questionId: questionSnapshot.id,
+              selectedOption: timedOutTrigger ? null : option,
+              correct: isCorrect,
+              durationMs: timedOutTrigger ? TIMER_DURATION : elapsedMs,
+              timedOut: timedOutTrigger,
+            });
+
+            if (!result.ok) {
+              console.warn(
+                'Antwort konnte nicht an den Server uebermittelt werden:',
+                result.error?.message ?? result.error ?? 'Unbekannter Fehler'
+              );
+            }
+          }
+
+          const nextIndex = currentIndex + 1;
+
+          if (nextIndex < totalQuestions) {
+            setIsAnswerLocked(false);
+            if (!isMultiplayer) {
+              setIndex(nextIndex);
+            }
+          } else {
+            const finalValue = isMultiplayer ? nextMatchScore : nextSoloScore;
+            finalizeQuiz(finalValue, { submit: true });
+          }
+        };
+
+        processAnswer().catch((err) => {
+          console.error('Antwort konnte nicht verarbeitet werden:', err);
           setIsAnswerLocked(false);
-          setIndex((prev) => prev + 1);
-        } else {
-          finalizeQuiz(finalScoreValue, { submit: true });
-        }
+        });
       }, 900);
     },
     [
+      TIMER_DURATION,
+      activeIndex,
+      activeScore,
       clearQuestionTimers,
       currentQuestion,
       finalizeQuiz,
-      index,
       isAnswerLocked,
+      isMultiplayer,
+      recordMatchAnswer,
       score,
       totalQuestions,
+      timeLeftMs,
     ]
   );
 
   const startQuestionTimer = useCallback(() => {
     if (!currentQuestion) {
+      return;
+    }
+
+    if (isMultiplayer && matchStatus !== 'active') {
       return;
     }
 
@@ -388,10 +542,17 @@ export default function QuizScreen({ navigation, route }) {
     answer,
     clearQuestionTimers,
     currentQuestion,
+    isMultiplayer,
+    matchStatus,
   ]);
 
   useEffect(() => {
     if (!currentQuestion) {
+      clearQuestionTimers();
+      return;
+    }
+
+    if (isMultiplayer && matchStatus !== 'active') {
       clearQuestionTimers();
       return;
     }
@@ -401,9 +562,15 @@ export default function QuizScreen({ navigation, route }) {
     return () => {
       clearQuestionTimers();
     };
-  }, [clearQuestionTimers, currentQuestion?.id, startQuestionTimer]);
+  }, [
+    clearQuestionTimers,
+    currentQuestion?.id,
+    isMultiplayer,
+    matchStatus,
+    startQuestionTimer,
+  ]);
 
-  if (loading) {
+  if (showLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#60A5FA" />
@@ -412,11 +579,12 @@ export default function QuizScreen({ navigation, route }) {
     );
   }
 
-  if (error || !questions.length) {
+  if (resolvedError || !hasQuestions) {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>
-          {error ?? 'Keine Fragen verfuegbar. Bitte versuche es spaeter erneut.'}
+          {resolvedError ??
+            'Keine Fragen verfuegbar. Bitte versuche es spaeter erneut.'}
         </Text>
         <Pressable
           onPress={() => navigation.navigate('Home')}
@@ -437,14 +605,50 @@ export default function QuizScreen({ navigation, route }) {
       <View style={styles.header}>
         <View>
           <Text style={styles.headerMeta}>
-            {difficultyLabel} · {questionLimit} Fragen
+            {difficultyLabel} • {(totalQuestions || questionLimit) || 0} Fragen
           </Text>
           <Text style={styles.headerTitle}>Battle laufend</Text>
-        </View>
+      </View>
         <Pressable onPress={handleExitRequest} style={styles.exitButton}>
           <Text style={styles.exitButtonText}>Beenden</Text>
         </Pressable>
       </View>
+
+      {isMultiplayer ? (
+        <View style={styles.matchStatusCard}>
+          <View style={styles.matchPlayersRow}>
+            <View style={styles.playerPanel}>
+              <Text style={styles.playerPanelLabel}>Du</Text>
+              <Text style={styles.playerPanelName}>
+                {matchPlayerState?.username ?? 'Du'}
+              </Text>
+              <Text style={styles.playerPanelScore}>
+                {matchPlayerState?.score ?? 0}
+              </Text>
+            </View>
+            <View style={styles.vsDivider}>
+              <Text style={styles.vsDividerText}>VS</Text>
+            </View>
+            <View style={styles.playerPanel}>
+              <Text style={styles.playerPanelLabel}>Gegner</Text>
+              <Text style={styles.playerPanelName}>
+                {matchOpponentState?.username ?? 'Unbekannt'}
+              </Text>
+              <Text style={styles.playerPanelScore}>
+                {matchOpponentState?.score ?? 0}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.matchMetaRow}>
+            <Text style={styles.matchMetaLeft}>
+              Runde {Math.min(activeIndex + 1, totalQuestions)}/{totalQuestions}
+            </Text>
+            <Text style={styles.matchMetaRight}>
+              Code {matchJoinCode ?? initialJoinCode ?? '—'}
+            </Text>
+          </View>
+        </View>
+      ) : null}
 
       <View style={styles.timerSection}>
         <View style={styles.timerRow}>
@@ -470,7 +674,7 @@ export default function QuizScreen({ navigation, route }) {
 
       <View style={styles.questionCard}>
         <Text style={styles.questionMeta}>
-          Frage {index + 1} / {questions.length}
+          Frage {Math.min(activeIndex + 1, totalQuestions)} / {totalQuestions}
         </Text>
         <Text style={styles.questionText}>{currentQuestion.question}</Text>
       </View>
@@ -543,7 +747,9 @@ export default function QuizScreen({ navigation, route }) {
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Battle beenden?</Text>
             <Text style={styles.modalMessage}>
-              Nicht beantwortete Fragen zaehlen nicht. Moechtest du wirklich abbrechen?
+              {isMultiplayer
+                ? 'Das laufende Duell gilt als aufgegeben. Moechtest du wirklich abbrechen?'
+                : 'Nicht beantwortete Fragen zaehlen nicht. Moechtest du wirklich abbrechen?'}
             </Text>
             <View style={styles.modalActions}>
               <Pressable

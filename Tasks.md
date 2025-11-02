@@ -6,7 +6,7 @@
 - [ ] Premium-Modus ohne Werbung
 - [ ] Supabase Auth (E-Mail + Google)
 - [x] Highscore / Rangliste
-- [ ] Multiplayer-Duelle (Realtime)
+- [x] Multiplayer-Duelle (Realtime)
 
 ## Erledigt
 - [x] Grundstruktur React Native + Expo  

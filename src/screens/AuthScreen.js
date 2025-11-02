@@ -1,35 +1,36 @@
 ﻿import { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  ActivityIndicator,
-  Linking,
-  Platform,
-} from 'react-native';
-import Constants from 'expo-constants';
+import { View, Text, TextInput, Pressable, ActivityIndicator, Linking, Platform } from 'react-native';
+import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
+import Constants from 'expo-constants';
 
 WebBrowser.maybeCompleteAuthSession();
+
+import { supabase } from '../lib/supabaseClient';
+import { ensureUserRecord } from '../services/userService';
+import styles from './styles/AuthScreen.styles';
 
 const REDIRECT_PATH = 'auth/callback';
 const APP_OWNERSHIP = Constants.appOwnership ?? 'expo';
 const expoOwner = Constants.expoConfig?.owner ?? 'sjigalin';
 const expoSlug = Constants.expoConfig?.slug ?? 'medbattle';
 
-const EXPO_PROXY_REDIRECT = `https://auth.expo.dev/@${expoOwner}/${expoSlug}`;
+const defaultProxyRedirect = AuthSession.makeRedirectUri({
+  useProxy: true,
+  scheme: 'medbattle',
+});
+
+const EXPO_PROXY_REDIRECT =
+  defaultProxyRedirect && defaultProxyRedirect.startsWith('https://')
+    ? defaultProxyRedirect
+    : `https://auth.expo.dev/@${expoOwner}/${expoSlug}`;
+
 const NATIVE_SCHEME_REDIRECT = `medbattle://${REDIRECT_PATH}`;
 
 const OAUTH_REDIRECT =
   APP_OWNERSHIP === 'expo' || Platform.OS === 'web'
     ? EXPO_PROXY_REDIRECT
     : NATIVE_SCHEME_REDIRECT;
-// console.log('OAuth redirect:', { OAUTH_REDIRECT, APP_OWNERSHIP });
-
-import { supabase } from '../lib/supabaseClient';
-import { ensureUserRecord } from '../services/userService';
-import styles from './styles/AuthScreen.styles';
 
 async function loginOAuth(provider, setMessage, setLoading) {
   try {
@@ -138,7 +139,6 @@ function parseSupabaseParams(url) {
 
     for (const segment of segments) {
       const searchParams = new URLSearchParams(segment);
-
       for (const [key, value] of searchParams.entries()) {
         params[key] = value;
       }
@@ -165,7 +165,6 @@ export default function AuthScreen() {
 
       if (!error && data?.user) {
         const result = await ensureUserRecord(data.user);
-
         if (!result.ok && result.error) {
           console.warn('Konnte Nutzerprofil nach Login nicht synchronisieren:', result.error);
         }
@@ -373,3 +372,4 @@ export default function AuthScreen() {
     </View>
   );
 }
+
