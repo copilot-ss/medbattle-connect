@@ -44,6 +44,7 @@ const DEFAULT_STREAKS = {
 
 export default function HomeScreen({ navigation }) {
   const [selectedDifficulty, setSelectedDifficulty] = useState('mittel');
+  const [selectedMode, setSelectedMode] = useState('campaign');
   const [soundEnabled, setSoundEnabled] = useState(
     typeof globalThis.__medbattleSound === 'boolean'
       ? globalThis.__medbattleSound
@@ -127,6 +128,7 @@ export default function HomeScreen({ navigation }) {
     () => DIFFICULTIES.find((item) => item.id === selectedDifficulty),
     [selectedDifficulty]
   );
+  const isCampaign = selectedMode === 'campaign';
 
   async function handleSignOut() {
     try {
@@ -136,7 +138,25 @@ export default function HomeScreen({ navigation }) {
     }
   }
 
-  function startQuiz() {
+  function handleCampaignPress() {
+    setSelectedMode('campaign');
+  }
+
+  function handleCreateLobby() {
+    navigation.navigate('MultiplayerLobby', {
+      difficulty: selectedDifficulty,
+      mode: 'create',
+    });
+  }
+
+  function handleJoinLobby() {
+    navigation.navigate('MultiplayerLobby', {
+      difficulty: selectedDifficulty,
+      mode: 'join',
+    });
+  }
+
+  function startCampaign() {
     navigation.navigate('Quiz', {
       difficulty: selectedDifficulty,
     });
@@ -181,93 +201,117 @@ export default function HomeScreen({ navigation }) {
 
       <View style={styles.arenaCard}>
         <Text style={styles.arenaLabel}>Arena bereit</Text>
-        <Text style={styles.arenaTitle}>Bereit fuer die naechste Battle?</Text>
+        <Text style={styles.arenaTitle}>Waehle deinen Spielmodus</Text>
         <Text style={styles.arenaDescription}>
-          Waehle deine Schwierigkeit, stelle dich 5 Fragen und sichere dir den Highscore.
+          Hoste ein Live-Duell, tritt einer Lobby bei oder trainiere solo in der Campaign.
         </Text>
       </View>
 
-      <Text style={styles.sectionLabel}>Schwierigkeit</Text>
+      <Text style={styles.sectionLabel}>Modi</Text>
 
-      <View style={styles.difficultyList}>
-        {DIFFICULTIES.map((mode, indexItem) => {
-          const isActive = mode.id === selectedDifficulty;
-          const streakValue = streaks[mode.id] ?? 0;
-          const isLast = indexItem === DIFFICULTIES.length - 1;
+      <View style={styles.modeList}>
+        <Pressable onPress={handleCreateLobby} style={[styles.modeCard, styles.modeCardHost]}>
+          <Text style={styles.modeCardTitle}>Create Lobby</Text>
+          <Text style={styles.modeCardSubtitle}>
+            Starte ein Duell und teile den Match-Code mit deiner Crew.
+          </Text>
+        </Pressable>
 
-          return (
-            <Pressable
-              key={mode.id}
-              onPress={() => setSelectedDifficulty(mode.id)}
-              style={[
-                styles.difficultyCard,
-                isLast ? styles.difficultyCardLast : null,
-                isActive ? styles.difficultyCardActive : styles.difficultyCardInactive,
-                isActive
-                  ? {
-                      borderColor: mode.accent,
-                      shadowColor: mode.accent,
-                    }
-                  : null,
-              ]}
-            >
-              <View style={styles.difficultyRow}>
-                <View>
-                  <Text style={styles.difficultyTitle}>{mode.title}</Text>
-                  <Text style={styles.difficultyDescription}>{mode.description}</Text>
-                </View>
-                <View
+        <Pressable onPress={handleJoinLobby} style={[styles.modeCard, styles.modeCardJoin]}>
+          <Text style={styles.modeCardTitle}>Join Lobby</Text>
+          <Text style={styles.modeCardSubtitle}>
+            Match-Code eingeben oder offene Lobbys durchstoebern.
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={handleCampaignPress}
+          style={[
+            styles.modeCard,
+            styles.modeCardCampaign,
+            isCampaign ? styles.modeCardActive : styles.modeCardInactive,
+            isCampaign && selectedCard
+              ? {
+                  borderColor: selectedCard.accent,
+                  shadowColor: selectedCard.accent,
+                }
+              : null,
+          ]}
+        >
+          <Text style={styles.modeCardTitle}>Campaign</Text>
+          <Text style={styles.modeCardSubtitle}>
+            Solo-Run mit Supabase Fragen und deinem persönlichen Streak.
+          </Text>
+        </Pressable>
+      </View>
+
+      {isCampaign ? (
+        <>
+          <Text style={styles.sectionLabel}>Schwierigkeit</Text>
+
+          <View style={styles.difficultyList}>
+            {DIFFICULTIES.map((mode, indexItem) => {
+              const isActive = mode.id === selectedDifficulty;
+              const streakValue = streaks[mode.id] ?? 0;
+              const isLast = indexItem === DIFFICULTIES.length - 1;
+
+              return (
+                <Pressable
+                  key={mode.id}
+                  onPress={() => setSelectedDifficulty(mode.id)}
                   style={[
-                    styles.streakBadge,
-                    {
-                      borderColor: mode.accent,
-                      backgroundColor: isActive ? mode.glow : 'rgba(15, 23, 42, 0.85)',
-                    },
+                    styles.difficultyCard,
+                    isLast ? styles.difficultyCardLast : null,
+                    isActive ? styles.difficultyCardActive : styles.difficultyCardInactive,
+                    isActive
+                      ? {
+                          borderColor: mode.accent,
+                          shadowColor: mode.accent,
+                        }
+                      : null,
                   ]}
                 >
-                  <Text style={[styles.streakValue, { color: mode.accent }]}>{streakValue}</Text>
-                  <Text style={[styles.streakLabel, { color: mode.accent }]}>Streak</Text>
-                </View>
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
+                  <View style={styles.difficultyRow}>
+                    <View>
+                      <Text style={styles.difficultyTitle}>{mode.title}</Text>
+                      <Text style={styles.difficultyDescription}>{mode.description}</Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.streakBadge,
+                        {
+                          borderColor: mode.accent,
+                          backgroundColor: isActive ? mode.glow : 'rgba(15, 23, 42, 0.85)',
+                        },
+                      ]}
+                    >
+                      <Text style={[styles.streakValue, { color: mode.accent }]}>{streakValue}</Text>
+                      <Text style={[styles.streakLabel, { color: mode.accent }]}>Streak</Text>
+                    </View>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <Pressable
+            onPress={startCampaign}
+            style={[
+              styles.startButton,
+              selectedCard
+                ? {
+                    backgroundColor: selectedCard.accent,
+                    shadowColor: selectedCard.accent,
+                  }
+                : null,
+            ]}
+          >
+            <Text style={styles.startButtonText}>Campaign starten</Text>
+          </Pressable>
+        </>
+      ) : null}
 
       <View style={styles.flexSpacer} />
-
-      <Pressable
-        onPress={openMultiplayerLobby}
-        style={[
-          styles.multiplayerButton,
-          selectedCard
-            ? {
-                borderColor: selectedCard.accent,
-                shadowColor: selectedCard.accent,
-              }
-            : null,
-        ]}
-      >
-        <Text style={styles.multiplayerTitle}>Online Duell</Text>
-        <Text style={styles.multiplayerSubtitle}>
-          Starte oder joine ein Live-Battle gegen andere Spieler:innen.
-        </Text>
-      </Pressable>
-
-      <Pressable
-        onPress={startQuiz}
-        style={[
-          styles.startButton,
-          selectedCard
-            ? {
-                backgroundColor: selectedCard.accent,
-                shadowColor: selectedCard.accent,
-              }
-            : null,
-        ]}
-      >
-        <Text style={styles.startButtonText}>Match starten</Text>
-      </Pressable>
 
       <Pressable onPress={handleSignOut} style={styles.signOutButton}>
         <Text style={styles.signOutText}>Abmelden</Text>
@@ -275,4 +319,5 @@ export default function HomeScreen({ navigation }) {
     </View>
   );
 }
+
 

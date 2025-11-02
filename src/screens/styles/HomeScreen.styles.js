@@ -123,6 +123,51 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 12,
   },
+  modeList: {
+    rowGap: 14,
+    marginBottom: 20,
+  },
+  modeCard: {
+    backgroundColor: '#0F172A',
+    borderRadius: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.25)',
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
+  },
+  modeCardHost: {
+    borderColor: 'rgba(34, 197, 94, 0.45)',
+    shadowColor: '#22C55E',
+  },
+  modeCardJoin: {
+    borderColor: 'rgba(56, 189, 248, 0.45)',
+    shadowColor: '#38BDF8',
+  },
+  modeCardCampaign: {
+    borderColor: 'rgba(96, 165, 250, 0.3)',
+    shadowColor: '#60A5FA',
+  },
+  modeCardActive: {
+    shadowOpacity: 0.42,
+  },
+  modeCardInactive: {
+    shadowOpacity: 0.18,
+  },
+  modeCardTitle: {
+    color: '#F8FAFC',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  modeCardSubtitle: {
+    color: '#94A3B8',
+    fontSize: 13,
+    lineHeight: 20,
+    marginTop: 6,
+  },
   difficultyList: {
     marginBottom: 0,
     rowGap: 14,
@@ -187,31 +232,6 @@ const styles = StyleSheet.create({
   },
   flexSpacer: {
     flex: 1,
-  },
-  multiplayerButton: {
-    backgroundColor: '#0F172A',
-    borderRadius: 18,
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.35)',
-    marginBottom: 16,
-    shadowColor: '#2563EB',
-    shadowOpacity: 0.28,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 6,
-  },
-  multiplayerTitle: {
-    color: '#BFDBFE',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  multiplayerSubtitle: {
-    color: '#94A3B8',
-    fontSize: 13,
-    lineHeight: 20,
-    marginTop: 4,
   },
   startButton: {
     backgroundColor: '#2563EB',

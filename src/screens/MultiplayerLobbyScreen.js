@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -41,18 +41,25 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     typeof route?.params?.difficulty === 'string'
       ? route.params.difficulty
       : 'mittel';
+  const initialMode =
+    typeof route?.params?.mode === 'string' ? route.params.mode.toLowerCase() : 'hub';
+  const normalizedMode =
+    initialMode === 'create' || initialMode === 'join' ? initialMode : 'hub';
+  const isCreateOnly = normalizedMode === 'create';
+  const isJoinOnly = normalizedMode === 'join';
 
   const [difficulty] = useState(initialDifficulty);
   const [userId, setUserId] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [openMatches, setOpenMatches] = useState([]);
-  const [matchesLoading, setMatchesLoading] = useState(true);
+  const [matchesLoading, setMatchesLoading] = useState(!isCreateOnly);
   const [matchesError, setMatchesError] = useState(null);
   const [joinCode, setJoinCode] = useState('');
   const [currentMatch, setCurrentMatch] = useState(null);
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
   const subscriptionRef = useRef(null);
+  const autoCreateTriggeredRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -99,9 +106,24 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     () => DIFFICULTY_LABELS[difficulty] ?? DIFFICULTY_LABELS.mittel,
     [difficulty]
   );
+  const helperText = useMemo(() => {
+    if (isCreateOnly) {
+      return `Direkt-Host: ${difficultyLabel} - 5 Fragen`;
+    }
+    if (isJoinOnly) {
+      return `Beitritt: ${difficultyLabel} - 5 Fragen`;
+    }
+    return `Schwierigkeit: ${difficultyLabel} - 5 Fragen`;
+  }, [difficultyLabel, isCreateOnly, isJoinOnly]);
 
   const refreshMatches = useCallback(
     async ({ force = false } = {}) => {
+      if (isCreateOnly) {
+        setOpenMatches([]);
+        setMatchesLoading(false);
+        return;
+      }
+
       setMatchesLoading(true);
       setMatchesError(null);
 
@@ -118,19 +140,19 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         setMatchesLoading(false);
       }
     },
-    [difficulty]
+    [difficulty, isCreateOnly]
   );
 
   useFocusEffect(
     useCallback(() => {
-      if (!userId) {
+      if (!userId || isCreateOnly) {
         return () => {};
       }
 
       refreshMatches();
 
       return () => {};
-    }, [refreshMatches, userId])
+    }, [isCreateOnly, refreshMatches, userId])
   );
 
   useEffect(() => {
@@ -192,9 +214,11 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       setMatchesError(err);
     } finally {
       setCreating(false);
-      refreshMatches({ force: true });
+      if (!isCreateOnly) {
+        refreshMatches({ force: true });
+      }
     }
-  }, [attachMatchSubscription, creating, difficulty, refreshMatches, userId]);
+  }, [attachMatchSubscription, creating, difficulty, isCreateOnly, refreshMatches, userId]);
 
   const handleJoinByCode = useCallback(async () => {
     if (!userId || joining) {
@@ -229,12 +253,15 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       setMatchesError(err);
     } finally {
       setJoining(false);
-      refreshMatches({ force: true });
+      if (!isCreateOnly) {
+        refreshMatches({ force: true });
+      }
     }
   }, [
     attachMatchSubscription,
     joinCode,
     joining,
+    isCreateOnly,
     refreshMatches,
     userId,
   ]);
@@ -265,13 +292,15 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         setMatchesError(err);
       } finally {
         setJoining(false);
-        refreshMatches({ force: true });
+        if (!isCreateOnly) {
+          refreshMatches({ force: true });
+        }
       }
     },
-    [attachMatchSubscription, joining, refreshMatches, userId]
+    [attachMatchSubscription, isCreateOnly, joining, refreshMatches, userId]
   );
 
-  const renderMatch = useCallback(
+    const renderMatch = useCallback(
     ({ item }) => (
       <Pressable
         onPress={() => handleJoinQuick(item.code)}
@@ -280,7 +309,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         <View style={styles.matchInfo}>
           <Text style={styles.matchCode}>{item.code}</Text>
           <Text style={styles.matchMeta}>
-            {DIFFICULTY_LABELS[item.difficulty] ?? difficultyLabel} •{' '}
+            {DIFFICULTY_LABELS[item.difficulty] ?? difficultyLabel} -{' '}
             {item.questionLimit} Fragen
           </Text>
           {item.hostUsername ? (
@@ -297,15 +326,30 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
   const currentJoinCode = currentMatch?.code ?? null;
 
+  useEffect(() => {
+    if (!isCreateOnly) {
+      return;
+    }
+
+    if (autoCreateTriggeredRef.current) {
+      return;
+    }
+
+    if (!userId || loadingUser) {
+      return;
+    }
+
+    autoCreateTriggeredRef.current = true;
+    handleCreateMatch();
+  }, [handleCreateMatch, isCreateOnly, loadingUser, userId]);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View>
           <Text style={styles.subtitle}>Multiplayer Arena</Text>
           <Text style={styles.title}>Online Battle</Text>
-          <Text style={styles.helper}>
-            Schwierigkeit: {difficultyLabel} • 5 Fragen
-          </Text>
+          <Text style={styles.helper}>{helperText}</Text>
         </View>
         <Pressable
           style={styles.closeButton}
@@ -349,75 +393,92 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         </View>
       ) : null}
 
-      <View style={styles.actionsRow}>
-        <Pressable
-          style={[
-            styles.primaryAction,
-            creating ? styles.actionDisabled : null,
-          ]}
-          onPress={handleCreateMatch}
-          disabled={creating || !userId}
-        >
-          <Text style={styles.primaryActionText}>
-            {creating ? 'Erstelle Lobby ...' : 'Lobby hosten'}
-          </Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.joinSection}>
-        <Text style={styles.joinLabel}>Match-Code eingeben</Text>
-        <View style={styles.joinRow}>
-          <TextInput
-            value={joinCode}
-            onChangeText={(value) =>
-              setJoinCode(value.toUpperCase().slice(0, 6))
-            }
-            style={styles.joinInput}
-            placeholder="ABC12"
-            placeholderTextColor="#64748B"
-            autoCapitalize="characters"
-            autoCorrect={false}
-            maxLength={6}
-          />
+      {!isJoinOnly ? (
+        <View style={styles.actionsRow}>
           <Pressable
-            onPress={handleJoinByCode}
             style={[
-              styles.joinButton,
-              joining ? styles.actionDisabled : null,
+              styles.primaryAction,
+              creating ? styles.actionDisabled : null,
             ]}
-            disabled={joining || !joinCode.trim()}
+            onPress={handleCreateMatch}
+            disabled={creating || !userId}
           >
-            <Text style={styles.joinButtonText}>
-              {joining ? 'Beitreten...' : 'Go'}
+            <Text style={styles.primaryActionText}>
+              {creating ? 'Erstelle Lobby ...' : 'Lobby hosten'}
             </Text>
           </Pressable>
         </View>
-      </View>
+      ) : null}
 
-      <View style={styles.listHeader}>
-        <Text style={styles.listTitle}>Offene Lobbys</Text>
-        <Pressable onPress={() => refreshMatches({ force: true })}>
-          <Text style={styles.listRefresh}>Aktualisieren</Text>
-        </Pressable>
-      </View>
+      {!isCreateOnly ? (
+        <>
+          <View style={styles.joinSection}>
+            <Text style={styles.joinLabel}>Match-Code eingeben</Text>
+            <View style={styles.joinRow}>
+              <TextInput
+                value={joinCode}
+                onChangeText={(value) =>
+                  setJoinCode(value.toUpperCase().slice(0, 6))
+                }
+                style={styles.joinInput}
+                placeholder="ABC12"
+                placeholderTextColor="#64748B"
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={6}
+                autoFocus={isJoinOnly}
+              />
+              <Pressable
+                onPress={handleJoinByCode}
+                style={[
+                  styles.joinButton,
+                  joining ? styles.actionDisabled : null,
+                ]}
+                disabled={joining || !joinCode.trim()}
+              >
+                <Text style={styles.joinButtonText}>
+                  {joining ? 'Beitreten...' : 'Go'}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
 
-      {matchesLoading ? (
-        <View style={styles.loadingList}>
-          <ActivityIndicator size="small" color="#60A5FA" />
-          <Text style={styles.loadingListText}>Lade Lobbys ...</Text>
+          <View style={styles.listHeader}>
+            <Text style={styles.listTitle}>Offene Lobbys</Text>
+            <Pressable onPress={() => refreshMatches({ force: true })}>
+              <Text style={styles.listRefresh}>Aktualisieren</Text>
+            </Pressable>
+          </View>
+
+          {matchesLoading ? (
+            <View style={styles.loadingList}>
+              <ActivityIndicator size="small" color="#60A5FA" />
+              <Text style={styles.loadingListText}>Lade Lobbys ...</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={openMatches}
+              keyExtractor={(item) => item.id}
+              renderItem={renderMatch}
+              contentContainerStyle={
+                openMatches.length ? styles.listContent : styles.listEmpty
+              }
+              ListEmptyComponent={<EmptyState />}
+            />
+          )}
+        </>
+      ) : !currentJoinCode ? (
+        <View style={styles.createInfoBox}>
+          <Text style={styles.createInfoTitle}>Lobby vorbereiten</Text>
+          <Text style={styles.createInfoText}>
+            Wir hosten dein Match. Teile gleich danach den Code mit deinem Team.
+          </Text>
         </View>
-      ) : (
-        <FlatList
-          data={openMatches}
-          keyExtractor={(item) => item.id}
-          renderItem={renderMatch}
-          contentContainerStyle={
-            openMatches.length ? styles.listContent : styles.listEmpty
-          }
-          ListEmptyComponent={<EmptyState />}
-        />
-      )}
+      ) : null}
     </View>
   );
 }
+
+
+
 

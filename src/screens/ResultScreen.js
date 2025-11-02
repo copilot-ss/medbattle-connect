@@ -216,7 +216,7 @@ export default function ResultScreen({ route, navigation }) {
             </View>
             <Text style={styles.multiplayerMeta}>
               {matchStatusLabel}
-              {matchJoinCode ? ` • Code ${matchJoinCode}` : ''}
+              {matchJoinCode ? ` - Code ${matchJoinCode}` : ''}
             </Text>
           </View>
         ) : null}

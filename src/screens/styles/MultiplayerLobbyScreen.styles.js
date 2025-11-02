@@ -121,6 +121,26 @@ const styles = StyleSheet.create({
     color: '#BFDBFE',
     fontWeight: '700',
   },
+  createInfoBox: {
+    backgroundColor: 'rgba(96, 165, 250, 0.12)',
+    borderRadius: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(96, 165, 250, 0.35)',
+    marginTop: 20,
+  },
+  createInfoTitle: {
+    color: '#BFDBFE',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  createInfoText: {
+    color: '#94A3B8',
+    fontSize: 13,
+    lineHeight: 20,
+  },
   actionsRow: {
     flexDirection: 'row',
     columnGap: 12,
@@ -282,4 +302,3 @@ const styles = StyleSheet.create({
 });
 
 export default styles;
-
