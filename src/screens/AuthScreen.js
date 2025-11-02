@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,29 +6,38 @@ import {
   Pressable,
   ActivityIndicator,
   Linking,
+  Platform,
 } from 'react-native';
-import * as AuthSession from 'expo-auth-session';
+import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
 
-const OAUTH_REDIRECT = AuthSession.makeRedirectUri({
-  useProxy: true,
-  scheme: 'medbattle',
- });
- // console.log('OAuth redirect:', OAUTH_REDIRECT);
+WebBrowser.maybeCompleteAuthSession();
+
+const REDIRECT_PATH = 'auth/callback';
+const APP_OWNERSHIP = Constants.appOwnership ?? 'expo';
+const expoOwner = Constants.expoConfig?.owner ?? 'sjigalin';
+const expoSlug = Constants.expoConfig?.slug ?? 'medbattle';
+
+const EXPO_PROXY_REDIRECT = `https://auth.expo.dev/@${expoOwner}/${expoSlug}`;
+const NATIVE_SCHEME_REDIRECT = `medbattle://${REDIRECT_PATH}`;
+
+const OAUTH_REDIRECT =
+  APP_OWNERSHIP === 'expo' || Platform.OS === 'web'
+    ? EXPO_PROXY_REDIRECT
+    : NATIVE_SCHEME_REDIRECT;
+// console.log('OAuth redirect:', { OAUTH_REDIRECT, APP_OWNERSHIP });
 
 import { supabase } from '../lib/supabaseClient';
 import { ensureUserRecord } from '../services/userService';
-
+import styles from './styles/AuthScreen.styles';
 
 async function loginOAuth(provider, setMessage, setLoading) {
   try {
     setMessage(null);
     setLoading(true);
 
-    // alte, evtl. kaputte Session löschen
     await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
 
-    // URL holen, Browser NICHT automatisch öffnen lassen
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: OAUTH_REDIRECT, skipBrowserRedirect: true },
@@ -36,27 +45,56 @@ async function loginOAuth(provider, setMessage, setLoading) {
     if (error) throw error;
     if (!data?.url) throw new Error('Kein OAuth-URL erhalten.');
 
-    // Browser-Flow starten
-    const res = await WebBrowser.openAuthSessionAsync(data.url, OAUTH_REDIRECT);
-    if (res.type === 'success' && res.url) {
-      // Tokens aus Rückgabe-URL lesen
-      const url = res.url;
-      const hash = url.includes('#') ? url.split('#')[1] : '';
-      const qs   = url.includes('?') ? url.split('?')[1].split('#')[0] : '';
-      const params = new URLSearchParams(`${qs}&${hash}`);
-
-      const access_token  = params.get('access_token');
-      const refresh_token = params.get('refresh_token');
-
-      if (access_token && refresh_token) {
-        await supabase.auth.setSession({ access_token, refresh_token });
-        // optional: Profil syncen
-        // await syncAuthenticatedUserProfile();  // falls die Funktion hier sichtbar ist
-        return;
-      }
+    let authUrl = data.url;
+    try {
+      const modified = new URL(authUrl);
+      modified.searchParams.set('redirect_to', OAUTH_REDIRECT);
+      authUrl = modified.toString();
+    } catch (parseErr) {
+      console.warn('Konnte OAuth-URL nicht anpassen:', parseErr);
     }
 
-    throw new Error('Kein Token nach OAuth erhalten.');
+    const result = await WebBrowser.openAuthSessionAsync(authUrl, OAUTH_REDIRECT);
+    if (result.type !== 'success' || !result.url) {
+      let debugHost = null;
+      try {
+        debugHost = new URL(authUrl).host;
+      } catch {
+        debugHost = null;
+      }
+
+      const detail = debugHost ? ` (Weiterleitung auf ${debugHost})` : '';
+      throw new Error(`OAuth nicht abgeschlossen${detail}.`);
+    }
+
+    const params = parseSupabaseParams(result.url);
+    const callbackError = params.error_description ?? params.error;
+    if (callbackError) {
+      throw new Error(callbackError);
+    }
+
+    const code = params.code ?? params.auth_code ?? params.authCode;
+    const accessToken = params.access_token;
+    const refreshToken = params.refresh_token;
+
+    if (code) {
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession({
+        authCode: code,
+      });
+      if (exchangeError) throw exchangeError;
+      return;
+    }
+
+    if (accessToken && refreshToken) {
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (sessionError) throw sessionError;
+      return;
+    }
+
+    throw new Error('Nach OAuth wurde kein Code oder Token geliefert.');
   } catch (err) {
     setMessage(err.message ?? 'OAuth fehlgeschlagen.');
   } finally {
@@ -265,115 +303,73 @@ export default function AuthScreen() {
   }
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: '#fff',
-        justifyContent: 'center',
-        paddingHorizontal: 24,
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 32,
-          fontWeight: 'bold',
-          textAlign: 'center',
-          marginBottom: 32,
-          color: '#111827',
-        }}
-      >
-        MedBattle
-      </Text>
+    <View style={styles.container}>
+      <Text style={styles.brand}>MedBattle</Text>
 
-      <View style={{ marginBottom: 16 }}>
-        <Text style={{ color: '#4B5563', marginBottom: 6 }}>E-Mail</Text>
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>E-Mail</Text>
         <TextInput
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
           placeholder="name@example.com"
-          style={{
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            borderRadius: 10,
-            paddingHorizontal: 14,
-            paddingVertical: 12,
-            fontSize: 16,
-          }}
+          style={styles.input}
         />
       </View>
 
-      <View style={{ marginBottom: 24 }}>
-        <Text style={{ color: '#4B5563', marginBottom: 6 }}>Passwort</Text>
+      <View style={[styles.inputGroup, styles.inputGroupLarge]}>
+        <Text style={styles.label}>Passwort</Text>
         <TextInput
           value={password}
           onChangeText={setPassword}
           secureTextEntry
           placeholder="Mindestens 6 Zeichen"
-          style={{
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            borderRadius: 10,
-            paddingHorizontal: 14,
-            paddingVertical: 12,
-            fontSize: 16,
-          }}
+          style={styles.input}
         />
       </View>
 
-      {message ? (
-        <Text
-          style={{
-            color: '#B91C1C',
-            marginBottom: 16,
-            textAlign: 'center',
-          }}
-        >
-          {message}
-        </Text>
-      ) : null}
+      {message ? <Text style={styles.message}>{message}</Text> : null}
 
       <Pressable
         onPress={handleSubmit}
         disabled={loading}
-        style={{
-          backgroundColor: loading ? '#93C5FD' : '#2563EB',
-          paddingVertical: 14,
-          borderRadius: 12,
-          alignItems: 'center',
-          marginBottom: 12,
-        }}
+        style={[styles.primaryButton, loading ? styles.primaryButtonDisabled : null]}
       >
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600' }}>
+          <Text style={styles.primaryButtonText}>
             {isSignUp ? 'Account erstellen' : 'Einloggen'}
           </Text>
         )}
       </Pressable>
 
       <Pressable onPress={toggleMode} disabled={loading}>
-  <Text style={{ color: '#2563EB', textAlign: 'center', fontSize: 15 }}>
-    {isSignUp ? 'Schon einen Account? Hier einloggen.' : 'Noch keinen Account? Jetzt erstellen.'}
-  </Text>
-</Pressable>
+        <Text style={styles.toggleText}>
+          {isSignUp
+            ? 'Schon einen Account? Hier einloggen.'
+            : 'Noch keinen Account? Jetzt erstellen.'}
+        </Text>
+      </Pressable>
 
-<View style={{ marginTop: 24, gap: 10 }}>
-  <Pressable
-    onPress={() => loginOAuth('google', setMessage, setLoading)}
-    disabled={loading}
-    style={{ backgroundColor: '#DB4437', paddingVertical: 12, borderRadius: 10, alignItems: 'center' }}>
-    <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Mit Google anmelden</Text>
-  </Pressable>
+      <View style={styles.socialGroup}>
+        <Pressable
+          onPress={() => loginOAuth('google', setMessage, setLoading)}
+          disabled={loading}
+          style={[styles.socialButton, styles.googleButton]}
+        >
+          <Text style={styles.socialButtonText}>Mit Google anmelden</Text>
+        </Pressable>
 
-  <Pressable
-    onPress={() => loginOAuth('facebook', setMessage, setLoading)}
-    disabled={loading}
-    style={{ backgroundColor: '#1877F2', paddingVertical: 12, borderRadius: 10, alignItems: 'center' }}>
-    <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Mit Facebook anmelden</Text>
-  </Pressable>
-</View>
-    </View>);
-    }
+        <Pressable
+          onPress={() => loginOAuth('facebook', setMessage, setLoading)}
+          disabled={loading}
+          style={[styles.socialButton, styles.facebookButton]}
+        >
+          <Text style={styles.socialButtonText}>Mit Facebook anmelden</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}

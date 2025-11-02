@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -12,6 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { supabase } from '../lib/supabaseClient';
+import styles from './styles/SettingsScreen.styles';
 import {
   addFriend,
   fetchFriends,
@@ -276,94 +277,21 @@ export default function SettingsScreen({ navigation, route }) {
   }
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: '#030712',
-        paddingHorizontal: 20,
-        paddingTop: 60,
-        paddingBottom: 40,
-      }}
-    >
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 32,
-        }}
-      >
-        <Text
-          style={{
-            color: '#F8FAFC',
-            fontSize: 30,
-            fontWeight: '800',
-            letterSpacing: 1,
-          }}
-        >
-          Einstellungen
-        </Text>
-
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={{
-            paddingHorizontal: 14,
-            paddingVertical: 10,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: 'rgba(148, 163, 184, 0.35)',
-            backgroundColor: 'rgba(15, 23, 42, 0.9)',
-          }}
-        >
-          <Text style={{ color: '#E0E7FF', fontWeight: '600' }}>Zurueck</Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Einstellungen</Text>
+        <Pressable onPress={() => navigation.goBack()} style={styles.headerButton}>
+          <Text style={styles.headerButtonText}>Zurueck</Text>
         </Pressable>
       </View>
 
-      <View
-        style={{
-          backgroundColor: '#0F172A',
-          borderRadius: 20,
-          paddingVertical: 22,
-          paddingHorizontal: 20,
-          borderWidth: 1,
-          borderColor: 'rgba(96, 165, 250, 0.35)',
-          marginBottom: 24,
-        }}
-      >
-        <Text
-          style={{
-            color: '#60A5FA',
-            fontSize: 14,
-            letterSpacing: 1.5,
-            marginBottom: 8,
-            textTransform: 'uppercase',
-            fontWeight: '600',
-          }}
-        >
-          Audio
-        </Text>
+      <View style={[styles.card, styles.audioCard]}>
+        <Text style={styles.cardLabel}>Audio</Text>
 
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 12,
-          }}
-        >
+        <View style={styles.rowBetween}>
           <View>
-            <Text
-              style={{
-                color: '#F8FAFC',
-                fontSize: 18,
-                fontWeight: '700',
-              }}
-            >
-              Battle Sound
-            </Text>
-            <Text style={{ color: '#94A3B8', fontSize: 13, marginTop: 4 }}>
-              {soundStatus}
-            </Text>
+            <Text style={styles.cardTitle}>Battle Sound</Text>
+            <Text style={styles.cardSubtitle}>{soundStatus}</Text>
           </View>
 
           <Switch
@@ -375,42 +303,12 @@ export default function SettingsScreen({ navigation, route }) {
         </View>
       </View>
 
-      <View
-        style={{
-          backgroundColor: '#0F172A',
-          borderRadius: 20,
-          paddingVertical: 24,
-          paddingHorizontal: 20,
-          borderWidth: 1,
-          borderColor: 'rgba(14, 165, 233, 0.35)',
-          marginBottom: 24,
-        }}
-      >
-        <Text
-          style={{
-            color: '#E2E8F0',
-            fontSize: 18,
-            fontWeight: '700',
-            marginBottom: 12,
-          }}
-        >
-          Squad
-        </Text>
+      <View style={[styles.card, styles.squadCard]}>
+        <Text style={styles.cardTitle}>Squad</Text>
+        <Text style={styles.cardSubtitle}>Fuege Freunde hinzu, um eure Ergebnisse gemeinsam zu feiern.</Text>
 
-        <Text
-          style={{
-            color: '#94A3B8',
-            fontSize: 13,
-            marginBottom: 14,
-          }}
-        >
-          Fuege Freunde hinzu, um eure Ergebnisse gemeinsam zu feiern.
-        </Text>
-
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ color: '#CBD5F5', fontSize: 12, marginBottom: 6 }}>
-            Freund per E-Mail einladen
-          </Text>
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>Freund per E-Mail einladen</Text>
           <TextInput
             value={friendEmail}
             onChangeText={setFriendEmail}
@@ -418,134 +316,60 @@ export default function SettingsScreen({ navigation, route }) {
             placeholderTextColor="#64748B"
             autoCapitalize="none"
             keyboardType="email-address"
-            style={{
-              backgroundColor: '#111827',
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: 'rgba(148, 163, 184, 0.25)',
-              paddingHorizontal: 14,
-              paddingVertical: 12,
-              color: '#E2E8F0',
-            }}
+            style={styles.input}
           />
           <Pressable
             onPress={handleAddFriend}
             disabled={addingFriend}
-            style={{
-              marginTop: 12,
-              backgroundColor: addingFriend ? '#1E3A8A' : '#22C55E',
-              paddingVertical: 12,
-              borderRadius: 12,
-              alignItems: 'center',
-            }}
+            style={[
+              styles.actionButton,
+              styles.successButton,
+              addingFriend ? styles.disabledButton : null,
+            ]}
           >
             {addingFriend ? (
               <ActivityIndicator color="#F8FAFC" />
             ) : (
-              <Text style={{ color: '#0F172A', fontWeight: '700' }}>
-                Freund hinzufügen
-              </Text>
+              <Text style={styles.successButtonText}>Freund hinzufuegen</Text>
             )}
           </Pressable>
         </View>
 
-        <View
-          style={{
-            backgroundColor: 'rgba(15, 23, 42, 0.9)',
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: 'rgba(59, 130, 246, 0.25)',
-            padding: 16,
-            maxHeight: 200,
-          }}
-        >
+        <View style={styles.friendList}>
           {loadingFriends ? (
-            <View
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingVertical: 24,
-              }}
-            >
+            <View style={styles.friendLoading}>
               <ActivityIndicator color="#60A5FA" />
-              <Text style={{ color: '#94A3B8', marginTop: 8 }}>
-                Freunde werden geladen ...
-              </Text>
+              <Text style={styles.friendLoadingText}>Freunde werden geladen ...</Text>
             </View>
           ) : friends.length ? (
             friends.map((friend) => (
               <View
                 key={friend.id ?? friend.email}
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  paddingVertical: 10,
-                  borderBottomWidth: 1,
-                  borderColor: 'rgba(148, 163, 184, 0.12)',
-                }}
+                style={styles.friendRow}
               >
-                <Text style={{ color: '#E2E8F0', fontSize: 14 }}>
-                  {friend.email}
-                </Text>
+                <Text style={styles.friendEmail}>{friend.email}</Text>
                 <Pressable
                   onPress={() => handleRemoveFriend(friend)}
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: 'rgba(239, 68, 68, 0.35)',
-                  }}
+                  style={styles.friendRemoveButton}
                 >
-                  <Text style={{ color: '#FCA5A5', fontSize: 12 }}>Entfernen</Text>
+                  <Text style={styles.friendRemoveText}>Entfernen</Text>
                 </Pressable>
               </View>
             ))
           ) : (
-            <Text style={{ color: '#94A3B8', textAlign: 'center' }}>
-              Noch keine Freunde hinzugefuegt.
-            </Text>
+            <Text style={styles.friendEmpty}>Noch keine Freunde hinzugefuegt.</Text>
           )}
         </View>
       </View>
 
-      <View
-        style={{
-          backgroundColor: '#0F172A',
-          borderRadius: 20,
-          paddingVertical: 24,
-          paddingHorizontal: 20,
-          borderWidth: 1,
-          borderColor: 'rgba(226, 232, 240, 0.18)',
-          marginBottom: 24,
-        }}
-      >
-        <Text
-          style={{
-            color: '#E2E8F0',
-            fontSize: 18,
-            fontWeight: '700',
-            marginBottom: 12,
-          }}
-        >
-          Profil & Sicherheit
-        </Text>
-
-        <Text
-          style={{
-            color: '#94A3B8',
-            fontSize: 13,
-            marginBottom: 16,
-          }}
-        >
+      <View style={[styles.card, styles.profileCard]}>
+        <Text style={styles.cardTitle}>Profil & Sicherheit</Text>
+        <Text style={styles.cardSubtitle}>
           Verwalte deinen Zugang ohne sensible Daten im Klartext anzuzeigen.
         </Text>
 
-        <View style={{ marginBottom: 20 }}>
-          <Text style={{ color: '#CBD5F5', fontSize: 12, marginBottom: 6 }}>
-            Neue E-Mail-Adresse
-          </Text>
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>Neue E-Mail-Adresse</Text>
           <TextInput
             value={newEmail}
             onChangeText={setNewEmail}
@@ -553,131 +377,68 @@ export default function SettingsScreen({ navigation, route }) {
             placeholderTextColor="#64748B"
             autoCapitalize="none"
             keyboardType="email-address"
-            style={{
-              backgroundColor: '#111827',
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: 'rgba(148, 163, 184, 0.25)',
-              paddingHorizontal: 14,
-              paddingVertical: 12,
-              color: '#E2E8F0',
-            }}
+            style={styles.input}
           />
           <Pressable
             onPress={handleEmailUpdate}
             disabled={loadingEmail}
-            style={{
-              marginTop: 12,
-              backgroundColor: loadingEmail ? '#1E3A8A' : '#2563EB',
-              paddingVertical: 12,
-              borderRadius: 12,
-              alignItems: 'center',
-            }}
+            style={[
+              styles.actionButton,
+              styles.primaryButton,
+              loadingEmail ? styles.disabledButton : null,
+            ]}
           >
             {loadingEmail ? (
               <ActivityIndicator color="#F8FAFC" />
             ) : (
-              <Text style={{ color: '#F8FAFC', fontWeight: '600' }}>
-                Bestaetigungslink senden
-              </Text>
+              <Text style={styles.primaryButtonText}>Bestaetigungslink senden</Text>
             )}
           </Pressable>
         </View>
 
-        <View
-          style={{
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-            borderRadius: 16,
-            backgroundColor: 'rgba(30, 41, 59, 0.7)',
-            borderWidth: 1,
-            borderColor: 'rgba(51, 65, 85, 0.6)',
-          }}
-        >
-          <Text
-            style={{
-              color: '#F8FAFC',
-              fontSize: 16,
-              fontWeight: '600',
-              marginBottom: 6,
-            }}
-          >
-            Passwort zuruecksetzen
-          </Text>
-          <Text style={{ color: '#94A3B8', fontSize: 13, marginBottom: 12 }}>
+        <View style={styles.infoBox}>
+          <Text style={styles.infoTitle}>Passwort zuruecksetzen</Text>
+          <Text style={styles.infoSubtitle}>
             Wir schicken dir einen Link fuer die Passwort-Aktualisierung.
           </Text>
           <Pressable
             onPress={handlePasswordReset}
             disabled={loadingReset}
-            style={{
-              backgroundColor: loadingReset ? '#0F172A' : '#F59E0B',
-              paddingVertical: 12,
-              borderRadius: 12,
-              alignItems: 'center',
-            }}
+            style={[
+              styles.actionButton,
+              styles.warningButton,
+              loadingReset ? styles.warningButtonDisabled : null,
+            ]}
           >
             {loadingReset ? (
               <ActivityIndicator color="#0F172A" />
             ) : (
-              <Text style={{ color: '#0F172A', fontWeight: '700' }}>
-                Passwort-Link anfordern
-              </Text>
+              <Text style={styles.warningButtonText}>Passwort-Link anfordern</Text>
             )}
           </Pressable>
         </View>
       </View>
 
       {friendsFeedback ? (
-        <View
-          style={{
-            paddingVertical: 12,
-            paddingHorizontal: 16,
-            backgroundColor: 'rgba(59, 130, 246, 0.16)',
-            borderRadius: 14,
-            borderWidth: 1,
-            borderColor: 'rgba(59, 130, 246, 0.35)',
-            marginBottom: 24,
-          }}
-        >
-          <Text style={{ color: '#BFDBFE', fontSize: 13 }}>
-            {friendsFeedback}
-          </Text>
+        <View style={styles.banner}>
+          <Text style={styles.bannerText}>{friendsFeedback}</Text>
         </View>
       ) : null}
 
       {feedback ? (
-        <View
-          style={{
-            paddingVertical: 12,
-            paddingHorizontal: 16,
-            backgroundColor: 'rgba(59, 130, 246, 0.16)',
-            borderRadius: 14,
-            borderWidth: 1,
-            borderColor: 'rgba(59, 130, 246, 0.35)',
-            marginBottom: 24,
-          }}
-        >
-          <Text style={{ color: '#BFDBFE', fontSize: 13 }}>{feedback}</Text>
+        <View style={styles.banner}>
+          <Text style={styles.bannerText}>{feedback}</Text>
         </View>
       ) : null}
 
       <Pressable
         onPress={() => navigation.goBack()}
-        style={{
-          alignSelf: 'center',
-          paddingVertical: 12,
-          paddingHorizontal: 24,
-          borderRadius: 14,
-          borderWidth: 1,
-          borderColor: 'rgba(148, 163, 184, 0.35)',
-          backgroundColor: 'rgba(15, 23, 42, 0.9)',
-        }}
+        style={styles.footerButton}
       >
-        <Text style={{ color: '#E0E7FF', fontWeight: '600' }}>
-          Zur Arena
-        </Text>
+        <Text style={styles.footerButtonText}>Zur Arena</Text>
       </Pressable>
     </View>
   );
 }
+
+

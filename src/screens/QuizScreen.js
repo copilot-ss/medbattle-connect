@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabaseClient';
 import { fetchQuestions, submitScore } from '../services/quizService';
+import styles from './styles/QuizScreen.styles';
 
 const DIFFICULTY_LABELS = {
   leicht: 'Leicht',
@@ -49,6 +50,11 @@ export default function QuizScreen({ navigation, route }) {
   const [isAnswerLocked, setIsAnswerLocked] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const feedbackTimerRef = useRef(null);
+  const TIMER_DURATION = 6000;
+  const timerTimeoutRef = useRef(null);
+  const timerIntervalRef = useRef(null);
+  const [timeLeftMs, setTimeLeftMs] = useState(TIMER_DURATION);
+  const [timedOut, setTimedOut] = useState(false);
   const difficulty =
     typeof route?.params?.difficulty === 'string'
       ? route.params.difficulty
@@ -61,13 +67,13 @@ export default function QuizScreen({ navigation, route }) {
   const difficultyLabel =
     DIFFICULTY_LABELS[normalizedDifficulty] ?? DIFFICULTY_LABELS.mittel;
   const questionLimit = 5;
-  const screenStyle = {
-    flex: 1,
-    backgroundColor: '#030712',
-    paddingHorizontal: 20,
-    paddingVertical: 32,
-  };
   const totalQuestions = questions.length;
+  const currentQuestion =
+    totalQuestions > 0 && index < totalQuestions ? questions[index] : null;
+  const progressPercent = useMemo(() => {
+    const ratio = Math.max(0, Math.min(1, timeLeftMs / TIMER_DURATION));
+    return `${(ratio * 100).toFixed(1)}%`;
+  }, [TIMER_DURATION, timeLeftMs]);
 
   useEffect(() => {
     navigation.setOptions({ gestureEnabled: false });
@@ -76,15 +82,28 @@ export default function QuizScreen({ navigation, route }) {
     };
   }, [navigation]);
 
+  const clearQuestionTimers = useCallback(() => {
+    if (timerTimeoutRef.current) {
+      clearTimeout(timerTimeoutRef.current);
+      timerTimeoutRef.current = null;
+    }
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+  }, []);
+
   const handleExitRequest = useCallback(() => {
+    clearQuestionTimers();
     if (feedbackTimerRef.current) {
       clearTimeout(feedbackTimerRef.current);
       feedbackTimerRef.current = null;
     }
     setSelectedOption(null);
     setIsAnswerLocked(false);
+    setTimedOut(false);
     setShowExitConfirm(true);
-  }, []);
+  }, [clearQuestionTimers]);
 
   useFocusEffect(
     useCallback(() => {
@@ -109,8 +128,9 @@ export default function QuizScreen({ navigation, route }) {
       if (feedbackTimerRef.current) {
         clearTimeout(feedbackTimerRef.current);
       }
+      clearQuestionTimers();
     };
-  }, []);
+  }, [clearQuestionTimers]);
 
   useEffect(() => {
     async function loadQuestions() {
@@ -118,9 +138,7 @@ export default function QuizScreen({ navigation, route }) {
         setLoading(true);
         const data = await fetchQuestions(normalizedDifficulty, questionLimit);
         if (!data.length) {
-          setError(
-            'Keine Fragen verfuegbar. Bitte kontrolliere die Supabase-Daten oder verwende die Platzhalter.'
-          );
+          setError('Keine Fragen verfuegbar. Bitte pflege Fragen in Supabase.');
           setQuestions([]);
         } else {
           setError(null);
@@ -156,13 +174,16 @@ export default function QuizScreen({ navigation, route }) {
     if (feedbackTimerRef.current) {
       clearTimeout(feedbackTimerRef.current);
     }
+    clearQuestionTimers();
+    setTimedOut(false);
+    setTimeLeftMs(TIMER_DURATION);
     setSelectedOption(null);
     setIsAnswerLocked(false);
     setQuestions([]);
     setIndex(0);
     setScore(0);
     loadQuestions();
-  }, [normalizedDifficulty]);
+  }, [TIMER_DURATION, clearQuestionTimers, normalizedDifficulty]);
 
   useEffect(() => {
     let mounted = true;
@@ -271,197 +292,201 @@ export default function QuizScreen({ navigation, route }) {
 
   const handleExitCancel = useCallback(() => {
     setShowExitConfirm(false);
-  }, []);
+    startQuestionTimer();
+  }, [startQuestionTimer]);
 
   const handleExitConfirm = useCallback(() => {
+    clearQuestionTimers();
     setShowExitConfirm(false);
     finalizeQuiz(score, {
       total: index > 0 ? index : 1,
       submit: false,
     });
-  }, [finalizeQuiz, index, score]);
+  }, [clearQuestionTimers, finalizeQuiz, index, score]);
+
+  const answer = useCallback(
+    async (option, { timedOut: timedOutTrigger = false } = {}) => {
+      if (isAnswerLocked || !currentQuestion) {
+        return;
+      }
+
+      clearQuestionTimers();
+
+      if (timedOutTrigger) {
+        setTimedOut(true);
+        setTimeLeftMs(0);
+      } else {
+        setTimedOut(false);
+      }
+
+      const isCorrect = option === currentQuestion.correct_answer;
+      const finalScoreValue = isCorrect ? score + 1 : score;
+
+      setSelectedOption(timedOutTrigger ? null : option);
+      setIsAnswerLocked(true);
+
+      if (isCorrect) {
+        setScore(finalScoreValue);
+      }
+
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+      }
+
+      feedbackTimerRef.current = setTimeout(() => {
+        feedbackTimerRef.current = null;
+        setSelectedOption(null);
+
+        if (index + 1 < totalQuestions) {
+          setIsAnswerLocked(false);
+          setIndex((prev) => prev + 1);
+        } else {
+          finalizeQuiz(finalScoreValue, { submit: true });
+        }
+      }, 900);
+    },
+    [
+      clearQuestionTimers,
+      currentQuestion,
+      finalizeQuiz,
+      index,
+      isAnswerLocked,
+      score,
+      totalQuestions,
+    ]
+  );
+
+  const startQuestionTimer = useCallback(() => {
+    if (!currentQuestion) {
+      return;
+    }
+
+    clearQuestionTimers();
+    setTimedOut(false);
+    setTimeLeftMs(TIMER_DURATION);
+
+    timerIntervalRef.current = setInterval(() => {
+      setTimeLeftMs((prev) => {
+        if (prev <= 100) {
+          if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current);
+            timerIntervalRef.current = null;
+          }
+          return 0;
+        }
+        return prev - 100;
+      });
+    }, 100);
+
+    timerTimeoutRef.current = setTimeout(() => {
+      timerTimeoutRef.current = null;
+      setTimedOut(true);
+      answer(null, { timedOut: true });
+    }, TIMER_DURATION);
+  }, [
+    TIMER_DURATION,
+    answer,
+    clearQuestionTimers,
+    currentQuestion,
+  ]);
+
+  useEffect(() => {
+    if (!currentQuestion) {
+      clearQuestionTimers();
+      return;
+    }
+
+    startQuestionTimer();
+
+    return () => {
+      clearQuestionTimers();
+    };
+  }, [clearQuestionTimers, currentQuestion?.id, startQuestionTimer]);
 
   if (loading) {
     return (
-      <View
-        style={{
-          ...screenStyle,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#60A5FA" />
-        <Text style={{ marginTop: 12, color: '#E2E8F0' }}>
-          Fragen werden geladen ...
-        </Text>
+        <Text style={styles.loadingText}>Fragen werden geladen ...</Text>
       </View>
     );
   }
 
   if (error || !questions.length) {
     return (
-      <View
-        style={{
-          ...screenStyle,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 18,
-            color: '#E2E8F0',
-            textAlign: 'center',
-            marginBottom: 24,
-          }}
-        >
-          {error ??
-            'Keine Fragen verfuegbar. Bitte versuche es spaeter erneut.'}
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>
+          {error ?? 'Keine Fragen verfuegbar. Bitte versuche es spaeter erneut.'}
         </Text>
         <Pressable
           onPress={() => navigation.navigate('Home')}
-          style={{
-            backgroundColor: '#60A5FA',
-            paddingVertical: 12,
-            paddingHorizontal: 28,
-            borderRadius: 12,
-          }}
+          style={styles.errorButton}
         >
-          <Text style={{ color: '#0F172A', fontSize: 16, fontWeight: '600' }}>
-            Zurueck zur Basis
-          </Text>
+          <Text style={styles.errorButtonText}>Zurueck zur Basis</Text>
         </Pressable>
       </View>
     );
   }
 
-  const currentQuestion = questions[index];
-
   if (!currentQuestion) {
     return null;
   }
 
-  async function answer(option) {
-    if (isAnswerLocked || !currentQuestion) {
-      return;
-    }
-
-    const isCorrect = option === currentQuestion.correct_answer;
-    const finalScoreValue = isCorrect ? score + 1 : score;
-
-    setSelectedOption(option);
-    setIsAnswerLocked(true);
-
-    if (isCorrect) {
-      setScore(finalScoreValue);
-    }
-
-    if (feedbackTimerRef.current) {
-      clearTimeout(feedbackTimerRef.current);
-    }
-
-    feedbackTimerRef.current = setTimeout(() => {
-      feedbackTimerRef.current = null;
-      setSelectedOption(null);
-
-      if (index + 1 < totalQuestions) {
-        setIsAnswerLocked(false);
-        setIndex((prev) => prev + 1);
-      } else {
-        finalizeQuiz(finalScoreValue, { submit: true });
-      }
-    }, 900);
-  }
-
   return (
-    <View style={screenStyle}>
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 20,
-        }}
-      >
+    <View style={styles.screen}>
+      <View style={styles.header}>
         <View>
-          <Text
-            style={{
-              color: '#94A3B8',
-              fontSize: 13,
-              letterSpacing: 1.5,
-              textTransform: 'uppercase',
-            }}
-          >
-            {difficultyLabel} • {questionLimit} Fragen
+          <Text style={styles.headerMeta}>
+            {difficultyLabel} · {questionLimit} Fragen
           </Text>
-          <Text
-            style={{
-              color: '#F8FAFC',
-              fontSize: 26,
-              fontWeight: '800',
-            }}
-          >
-            Battle laufend
-          </Text>
+          <Text style={styles.headerTitle}>Battle laufend</Text>
         </View>
-        <Pressable
-          onPress={handleExitRequest}
-          style={{
-            paddingHorizontal: 16,
-            paddingVertical: 10,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: 'rgba(239, 68, 68, 0.6)',
-            backgroundColor: 'rgba(239, 68, 68, 0.15)',
-          }}
-        >
-          <Text style={{ color: '#FCA5A5', fontWeight: '700' }}>Beenden</Text>
+        <Pressable onPress={handleExitRequest} style={styles.exitButton}>
+          <Text style={styles.exitButtonText}>Beenden</Text>
         </Pressable>
       </View>
 
-      <View
-        style={{
-          backgroundColor: '#0F172A',
-          borderRadius: 20,
-          paddingVertical: 22,
-          paddingHorizontal: 20,
-          borderWidth: 1,
-          borderColor: 'rgba(59, 130, 246, 0.25)',
-          marginBottom: 28,
-        }}
-      >
-        <Text
-          style={{
-            color: '#60A5FA',
-            fontSize: 16,
-            fontWeight: '600',
-            marginBottom: 6,
-          }}
-        >
-          Frage {index + 1} / {questions.length}
-        </Text>
-        <Text
-          style={{
-            color: '#F8FAFC',
-            fontSize: 20,
-            lineHeight: 28,
-            fontWeight: '600',
-          }}
-        >
-          {currentQuestion.question}
-        </Text>
+      <View style={styles.timerSection}>
+        <View style={styles.timerRow}>
+          <Text style={styles.timerLabel}>Time Attack</Text>
+          <Text style={styles.timerValue}>
+            {(Math.max(timeLeftMs, 0) / 1000).toFixed(1)}s
+          </Text>
+        </View>
+        <View style={styles.progressTrack}>
+          <View
+            style={[
+              styles.progressFill,
+              {
+                width: progressPercent,
+                backgroundColor: timedOut
+                  ? 'rgba(248, 113, 113, 0.85)'
+                  : '#FACC15',
+              },
+            ]}
+          />
+        </View>
       </View>
 
-      <View style={{ gap: 12 }}>
+      <View style={styles.questionCard}>
+        <Text style={styles.questionMeta}>
+          Frage {index + 1} / {questions.length}
+        </Text>
+        <Text style={styles.questionText}>{currentQuestion.question}</Text>
+      </View>
+
+      <View style={styles.optionsList}>
         {currentQuestion.options.map((opt, i) => {
           const optionKey = `${i}-${opt}`;
           const isOptionSelected = selectedOption === opt;
           const isCorrectOption = opt === currentQuestion.correct_answer;
-          const showFeedback = isAnswerLocked && selectedOption !== null;
+          const showFeedback =
+            isAnswerLocked && (selectedOption !== null || timedOut);
 
           let backgroundColor = '#111827';
           let borderColor = 'rgba(148, 163, 184, 0.25)';
           let textColor = '#E2E8F0';
+          let extraOpacity = 1;
 
           if (showFeedback) {
             if (isCorrectOption) {
@@ -475,6 +500,8 @@ export default function QuizScreen({ navigation, route }) {
             } else {
               backgroundColor = '#111827';
               borderColor = 'rgba(148, 163, 184, 0.15)';
+              textColor = '#E2E8F0';
+              extraOpacity = 0.85;
             }
           } else if (isOptionSelected) {
             backgroundColor = 'rgba(59, 130, 246, 0.18)';
@@ -487,106 +514,49 @@ export default function QuizScreen({ navigation, route }) {
               key={optionKey}
               onPress={() => answer(opt)}
               disabled={isAnswerLocked}
-              style={{
-                backgroundColor,
-                borderRadius: 16,
-                paddingVertical: 14,
-                paddingHorizontal: 18,
-                borderWidth: 1,
-                borderColor,
-                opacity: isAnswerLocked && !isOptionSelected && !isCorrectOption ? 0.85 : 1,
-              }}
+              style={[
+                styles.optionButton,
+                {
+                  backgroundColor,
+                  borderColor,
+                  opacity: extraOpacity,
+                },
+              ]}
             >
-              <Text
-                style={{
-                  color: textColor,
-                  fontSize: 16,
-                  fontWeight: '600',
-                }}
-              >
-                {opt}
-              </Text>
+              <Text style={[styles.optionText, { color: textColor }]}>{opt}</Text>
             </Pressable>
           );
         })}
       </View>
 
+      {timedOut && isAnswerLocked ? (
+        <View style={styles.timeoutBanner}>
+          <Text style={styles.timeoutTitle}>Zeit abgelaufen!</Text>
+          <Text style={styles.timeoutSubtitle}>
+            Reagiere schneller, um deinen Combo-Bonus zu sichern.
+          </Text>
+        </View>
+      ) : null}
+
       {showExitConfirm ? (
-        <View
-          style={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: 'rgba(2, 6, 23, 0.85)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 24,
-          }}
-        >
-          <View
-            style={{
-              width: '100%',
-              maxWidth: 340,
-              backgroundColor: '#0F172A',
-              borderRadius: 20,
-              padding: 24,
-              borderWidth: 1,
-              borderColor: 'rgba(148, 163, 184, 0.25)',
-              gap: 16,
-            }}
-          >
-            <Text
-              style={{
-                color: '#F8FAFC',
-                fontSize: 20,
-                fontWeight: '700',
-              }}
-            >
-              Battle beenden?
-            </Text>
-            <Text style={{ color: '#CBD5F5', fontSize: 14, lineHeight: 20 }}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Battle beenden?</Text>
+            <Text style={styles.modalMessage}>
               Nicht beantwortete Fragen zaehlen nicht. Moechtest du wirklich abbrechen?
             </Text>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                gap: 12,
-              }}
-            >
+            <View style={styles.modalActions}>
               <Pressable
                 onPress={handleExitCancel}
-                style={{
-                  flex: 1,
-                  backgroundColor: 'rgba(34, 197, 94, 0.25)',
-                  borderRadius: 14,
-                  paddingVertical: 12,
-                  alignItems: 'center',
-                  borderWidth: 1,
-                  borderColor: 'rgba(34, 197, 94, 0.55)',
-                }}
+                style={[styles.modalButton, styles.modalButtonContinue]}
               >
-                <Text style={{ color: '#BBF7D0', fontWeight: '700' }}>
-                  Weiter spielen
-                </Text>
+                <Text style={styles.modalButtonContinueText}>Weiter spielen</Text>
               </Pressable>
               <Pressable
                 onPress={handleExitConfirm}
-                style={{
-                  flex: 1,
-                  backgroundColor: 'rgba(239, 68, 68, 0.25)',
-                  borderRadius: 14,
-                  paddingVertical: 12,
-                  alignItems: 'center',
-                  borderWidth: 1,
-                  borderColor: 'rgba(239, 68, 68, 0.6)',
-                }}
+                style={[styles.modalButton, styles.modalButtonExit]}
               >
-                <Text style={{ color: '#FCA5A5', fontWeight: '700' }}>
-                  Ja, beenden
-                </Text>
+                <Text style={styles.modalButtonExitText}>Ja, beenden</Text>
               </Pressable>
             </View>
           </View>
@@ -595,3 +565,5 @@ export default function QuizScreen({ navigation, route }) {
     </View>
   );
 }
+
+

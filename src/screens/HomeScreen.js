@@ -1,9 +1,10 @@
-import { useCallback, useMemo, useState } from 'react';
+﻿import { useCallback, useMemo, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabaseClient';
+import styles from './styles/HomeScreen.styles';
 
 const DIFFICULTIES = [
   {
@@ -142,76 +143,18 @@ export default function HomeScreen({ navigation }) {
   }
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: '#030712',
-        paddingHorizontal: 20,
-        paddingTop: 60,
-        paddingBottom: 40,
-      }}
-    >
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 32,
-        }}
-      >
-        <Text
-          style={{
-            color: '#F8FAFC',
-            fontSize: 32,
-            fontWeight: '800',
-            letterSpacing: 1,
-          }}
-        >
-          MedBattle
-        </Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>MedBattle</Text>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={styles.quickActions}>
           <Pressable
             onPress={() => navigation.navigate('Leaderboard')}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 22,
-              backgroundColor: 'rgba(96, 165, 250, 0.12)',
-              borderWidth: 1,
-              borderColor: 'rgba(96, 165, 250, 0.35)',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            style={styles.leaderboardButton}
           >
-            <View
-              style={{
-                width: 14,
-                height: 14,
-                borderRadius: 4,
-                backgroundColor: '#60A5FA',
-              }}
-            />
-            <View
-              style={{
-                position: 'absolute',
-                bottom: 10,
-                width: 10,
-                height: 10,
-                borderRadius: 3,
-                backgroundColor: '#93C5FD',
-              }}
-            />
-            <View
-              style={{
-                position: 'absolute',
-                bottom: 4,
-                width: 6,
-                height: 6,
-                borderRadius: 2,
-                backgroundColor: '#BFDBFE',
-              }}
-            />
+            <View style={styles.leaderboardDotLarge} />
+            <View style={styles.leaderboardDotMedium} />
+            <View style={styles.leaderboardDotSmall} />
           </Pressable>
 
           <Pressable
@@ -220,189 +163,64 @@ export default function HomeScreen({ navigation }) {
                 initialSoundEnabled: soundEnabled,
               })
             }
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              backgroundColor: 'rgba(148, 163, 184, 0.18)',
-              borderWidth: 1,
-              borderColor: 'rgba(148, 163, 184, 0.35)',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginLeft: 16,
-            }}
+            style={styles.settingsButton}
           >
-            <View
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: 10,
-                borderWidth: 2,
-                borderColor: '#E2E8F0',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <View
-                style={{
-                  width: 2,
-                  height: 10,
-                  backgroundColor: '#E2E8F0',
-                  borderRadius: 1,
-                }}
-              />
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 3,
-                  width: 2,
-                  height: 2,
-                  backgroundColor: '#E2E8F0',
-                  borderRadius: 1,
-                }}
-              />
+            <View style={styles.settingsOuter}>
+              <View style={styles.settingsNeedle} />
+              <View style={styles.settingsPivot} />
             </View>
           </Pressable>
         </View>
       </View>
 
-      <View
-        style={{
-          backgroundColor: '#111827',
-          borderRadius: 24,
-          paddingVertical: 28,
-          paddingHorizontal: 24,
-          marginBottom: 28,
-          borderWidth: 1,
-          borderColor: 'rgba(59, 130, 246, 0.25)',
-        }}
-      >
-        <Text
-          style={{
-            color: '#60A5FA',
-            fontSize: 14,
-            letterSpacing: 2,
-            fontWeight: '600',
-            textTransform: 'uppercase',
-            marginBottom: 12,
-          }}
-        >
-          Arena bereit
-        </Text>
-        <Text
-          style={{
-            color: '#F8FAFC',
-            fontSize: 24,
-            fontWeight: '700',
-            marginBottom: 10,
-          }}
-        >
-          Bereit fuer die naechste Battle?
-        </Text>
-        <Text
-          style={{
-            color: '#CBD5F5',
-            fontSize: 15,
-            lineHeight: 22,
-          }}
-        >
-          Waehle deine Schwierigkeit, stelle dich 5 Fragen und sichere dir den
-          Highscore.
+      <View style={styles.arenaCard}>
+        <Text style={styles.arenaLabel}>Arena bereit</Text>
+        <Text style={styles.arenaTitle}>Bereit fuer die naechste Battle?</Text>
+        <Text style={styles.arenaDescription}>
+          Waehle deine Schwierigkeit, stelle dich 5 Fragen und sichere dir den Highscore.
         </Text>
       </View>
 
-      <Text
-        style={{
-          color: '#94A3B8',
-          fontSize: 14,
-          marginBottom: 12,
-        }}
-      >
-        Schwierigkeit
-      </Text>
+      <Text style={styles.sectionLabel}>Schwierigkeit</Text>
 
-      <View style={{ gap: 14 }}>
-        {DIFFICULTIES.map((mode) => {
+      <View style={styles.difficultyList}>
+        {DIFFICULTIES.map((mode, indexItem) => {
           const isActive = mode.id === selectedDifficulty;
           const streakValue = streaks[mode.id] ?? 0;
+          const isLast = indexItem === DIFFICULTIES.length - 1;
+
           return (
             <Pressable
               key={mode.id}
               onPress={() => setSelectedDifficulty(mode.id)}
-              style={{
-                backgroundColor: '#0F172A',
-                borderRadius: 18,
-                paddingVertical: 16,
-                paddingHorizontal: 18,
-                borderWidth: 1,
-                borderColor: isActive ? mode.accent : 'rgba(148, 163, 184, 0.25)',
-                shadowColor: mode.accent,
-                shadowOpacity: isActive ? 0.45 : 0,
-                shadowRadius: isActive ? 12 : 0,
-                shadowOffset: { width: 0, height: isActive ? 8 : 0 },
-                elevation: isActive ? 6 : 0,
-              }}
+              style={[
+                styles.difficultyCard,
+                isLast ? styles.difficultyCardLast : null,
+                isActive ? styles.difficultyCardActive : styles.difficultyCardInactive,
+                isActive
+                  ? {
+                      borderColor: mode.accent,
+                      shadowColor: mode.accent,
+                    }
+                  : null,
+              ]}
             >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
+              <View style={styles.difficultyRow}>
                 <View>
-                  <Text
-                    style={{
-                      color: '#F8FAFC',
-                      fontSize: 20,
-                      fontWeight: '700',
-                    }}
-                  >
-                    {mode.title}
-                  </Text>
-                  <Text
-                    style={{
-                      color: '#94A3B8',
-                      fontSize: 13,
-                      marginTop: 4,
-                    }}
-                  >
-                    {mode.description}
-                  </Text>
+                  <Text style={styles.difficultyTitle}>{mode.title}</Text>
+                  <Text style={styles.difficultyDescription}>{mode.description}</Text>
                 </View>
                 <View
-                  style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: 24,
-                    backgroundColor: isActive ? mode.glow : 'rgba(15, 23, 42, 0.85)',
-                    borderWidth: 2,
-                    borderColor: mode.accent,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    paddingVertical: 10,
-                    paddingHorizontal: 6,
-                  }}
+                  style={[
+                    styles.streakBadge,
+                    {
+                      borderColor: mode.accent,
+                      backgroundColor: isActive ? mode.glow : 'rgba(15, 23, 42, 0.85)',
+                    },
+                  ]}
                 >
-                  <Text
-                    style={{
-                      color: mode.accent,
-                      fontWeight: '800',
-                      fontSize: 18,
-                    }}
-                  >
-                    {streakValue}
-                  </Text>
-                  <Text
-                    style={{
-                      color: mode.accent,
-                      fontSize: 14,
-                      fontWeight: '700',
-                      marginTop: 2,
-                    }}
-                  >
-                    🔥
-                  </Text>
+                  <Text style={[styles.streakValue, { color: mode.accent }]}>{streakValue}</Text>
+                  <Text style={[styles.streakLabel, { color: mode.accent }]}>Streak</Text>
                 </View>
               </View>
             </Pressable>
@@ -410,38 +228,27 @@ export default function HomeScreen({ navigation }) {
         })}
       </View>
 
-      <View style={{ flex: 1 }} />
+      <View style={styles.flexSpacer} />
 
       <Pressable
         onPress={startQuiz}
-        style={{
-          backgroundColor: selectedCard?.accent ?? '#2563EB',
-          paddingVertical: 18,
-          borderRadius: 16,
-          alignItems: 'center',
-          shadowColor: selectedCard?.accent ?? '#2563EB',
-          shadowOpacity: 0.45,
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: 8 },
-          elevation: 8,
-          marginBottom: 14,
-        }}
+        style={[
+          styles.startButton,
+          selectedCard
+            ? {
+                backgroundColor: selectedCard.accent,
+                shadowColor: selectedCard.accent,
+              }
+            : null,
+        ]}
       >
-        <Text
-          style={{
-            color: '#0F172A',
-            fontSize: 18,
-            fontWeight: '800',
-            letterSpacing: 0.5,
-          }}
-        >
-          Match starten
-        </Text>
+        <Text style={styles.startButtonText}>Match starten</Text>
       </Pressable>
 
-      <Pressable onPress={handleSignOut} style={{ alignSelf: 'center' }}>
-        <Text style={{ color: '#64748B', fontSize: 14 }}>Abmelden</Text>
+      <Pressable onPress={handleSignOut} style={styles.signOutButton}>
+        <Text style={styles.signOutText}>Abmelden</Text>
       </Pressable>
     </View>
   );
 }
+

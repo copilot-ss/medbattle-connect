@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+﻿import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 
 import { supabase } from '../lib/supabaseClient';
+import styles from './styles/LeaderboardScreen.styles';
 import { fetchLeaderboard } from '../services/quizService';
 
 function formatUserId(value) {
@@ -105,37 +106,17 @@ export default function LeaderboardScreen({ navigation }) {
 
     return (
       <View
-        style={{
-          borderRadius: 20,
-          backgroundColor: containerBackground,
-          borderWidth: 1,
-          borderColor: isCurrent ? '#FACC15' : 'rgba(71, 85, 105, 0.45)',
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingVertical: 18,
-          paddingHorizontal: 18,
-          marginBottom: 14,
-          gap: 14,
-        }}
+        style={[
+          styles.entry,
+          {
+            backgroundColor: containerBackground,
+            borderColor: isCurrent ? '#FACC15' : 'rgba(71, 85, 105, 0.45)',
+          },
+        ]}
       >
-        <Text
-          style={{
-            width: 46,
-            fontSize: 18,
-            fontWeight: '800',
-            color: accent,
-          }}
-        >
-          {index + 1}.
-        </Text>
-        <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: '600',
-              color: '#F8FAFC',
-            }}
-          >
+        <Text style={[styles.entryRank, { color: accent }]}>{index + 1}.</Text>
+        <View style={styles.entryMeta}>
+          <Text style={styles.entryName}>
             {(() => {
               const name = item.username?.trim()
                 ? item.username
@@ -143,115 +124,38 @@ export default function LeaderboardScreen({ navigation }) {
               return isCurrent ? `${name} (Du)` : name;
             })()}
           </Text>
-          <Text style={{ fontSize: 12, color: '#94A3B8', marginTop: 4 }}>
-            Schwierigkeit: {item.difficulty}
-          </Text>
+          <Text style={styles.entryDifficulty}>Schwierigkeit: {item.difficulty}</Text>
         </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: '700',
-              color: '#FACC15',
-            }}
-          >
-            {item.points}
-          </Text>
-          <Text style={{ fontSize: 11, color: '#CBD5F5', marginTop: 4 }}>
-            Punkte
-          </Text>
+        <View style={styles.entryScoreWrap}>
+          <Text style={styles.entryScore}>{item.points}</Text>
+          <Text style={styles.entryScoreLabel}>Punkte</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#030712' }}>
-      <View
-        style={{
-          paddingTop: 60,
-          paddingHorizontal: 20,
-          paddingBottom: 24,
-          backgroundColor: '#0F172A',
-          borderBottomWidth: 1,
-          borderColor: 'rgba(59, 130, 246, 0.3)',
-        }}
-      >
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={{
-            alignSelf: 'flex-start',
-            paddingHorizontal: 14,
-            paddingVertical: 8,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: 'rgba(148, 163, 184, 0.35)',
-            backgroundColor: 'rgba(2, 6, 23, 0.6)',
-            marginBottom: 18,
-          }}
-        >
-          <Text style={{ color: '#E0E7FF', fontWeight: '600' }}>Zurueck</Text>
+    <View style={styles.screen}>
+      <View style={styles.header}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>Zurueck</Text>
         </Pressable>
-        <Text
-          style={{
-            fontSize: 30,
-            fontWeight: '800',
-            color: '#F8FAFC',
-          }}
-        >
-          Rangliste
-        </Text>
-        <Text style={{ color: '#CBD5F5', marginTop: 6 }}>
+        <Text style={styles.headerTitle}>Rangliste</Text>
+        <Text style={styles.headerSubtitle}>
           Die besten Ergebnisse der Community
         </Text>
       </View>
 
       {loading ? (
-        <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: '#030712',
-          }}
-        >
+        <View style={styles.stateContainer}>
           <ActivityIndicator size="large" color="#60A5FA" />
-          <Text style={{ marginTop: 12, color: '#94A3B8' }}>
-            Daten werden geladen ...
-          </Text>
+          <Text style={styles.stateMessage}>Daten werden geladen ...</Text>
         </View>
       ) : error ? (
-        <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            paddingHorizontal: 24,
-            backgroundColor: '#030712',
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 16,
-              color: '#FCA5A5',
-              textAlign: 'center',
-              marginBottom: 16,
-            }}
-          >
-            {error}
-          </Text>
-          <Pressable
-            onPress={() => loadLeaderboard({ force: true })}
-            style={{
-              backgroundColor: '#2563EB',
-              paddingVertical: 12,
-              paddingHorizontal: 24,
-              borderRadius: 12,
-            }}
-          >
-            <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>
-              Erneut versuchen
-            </Text>
+        <View style={styles.stateContainer}>
+          <Text style={styles.errorMessage}>{error}</Text>
+          <Pressable onPress={() => loadLeaderboard({ force: true })} style={styles.retryButton}>
+            <Text style={styles.retryButtonText}>Erneut versuchen</Text>
           </Pressable>
         </View>
       ) : (
@@ -269,27 +173,17 @@ export default function LeaderboardScreen({ navigation }) {
             />
           }
           ListEmptyComponent={
-            <View
-              style={{
-                padding: 24,
-                alignItems: 'center',
-                backgroundColor: 'rgba(15, 23, 42, 0.85)',
-                borderRadius: 16,
-              }}
-            >
-              <Text style={{ fontSize: 16, color: '#CBD5F5' }}>
-                Noch keine Eintraege vorhanden.
-              </Text>
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>Noch keine Eintraege vorhanden.</Text>
             </View>
           }
-          contentContainerStyle={{
-            paddingTop: 20,
-            paddingHorizontal: 20,
-            paddingBottom: 40,
-          }}
-          style={{ flex: 1, backgroundColor: '#030712' }}
+          contentContainerStyle={styles.listContent}
+          style={styles.list}
         />
       )}
     </View>
   );
 }
+
+
+
