@@ -96,6 +96,12 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     fontSize: 13,
   },
+  matchWaitingHint: {
+    marginTop: 12,
+    color: '#A5B4FC',
+    fontSize: 13,
+    textAlign: 'center',
+  },
   exitButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,

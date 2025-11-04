@@ -15,6 +15,12 @@ const openMatchesCache = {
   data: null,
 };
 
+function invalidateOpenMatchesCache() {
+  openMatchesCache.key = null;
+  openMatchesCache.fetchedAt = 0;
+  openMatchesCache.data = null;
+}
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -166,6 +172,7 @@ function normalizeMatchRow(row) {
     question_limit: Number.isFinite(row.question_limit)
       ? Math.max(1, row.question_limit)
       : 5,
+    question_ids: Array.isArray(row.question_ids) ? row.question_ids : [],
     questions: sanitizeQuestionsForMatch(row.questions),
     state: normalizeMatchState(row.state),
   };
@@ -261,6 +268,10 @@ export async function createMatch({
       };
     }
 
+    const questionIds = sanitizedQuestions
+      .map((item) => item.id)
+      .filter((value) => typeof value === 'string');
+
     const joinCode = generateJoinCode();
     const hostProfile = await fetchUserProfile(hostId);
     const state = normalizeMatchState({
@@ -289,6 +300,7 @@ export async function createMatch({
       guest_id: null,
       difficulty: normalizedDifficulty,
       question_limit: sanitizedQuestions.length,
+      question_ids: questionIds,
       questions: sanitizedQuestions,
       status: MATCH_STATUS.WAITING,
       state,
@@ -307,6 +319,8 @@ export async function createMatch({
       console.error('Fehler beim Erstellen des Matches:', error.message);
       return { ok: false, error };
     }
+
+    invalidateOpenMatchesCache();
 
     return { ok: true, match: normalizeMatchRow(data) };
   } catch (err) {
@@ -350,6 +364,10 @@ export async function joinMatch({ code, userId } = {}) {
       return { ok: true, match };
     }
 
+    if (match.status !== MATCH_STATUS.WAITING) {
+      return { ok: false, error: new Error('Dieses Match laeuft bereits oder ist beendet.') };
+    }
+
     if (match.guest_id && match.guest_id !== guestId) {
       return { ok: false, error: new Error('Dieses Match ist bereits voll.') };
     }
@@ -372,16 +390,24 @@ export async function joinMatch({ code, userId } = {}) {
       updated_at: nowIso(),
     };
 
-    const { data: updated, error: updateError } = await supabase
+    let updateQuery = supabase
       .from('matches')
       .update(updatePayload)
-      .eq('id', match.id)
+      .eq('id', match.id);
+
+    if (match.updated_at) {
+      updateQuery = updateQuery.eq('updated_at', match.updated_at);
+    }
+
+    const { data: updated, error: updateError } = await updateQuery
       .select('*')
       .single();
 
     if (updateError) {
       return { ok: false, error: updateError };
     }
+
+    invalidateOpenMatchesCache();
 
     return { ok: true, match: normalizeMatchRow(updated) };
   } catch (err) {
@@ -463,6 +489,9 @@ export async function fetchOpenMatches({
               if (!normalized) {
                 return null;
               }
+              if (normalized.status !== MATCH_STATUS.WAITING) {
+                return null;
+              }
               return {
                 id: normalized.id,
                 code: normalized.code,
@@ -508,9 +537,17 @@ export function subscribeToMatch(matchId, handler) {
     }
   );
 
-  channel.subscribe().catch((err) => {
+  try {
+    channel.subscribe((status) => {
+      if (status === 'CHANNEL_ERROR') {
+        console.warn(
+          `Match-Realtime konnte nicht abonniert werden (Status: ${status}).`
+        );
+      }
+    });
+  } catch (err) {
     console.warn('Match-Realtime konnte nicht abonniert werden:', err);
-  });
+  }
 
   return () => {
     supabase.removeChannel(channel);
@@ -588,18 +625,40 @@ export async function updateMatchProgress({
   }
 
   try {
-    const { data, error } = await supabase
-      .from('matches')
-      .update(payload)
-      .eq('id', match.id)
-      .select('*')
-      .single();
+    let updateQuery = supabase.from('matches').update(payload).eq('id', match.id);
+
+    if (match.updated_at) {
+      updateQuery = updateQuery.eq('updated_at', match.updated_at);
+    }
+
+    const { data, error } = await updateQuery.select('*').single();
 
     if (error) {
+      if (error.code === 'PGRST116' || error.code === 'PGRST109') {
+        return {
+          ok: false,
+          error: new Error('Match wurde bereits aktualisiert. Lade es neu und versuche es erneut.'),
+        };
+      }
       return { ok: false, error };
     }
 
-    return { ok: true, match: normalizeMatchRow(data) };
+    if (!data) {
+      return {
+        ok: false,
+        error: new Error('Match wurde parallel aktualisiert. Bitte neu laden.'),
+      };
+    }
+
+    const updatedMatch = normalizeMatchRow(data);
+    if (
+      match.status === MATCH_STATUS.WAITING ||
+      updatedMatch?.status === MATCH_STATUS.WAITING
+    ) {
+      invalidateOpenMatchesCache();
+    }
+
+    return { ok: true, match: updatedMatch };
   } catch (err) {
     console.error('Unerwarteter Fehler beim Aktualisieren des Matches:', err);
     return { ok: false, error: err };
@@ -640,18 +699,26 @@ export async function markPlayerFinished({ match, role } = {}) {
   }
 
   try {
-    const { data, error } = await supabase
-      .from('matches')
-      .update(payload)
-      .eq('id', match.id)
-      .select('*')
-      .single();
+    let updateQuery = supabase.from('matches').update(payload).eq('id', match.id);
+
+    if (match.updated_at) {
+      updateQuery = updateQuery.eq('updated_at', match.updated_at);
+    }
+
+    const { data, error } = await updateQuery.select('*').single();
 
     if (error) {
       return { ok: false, error };
     }
 
-    return { ok: true, match: normalizeMatchRow(data) };
+    const updatedMatch = normalizeMatchRow(data);
+    if (
+      match.status === MATCH_STATUS.WAITING ||
+      updatedMatch?.status === MATCH_STATUS.WAITING
+    ) {
+      invalidateOpenMatchesCache();
+    }
+    return { ok: true, match: updatedMatch };
   } catch (err) {
     console.error('Unerwarteter Fehler beim Abschliessen des Matches:', err);
     return { ok: false, error: err };
@@ -687,21 +754,28 @@ export async function abandonMatch({ match, role } = {}) {
   };
 
   try {
-    const { data, error } = await supabase
-      .from('matches')
-      .update(payload)
-      .eq('id', match.id)
-      .select('*')
-      .single();
+    let updateQuery = supabase.from('matches').update(payload).eq('id', match.id);
+
+    if (match.updated_at) {
+      updateQuery = updateQuery.eq('updated_at', match.updated_at);
+    }
+
+    const { data, error } = await updateQuery.select('*').single();
 
     if (error) {
       return { ok: false, error };
     }
 
-    return { ok: true, match: normalizeMatchRow(data) };
+    const updatedMatch = normalizeMatchRow(data);
+    if (
+      match.status === MATCH_STATUS.WAITING ||
+      updatedMatch?.status === MATCH_STATUS.WAITING
+    ) {
+      invalidateOpenMatchesCache();
+    }
+    return { ok: true, match: updatedMatch };
   } catch (err) {
     console.error('Unerwarteter Fehler beim Abbrechen des Matches:', err);
     return { ok: false, error: err };
   }
 }
-

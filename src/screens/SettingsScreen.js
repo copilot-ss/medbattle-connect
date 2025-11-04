@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -8,9 +8,9 @@ import {
   View,
 } from 'react-native';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 
+import { usePreferences } from '../context/PreferencesContext';
 import { supabase } from '../lib/supabaseClient';
 import styles from './styles/SettingsScreen.styles';
 import {
@@ -31,15 +31,8 @@ function normalizeEmail(value) {
   return value.trim().toLowerCase();
 }
 
-export default function SettingsScreen({ navigation, route }) {
-  const initialSound =
-    typeof route?.params?.initialSoundEnabled === 'boolean'
-      ? route.params.initialSoundEnabled
-      : typeof globalThis.__medbattleSound === 'boolean'
-      ? globalThis.__medbattleSound
-      : true;
-
-  const [soundEnabled, setSoundEnabled] = useState(initialSound);
+export default function SettingsScreen({ navigation }) {
+  const { soundEnabled, setSoundEnabled } = usePreferences();
   const [newEmail, setNewEmail] = useState('');
   const [feedback, setFeedback] = useState(null);
   const [loadingReset, setLoadingReset] = useState(false);
@@ -57,13 +50,9 @@ export default function SettingsScreen({ navigation, route }) {
   );
 
   function handleSoundToggle(value) {
-    setSoundEnabled(value);
-    globalThis.__medbattleSound = value;
-    AsyncStorage.setItem('medbattle_sound_enabled', value ? 'true' : 'false').catch(
-      (err) => {
-        console.warn('Konnte Sound-Einstellung nicht speichern:', err);
-      }
-    );
+    setSoundEnabled(value).catch((err) => {
+      console.warn('Konnte Sound-Einstellung nicht speichern:', err);
+    });
   }
 
   const loadFriends = useCallback(

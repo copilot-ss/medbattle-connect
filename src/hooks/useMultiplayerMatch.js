@@ -247,11 +247,16 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
           ...prev,
           error: response.error ?? new Error('Match konnte nicht aktualisiert werden.'),
         }));
+        try {
+          await loadMatch({ skipIfSame: false });
+        } catch (reloadError) {
+          console.warn('Match-Reload nach Fehler fehlgeschlagen:', reloadError);
+        }
       }
 
       return response;
     },
-    [playerState.index, playerState.score, questions.length, role, state.match]
+    [loadMatch, playerState.index, playerState.score, questions.length, role, state.match]
   );
 
   const finishMatch = useCallback(async () => {
@@ -317,4 +322,3 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
     refetch: reload,
   };
 }
-

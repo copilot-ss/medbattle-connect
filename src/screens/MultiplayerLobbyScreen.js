@@ -25,6 +25,9 @@ const DIFFICULTY_LABELS = {
   schwer: 'Schwer',
 };
 
+const MIN_QUESTION_LIMIT = 3;
+const MAX_QUESTION_LIMIT = 15;
+
 function EmptyState() {
   return (
     <View style={styles.emptyState}>
@@ -49,6 +52,8 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   const isJoinOnly = normalizedMode === 'join';
 
   const [difficulty] = useState(initialDifficulty);
+  const [selectedDifficulty, setSelectedDifficulty] = useState(initialDifficulty);
+  const [questionLimit, setQuestionLimit] = useState(5);
   const [userId, setUserId] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [openMatches, setOpenMatches] = useState([]);
@@ -59,7 +64,19 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
   const subscriptionRef = useRef(null);
-  const autoCreateTriggeredRef = useRef(false);
+
+  const adjustQuestionLimit = useCallback((delta) => {
+    setQuestionLimit((prev) => {
+      const next = prev + delta;
+      if (next < MIN_QUESTION_LIMIT) {
+        return MIN_QUESTION_LIMIT;
+      }
+      if (next > MAX_QUESTION_LIMIT) {
+        return MAX_QUESTION_LIMIT;
+      }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -106,15 +123,26 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     () => DIFFICULTY_LABELS[difficulty] ?? DIFFICULTY_LABELS.mittel,
     [difficulty]
   );
+  const selectedDifficultyLabel = useMemo(
+    () =>
+      DIFFICULTY_LABELS[selectedDifficulty] ?? DIFFICULTY_LABELS.mittel,
+    [selectedDifficulty]
+  );
   const helperText = useMemo(() => {
     if (isCreateOnly) {
-      return `Direkt-Host: ${difficultyLabel} - 5 Fragen`;
+      return `Lobby Einstellungen: ${selectedDifficultyLabel} - ${questionLimit} Fragen`;
     }
     if (isJoinOnly) {
       return `Beitritt: ${difficultyLabel} - 5 Fragen`;
     }
     return `Schwierigkeit: ${difficultyLabel} - 5 Fragen`;
-  }, [difficultyLabel, isCreateOnly, isJoinOnly]);
+  }, [
+    difficultyLabel,
+    isCreateOnly,
+    isJoinOnly,
+    questionLimit,
+    selectedDifficultyLabel,
+  ]);
 
   const refreshMatches = useCallback(
     async ({ force = false } = {}) => {
@@ -198,8 +226,8 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
     try {
       const result = await createMatch({
-        difficulty,
-        questionLimit: 5,
+        difficulty: selectedDifficulty,
+        questionLimit,
         userId,
       });
 
@@ -208,6 +236,8 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       }
 
       setCurrentMatch(result.match);
+      setQuestionLimit(result.match.question_limit ?? questionLimit);
+      setSelectedDifficulty(result.match.difficulty ?? selectedDifficulty);
       attachMatchSubscription(result.match.id);
     } catch (err) {
       console.error('Fehler beim Erstellen eines Matches:', err);
@@ -218,7 +248,15 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         refreshMatches({ force: true });
       }
     }
-  }, [attachMatchSubscription, creating, difficulty, isCreateOnly, refreshMatches, userId]);
+  }, [
+    attachMatchSubscription,
+    creating,
+    isCreateOnly,
+    questionLimit,
+    refreshMatches,
+    selectedDifficulty,
+    userId,
+  ]);
 
   const handleJoinByCode = useCallback(async () => {
     if (!userId || joining) {
@@ -300,7 +338,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     [attachMatchSubscription, isCreateOnly, joining, refreshMatches, userId]
   );
 
-    const renderMatch = useCallback(
+  const renderMatch = useCallback(
     ({ item }) => (
       <Pressable
         onPress={() => handleJoinQuick(item.code)}
@@ -325,23 +363,77 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   );
 
   const currentJoinCode = currentMatch?.code ?? null;
+  const participants = useMemo(() => {
+    if (!currentMatch?.state) {
+      return [];
+    }
+    const hostState = currentMatch.state.host ?? {};
+    const guestState = currentMatch.state.guest ?? {};
+
+    const items = [
+      {
+        key: 'host',
+        role: 'Host',
+        name: hostState.username ?? 'Host',
+        ready: Boolean(hostState.ready),
+        isPlaceholder: false,
+      },
+    ];
+
+    if (guestState?.username || currentMatch.guest_id) {
+      items.push({
+        key: 'guest',
+        role: 'Gast',
+        name: guestState.username ?? 'Gast',
+        ready: Boolean(guestState.ready),
+        isPlaceholder: false,
+      });
+    } else {
+      items.push({
+        key: 'guest',
+        role: 'Gast',
+        name: 'Warte auf Gegner',
+        ready: false,
+        isPlaceholder: true,
+      });
+    }
+
+    return items;
+  }, [currentMatch]);
+
+  const showConfigCard = isCreateOnly && !currentMatch;
 
   useEffect(() => {
-    if (!isCreateOnly) {
+    if (!currentMatch) {
       return;
     }
+    if (
+      currentMatch.question_limit &&
+      currentMatch.question_limit !== questionLimit
+    ) {
+      setQuestionLimit(currentMatch.question_limit);
+    }
+    if (
+      currentMatch.difficulty &&
+      currentMatch.difficulty !== selectedDifficulty
+    ) {
+      setSelectedDifficulty(currentMatch.difficulty);
+    }
+  }, [currentMatch]);
 
-    if (autoCreateTriggeredRef.current) {
-      return;
+  useEffect(() => {
+    if (!userId || isCreateOnly) {
+      return () => {};
     }
 
-    if (!userId || loadingUser) {
-      return;
-    }
+    const intervalId = setInterval(() => {
+      refreshMatches({ force: true });
+    }, 15000);
 
-    autoCreateTriggeredRef.current = true;
-    handleCreateMatch();
-  }, [handleCreateMatch, isCreateOnly, loadingUser, userId]);
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [isCreateOnly, refreshMatches, userId]);
 
   return (
     <View style={styles.container}>
@@ -375,6 +467,91 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         </View>
       ) : null}
 
+      {showConfigCard ? (
+        <View style={styles.configCard}>
+          <Text style={styles.configTitle}>Lobby konfigurieren</Text>
+          <Text style={styles.configSubtitle}>
+            Waehle Schwierigkeit und Fragenanzahl aus, bevor du startest.
+          </Text>
+
+          <View style={styles.configSection}>
+            <Text style={styles.configLabel}>Schwierigkeit</Text>
+            <View style={styles.difficultyChips}>
+              {Object.keys(DIFFICULTY_LABELS).map((key) => {
+                const active = key === selectedDifficulty;
+                return (
+                  <Pressable
+                    key={key}
+                    onPress={() => setSelectedDifficulty(key)}
+                    style={[
+                      styles.difficultyChip,
+                      active ? styles.difficultyChipActive : null,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.difficultyChipText,
+                        active ? styles.difficultyChipTextActive : null,
+                      ]}
+                    >
+                      {DIFFICULTY_LABELS[key]}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.configSection}>
+            <Text style={styles.configLabel}>Fragenanzahl</Text>
+            <View style={styles.questionStepper}>
+              <Pressable
+                onPress={() => adjustQuestionLimit(-1)}
+                style={[
+                  styles.stepperButton,
+                  questionLimit <= MIN_QUESTION_LIMIT
+                    ? styles.stepperButtonDisabled
+                    : null,
+                ]}
+                disabled={questionLimit <= MIN_QUESTION_LIMIT}
+              >
+                <Text style={styles.stepperButtonText}>-</Text>
+              </Pressable>
+              <Text style={styles.stepperValue}>{questionLimit}</Text>
+              <Pressable
+                onPress={() => adjustQuestionLimit(1)}
+                style={[
+                  styles.stepperButton,
+                  questionLimit >= MAX_QUESTION_LIMIT
+                    ? styles.stepperButtonDisabled
+                    : null,
+                ]}
+                disabled={questionLimit >= MAX_QUESTION_LIMIT}
+              >
+                <Text style={styles.stepperButtonText}>+</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          <Pressable
+            onPress={handleCreateMatch}
+            disabled={creating || !userId}
+            style={[
+              styles.startAction,
+              creating ? styles.actionDisabled : null,
+            ]}
+          >
+            <Text style={styles.startActionText}>
+              {creating ? 'Erstelle Lobby ...' : 'Lobby starten'}
+            </Text>
+          </Pressable>
+
+          <Text style={styles.configHint}>
+            Nach dem Start erhaeltst du den Match-Code zum Teilen.
+          </Text>
+        </View>
+      ) : null}
+
       {currentJoinCode ? (
         <View style={styles.lobbyCard}>
           <Text style={styles.lobbyTitle}>Warte auf Gegner</Text>
@@ -384,6 +561,34 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
           <View style={styles.codeBadge}>
             <Text style={styles.codeBadgeText}>{currentJoinCode}</Text>
           </View>
+
+          <View style={styles.participantsHeader}>
+            <Text style={styles.participantsTitle}>Spieler</Text>
+            <Text style={styles.participantsCount}>
+              {participants.filter((item) => !item.isPlaceholder).length}/2
+            </Text>
+          </View>
+
+          <View style={styles.participantList}>
+            {participants.map((participant) => (
+              <View key={participant.key} style={styles.participantRow}>
+                <View style={styles.participantBadge}>
+                  <Text style={styles.participantBadgeText}>
+                    {participant.role}
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    styles.participantName,
+                    participant.isPlaceholder ? styles.participantPlaceholder : null,
+                  ]}
+                >
+                  {participant.name}
+                </Text>
+              </View>
+            ))}
+          </View>
+
           <Pressable
             onPress={() => refreshMatches({ force: true })}
             style={styles.refreshWaitingButton}
@@ -393,7 +598,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         </View>
       ) : null}
 
-      {!isJoinOnly ? (
+      {!isJoinOnly && !isCreateOnly ? (
         <View style={styles.actionsRow}>
           <Pressable
             style={[
@@ -467,13 +672,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
             />
           )}
         </>
-      ) : !currentJoinCode ? (
-        <View style={styles.createInfoBox}>
-          <Text style={styles.createInfoTitle}>Lobby vorbereiten</Text>
-          <Text style={styles.createInfoText}>
-            Wir hosten dein Match. Teile gleich danach den Code mit deinem Team.
-          </Text>
-        </View>
       ) : null}
     </View>
   );

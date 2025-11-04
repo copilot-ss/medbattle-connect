@@ -1,8 +1,7 @@
-﻿import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { useFocusEffect } from '@react-navigation/native';
+import { usePreferences } from '../context/PreferencesContext';
 import { supabase } from '../lib/supabaseClient';
 import styles from './styles/HomeScreen.styles';
 
@@ -30,99 +29,10 @@ const DIFFICULTIES = [
   },
 ];
 
-const STREAK_STORAGE_KEYS = {
-  leicht: 'medbattle_streak_leicht',
-  mittel: 'medbattle_streak_mittel',
-  schwer: 'medbattle_streak_schwer',
-};
-
-const DEFAULT_STREAKS = {
-  leicht: 0,
-  mittel: 0,
-  schwer: 0,
-};
-
 export default function HomeScreen({ navigation }) {
   const [selectedDifficulty, setSelectedDifficulty] = useState('mittel');
   const [selectedMode, setSelectedMode] = useState('campaign');
-  const [soundEnabled, setSoundEnabled] = useState(
-    typeof globalThis.__medbattleSound === 'boolean'
-      ? globalThis.__medbattleSound
-      : true
-  );
-  const [streaks, setStreaks] = useState(() => {
-    const globalStreaks =
-      typeof globalThis.__medbattleStreaks === 'object' &&
-      globalThis.__medbattleStreaks !== null
-        ? globalThis.__medbattleStreaks
-        : DEFAULT_STREAKS;
-    return { ...DEFAULT_STREAKS, ...globalStreaks };
-  });
-
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-
-      async function syncPreferences() {
-        try {
-          const storedSound = await AsyncStorage.getItem(
-            'medbattle_sound_enabled'
-          );
-          if (storedSound !== null) {
-            const parsed = storedSound === 'true';
-            globalThis.__medbattleSound = parsed;
-            if (active) {
-              setSoundEnabled(parsed);
-            }
-          } else if (typeof globalThis.__medbattleSound === 'boolean') {
-            setSoundEnabled(globalThis.__medbattleSound);
-          }
-        } catch (err) {
-          console.warn('Konnte Sound-Einstellung nicht laden:', err);
-        }
-
-        try {
-          const globalStreaks =
-            typeof globalThis.__medbattleStreaks === 'object' &&
-            globalThis.__medbattleStreaks !== null
-              ? globalThis.__medbattleStreaks
-              : DEFAULT_STREAKS;
-
-          const resolved = { ...DEFAULT_STREAKS, ...globalStreaks };
-
-          await Promise.all(
-            Object.entries(STREAK_STORAGE_KEYS).map(async ([difficulty, key]) => {
-              try {
-                const raw = await AsyncStorage.getItem(key);
-                const parsed = raw ? parseInt(raw, 10) : null;
-                if (Number.isFinite(parsed) && parsed >= 0) {
-                  resolved[difficulty] = parsed;
-                }
-              } catch (streakErr) {
-                console.warn(
-                  `Konnte Streak fuer ${difficulty} nicht laden:`,
-                  streakErr
-                );
-              }
-            })
-          );
-
-          if (active) {
-            setStreaks(resolved);
-          }
-          globalThis.__medbattleStreaks = resolved;
-        } catch (err) {
-          console.warn('Konnte Streak nicht laden:', err);
-        }
-      }
-
-      syncPreferences();
-
-      return () => {
-        active = false;
-      };
-    }, [])
-  );
+  const { streaks } = usePreferences();
 
   const selectedCard = useMemo(
     () => DIFFICULTIES.find((item) => item.id === selectedDifficulty),
@@ -162,12 +72,6 @@ export default function HomeScreen({ navigation }) {
     });
   }
 
-  function openMultiplayerLobby() {
-    navigation.navigate('MultiplayerLobby', {
-      difficulty: selectedDifficulty,
-    });
-  }
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -184,11 +88,7 @@ export default function HomeScreen({ navigation }) {
           </Pressable>
 
           <Pressable
-            onPress={() =>
-              navigation.navigate('Settings', {
-                initialSoundEnabled: soundEnabled,
-              })
-            }
+            onPress={() => navigation.navigate('Settings')}
             style={styles.settingsButton}
           >
             <View style={styles.settingsOuter}>
@@ -240,7 +140,7 @@ export default function HomeScreen({ navigation }) {
         >
           <Text style={styles.modeCardTitle}>Campaign</Text>
           <Text style={styles.modeCardSubtitle}>
-            Solo-Run mit Supabase Fragen und deinem persönlichen Streak.
+            Solo-Run mit Supabase Fragen und deinem persoenlichen Streak.
           </Text>
         </Pressable>
       </View>
@@ -252,7 +152,7 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.difficultyList}>
             {DIFFICULTIES.map((mode, indexItem) => {
               const isActive = mode.id === selectedDifficulty;
-              const streakValue = streaks[mode.id] ?? 0;
+              const streakValue = streaks?.[mode.id] ?? 0;
               const isLast = indexItem === DIFFICULTIES.length - 1;
 
               return (
@@ -319,5 +219,3 @@ export default function HomeScreen({ navigation }) {
     </View>
   );
 }
-
-

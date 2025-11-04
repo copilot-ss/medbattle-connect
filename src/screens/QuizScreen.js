@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,8 @@ import {
   ActivityIndicator,
   BackHandler,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { usePreferences } from '../context/PreferencesContext';
 import { supabase } from '../lib/supabaseClient';
 import useMultiplayerMatch from '../hooks/useMultiplayerMatch';
 import { fetchQuestions, submitScore } from '../services/quizService';
@@ -17,18 +17,6 @@ const DIFFICULTY_LABELS = {
   leicht: 'Leicht',
   mittel: 'Mittel',
   schwer: 'Schwer',
-};
-
-const STREAK_STORAGE_KEYS = {
-  leicht: 'medbattle_streak_leicht',
-  mittel: 'medbattle_streak_mittel',
-  schwer: 'medbattle_streak_schwer',
-};
-
-const DEFAULT_STREAKS = {
-  leicht: 0,
-  mittel: 0,
-  schwer: 0,
 };
 
 function shuffleOptions(options) {
@@ -117,10 +105,14 @@ export default function QuizScreen({ navigation, route }) {
   const showLoading =
     isMultiplayer ? (matchLoading || loading) && !hasQuestions : loading;
   const resolvedMatchStatus = matchData?.status ?? matchStatus ?? null;
+  const matchIsActive = !isMultiplayer || resolvedMatchStatus === 'active';
   const progressPercent = useMemo(() => {
+    if (!matchIsActive) {
+      return '0%';
+    }
     const ratio = Math.max(0, Math.min(1, timeLeftMs / TIMER_DURATION));
     return `${(ratio * 100).toFixed(1)}%`;
-  }, [TIMER_DURATION, timeLeftMs]);
+  }, [TIMER_DURATION, matchIsActive, timeLeftMs]);
 
   useEffect(() => {
     navigation.setOptions({ gestureEnabled: false });
@@ -314,7 +306,6 @@ export default function QuizScreen({ navigation, route }) {
       }
 
       if (submit && !isMultiplayer) {
-        const streakKey = STREAK_STORAGE_KEYS[normalizedDifficulty] ?? null;
         const mistakes = totalQuestions - resolvedScore;
         const shouldIncrease =
           normalizedDifficulty === 'leicht'
@@ -324,23 +315,10 @@ export default function QuizScreen({ navigation, route }) {
             : mistakes === 0;
 
         try {
-          let streak = shouldIncrease ? 1 : 0;
-
-          if (streakKey) {
-            const raw = await AsyncStorage.getItem(streakKey);
-            const current = raw ? parseInt(raw, 10) : 0;
-            const nextStreak = shouldIncrease ? current + 1 : 0;
-            streak = Number.isFinite(nextStreak) ? nextStreak : 0;
-            await AsyncStorage.setItem(streakKey, String(streak));
-          }
-
-          const existing =
-            typeof globalThis.__medbattleStreaks === 'object' &&
-            globalThis.__medbattleStreaks !== null
-              ? { ...DEFAULT_STREAKS, ...globalThis.__medbattleStreaks }
-              : { ...DEFAULT_STREAKS };
-          existing[normalizedDifficulty] = streak;
-          globalThis.__medbattleStreaks = existing;
+          await setStreakValue(normalizedDifficulty, (current) => {
+            const safeCurrent = Number.isFinite(current) ? current : 0;
+            return shouldIncrease ? safeCurrent + 1 : 0;
+          });
         } catch (err) {
           console.warn('Konnte Streak nicht aktualisieren:', err);
         }
@@ -376,6 +354,7 @@ export default function QuizScreen({ navigation, route }) {
       navigation,
       normalizedDifficulty,
       questionLimit,
+      setStreakValue,
       totalQuestions,
       userId,
     ]
@@ -416,7 +395,11 @@ export default function QuizScreen({ navigation, route }) {
 
   const answer = useCallback(
     async (option, { timedOut: timedOutTrigger = false } = {}) => {
-      if (isAnswerLocked || !currentQuestion) {
+      if (
+        isAnswerLocked ||
+        !currentQuestion ||
+        (isMultiplayer && !matchIsActive)
+      ) {
         return;
       }
 
@@ -455,19 +438,23 @@ export default function QuizScreen({ navigation, route }) {
           setSelectedOption(null);
 
           if (isMultiplayer) {
-            const result = await recordMatchAnswer({
-              questionId: questionSnapshot.id,
-              selectedOption: timedOutTrigger ? null : option,
-              correct: isCorrect,
-              durationMs: timedOutTrigger ? TIMER_DURATION : elapsedMs,
-              timedOut: timedOutTrigger,
-            });
+            if (questionSnapshot.id) {
+              const result = await recordMatchAnswer({
+                questionId: questionSnapshot.id,
+                selectedOption: timedOutTrigger ? null : option,
+                correct: isCorrect,
+                durationMs: timedOutTrigger ? TIMER_DURATION : elapsedMs,
+                timedOut: timedOutTrigger,
+              });
 
-            if (!result.ok) {
-              console.warn(
-                'Antwort konnte nicht an den Server uebermittelt werden:',
-                result.error?.message ?? result.error ?? 'Unbekannter Fehler'
-              );
+              if (!result.ok) {
+                console.warn(
+                  'Antwort konnte nicht an den Server uebermittelt werden:',
+                  result.error?.message ?? result.error ?? 'Unbekannter Fehler'
+                );
+              }
+            } else {
+              console.warn('Match-Frage ohne gueltige ID, Antwort wurde nicht synchronisiert.');
             }
           }
 
@@ -499,6 +486,7 @@ export default function QuizScreen({ navigation, route }) {
       finalizeQuiz,
       isAnswerLocked,
       isMultiplayer,
+      matchIsActive,
       recordMatchAnswer,
       score,
       totalQuestions,
@@ -507,11 +495,7 @@ export default function QuizScreen({ navigation, route }) {
   );
 
   const startQuestionTimer = useCallback(() => {
-    if (!currentQuestion) {
-      return;
-    }
-
-    if (isMultiplayer && matchStatus !== 'active') {
+    if (!currentQuestion || !matchIsActive) {
       return;
     }
 
@@ -542,17 +526,11 @@ export default function QuizScreen({ navigation, route }) {
     answer,
     clearQuestionTimers,
     currentQuestion,
-    isMultiplayer,
-    matchStatus,
+    matchIsActive,
   ]);
 
   useEffect(() => {
-    if (!currentQuestion) {
-      clearQuestionTimers();
-      return;
-    }
-
-    if (isMultiplayer && matchStatus !== 'active') {
+    if (!currentQuestion || !matchIsActive) {
       clearQuestionTimers();
       return;
     }
@@ -565,8 +543,7 @@ export default function QuizScreen({ navigation, route }) {
   }, [
     clearQuestionTimers,
     currentQuestion?.id,
-    isMultiplayer,
-    matchStatus,
+    matchIsActive,
     startQuestionTimer,
   ]);
 
@@ -605,7 +582,7 @@ export default function QuizScreen({ navigation, route }) {
       <View style={styles.header}>
         <View>
           <Text style={styles.headerMeta}>
-            {difficultyLabel} • {(totalQuestions || questionLimit) || 0} Fragen
+            {difficultyLabel} - {(totalQuestions || questionLimit) || 0} Fragen
           </Text>
           <Text style={styles.headerTitle}>Battle laufend</Text>
       </View>
@@ -644,9 +621,14 @@ export default function QuizScreen({ navigation, route }) {
               Runde {Math.min(activeIndex + 1, totalQuestions)}/{totalQuestions}
             </Text>
             <Text style={styles.matchMetaRight}>
-              Code {matchJoinCode ?? initialJoinCode ?? '—'}
+              Code {matchJoinCode ?? initialJoinCode ?? '-'}
             </Text>
           </View>
+          {resolvedMatchStatus === 'waiting' ? (
+            <Text style={styles.matchWaitingHint}>
+              Warte auf Gegner - Fragen starten sobald beide bereit sind.
+            </Text>
+          ) : null}
         </View>
       ) : null}
 
@@ -654,7 +636,7 @@ export default function QuizScreen({ navigation, route }) {
         <View style={styles.timerRow}>
           <Text style={styles.timerLabel}>Time Attack</Text>
           <Text style={styles.timerValue}>
-            {(Math.max(timeLeftMs, 0) / 1000).toFixed(1)}s
+            {matchIsActive ? `${(Math.max(timeLeftMs, 0) / 1000).toFixed(1)}s` : '--'}
           </Text>
         </View>
         <View style={styles.progressTrack}>
@@ -717,7 +699,9 @@ export default function QuizScreen({ navigation, route }) {
             <Pressable
               key={optionKey}
               onPress={() => answer(opt)}
-              disabled={isAnswerLocked}
+              disabled={
+                isAnswerLocked || (isMultiplayer && !matchIsActive)
+              }
               style={[
                 styles.optionButton,
                 {
@@ -771,5 +755,6 @@ export default function QuizScreen({ navigation, route }) {
     </View>
   );
 }
+
 
 
