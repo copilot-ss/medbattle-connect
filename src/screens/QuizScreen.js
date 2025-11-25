@@ -11,7 +11,11 @@ import { usePreferences } from '../context/PreferencesContext';
 import { supabase } from '../lib/supabaseClient';
 import useMultiplayerMatch from '../hooks/useMultiplayerMatch';
 import { fetchQuestions, submitScore } from '../services/quizService';
-import styles from './styles/QuizScreen.styles';
+import styles, {
+  getOptionButtonStyle,
+  getOptionTextStyle,
+  getTimerProgressFillStyle,
+} from './styles/QuizScreen.styles';
 
 const DIFFICULTY_LABELS = {
   leicht: 'Leicht',
@@ -640,17 +644,7 @@ export default function QuizScreen({ navigation, route }) {
           </Text>
         </View>
         <View style={styles.progressTrack}>
-          <View
-            style={[
-              styles.progressFill,
-              {
-                width: progressPercent,
-                backgroundColor: timedOut
-                  ? 'rgba(248, 113, 113, 0.85)'
-                  : '#FACC15',
-              },
-            ]}
-          />
+          <View style={getTimerProgressFillStyle(progressPercent, timedOut)} />
         </View>
       </View>
 
@@ -702,16 +696,13 @@ export default function QuizScreen({ navigation, route }) {
               disabled={
                 isAnswerLocked || (isMultiplayer && !matchIsActive)
               }
-              style={[
-                styles.optionButton,
-                {
-                  backgroundColor,
-                  borderColor,
-                  opacity: extraOpacity,
-                },
-              ]}
+              style={getOptionButtonStyle({
+                backgroundColor,
+                borderColor,
+                opacity: extraOpacity,
+              })}
             >
-              <Text style={[styles.optionText, { color: textColor }]}>{opt}</Text>
+              <Text style={getOptionTextStyle(textColor)}>{opt}</Text>
             </Pressable>
           );
         })}

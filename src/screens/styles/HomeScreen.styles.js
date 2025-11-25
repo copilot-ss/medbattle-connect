@@ -34,29 +34,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  leaderboardDotLarge: {
-    width: 14,
-    height: 14,
-    borderRadius: 4,
-    backgroundColor: '#60A5FA',
+  leaderboardIcon: {
+    width: 24,
+    height: 24,
   },
-  leaderboardDotMedium: {
-    position: 'absolute',
-    bottom: 10,
-    width: 10,
-    height: 10,
-    borderRadius: 3,
-    backgroundColor: '#93C5FD',
-  },
-  leaderboardDotSmall: {
-    position: 'absolute',
-    bottom: 4,
-    width: 6,
-    height: 6,
-    borderRadius: 2,
-    backgroundColor: '#BFDBFE',
-  },
-  settingsButton: {
+  menuButton: {
     width: 44,
     height: 44,
     borderRadius: 12,
@@ -67,198 +49,121 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 16,
   },
-  settingsOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#E2E8F0',
+  menuIcon: {
+    width: 24,
+    height: 24,
+  },
+  modeSection: {
+    flex: 1,
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  settingsNeedle: {
-    width: 2,
-    height: 10,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 1,
-  },
-  settingsPivot: {
-    position: 'absolute',
-    top: 3,
-    width: 2,
-    height: 2,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 1,
-  },
-  arenaCard: {
-    backgroundColor: '#111827',
-    borderRadius: 24,
-    paddingVertical: 28,
-    paddingHorizontal: 24,
-    marginBottom: 28,
-    borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.25)',
-  },
-  arenaLabel: {
-    color: '#60A5FA',
-    fontSize: 14,
-    letterSpacing: 2,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    marginBottom: 12,
-  },
-  arenaTitle: {
-    color: '#F8FAFC',
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 10,
-  },
-  arenaDescription: {
-    color: '#CBD5F5',
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  sectionLabel: {
-    color: '#94A3B8',
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  modeList: {
-    rowGap: 14,
-    marginBottom: 20,
+    rowGap: 18,
+    marginTop: 320,
   },
   modeCard: {
-    backgroundColor: '#0F172A',
-    borderRadius: 18,
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.25)',
-    shadowOpacity: 0.28,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 6,
-  },
-  modeCardHost: {
-    borderColor: 'rgba(34, 197, 94, 0.45)',
-    shadowColor: '#22C55E',
-  },
-  modeCardJoin: {
-    borderColor: 'rgba(56, 189, 248, 0.45)',
-    shadowColor: '#38BDF8',
-  },
-  modeCardCampaign: {
-    borderColor: 'rgba(96, 165, 250, 0.3)',
-    shadowColor: '#60A5FA',
-  },
-  modeCardActive: {
-    shadowOpacity: 0.42,
-  },
-  modeCardInactive: {
-    shadowOpacity: 0.18,
-  },
-  modeCardTitle: {
-    color: '#F8FAFC',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  modeCardSubtitle: {
-    color: '#94A3B8',
-    fontSize: 13,
-    lineHeight: 20,
-    marginTop: 6,
-  },
-  difficultyList: {
-    marginBottom: 0,
-    rowGap: 14,
-  },
-  difficultyCard: {
-    backgroundColor: '#0F172A',
-    borderRadius: 18,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.25)',
-    marginBottom: 14,
-  },
-  difficultyCardLast: {
-    marginBottom: 0,
-  },
-  difficultyCardActive: {
-    shadowOpacity: 0.45,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 6,
-  },
-  difficultyCardInactive: {
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 0,
-  },
-  difficultyRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  difficultyTitle: {
-    color: '#F8FAFC',
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  difficultyDescription: {
-    color: '#94A3B8',
-    fontSize: 13,
-    marginTop: 4,
-  },
-  streakBadge: {
-    width: 60,
-    height: 60,
+    width: '100%',
+    maxWidth: 360,
     borderRadius: 24,
     borderWidth: 2,
+    borderColor: 'transparent',
+    backgroundColor: '#030712',
+    shadowOpacity: 0.3,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 8,
+  },
+  modeCardPressable: {
+    paddingVertical: 26,
+    paddingHorizontal: 24,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 6,
   },
-  streakValue: {
+  modeCardTitle: {
+    fontSize: 20,
     fontWeight: '800',
-    fontSize: 18,
-  },
-  streakLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginTop: 2,
+    letterSpacing: 0.5,
   },
   flexSpacer: {
     flex: 1,
   },
-  startButton: {
-    backgroundColor: '#2563EB',
-    paddingVertical: 18,
-    borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#2563EB',
-    shadowOpacity: 0.45,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
-    marginBottom: 14,
+  menuOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(3, 7, 18, 0.6)',
+    zIndex: 10,
   },
-  startButtonText: {
-    color: '#0F172A',
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+  menuContainer: {
+    position: 'absolute',
+    top: 70,
+    right: 20,
+    zIndex: 11,
+    alignItems: 'flex-end',
   },
-  signOutButton: {
-    alignSelf: 'center',
+  menuCard: {
+    width: 220,
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.35)',
   },
-  signOutText: {
-    color: '#64748B',
-    fontSize: 14,
+  menuGroup: {
+    marginBottom: 0,
+  },
+  menuGroupSpacing: {
+    marginBottom: 12,
+  },
+  menuGroupTitle: {
+    color: '#94A3B8',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  menuItem: {
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+  },
+  menuItemLabel: {
+    color: '#E2E8F0',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
-export default styles;
+export function getModeCardContainerStyle(accent, glow, glowColors) {
+  return StyleSheet.compose(styles.modeCard, {
+    shadowColor: accent,
+    shadowOffset: { width: 0, height: 28 },
+    borderColor: glow.interpolate({
+      inputRange: [0, 1],
+      outputRange: [glowColors.inactive, glowColors.active],
+    }),
+    shadowOpacity: glow.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.7, 1],
+    }),
+    shadowRadius: glow.interpolate({
+      inputRange: [0, 1],
+      outputRange: [44, 80],
+    }),
+    transform: [
+      {
+        scale: glow.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, 1.08],
+        }),
+      },
+    ],
+  });
+}
 
+export function getModeCardTitleStyle(accent) {
+  return StyleSheet.compose(styles.modeCardTitle, { color: accent });
+}
+
+export default styles;

@@ -301,4 +301,23 @@ const styles = StyleSheet.create({
   },
 });
 
+export function getTimerProgressFillStyle(progressPercent, timedOut) {
+  return StyleSheet.compose(styles.progressFill, {
+    width: progressPercent,
+    backgroundColor: timedOut ? 'rgba(248, 113, 113, 0.85)' : '#FACC15',
+  });
+}
+
+export function getOptionButtonStyle({ backgroundColor, borderColor, opacity = 1 }) {
+  return StyleSheet.compose(styles.optionButton, {
+    backgroundColor,
+    borderColor,
+    opacity,
+  });
+}
+
+export function getOptionTextStyle(color) {
+  return StyleSheet.compose(styles.optionText, { color });
+}
+
 export default styles;

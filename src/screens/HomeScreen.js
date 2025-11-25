@@ -1,79 +1,179 @@
-import { useMemo, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { useMemo, useRef, useState, useCallback } from 'react';
+import { Animated, Pressable, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-import { usePreferences } from '../context/PreferencesContext';
-import { supabase } from '../lib/supabaseClient';
-import styles from './styles/HomeScreen.styles';
+import styles, {
+  getModeCardContainerStyle,
+  getModeCardTitleStyle,
+} from './styles/HomeScreen.styles';
 
-const DIFFICULTIES = [
+const DEFAULT_DIFFICULTY = 'mittel';
+const MENU_GROUPS = [
   {
-    id: 'leicht',
-    title: 'Leicht',
-    description: 'Locker aufwaermen',
-    accent: '#34D399',
-    glow: 'rgba(52, 211, 153, 0.35)',
+    title: 'Einstellungen',
+    items: [{ label: 'Audio', action: 'settingsAudio' }],
   },
   {
-    id: 'mittel',
-    title: 'Mittel',
-    description: 'Balance aus Tempo & Wissen',
-    accent: '#60A5FA',
-    glow: 'rgba(96, 165, 250, 0.35)',
+    title: 'Profil',
+    items: [
+      { label: 'Passwort vergessen', action: 'profilePassword' },
+      { label: 'Abmelden', action: 'profileLogout' },
+    ],
   },
   {
-    id: 'schwer',
-    title: 'Schwer',
-    description: 'Nur fuer echte Pros',
-    accent: '#F97316',
-    glow: 'rgba(249, 115, 22, 0.35)',
+    title: 'Freunde',
+    items: [{ label: 'Freunde hinzufügen', action: 'friendsAdd' }],
   },
 ];
 
-export default function HomeScreen({ navigation }) {
-  const [selectedDifficulty, setSelectedDifficulty] = useState('mittel');
-  const [selectedMode, setSelectedMode] = useState('campaign');
-  const { streaks } = usePreferences();
+function parseHex(hex) {
+  const normalized = hex.replace('#', '');
+  const isShort = normalized.length === 3;
+  const full = isShort
+    ? normalized
+        .split('')
+        .map((char) => char + char)
+        .join('')
+    : normalized;
 
-  const selectedCard = useMemo(
-    () => DIFFICULTIES.find((item) => item.id === selectedDifficulty),
-    [selectedDifficulty]
+  const parsed = Number.parseInt(full, 16);
+  const r = (parsed >> 16) & 255;
+  const g = (parsed >> 8) & 255;
+  const b = parsed & 255;
+
+  return { r, g, b };
+}
+
+function hexToRgba(hex, alpha = 1) {
+  const { r, g, b } = parseHex(hex);
+
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function ModeCard({ title, accent, onPress }) {
+  const glow = useRef(new Animated.Value(0)).current;
+  const glowColors = useMemo(
+    () => ({
+      inactive: hexToRgba(accent, 0.7),
+      active: hexToRgba(accent, 1),
+    }),
+    [accent]
   );
-  const isCampaign = selectedMode === 'campaign';
 
-  async function handleSignOut() {
-    try {
-      await supabase.auth.signOut();
-    } catch (err) {
-      console.error('Fehler beim Abmelden:', err);
-    }
+  function handlePressIn() {
+    Animated.timing(glow, {
+      toValue: 1,
+      duration: 160,
+      useNativeDriver: false,
+    }).start();
   }
 
-  function handleCampaignPress() {
-    setSelectedMode('campaign');
+  function handlePressOut() {
+    Animated.timing(glow, {
+      toValue: 0,
+      duration: 220,
+      useNativeDriver: false,
+    }).start();
   }
+
+  return (
+    <Animated.View
+      style={getModeCardContainerStyle(accent, glow, glowColors)}
+    >
+      <Pressable
+        style={styles.modeCardPressable}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+      >
+        <Text style={getModeCardTitleStyle(accent)}>{title}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+export default function HomeScreen({ navigation }) {
+  const [menuOpen, setMenuOpen] = useState(false);
 
   function handleCreateLobby() {
     navigation.navigate('MultiplayerLobby', {
-      difficulty: selectedDifficulty,
+      difficulty: DEFAULT_DIFFICULTY,
       mode: 'create',
     });
   }
 
   function handleJoinLobby() {
     navigation.navigate('MultiplayerLobby', {
-      difficulty: selectedDifficulty,
+      difficulty: DEFAULT_DIFFICULTY,
       mode: 'join',
     });
   }
 
   function startCampaign() {
     navigation.navigate('Quiz', {
-      difficulty: selectedDifficulty,
+      difficulty: DEFAULT_DIFFICULTY,
     });
   }
 
+  const toggleMenu = useCallback(() => {
+    setMenuOpen((prev) => !prev);
+  }, []);
+
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false);
+  }, []);
+
+  const handleMenuSelect = useCallback(
+    (action) => {
+      closeMenu();
+
+      const focusMap = {
+        settingsAudio: 'audio',
+        profilePassword: 'password',
+        profileLogout: 'logout',
+        friendsAdd: 'friendsAdd',
+      };
+
+      const focus = focusMap[action];
+
+      if (focus) {
+        navigation.navigate('Settings', { focus });
+      }
+    },
+    [closeMenu, navigation]
+  );
+
   return (
     <View style={styles.container}>
+      {menuOpen ? (
+        <>
+          <Pressable style={styles.menuOverlay} onPress={closeMenu} />
+          <View pointerEvents="box-none" style={styles.menuContainer}>
+            <View style={styles.menuCard}>
+              {MENU_GROUPS.map((group, index) => (
+                <View
+                  key={group.title}
+                  style={[
+                    styles.menuGroup,
+                    index + 1 < MENU_GROUPS.length ? styles.menuGroupSpacing : null,
+                  ]}
+                >
+                  <Text style={styles.menuGroupTitle}>{group.title}</Text>
+                  {group.items.map((item) => (
+                    <Pressable
+                      key={item.action}
+                      onPress={() => handleMenuSelect(item.action)}
+                      style={styles.menuItem}
+                    >
+                      <Text style={styles.menuItemLabel}>{item.label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ))}
+            </View>
+          </View>
+        </>
+      ) : null}
       <View style={styles.header}>
         <Text style={styles.title}>MedBattle</Text>
 
@@ -82,140 +182,22 @@ export default function HomeScreen({ navigation }) {
             onPress={() => navigation.navigate('Leaderboard')}
             style={styles.leaderboardButton}
           >
-            <View style={styles.leaderboardDotLarge} />
-            <View style={styles.leaderboardDotMedium} />
-            <View style={styles.leaderboardDotSmall} />
+            <Ionicons name="trophy" size={22} color="#FACC15" style={styles.leaderboardIcon} />
           </Pressable>
 
-          <Pressable
-            onPress={() => navigation.navigate('Settings')}
-            style={styles.settingsButton}
-          >
-            <View style={styles.settingsOuter}>
-              <View style={styles.settingsNeedle} />
-              <View style={styles.settingsPivot} />
-            </View>
+          <Pressable onPress={toggleMenu} style={styles.menuButton}>
+            <Ionicons name="menu" size={24} color="#E2E8F0" style={styles.menuIcon} />
           </Pressable>
         </View>
       </View>
 
-      <View style={styles.arenaCard}>
-        <Text style={styles.arenaLabel}>Arena bereit</Text>
-        <Text style={styles.arenaTitle}>Waehle deinen Spielmodus</Text>
-        <Text style={styles.arenaDescription}>
-          Hoste ein Live-Duell, tritt einer Lobby bei oder trainiere solo in der Campaign.
-        </Text>
+      <View style={styles.modeSection}>
+        <ModeCard title="Create Lobby" accent="#38E4AE" onPress={handleCreateLobby} />
+        <ModeCard title="Join Lobby" accent="#60A5FA" onPress={handleJoinLobby} />
+        <ModeCard title="Campaign" accent="#FDE68A" onPress={startCampaign} />
       </View>
-
-      <Text style={styles.sectionLabel}>Modi</Text>
-
-      <View style={styles.modeList}>
-        <Pressable onPress={handleCreateLobby} style={[styles.modeCard, styles.modeCardHost]}>
-          <Text style={styles.modeCardTitle}>Create Lobby</Text>
-          <Text style={styles.modeCardSubtitle}>
-            Starte ein Duell und teile den Match-Code mit deiner Crew.
-          </Text>
-        </Pressable>
-
-        <Pressable onPress={handleJoinLobby} style={[styles.modeCard, styles.modeCardJoin]}>
-          <Text style={styles.modeCardTitle}>Join Lobby</Text>
-          <Text style={styles.modeCardSubtitle}>
-            Match-Code eingeben oder offene Lobbys durchstoebern.
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={handleCampaignPress}
-          style={[
-            styles.modeCard,
-            styles.modeCardCampaign,
-            isCampaign ? styles.modeCardActive : styles.modeCardInactive,
-            isCampaign && selectedCard
-              ? {
-                  borderColor: selectedCard.accent,
-                  shadowColor: selectedCard.accent,
-                }
-              : null,
-          ]}
-        >
-          <Text style={styles.modeCardTitle}>Campaign</Text>
-          <Text style={styles.modeCardSubtitle}>
-            Solo-Run mit Supabase Fragen und deinem persoenlichen Streak.
-          </Text>
-        </Pressable>
-      </View>
-
-      {isCampaign ? (
-        <>
-          <Text style={styles.sectionLabel}>Schwierigkeit</Text>
-
-          <View style={styles.difficultyList}>
-            {DIFFICULTIES.map((mode, indexItem) => {
-              const isActive = mode.id === selectedDifficulty;
-              const streakValue = streaks?.[mode.id] ?? 0;
-              const isLast = indexItem === DIFFICULTIES.length - 1;
-
-              return (
-                <Pressable
-                  key={mode.id}
-                  onPress={() => setSelectedDifficulty(mode.id)}
-                  style={[
-                    styles.difficultyCard,
-                    isLast ? styles.difficultyCardLast : null,
-                    isActive ? styles.difficultyCardActive : styles.difficultyCardInactive,
-                    isActive
-                      ? {
-                          borderColor: mode.accent,
-                          shadowColor: mode.accent,
-                        }
-                      : null,
-                  ]}
-                >
-                  <View style={styles.difficultyRow}>
-                    <View>
-                      <Text style={styles.difficultyTitle}>{mode.title}</Text>
-                      <Text style={styles.difficultyDescription}>{mode.description}</Text>
-                    </View>
-                    <View
-                      style={[
-                        styles.streakBadge,
-                        {
-                          borderColor: mode.accent,
-                          backgroundColor: isActive ? mode.glow : 'rgba(15, 23, 42, 0.85)',
-                        },
-                      ]}
-                    >
-                      <Text style={[styles.streakValue, { color: mode.accent }]}>{streakValue}</Text>
-                      <Text style={[styles.streakLabel, { color: mode.accent }]}>Streak</Text>
-                    </View>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <Pressable
-            onPress={startCampaign}
-            style={[
-              styles.startButton,
-              selectedCard
-                ? {
-                    backgroundColor: selectedCard.accent,
-                    shadowColor: selectedCard.accent,
-                  }
-                : null,
-            ]}
-          >
-            <Text style={styles.startButtonText}>Campaign starten</Text>
-          </Pressable>
-        </>
-      ) : null}
 
       <View style={styles.flexSpacer} />
-
-      <Pressable onPress={handleSignOut} style={styles.signOutButton}>
-        <Text style={styles.signOutText}>Abmelden</Text>
-      </Pressable>
     </View>
   );
 }

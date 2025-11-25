@@ -1,6 +1,14 @@
 ﻿import { useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
-import styles from './styles/ResultScreen.styles';
+import styles, {
+  getBadgePillStyle,
+  getLargeGlowStyle,
+  getPrimaryButtonStyle,
+  getResultProgressFillStyle,
+  getSparkleContainerStyle,
+  getSparkleHorizontalStyle,
+  getSparkleVerticalStyle,
+} from './styles/ResultScreen.styles';
 
 const BADGES = [
   {
@@ -51,44 +59,22 @@ function Sparkle({ size, top, left, opacity, rotate = '0deg', color }) {
   const horizontalHeight = size * 0.2;
   const verticalWidth = size * 0.2;
   const centerOffset = (size - horizontalHeight) / 2;
+  const containerStyle = getSparkleContainerStyle({ size, top, left, opacity, rotate });
+  const horizontalStyle = getSparkleHorizontalStyle({
+    centerOffset,
+    height: horizontalHeight,
+    color,
+  });
+  const verticalStyle = getSparkleVerticalStyle({
+    leftOffset: (size - verticalWidth) / 2,
+    width: verticalWidth,
+    color,
+  });
 
   return (
-    <View
-      pointerEvents="none"
-      style={[
-        styles.sparkle,
-        {
-          top,
-          left,
-          width: size,
-          height: size,
-          opacity,
-          transform: [{ rotate }],
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.sparkleHorizontal,
-          {
-            top: centerOffset,
-            height: horizontalHeight,
-            borderRadius: horizontalHeight / 2,
-            backgroundColor: color,
-          },
-        ]}
-      />
-      <View
-        style={[
-          styles.sparkleVertical,
-          {
-            left: (size - verticalWidth) / 2,
-            width: verticalWidth,
-            borderRadius: verticalWidth / 2,
-            backgroundColor: color,
-          },
-        ]}
-      />
+    <View pointerEvents="none" style={containerStyle}>
+      <View style={horizontalStyle} />
+      <View style={verticalStyle} />
     </View>
   );
 }
@@ -157,7 +143,7 @@ export default function ResultScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.backgroundGlowLarge, { backgroundColor: badge.glow }]} />
+      <View style={getLargeGlowStyle(badge.glow)} />
       <View style={styles.backgroundGlowSmall} />
 
       <Sparkle size={36} top={120} left={36} opacity={0.35} rotate="25deg" color={badge.glow} />
@@ -166,7 +152,7 @@ export default function ResultScreen({ route, navigation }) {
       <Sparkle size={28} top={420} left={44} opacity={0.26} rotate="-30deg" color="#FCD34D" />
 
       <View style={styles.card}>
-        <View style={[styles.badgePill, { backgroundColor: badge.color }]}>
+        <View style={getBadgePillStyle(badge.color)}>
           <Text style={styles.badgePillText}>{badge.title}</Text>
         </View>
 
@@ -184,15 +170,7 @@ export default function ResultScreen({ route, navigation }) {
           </View>
 
           <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${accuracyValue}%`,
-                  backgroundColor: badge.color,
-                },
-              ]}
-            />
+            <View style={getResultProgressFillStyle(accuracyValue, badge.color)} />
           </View>
         </View>
 
@@ -223,7 +201,7 @@ export default function ResultScreen({ route, navigation }) {
 
         <Pressable
           onPress={() => navigation.replace('Quiz', { difficulty: difficultyKey })}
-          style={[styles.primaryButton, { backgroundColor: badge.color, shadowColor: badge.color }]}
+          style={getPrimaryButtonStyle(badge.color)}
         >
           <Text style={styles.primaryButtonText}>Naechste Challenge</Text>
         </Pressable>

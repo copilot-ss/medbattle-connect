@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  ScrollView,
   Switch,
   Text,
   TextInput,
@@ -31,23 +32,83 @@ function normalizeEmail(value) {
   return value.trim().toLowerCase();
 }
 
-export default function SettingsScreen({ navigation }) {
+function deriveFriendCode(userId) {
+  if (!userId) {
+    return '';
+  }
+  const compact = userId.replace(/[^a-zA-Z0-9]/g, '');
+  if (!compact) {
+    return '';
+  }
+  const slice = compact.slice(-8).toUpperCase();
+  return slice.padStart(8, '0');
+}
+
+export default function SettingsScreen({ navigation, route }) {
   const { soundEnabled, setSoundEnabled } = usePreferences();
   const [newEmail, setNewEmail] = useState('');
   const [feedback, setFeedback] = useState(null);
   const [loadingReset, setLoadingReset] = useState(false);
   const [loadingEmail, setLoadingEmail] = useState(false);
-  const [friendEmail, setFriendEmail] = useState('');
+  const [friendCodeInput, setFriendCodeInput] = useState('');
+  const [friendCode, setFriendCode] = useState('');
   const [friends, setFriends] = useState([]);
   const [loadingFriends, setLoadingFriends] = useState(true);
   const [addingFriend, setAddingFriend] = useState(false);
   const [friendsFeedback, setFriendsFeedback] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [signingOut, setSigningOut] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [showResetForm, setShowResetForm] = useState(false);
+  const scrollRef = useRef(null);
+  const friendInputRef = useRef(null);
 
   const soundStatus = useMemo(
     () => (soundEnabled ? 'Sound aktiv' : 'Sound stumm'),
     [soundEnabled]
   );
+
+  useEffect(() => {
+    const focusTarget = route?.params?.focus;
+
+    if (!focusTarget) {
+      return undefined;
+    }
+
+    const cleanupFns = [];
+
+    const scrollToTarget = () => {
+      if (!scrollRef.current) {
+        return;
+      }
+      if (focusTarget === 'audio') {
+        scrollRef.current.scrollTo({ y: 0, animated: true });
+      } else {
+        scrollRef.current.scrollToEnd({ animated: true });
+      }
+    };
+
+    if (focusTarget === 'password') {
+      setShowResetForm(true);
+      scrollToTarget();
+    } else if (focusTarget === 'friendsAdd') {
+      const timer = setTimeout(() => {
+        friendInputRef.current?.focus?.();
+      }, 100);
+      cleanupFns.push(() => clearTimeout(timer));
+      scrollToTarget();
+    } else if (focusTarget === 'audio') {
+      scrollToTarget();
+    } else if (focusTarget === 'logout') {
+      handleSignOut();
+    }
+
+    navigation.setParams({ focus: null });
+
+    return () => {
+      cleanupFns.forEach((fn) => fn());
+    };
+  }, [route?.params?.focus, navigation]);
 
   function handleSoundToggle(value) {
     setSoundEnabled(value).catch((err) => {
@@ -92,6 +153,7 @@ export default function SettingsScreen({ navigation }) {
       }
       const id = data?.user?.id ?? null;
       setUserId(id);
+      setFriendCode(deriveFriendCode(id));
       loadFriends(id);
     });
 
@@ -109,7 +171,9 @@ export default function SettingsScreen({ navigation }) {
   );
 
   async function handlePasswordReset() {
-    if (loadingReset) {
+    const targetEmail = normalizeEmail(resetEmail);
+
+    if (loadingReset || !targetEmail) {
       return;
     }
 
@@ -117,21 +181,8 @@ export default function SettingsScreen({ navigation }) {
     setLoadingReset(true);
 
     try {
-      const { data, error } = await supabase.auth.getUser();
-
-      if (error) {
-        throw error;
-      }
-
-      const email = data?.user?.email;
-
-      if (!email) {
-        setFeedback('Kein Account gefunden. Bitte erneut anmelden.');
-        return;
-      }
-
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        email,
+        targetEmail,
         {
           redirectTo: PASSWORD_RESET_REDIRECT,
         }
@@ -141,12 +192,12 @@ export default function SettingsScreen({ navigation }) {
         throw resetError;
       }
 
-      setFeedback(
-        'Passwort-Link gesendet. Bitte pruefe dein Postfach und folge den Anweisungen.'
-      );
+      setFeedback('Link zum Zurücksetzen wurde gesendet.');
+      setResetEmail('');
+      setShowResetForm(false);
     } catch (err) {
       setFeedback(
-        err?.message ?? 'Passwort konnte nicht zurueckgesetzt werden.'
+        err?.message ?? 'Passwort konnte nicht zurückgesetzt werden.'
       );
     } finally {
       setLoadingReset(false);
@@ -181,7 +232,7 @@ export default function SettingsScreen({ navigation }) {
       }
 
       setFeedback(
-        'E-Mail-Update angefordert. Bitte bestaetige die neue Adresse ueber den zugesandten Link.'
+        'E-Mail-Update angefordert. Bitte bestätige die neue Adresse über den zugesandten Link.'
       );
       setNewEmail('');
     } catch (err) {
@@ -196,7 +247,7 @@ export default function SettingsScreen({ navigation }) {
 
   async function handleAddFriend() {
     if (!userId) {
-      setFriendsFeedback('Bitte melde dich erneut an, um Freunde hinzuzufuegen.');
+      setFriendsFeedback('Bitte melde dich erneut an, um Freunde hinzuzufügen.');
       return;
     }
 
@@ -204,15 +255,20 @@ export default function SettingsScreen({ navigation }) {
       return;
     }
 
-    const normalized = normalizeEmail(friendEmail);
+    const normalizedCode = friendCodeInput.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
-    if (!normalized) {
-      setFriendsFeedback('Bitte eine gueltige E-Mail eingeben.');
+    if (!normalizedCode) {
+      setFriendsFeedback('Bitte einen gültigen Code eingeben.');
       return;
     }
 
-    if (friends.some((friend) => friend.email === normalized)) {
-      setFriendsFeedback('Dieser Freund ist bereits in deiner Liste.');
+    if (friendCode && normalizedCode === friendCode) {
+      setFriendsFeedback('Das ist dein eigener Code.');
+      return;
+    }
+
+    if (friends.some((friend) => friend.code === normalizedCode)) {
+      setFriendsFeedback('Dieser Code ist bereits in deiner Liste.');
       return;
     }
 
@@ -220,10 +276,10 @@ export default function SettingsScreen({ navigation }) {
     setFriendsFeedback(null);
 
     try {
-      const result = await addFriend(userId, normalized);
+      const result = await addFriend(userId, normalizedCode);
 
       if (!result.ok) {
-        throw result.error ?? new Error('Freund konnte nicht hinzugefuegt werden.');
+        throw result.error ?? new Error('Freund konnte nicht hinzugefügt werden.');
       }
 
       if (Array.isArray(result.friends)) {
@@ -232,10 +288,10 @@ export default function SettingsScreen({ navigation }) {
         setFriends((prev) => [...prev, result.friend]);
       }
 
-      setFriendEmail('');
-      setFriendsFeedback('Freund wurde hinzugefuegt.');
+      setFriendCodeInput('');
+      setFriendsFeedback('Freund wurde hinzugefügt.');
     } catch (err) {
-      setFriendsFeedback(err?.message ?? 'Freund konnte nicht hinzugefuegt werden.');
+      setFriendsFeedback(err?.message ?? 'Freund konnte nicht hinzugefügt werden.');
     } finally {
       setAddingFriend(false);
     }
@@ -257,7 +313,7 @@ export default function SettingsScreen({ navigation }) {
         setFriends(result.friends);
       } else {
         setFriends((prev) =>
-          prev.filter((item) => item.email !== friend.email)
+          prev.filter((item) => item.code !== friend.code)
         );
       }
     } catch (err) {
@@ -265,167 +321,218 @@ export default function SettingsScreen({ navigation }) {
     }
   }
 
+  async function handleSignOut() {
+    if (signingOut) {
+      return;
+    }
+
+    setFeedback(null);
+    setSigningOut(true);
+
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      setFeedback(err?.message ?? 'Abmelden fehlgeschlagen.');
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Einstellungen</Text>
-        <Pressable onPress={() => navigation.goBack()} style={styles.headerButton}>
-          <Text style={styles.headerButtonText}>Zurueck</Text>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={styles.headerCloseButton}
+          accessibilityLabel="Schließen"
+        >
+          <Text style={styles.headerCloseText}>X</Text>
         </Pressable>
       </View>
 
-      <View style={[styles.card, styles.audioCard]}>
-        <Text style={styles.cardLabel}>Audio</Text>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.card, styles.audioCard]}>
+          <View style={styles.rowBetween}>
+            <Text style={styles.cardLabel}>Audio</Text>
+            <Switch
+              value={soundEnabled}
+              onValueChange={handleSoundToggle}
+              trackColor={{ false: '#1F2937', true: '#2563EB' }}
+              thumbColor={soundEnabled ? '#F8FAFC' : '#94A3B8'}
+              accessibilityHint={soundStatus}
+            />
+          </View>
+        </View>
 
-        <View style={styles.rowBetween}>
-          <View>
-            <Text style={styles.cardTitle}>Battle Sound</Text>
-            <Text style={styles.cardSubtitle}>{soundStatus}</Text>
+        <View style={[styles.card, styles.squadCard]}>
+          <Text style={styles.cardTitle}>Freunde hinzufügen</Text>
+
+          {friendCode ? (
+            <View style={styles.friendCodeBadge}>
+              <Text style={styles.friendCodeHint}>Dein Code</Text>
+              <Text style={styles.friendCodeValue}>{friendCode}</Text>
+            </View>
+          ) : null}
+
+          <View style={styles.fieldGroup}>
+            <TextInput
+              ref={friendInputRef}
+              value={friendCodeInput}
+              onChangeText={setFriendCodeInput}
+              placeholder="ABC12345"
+              placeholderTextColor="#64748B"
+              autoCapitalize="characters"
+              keyboardType="default"
+              style={styles.input}
+            />
+            <Pressable
+              onPress={handleAddFriend}
+              disabled={addingFriend}
+              style={[
+                styles.actionButton,
+                styles.successButton,
+                addingFriend ? styles.disabledButton : null,
+              ]}
+            >
+              {addingFriend ? (
+                <ActivityIndicator color="#F8FAFC" />
+              ) : (
+                <Text style={styles.successButtonText}>Bestätigen</Text>
+              )}
+            </Pressable>
           </View>
 
-          <Switch
-            value={soundEnabled}
-            onValueChange={handleSoundToggle}
-            trackColor={{ false: '#1F2937', true: '#2563EB' }}
-            thumbColor={soundEnabled ? '#F8FAFC' : '#94A3B8'}
-          />
-        </View>
-      </View>
-
-      <View style={[styles.card, styles.squadCard]}>
-        <Text style={styles.cardTitle}>Squad</Text>
-        <Text style={styles.cardSubtitle}>Fuege Freunde hinzu, um eure Ergebnisse gemeinsam zu feiern.</Text>
-
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>Freund per E-Mail einladen</Text>
-          <TextInput
-            value={friendEmail}
-            onChangeText={setFriendEmail}
-            placeholder="freund@example.com"
-            placeholderTextColor="#64748B"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            style={styles.input}
-          />
-          <Pressable
-            onPress={handleAddFriend}
-            disabled={addingFriend}
-            style={[
-              styles.actionButton,
-              styles.successButton,
-              addingFriend ? styles.disabledButton : null,
-            ]}
-          >
-            {addingFriend ? (
-              <ActivityIndicator color="#F8FAFC" />
-            ) : (
-              <Text style={styles.successButtonText}>Freund hinzufuegen</Text>
-            )}
-          </Pressable>
-        </View>
-
-        <View style={styles.friendList}>
-          {loadingFriends ? (
-            <View style={styles.friendLoading}>
-              <ActivityIndicator color="#60A5FA" />
-              <Text style={styles.friendLoadingText}>Freunde werden geladen ...</Text>
-            </View>
-          ) : friends.length ? (
-            friends.map((friend) => (
-              <View
-                key={friend.id ?? friend.email}
-                style={styles.friendRow}
-              >
-                <Text style={styles.friendEmail}>{friend.email}</Text>
-                <Pressable
-                  onPress={() => handleRemoveFriend(friend)}
-                  style={styles.friendRemoveButton}
-                >
-                  <Text style={styles.friendRemoveText}>Entfernen</Text>
-                </Pressable>
+          <View style={styles.friendList}>
+            {loadingFriends ? (
+              <View style={styles.friendLoading}>
+                <ActivityIndicator color="#60A5FA" />
+                <Text style={styles.friendLoadingText}>
+                  Freunde werden geladen ...
+                </Text>
               </View>
-            ))
+            ) : friends.length ? (
+              friends.map((friend) => (
+                <View key={friend.id ?? friend.code} style={styles.friendRow}>
+                  <Text style={styles.friendCodeText}>
+                    {friend.code ?? '------'}
+                  </Text>
+                  <Pressable
+                    onPress={() => handleRemoveFriend(friend)}
+                    style={styles.friendRemoveButton}
+                  >
+                    <Text style={styles.friendRemoveText}>Entfernen</Text>
+                  </Pressable>
+                </View>
+              ))
+            ) : null}
+          </View>
+        </View>
+
+        <View style={[styles.card, styles.profileCard]}>
+          <Text style={styles.cardTitle}>Profil & Sicherheit</Text>
+
+          <View style={styles.fieldGroup}>
+            <TextInput
+              value={newEmail}
+              onChangeText={setNewEmail}
+              placeholder="name@example.com"
+              placeholderTextColor="#64748B"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              style={styles.input}
+            />
+            <Pressable
+              onPress={handleEmailUpdate}
+              disabled={loadingEmail}
+              style={[
+                styles.actionButton,
+                styles.primaryButton,
+                loadingEmail ? styles.disabledButton : null,
+              ]}
+            >
+              {loadingEmail ? (
+                <ActivityIndicator color="#F8FAFC" />
+              ) : (
+                <Text style={styles.primaryButtonText}>
+                  Bestätigungslink senden
+                </Text>
+              )}
+            </Pressable>
+          </View>
+        </View>
+
+        {friendsFeedback ? (
+          <View style={styles.banner}>
+            <Text style={styles.bannerText}>{friendsFeedback}</Text>
+          </View>
+        ) : null}
+
+        {feedback ? (
+          <View style={styles.banner}>
+            <Text style={styles.bannerText}>{feedback}</Text>
+          </View>
+        ) : null}
+
+        <Pressable
+          onPress={() => setShowResetForm((prev) => !prev)}
+          style={styles.inlineLink}
+          accessibilityRole="button"
+          accessibilityLabel="Passwort vergessen"
+        >
+          <Text style={styles.inlineLinkText}>Passwort vergessen?</Text>
+        </Pressable>
+
+        {showResetForm ? (
+          <View style={styles.resetContainer}>
+            <TextInput
+              value={resetEmail}
+              onChangeText={setResetEmail}
+              placeholder="deine@email.com"
+              placeholderTextColor="#64748B"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              style={styles.input}
+            />
+            <Pressable
+              onPress={handlePasswordReset}
+              disabled={loadingReset}
+              style={[
+                styles.actionButton,
+                styles.warningButton,
+                loadingReset ? styles.warningButtonDisabled : null,
+              ]}
+            >
+              {loadingReset ? (
+                <ActivityIndicator color="#0F172A" />
+              ) : (
+                <Text style={styles.warningButtonText}>Link senden</Text>
+              )}
+            </Pressable>
+          </View>
+        ) : null}
+
+        <Pressable
+          onPress={handleSignOut}
+          disabled={signingOut}
+          style={[
+            styles.actionButton,
+            styles.dangerButton,
+            signingOut ? styles.dangerButtonDisabled : null,
+          ]}
+        >
+          {signingOut ? (
+            <ActivityIndicator color="#0F172A" />
           ) : (
-            <Text style={styles.friendEmpty}>Noch keine Freunde hinzugefuegt.</Text>
+            <Text style={styles.dangerButtonText}>Abmelden</Text>
           )}
-        </View>
-      </View>
+        </Pressable>
 
-      <View style={[styles.card, styles.profileCard]}>
-        <Text style={styles.cardTitle}>Profil & Sicherheit</Text>
-        <Text style={styles.cardSubtitle}>
-          Verwalte deinen Zugang ohne sensible Daten im Klartext anzuzeigen.
-        </Text>
-
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>Neue E-Mail-Adresse</Text>
-          <TextInput
-            value={newEmail}
-            onChangeText={setNewEmail}
-            placeholder="name@example.com"
-            placeholderTextColor="#64748B"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            style={styles.input}
-          />
-          <Pressable
-            onPress={handleEmailUpdate}
-            disabled={loadingEmail}
-            style={[
-              styles.actionButton,
-              styles.primaryButton,
-              loadingEmail ? styles.disabledButton : null,
-            ]}
-          >
-            {loadingEmail ? (
-              <ActivityIndicator color="#F8FAFC" />
-            ) : (
-              <Text style={styles.primaryButtonText}>Bestaetigungslink senden</Text>
-            )}
-          </Pressable>
-        </View>
-
-        <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>Passwort zuruecksetzen</Text>
-          <Text style={styles.infoSubtitle}>
-            Wir schicken dir einen Link fuer die Passwort-Aktualisierung.
-          </Text>
-          <Pressable
-            onPress={handlePasswordReset}
-            disabled={loadingReset}
-            style={[
-              styles.actionButton,
-              styles.warningButton,
-              loadingReset ? styles.warningButtonDisabled : null,
-            ]}
-          >
-            {loadingReset ? (
-              <ActivityIndicator color="#0F172A" />
-            ) : (
-              <Text style={styles.warningButtonText}>Passwort-Link anfordern</Text>
-            )}
-          </Pressable>
-        </View>
-      </View>
-
-      {friendsFeedback ? (
-        <View style={styles.banner}>
-          <Text style={styles.bannerText}>{friendsFeedback}</Text>
-        </View>
-      ) : null}
-
-      {feedback ? (
-        <View style={styles.banner}>
-          <Text style={styles.bannerText}>{feedback}</Text>
-        </View>
-      ) : null}
-
-      <Pressable
-        onPress={() => navigation.goBack()}
-        style={styles.footerButton}
-      >
-        <Text style={styles.footerButtonText}>Zur Arena</Text>
-      </Pressable>
+      </ScrollView>
     </View>
   );
 }

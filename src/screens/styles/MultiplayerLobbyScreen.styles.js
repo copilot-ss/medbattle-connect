@@ -38,10 +38,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.35)',
     backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    alignItems: 'center',
   },
   closeButtonText: {
     color: '#E2E8F0',
     fontWeight: '700',
+    fontSize: 18,
   },
   loadingBox: {
     flexDirection: 'row',
@@ -197,6 +199,35 @@ const styles = StyleSheet.create({
     color: '#CBD5F5',
     marginTop: 6,
     marginBottom: 16,
+  },
+  lobbyConfig: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(96, 165, 250, 0.25)',
+  },
+  lobbyConfigTitle: {
+    color: '#F8FAFC',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  lobbyConfigSubtitle: {
+    color: '#94A3B8',
+    marginTop: 6,
+    marginBottom: 14,
+    lineHeight: 20,
+  },
+  lobbyConfigAction: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#38BDF8',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+  },
+  lobbyConfigActionText: {
+    color: '#021527',
+    fontSize: 15,
+    fontWeight: '800',
   },
   codeBadge: {
     alignSelf: 'flex-start',

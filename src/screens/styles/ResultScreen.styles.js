@@ -213,4 +213,55 @@ const styles = StyleSheet.create({
   },
 });
 
+export function getLargeGlowStyle(color) {
+  return StyleSheet.compose(styles.backgroundGlowLarge, { backgroundColor: color });
+}
+
+export function getBadgePillStyle(color) {
+  return StyleSheet.compose(styles.badgePill, { backgroundColor: color });
+}
+
+export function getResultProgressFillStyle(accuracyPercent, color) {
+  return StyleSheet.compose(styles.progressFill, {
+    width: `${accuracyPercent}%`,
+    backgroundColor: color,
+  });
+}
+
+export function getPrimaryButtonStyle(color) {
+  return StyleSheet.compose(styles.primaryButton, {
+    backgroundColor: color,
+    shadowColor: color,
+  });
+}
+
+export function getSparkleContainerStyle({ size, top, left, opacity, rotate = '0deg' }) {
+  return StyleSheet.compose(styles.sparkle, {
+    top,
+    left,
+    width: size,
+    height: size,
+    opacity,
+    transform: [{ rotate }],
+  });
+}
+
+export function getSparkleHorizontalStyle({ centerOffset, height, color }) {
+  return StyleSheet.compose(styles.sparkleHorizontal, {
+    top: centerOffset,
+    height,
+    borderRadius: height / 2,
+    backgroundColor: color,
+  });
+}
+
+export function getSparkleVerticalStyle({ leftOffset, width, color }) {
+  return StyleSheet.compose(styles.sparkleVertical, {
+    left: leftOffset,
+    width,
+    borderRadius: width / 2,
+    backgroundColor: color,
+  });
+}
+
 export default styles;

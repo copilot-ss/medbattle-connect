@@ -8,6 +8,9 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
   },
+  scrollContent: {
+    paddingBottom: 60,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -20,17 +23,20 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
   },
-  headerButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
+  headerCloseButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.35)',
     backgroundColor: 'rgba(15, 23, 42, 0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  headerButtonText: {
+  headerCloseText: {
     color: '#E0E7FF',
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 18,
   },
   card: {
     backgroundColor: '#0F172A',
@@ -53,7 +59,7 @@ const styles = StyleSheet.create({
     color: '#60A5FA',
     fontSize: 14,
     letterSpacing: 1.5,
-    marginBottom: 8,
+    marginBottom: 0,
     textTransform: 'uppercase',
     fontWeight: '600',
   },
@@ -62,12 +68,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
-  cardSubtitle: {
-    color: '#94A3B8',
-    fontSize: 13,
-    marginTop: 4,
-    marginBottom: 16,
-  },
   rowBetween: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -75,13 +75,6 @@ const styles = StyleSheet.create({
   },
   fieldGroup: {
     marginBottom: 16,
-  },
-  fieldLabel: {
-    color: '#CBD5F5',
-    fontSize: 12,
-    marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   input: {
     backgroundColor: '#111827',
@@ -120,6 +113,18 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     fontWeight: '700',
   },
+  dangerButton: {
+    backgroundColor: '#F87171',
+  },
+  dangerButtonText: {
+    color: '#0F172A',
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  dangerButtonDisabled: {
+    backgroundColor: '#7F1D1D',
+  },
   disabledButton: {
     backgroundColor: '#1E3A8A',
   },
@@ -129,8 +134,6 @@ const styles = StyleSheet.create({
   friendList: {
     backgroundColor: 'rgba(15, 23, 42, 0.9)',
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.25)',
     padding: 16,
     maxHeight: 200,
   },
@@ -143,6 +146,28 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     marginTop: 8,
   },
+  friendCodeBadge: {
+    marginBottom: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.35)',
+  },
+  friendCodeHint: {
+    color: '#93C5FD',
+    fontSize: 11,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  friendCodeValue: {
+    color: '#F8FAFC',
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: 2,
+  },
   friendRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -151,9 +176,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.12)',
   },
-  friendEmail: {
+  friendCodeText: {
     color: '#E2E8F0',
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 2,
   },
   friendRemoveButton: {
     paddingHorizontal: 12,
@@ -165,29 +192,6 @@ const styles = StyleSheet.create({
   friendRemoveText: {
     color: '#FCA5A5',
     fontSize: 12,
-  },
-  friendEmpty: {
-    color: '#94A3B8',
-    textAlign: 'center',
-  },
-  infoBox: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    backgroundColor: 'rgba(30, 41, 59, 0.7)',
-    borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.6)',
-  },
-  infoTitle: {
-    color: '#F8FAFC',
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  infoSubtitle: {
-    color: '#94A3B8',
-    fontSize: 13,
-    marginBottom: 12,
   },
   banner: {
     paddingVertical: 12,
@@ -202,18 +206,23 @@ const styles = StyleSheet.create({
     color: '#BFDBFE',
     fontSize: 13,
   },
-  footerButton: {
+  inlineLink: {
     alignSelf: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.35)',
-    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+    marginTop: 12,
+    marginBottom: 4,
   },
-  footerButtonText: {
-    color: '#E0E7FF',
-    fontWeight: '600',
+  inlineLinkText: {
+    color: '#BFDBFE',
+    fontSize: 13,
+    textDecorationLine: 'underline',
+  },
+  resetContainer: {
+    marginBottom: 8,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.3)',
   },
 });
 

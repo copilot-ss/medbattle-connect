@@ -16,6 +16,8 @@ import {
   fetchOpenMatches,
   joinMatch,
   subscribeToMatch,
+  updateMatchSettings,
+  abandonMatch,
 } from '../services/matchService';
 import styles from './styles/MultiplayerLobbyScreen.styles';
 
@@ -63,7 +65,11 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   const [currentMatch, setCurrentMatch] = useState(null);
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [updatingSettings, setUpdatingSettings] = useState(false);
+  const [closingLobby, setClosingLobby] = useState(false);
   const subscriptionRef = useRef(null);
+  const closingRef = useRef(false);
+  const skipAutoCloseRef = useRef(false);
 
   const adjustQuestionLimit = useCallback((delta) => {
     setQuestionLimit((prev) => {
@@ -338,6 +344,86 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     [attachMatchSubscription, isCreateOnly, joining, refreshMatches, userId]
   );
 
+  const cancelLobbyAsHost = useCallback(async () => {
+    if (!isHostWaiting || !currentMatch) {
+      return null;
+    }
+
+    try {
+      const result = await abandonMatch({
+        match: currentMatch,
+        role: 'host',
+      });
+
+      if (result?.ok) {
+        setCurrentMatch(result.match);
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Fehler beim Schliessen der Lobby:', err);
+      return null;
+    }
+  }, [abandonMatch, currentMatch, isHostWaiting]);
+
+  const handleUpdateMatchSettings = useCallback(async () => {
+    if (!isHostWaiting || !currentMatch || updatingSettings) {
+      return;
+    }
+
+    setUpdatingSettings(true);
+    setMatchesError(null);
+
+    try {
+      const result = await updateMatchSettings({
+        matchId: currentMatch.id,
+        userId,
+        difficulty: selectedDifficulty,
+        questionLimit,
+      });
+
+      if (!result.ok) {
+        throw (
+          result.error ??
+          new Error('Einstellungen konnten nicht gespeichert werden.')
+        );
+      }
+
+      setCurrentMatch(result.match);
+      setQuestionLimit(result.match.question_limit ?? questionLimit);
+      setSelectedDifficulty(result.match.difficulty ?? selectedDifficulty);
+    } catch (err) {
+      console.error('Fehler beim Aktualisieren der Lobby-Einstellungen:', err);
+      setMatchesError(err);
+    } finally {
+      setUpdatingSettings(false);
+    }
+  }, [
+    currentMatch,
+    isHostWaiting,
+    questionLimit,
+    selectedDifficulty,
+    updateMatchSettings,
+    updatingSettings,
+    userId,
+  ]);
+
+  const handleLeaveLobby = useCallback(async () => {
+    if (closingRef.current) {
+      return;
+    }
+
+    closingRef.current = true;
+    setClosingLobby(true);
+
+    await cancelLobbyAsHost();
+
+    setClosingLobby(false);
+    skipAutoCloseRef.current = true;
+    closingRef.current = false;
+    navigation.goBack();
+  }, [cancelLobbyAsHost, navigation]);
+
   const renderMatch = useCallback(
     ({ item }) => (
       <Pressable
@@ -401,6 +487,17 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     return items;
   }, [currentMatch]);
 
+  const isHostWaiting = useMemo(() => {
+    if (!currentMatch || !userId) {
+      return false;
+    }
+
+    return (
+      deriveMatchRole(currentMatch, userId) === 'host' &&
+      currentMatch.status === 'waiting'
+    );
+  }, [currentMatch, userId]);
+
   const showConfigCard = isCreateOnly && !currentMatch;
 
   useEffect(() => {
@@ -422,6 +519,32 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   }, [currentMatch]);
 
   useEffect(() => {
+    if (!currentMatch) {
+      return;
+    }
+
+    if (
+      currentMatch.status === 'cancelled' ||
+      currentMatch.status === 'completed'
+    ) {
+      if (subscriptionRef.current) {
+        subscriptionRef.current();
+        subscriptionRef.current = null;
+      }
+
+      setCurrentMatch(null);
+
+      if (!isCreateOnly) {
+        refreshMatches({ force: true });
+      }
+
+      if (currentMatch.status === 'cancelled' && !closingRef.current) {
+        setMatchesError(new Error('Lobby wurde geschlossen.'));
+      }
+    }
+  }, [currentMatch, isCreateOnly, refreshMatches]);
+
+  useEffect(() => {
     if (!userId || isCreateOnly) {
       return () => {};
     }
@@ -435,6 +558,36 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     };
   }, [isCreateOnly, refreshMatches, userId]);
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (event) => {
+      if (skipAutoCloseRef.current) {
+        skipAutoCloseRef.current = false;
+        return;
+      }
+
+      if (!isHostWaiting || !currentMatch) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (closingRef.current) {
+        return;
+      }
+
+      closingRef.current = true;
+
+      cancelLobbyAsHost()
+        .catch(() => null)
+        .finally(() => {
+          closingRef.current = false;
+          navigation.dispatch(event.data.action);
+        });
+    });
+
+    return unsubscribe;
+  }, [cancelLobbyAsHost, currentMatch, isHostWaiting, navigation]);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -444,10 +597,14 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
           <Text style={styles.helper}>{helperText}</Text>
         </View>
         <Pressable
-          style={styles.closeButton}
-          onPress={() => navigation.goBack()}
+          style={[
+            styles.closeButton,
+            closingLobby ? styles.actionDisabled : null,
+          ]}
+          onPress={handleLeaveLobby}
+          disabled={closingLobby}
         >
-          <Text style={styles.closeButtonText}>Schliessen</Text>
+          <Text style={styles.closeButtonText}>X</Text>
         </Pressable>
       </View>
 
@@ -588,6 +745,87 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
               </View>
             ))}
           </View>
+
+          {isHostWaiting ? (
+            <View style={styles.lobbyConfig}>
+              <Text style={styles.lobbyConfigTitle}>Lobby Einstellungen</Text>
+              <Text style={styles.lobbyConfigSubtitle}>
+                Passe die Fragenanzahl und Schwierigkeit an, bevor du startest.
+              </Text>
+
+              <View style={styles.configSection}>
+                <Text style={styles.configLabel}>Schwierigkeit</Text>
+                <View style={styles.difficultyChips}>
+                  {Object.keys(DIFFICULTY_LABELS).map((key) => {
+                    const active = key === selectedDifficulty;
+                    return (
+                      <Pressable
+                        key={key}
+                        onPress={() => setSelectedDifficulty(key)}
+                        style={[
+                          styles.difficultyChip,
+                          active ? styles.difficultyChipActive : null,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.difficultyChipText,
+                            active ? styles.difficultyChipTextActive : null,
+                          ]}
+                        >
+                          {DIFFICULTY_LABELS[key]}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <View style={styles.configSection}>
+                <Text style={styles.configLabel}>Fragenanzahl</Text>
+                <View style={styles.questionStepper}>
+                  <Pressable
+                    onPress={() => adjustQuestionLimit(-1)}
+                    style={[
+                      styles.stepperButton,
+                      questionLimit <= MIN_QUESTION_LIMIT
+                        ? styles.stepperButtonDisabled
+                        : null,
+                    ]}
+                    disabled={questionLimit <= MIN_QUESTION_LIMIT}
+                  >
+                    <Text style={styles.stepperButtonText}>-</Text>
+                  </Pressable>
+                  <Text style={styles.stepperValue}>{questionLimit}</Text>
+                  <Pressable
+                    onPress={() => adjustQuestionLimit(1)}
+                    style={[
+                      styles.stepperButton,
+                      questionLimit >= MAX_QUESTION_LIMIT
+                        ? styles.stepperButtonDisabled
+                        : null,
+                    ]}
+                    disabled={questionLimit >= MAX_QUESTION_LIMIT}
+                  >
+                    <Text style={styles.stepperButtonText}>+</Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              <Pressable
+                onPress={handleUpdateMatchSettings}
+                disabled={updatingSettings}
+                style={[
+                  styles.lobbyConfigAction,
+                  updatingSettings ? styles.actionDisabled : null,
+                ]}
+              >
+                <Text style={styles.lobbyConfigActionText}>
+                  {updatingSettings ? 'Speichere ...' : 'Einstellungen speichern'}
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
 
           <Pressable
             onPress={() => refreshMatches({ force: true })}

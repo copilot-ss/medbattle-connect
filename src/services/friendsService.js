@@ -4,8 +4,8 @@ import { supabase } from '../lib/supabaseClient';
 
 const STORAGE_PREFIX = 'medbattle_friends';
 
-function normalizeEmail(value) {
-  return value.trim().toLowerCase();
+function normalizeCode(value = '') {
+  return value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 }
 
 function getStorageKey(userId) {
@@ -17,16 +17,24 @@ function sanitizeFriends(entries = []) {
   const friends = [];
 
   for (const entry of entries) {
-    const email = normalizeEmail(entry.friend_email ?? entry.email ?? '');
-    if (!email || seen.has(email)) {
+    const rawValue =
+      entry.friend_code ?? entry.friend_email ?? entry.code ?? entry.email ?? '';
+
+    if (!rawValue || rawValue.includes('@')) {
       continue;
     }
 
-    seen.add(email);
+    const code = normalizeCode(rawValue);
+
+    if (!code || seen.has(code)) {
+      continue;
+    }
+
+    seen.add(code);
 
     friends.push({
       id: entry.id ?? null,
-      email,
+      code,
       created_at: entry.created_at ?? null,
     });
   }
@@ -82,20 +90,20 @@ export async function fetchFriends(userId) {
     await persistLocalFriends(userId, friends);
     return friends;
   } catch (err) {
-    console.warn('Konnte Freunde nicht ueber Supabase laden:', err?.message);
+    console.warn('Konnte Freunde nicht über Supabase laden:', err?.message);
     return loadLocalFriends(userId);
   }
 }
 
-export async function addFriend(userId, email) {
+export async function addFriend(userId, code) {
   if (!userId) {
     return { ok: false, error: new Error('Kein Nutzer angemeldet.') };
   }
 
-  const normalizedEmail = normalizeEmail(email ?? '');
+  const normalizedCode = normalizeCode(code ?? '');
 
-  if (!normalizedEmail) {
-    return { ok: false, error: new Error('Bitte gueltige E-Mail angeben.') };
+  if (!normalizedCode) {
+    return { ok: false, error: new Error('Bitte gültigen Code angeben.') };
   }
 
   try {
@@ -104,7 +112,7 @@ export async function addFriend(userId, email) {
       .insert([
         {
           owner_id: userId,
-          friend_email: normalizedEmail,
+          friend_email: normalizedCode,
         },
       ])
       .select('id, friend_email, created_at')
@@ -123,12 +131,16 @@ export async function addFriend(userId, email) {
   } catch (err) {
     console.warn('Supabase Freund konnte nicht gespeichert werden:', err?.message);
     const current = await loadLocalFriends(userId);
-    if (current.some((item) => item.email === normalizedEmail)) {
-      return { ok: true, friend: current.find((item) => item.email === normalizedEmail), friends: current };
+    if (current.some((item) => item.code === normalizedCode)) {
+      return {
+        ok: true,
+        friend: current.find((item) => item.code === normalizedCode),
+        friends: current,
+      };
     }
     const localFriend = {
       id: `local-${Date.now()}`,
-      email: normalizedEmail,
+      code: normalizedCode,
       created_at: new Date().toISOString(),
     };
     const updated = sanitizeFriends([...(current ?? []), localFriend]);
@@ -142,11 +154,11 @@ export async function removeFriend(userId, friend) {
     return { ok: false, error: new Error('Kein Nutzer angemeldet.') };
   }
 
-  if (!friend?.email) {
-    return { ok: false, error: new Error('Ungueltiger Freund.') };
+  if (!friend?.code) {
+    return { ok: false, error: new Error('Ungültiger Freund.') };
   }
 
-  const normalizedEmail = normalizeEmail(friend.email);
+  const normalizedCode = normalizeCode(friend.code);
 
   try {
     if (friend.id) {
@@ -162,14 +174,16 @@ export async function removeFriend(userId, friend) {
       await supabase
         .from('friends')
         .delete()
-        .match({ owner_id: userId, friend_email: normalizedEmail });
+        .match({ owner_id: userId, friend_email: normalizedCode });
     }
   } catch (err) {
-    console.warn('Konnte Freund nicht ueber Supabase entfernen:', err?.message);
+    console.warn('Konnte Freund nicht über Supabase entfernen:', err?.message);
   }
 
   const current = await loadLocalFriends(userId);
-  const updated = current.filter((item) => normalizeEmail(item.email) !== normalizedEmail);
+  const updated = current.filter(
+    (item) => normalizeCode(item.code) !== normalizedCode
+  );
   await persistLocalFriends(userId, updated);
 
   return { ok: true, friends: updated };

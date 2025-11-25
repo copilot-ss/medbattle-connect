@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabaseClient';
 import { fetchQuestions } from './quizService';
 
 const MATCH_CACHE_TTL = 15 * 1000;
+const LOBBY_IDLE_TIMEOUT_MINUTES = 10;
 const MATCH_STATUS = {
   WAITING: 'waiting',
   ACTIVE: 'active',
@@ -14,6 +15,68 @@ const openMatchesCache = {
   fetchedAt: 0,
   data: null,
 };
+
+let initialLobbyCleanupPromise = null;
+let lastIdleCleanupAt = 0;
+
+async function closeWaitingMatches({ includeAllOpen = false } = {}) {
+  try {
+    let query = supabase
+      .from('matches')
+      .update({
+        status: MATCH_STATUS.CANCELLED,
+        finished_at: nowIso(),
+        updated_at: nowIso(),
+      })
+      .eq('status', MATCH_STATUS.WAITING);
+
+    if (!includeAllOpen) {
+      const cutoff = new Date(
+        Date.now() - LOBBY_IDLE_TIMEOUT_MINUTES * 60 * 1000
+      ).toISOString();
+      query = query.lte('created_at', cutoff);
+    }
+
+    const { data, error } = await query.select('id');
+
+    if (error) {
+      throw error;
+    }
+
+    if (data?.length) {
+      invalidateOpenMatchesCache();
+    }
+
+    return data?.length ?? 0;
+  } catch (err) {
+    console.warn('Konnte inaktive Lobbys nicht schließen:', err?.message ?? err);
+    return 0;
+  }
+}
+
+async function ensureInitialLobbyCleanup() {
+  if (!initialLobbyCleanupPromise) {
+    initialLobbyCleanupPromise = closeWaitingMatches({ includeAllOpen: true }).catch(
+      (err) => {
+        console.warn('Initiales Lobby-Cleanup fehlgeschlagen:', err?.message ?? err);
+        return 0;
+      }
+    );
+  }
+  return initialLobbyCleanupPromise;
+}
+
+async function ensureLobbyCleanup({ force = false } = {}) {
+  await ensureInitialLobbyCleanup();
+
+  const now = Date.now();
+  if (!force && now - lastIdleCleanupAt < LOBBY_IDLE_TIMEOUT_MINUTES * 60 * 1000) {
+    return;
+  }
+
+  await closeWaitingMatches();
+  lastIdleCleanupAt = now;
+}
 
 function invalidateOpenMatchesCache() {
   openMatchesCache.key = null;
@@ -250,6 +313,8 @@ export async function createMatch({
   const limit = Number.isFinite(questionLimit) ? Math.max(1, questionLimit) : 5;
 
   try {
+    await ensureLobbyCleanup({ force: true });
+
     const questions = await fetchQuestions(normalizedDifficulty, limit);
 
     if (!questions.length) {
@@ -343,6 +408,8 @@ export async function joinMatch({ code, userId } = {}) {
   }
 
   try {
+    await ensureLobbyCleanup({ force: true });
+
     const { data: matchRow, error: fetchError } = await supabase
       .from('matches')
       .select('*')
@@ -443,10 +510,125 @@ export async function getMatchById(matchId) {
   }
 }
 
+export async function updateMatchSettings({
+  matchId,
+  userId,
+  difficulty = 'mittel',
+  questionLimit = 5,
+} = {}) {
+  const hostId = typeof userId === 'string' ? userId : null;
+
+  if (!matchId) {
+    return { ok: false, error: new Error('Match-ID fehlt.') };
+  }
+
+  if (!hostId) {
+    return { ok: false, error: new Error('Kein Nutzer angemeldet.') };
+  }
+
+  const matchResult = await getMatchById(matchId);
+
+  if (!matchResult.ok) {
+    return matchResult;
+  }
+
+  const match = matchResult.match;
+
+  if (!match || match.host_id !== hostId) {
+    return { ok: false, error: new Error('Nur der Host kann die Lobby anpassen.') };
+  }
+
+  if (match.status !== MATCH_STATUS.WAITING) {
+    return { ok: false, error: new Error('Die Lobby laeuft bereits.') };
+  }
+
+  const normalizedDifficulty = normalizeDifficulty(difficulty);
+  const limit = Number.isFinite(questionLimit)
+    ? Math.max(1, Math.min(questionLimit, 50))
+    : Math.max(match.question_limit ?? 5, 1);
+
+  try {
+    const questions = await fetchQuestions(normalizedDifficulty, limit);
+
+    if (!questions.length) {
+      return {
+        ok: false,
+        error: new Error('Keine Fragen fuer die gewaehlte Einstellung verfuegbar.'),
+      };
+    }
+
+    const sanitizedQuestions = sanitizeQuestionsForMatch(questions);
+
+    if (!sanitizedQuestions.length) {
+      return {
+        ok: false,
+        error: new Error('Fragenliste konnte nicht vorbereitet werden.'),
+      };
+    }
+
+    const questionIds = sanitizedQuestions
+      .map((item) => item.id)
+      .filter((value) => typeof value === 'string');
+
+    const nextState = normalizeMatchState(match.state);
+    nextState.host = {
+      ...nextState.host,
+      index: 0,
+      score: 0,
+      finished: false,
+      answers: [],
+    };
+    nextState.guest = {
+      userId: null,
+      username: null,
+      index: 0,
+      score: 0,
+      finished: false,
+      answers: [],
+    };
+    nextState.history = [];
+
+    const payload = {
+      difficulty: normalizedDifficulty,
+      question_limit: sanitizedQuestions.length,
+      question_ids: questionIds,
+      questions: sanitizedQuestions,
+      state: nextState,
+      status: MATCH_STATUS.WAITING,
+      started_at: null,
+      updated_at: nowIso(),
+    };
+
+    let updateQuery = supabase
+      .from('matches')
+      .update(payload)
+      .eq('id', match.id);
+
+    if (match.updated_at) {
+      updateQuery = updateQuery.eq('updated_at', match.updated_at);
+    }
+
+    const { data, error } = await updateQuery.select('*').single();
+
+    if (error) {
+      return { ok: false, error };
+    }
+
+    invalidateOpenMatchesCache();
+
+    return { ok: true, match: normalizeMatchRow(data) };
+  } catch (err) {
+    console.error('Unerwarteter Fehler beim Aktualisieren des Matches:', err);
+    return { ok: false, error: err };
+  }
+}
+
 export async function fetchOpenMatches({
   difficulty = null,
   force = false,
 } = {}) {
+  await ensureLobbyCleanup({ force });
+
   const normalizedDifficulty = difficulty
     ? normalizeDifficulty(difficulty)
     : null;

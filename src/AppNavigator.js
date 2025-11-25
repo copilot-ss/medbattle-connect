@@ -13,6 +13,7 @@ import MultiplayerLobbyScreen from './screens/MultiplayerLobbyScreen';
 import QuizScreen from './screens/QuizScreen';
 import ResultScreen from './screens/ResultScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import styles from './styles/AppNavigator.styles';
 
 const Stack = createNativeStackNavigator();
 
@@ -96,14 +97,7 @@ export default function AppNavigator() {
 
   if (initializing) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: '#fff',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#2563EB" />
       </View>
     );
