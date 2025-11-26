@@ -129,27 +129,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     () => DIFFICULTY_LABELS[difficulty] ?? DIFFICULTY_LABELS.mittel,
     [difficulty]
   );
-  const selectedDifficultyLabel = useMemo(
-    () =>
-      DIFFICULTY_LABELS[selectedDifficulty] ?? DIFFICULTY_LABELS.mittel,
-    [selectedDifficulty]
-  );
-  const helperText = useMemo(() => {
-    if (isCreateOnly) {
-      return `Lobby Einstellungen: ${selectedDifficultyLabel} - ${questionLimit} Fragen`;
-    }
-    if (isJoinOnly) {
-      return `Beitritt: ${difficultyLabel} - 5 Fragen`;
-    }
-    return `Schwierigkeit: ${difficultyLabel} - 5 Fragen`;
-  }, [
-    difficultyLabel,
-    isCreateOnly,
-    isJoinOnly,
-    questionLimit,
-    selectedDifficultyLabel,
-  ]);
-
   const refreshMatches = useCallback(
     async ({ force = false } = {}) => {
       if (isCreateOnly) {
@@ -594,7 +573,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         <View>
           <Text style={styles.subtitle}>Multiplayer Arena</Text>
           <Text style={styles.title}>Online Battle</Text>
-          <Text style={styles.helper}>{helperText}</Text>
         </View>
         <Pressable
           style={[
@@ -627,9 +605,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       {showConfigCard ? (
         <View style={styles.configCard}>
           <Text style={styles.configTitle}>Lobby konfigurieren</Text>
-          <Text style={styles.configSubtitle}>
-            Waehle Schwierigkeit und Fragenanzahl aus, bevor du startest.
-          </Text>
 
           <View style={styles.configSection}>
             <Text style={styles.configLabel}>Schwierigkeit</Text>
@@ -702,19 +677,88 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
               {creating ? 'Erstelle Lobby ...' : 'Lobby starten'}
             </Text>
           </Pressable>
-
-          <Text style={styles.configHint}>
-            Nach dem Start erhaeltst du den Match-Code zum Teilen.
-          </Text>
         </View>
+      ) : null}
+
+      {!isJoinOnly && !isCreateOnly ? (
+        <View style={styles.actionsRow}>
+          <Pressable
+            style={[
+              styles.primaryAction,
+              creating ? styles.actionDisabled : null,
+            ]}
+            onPress={handleCreateMatch}
+            disabled={creating || !userId}
+          >
+            <Text style={styles.primaryActionText}>
+              {creating ? 'Erstelle Lobby ...' : 'Lobby hosten'}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {!isCreateOnly ? (
+        <>
+          <View style={styles.joinSection}>
+            <Text style={styles.joinLabel}>Match-Code eingeben</Text>
+            <View style={styles.joinRow}>
+              <TextInput
+                value={joinCode}
+                onChangeText={(value) =>
+                  setJoinCode(value.toUpperCase().slice(0, 6))
+                }
+                style={styles.joinInput}
+                placeholder="ABC12"
+                placeholderTextColor="#64748B"
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={6}
+                autoFocus={isJoinOnly}
+              />
+              <Pressable
+                onPress={handleJoinByCode}
+                style={[
+                  styles.joinButton,
+                  joining ? styles.actionDisabled : null,
+                ]}
+                disabled={joining || !joinCode.trim()}
+              >
+                <Text style={styles.joinButtonText}>
+                  {joining ? 'Beitreten...' : 'Go'}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+
+          <View style={styles.listHeader}>
+            <Text style={styles.listTitle}>Offene Lobbys</Text>
+            <Pressable onPress={() => refreshMatches({ force: true })}>
+              <Text style={styles.listRefresh}>Aktualisieren</Text>
+            </Pressable>
+          </View>
+
+          {matchesLoading ? (
+            <View style={styles.loadingList}>
+              <ActivityIndicator size="small" color="#60A5FA" />
+              <Text style={styles.loadingListText}>Lade Lobbys ...</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={openMatches}
+              keyExtractor={(item) => item.id}
+              renderItem={renderMatch}
+              contentContainerStyle={
+                openMatches.length ? styles.listContent : styles.listEmpty
+              }
+              ListEmptyComponent={<EmptyState />}
+            />
+          )}
+        </>
       ) : null}
 
       {currentJoinCode ? (
         <View style={styles.lobbyCard}>
           <Text style={styles.lobbyTitle}>Warte auf Gegner</Text>
-          <Text style={styles.lobbyDescription}>
-            Teile den Code, damit dein:e Gegner:in beitritt.
-          </Text>
           <View style={styles.codeBadge}>
             <Text style={styles.codeBadgeText}>{currentJoinCode}</Text>
           </View>
@@ -749,9 +793,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
           {isHostWaiting ? (
             <View style={styles.lobbyConfig}>
               <Text style={styles.lobbyConfigTitle}>Lobby Einstellungen</Text>
-              <Text style={styles.lobbyConfigSubtitle}>
-                Passe die Fragenanzahl und Schwierigkeit an, bevor du startest.
-              </Text>
 
               <View style={styles.configSection}>
                 <Text style={styles.configLabel}>Schwierigkeit</Text>
@@ -834,82 +875,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
             <Text style={styles.refreshWaitingText}>Status aktualisieren</Text>
           </Pressable>
         </View>
-      ) : null}
-
-      {!isJoinOnly && !isCreateOnly ? (
-        <View style={styles.actionsRow}>
-          <Pressable
-            style={[
-              styles.primaryAction,
-              creating ? styles.actionDisabled : null,
-            ]}
-            onPress={handleCreateMatch}
-            disabled={creating || !userId}
-          >
-            <Text style={styles.primaryActionText}>
-              {creating ? 'Erstelle Lobby ...' : 'Lobby hosten'}
-            </Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      {!isCreateOnly ? (
-        <>
-          <View style={styles.joinSection}>
-            <Text style={styles.joinLabel}>Match-Code eingeben</Text>
-            <View style={styles.joinRow}>
-              <TextInput
-                value={joinCode}
-                onChangeText={(value) =>
-                  setJoinCode(value.toUpperCase().slice(0, 6))
-                }
-                style={styles.joinInput}
-                placeholder="ABC12"
-                placeholderTextColor="#64748B"
-                autoCapitalize="characters"
-                autoCorrect={false}
-                maxLength={6}
-                autoFocus={isJoinOnly}
-              />
-              <Pressable
-                onPress={handleJoinByCode}
-                style={[
-                  styles.joinButton,
-                  joining ? styles.actionDisabled : null,
-                ]}
-                disabled={joining || !joinCode.trim()}
-              >
-                <Text style={styles.joinButtonText}>
-                  {joining ? 'Beitreten...' : 'Go'}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>Offene Lobbys</Text>
-            <Pressable onPress={() => refreshMatches({ force: true })}>
-              <Text style={styles.listRefresh}>Aktualisieren</Text>
-            </Pressable>
-          </View>
-
-          {matchesLoading ? (
-            <View style={styles.loadingList}>
-              <ActivityIndicator size="small" color="#60A5FA" />
-              <Text style={styles.loadingListText}>Lade Lobbys ...</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={openMatches}
-              keyExtractor={(item) => item.id}
-              renderItem={renderMatch}
-              contentContainerStyle={
-                openMatches.length ? styles.listContent : styles.listEmpty
-              }
-              ListEmptyComponent={<EmptyState />}
-            />
-          )}
-        </>
       ) : null}
     </View>
   );

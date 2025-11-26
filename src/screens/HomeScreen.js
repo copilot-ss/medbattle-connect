@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, useCallback } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import LottieView from 'lottie-react-native';
 
 import styles, {
   getModeCardContainerStyle,
@@ -8,23 +9,29 @@ import styles, {
 } from './styles/HomeScreen.styles';
 
 const DEFAULT_DIFFICULTY = 'mittel';
+const doctorAnimation = require('../../assets/animations/doctor/doctor.json');
 const MENU_GROUPS = [
   {
     title: 'Einstellungen',
-    items: [{ label: 'Audio', action: 'settingsAudio' }],
+    icon: { type: 'ion', name: 'settings-sharp' },
+    items: [{ label: 'Audio', icon: 'AU', action: 'settingsAudio' }],
   },
   {
     title: 'Profil',
+    icon: { type: 'ion', name: 'person-circle' },
     items: [
-      { label: 'Passwort vergessen', action: 'profilePassword' },
-      { label: 'Abmelden', action: 'profileLogout' },
+      { label: 'Passwort vergessen', icon: 'PW', action: 'profilePassword' },
+      { label: 'Abmelden', icon: 'LO', action: 'profileLogout' },
     ],
   },
   {
     title: 'Freunde',
-    items: [{ label: 'Freunde hinzufügen', action: 'friendsAdd' }],
+    icon: { type: 'ion', name: 'people' },
+    items: [{ label: 'Freunde hinzufügen', icon: 'FR', action: 'friendsAdd' }],
   },
 ];
+
+
 
 function parseHex(hex) {
   const normalized = hex.replace('#', '');
@@ -143,6 +150,25 @@ export default function HomeScreen({ navigation }) {
     [closeMenu, navigation]
   );
 
+  function renderMenuGroupIcon(icon) {
+    if (icon?.type === 'ion') {
+      return (
+        <Ionicons
+          name={icon.name}
+          size={22}
+          color="#F8FAFC"
+          style={styles.menuGroupIonIcon}
+        />
+      );
+    }
+
+    if (icon?.type === 'emoji') {
+      return <Text style={styles.menuGroupEmoji}>{icon.value}</Text>;
+    }
+
+    return null;
+  }
+
   return (
     <View style={styles.container}>
       {menuOpen ? (
@@ -158,14 +184,20 @@ export default function HomeScreen({ navigation }) {
                     index + 1 < MENU_GROUPS.length ? styles.menuGroupSpacing : null,
                   ]}
                 >
-                  <Text style={styles.menuGroupTitle}>{group.title}</Text>
+                  <View style={styles.menuGroupHeader}>
+                    {renderMenuGroupIcon(group.icon)}
+                    <Text style={styles.menuGroupTitle}>{group.title}</Text>
+                  </View>
                   {group.items.map((item) => (
                     <Pressable
                       key={item.action}
                       onPress={() => handleMenuSelect(item.action)}
                       style={styles.menuItem}
                     >
-                      <Text style={styles.menuItemLabel}>{item.label}</Text>
+                      <View style={styles.menuItemRow}>
+                        <Text style={styles.menuItemIcon}>{item.icon}</Text>
+                        <Text style={styles.menuItemLabel}>{item.label}</Text>
+                      </View>
                     </Pressable>
                   ))}
                 </View>
@@ -186,9 +218,18 @@ export default function HomeScreen({ navigation }) {
           </Pressable>
 
           <Pressable onPress={toggleMenu} style={styles.menuButton}>
-            <Ionicons name="menu" size={24} color="#E2E8F0" style={styles.menuIcon} />
+            <Ionicons name="menu" size={28} color="#E2E8F0" style={styles.menuIcon} />
           </Pressable>
         </View>
+      </View>
+
+      <View style={styles.animationWrapper} pointerEvents="none">
+        <LottieView
+          source={doctorAnimation}
+          style={styles.animationView}
+          autoPlay
+          loop
+        />
       </View>
 
       <View style={styles.modeSection}>
@@ -201,3 +242,4 @@ export default function HomeScreen({ navigation }) {
     </View>
   );
 }
+

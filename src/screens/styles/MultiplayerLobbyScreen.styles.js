@@ -27,10 +27,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     fontWeight: '700',
   },
-  helper: {
-    color: '#94A3B8',
-    marginTop: 6,
-  },
   closeButton: {
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -90,12 +86,6 @@ const styles = StyleSheet.create({
     color: '#F8FAFC',
     fontSize: 18,
     fontWeight: '700',
-  },
-  configSubtitle: {
-    color: '#94A3B8',
-    marginTop: 6,
-    marginBottom: 16,
-    lineHeight: 20,
   },
   configSection: {
     marginBottom: 18,
@@ -177,11 +167,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
   },
-  configHint: {
-    color: '#94A3B8',
-    marginTop: 12,
-    fontSize: 13,
-  },
   lobbyCard: {
     backgroundColor: '#0F172A',
     borderRadius: 20,
@@ -195,11 +180,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
-  lobbyDescription: {
-    color: '#CBD5F5',
-    marginTop: 6,
-    marginBottom: 16,
-  },
   lobbyConfig: {
     marginTop: 16,
     paddingTop: 16,
@@ -210,12 +190,6 @@ const styles = StyleSheet.create({
     color: '#F8FAFC',
     fontSize: 16,
     fontWeight: '700',
-  },
-  lobbyConfigSubtitle: {
-    color: '#94A3B8',
-    marginTop: 6,
-    marginBottom: 14,
-    lineHeight: 20,
   },
   lobbyConfigAction: {
     alignSelf: 'flex-start',
