@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState, useCallback } from 'react';
+import { useMemo, useRef } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
+import { CAMPAIGN_QUESTION_LIMIT } from '../services/quizService';
 
 import styles, {
   getModeCardContainerStyle,
@@ -10,26 +11,6 @@ import styles, {
 
 const DEFAULT_DIFFICULTY = 'mittel';
 const doctorAnimation = require('../../assets/animations/doctor/doctor.json');
-const MENU_GROUPS = [
-  {
-    title: 'Einstellungen',
-    icon: { type: 'ion', name: 'settings-sharp' },
-    items: [{ label: 'Audio', icon: 'AU', action: 'settingsAudio' }],
-  },
-  {
-    title: 'Profil',
-    icon: { type: 'ion', name: 'person-circle' },
-    items: [
-      { label: 'Passwort vergessen', icon: 'PW', action: 'profilePassword' },
-      { label: 'Abmelden', icon: 'LO', action: 'profileLogout' },
-    ],
-  },
-  {
-    title: 'Freunde',
-    icon: { type: 'ion', name: 'people' },
-    items: [{ label: 'Freunde hinzufügen', icon: 'FR', action: 'friendsAdd' }],
-  },
-];
 
 
 
@@ -100,8 +81,6 @@ function ModeCard({ title, accent, onPress }) {
 }
 
 export default function HomeScreen({ navigation }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-
   function handleCreateLobby() {
     navigation.navigate('MultiplayerLobby', {
       difficulty: DEFAULT_DIFFICULTY,
@@ -119,93 +98,13 @@ export default function HomeScreen({ navigation }) {
   function startCampaign() {
     navigation.navigate('Quiz', {
       difficulty: DEFAULT_DIFFICULTY,
+      mode: 'campaign',
+      questionLimit: CAMPAIGN_QUESTION_LIMIT,
     });
-  }
-
-  const toggleMenu = useCallback(() => {
-    setMenuOpen((prev) => !prev);
-  }, []);
-
-  const closeMenu = useCallback(() => {
-    setMenuOpen(false);
-  }, []);
-
-  const handleMenuSelect = useCallback(
-    (action) => {
-      closeMenu();
-
-      const focusMap = {
-        settingsAudio: 'audio',
-        profilePassword: 'password',
-        profileLogout: 'logout',
-        friendsAdd: 'friendsAdd',
-      };
-
-      const focus = focusMap[action];
-
-      if (focus) {
-        navigation.navigate('Settings', { focus });
-      }
-    },
-    [closeMenu, navigation]
-  );
-
-  function renderMenuGroupIcon(icon) {
-    if (icon?.type === 'ion') {
-      return (
-        <Ionicons
-          name={icon.name}
-          size={22}
-          color="#F8FAFC"
-          style={styles.menuGroupIonIcon}
-        />
-      );
-    }
-
-    if (icon?.type === 'emoji') {
-      return <Text style={styles.menuGroupEmoji}>{icon.value}</Text>;
-    }
-
-    return null;
   }
 
   return (
     <View style={styles.container}>
-      {menuOpen ? (
-        <>
-          <Pressable style={styles.menuOverlay} onPress={closeMenu} />
-          <View pointerEvents="box-none" style={styles.menuContainer}>
-            <View style={styles.menuCard}>
-              {MENU_GROUPS.map((group, index) => (
-                <View
-                  key={group.title}
-                  style={[
-                    styles.menuGroup,
-                    index + 1 < MENU_GROUPS.length ? styles.menuGroupSpacing : null,
-                  ]}
-                >
-                  <View style={styles.menuGroupHeader}>
-                    {renderMenuGroupIcon(group.icon)}
-                    <Text style={styles.menuGroupTitle}>{group.title}</Text>
-                  </View>
-                  {group.items.map((item) => (
-                    <Pressable
-                      key={item.action}
-                      onPress={() => handleMenuSelect(item.action)}
-                      style={styles.menuItem}
-                    >
-                      <View style={styles.menuItemRow}>
-                        <Text style={styles.menuItemIcon}>{item.icon}</Text>
-                        <Text style={styles.menuItemLabel}>{item.label}</Text>
-                      </View>
-                    </Pressable>
-                  ))}
-                </View>
-              ))}
-            </View>
-          </View>
-        </>
-      ) : null}
       <View style={styles.header}>
         <Text style={styles.title}>MedBattle</Text>
 
@@ -217,8 +116,11 @@ export default function HomeScreen({ navigation }) {
             <Ionicons name="trophy" size={22} color="#FACC15" style={styles.leaderboardIcon} />
           </Pressable>
 
-          <Pressable onPress={toggleMenu} style={styles.menuButton}>
-            <Ionicons name="menu" size={28} color="#E2E8F0" style={styles.menuIcon} />
+          <Pressable
+            onPress={() => navigation.navigate('Settings', { focus: 'audio' })}
+            style={styles.menuButton}
+          >
+            <Ionicons name="settings" size={28} color="#E2E8F0" style={styles.menuIcon} />
           </Pressable>
         </View>
       </View>
@@ -235,7 +137,7 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.modeSection}>
         <ModeCard title="Create Lobby" accent="#38E4AE" onPress={handleCreateLobby} />
         <ModeCard title="Join Lobby" accent="#60A5FA" onPress={handleJoinLobby} />
-        <ModeCard title="Campaign" accent="#FDE68A" onPress={startCampaign} />
+        <ModeCard title="Campaign (Offline)" accent="#FDE68A" onPress={startCampaign} />
       </View>
 
       <View style={styles.flexSpacer} />

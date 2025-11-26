@@ -63,6 +63,23 @@ const styles = StyleSheet.create({
     marginTop: 24,
     rowGap: 10,
   },
+  guestButton: {
+    marginTop: 12,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+  },
+  guestButtonDisabled: {
+    opacity: 0.6,
+  },
+  guestButtonText: {
+    color: '#111827',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   socialButton: {
     paddingVertical: 12,
     borderRadius: 10,

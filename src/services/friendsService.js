@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 const STORAGE_PREFIX = 'medbattle_friends';
 
 function normalizeCode(value = '') {
-  return value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  return value.replace(/[^a-zA-Z0-9_]/g, '').toUpperCase();
 }
 
 function getStorageKey(userId) {
@@ -18,9 +18,9 @@ function sanitizeFriends(entries = []) {
 
   for (const entry of entries) {
     const rawValue =
-      entry.friend_code ?? entry.friend_email ?? entry.code ?? entry.email ?? '';
+      entry.friend_code ?? entry.friend_username ?? entry.code ?? entry.username ?? '';
 
-    if (!rawValue || rawValue.includes('@')) {
+    if (!rawValue) {
       continue;
     }
 
@@ -78,7 +78,7 @@ export async function fetchFriends(userId) {
   try {
     const { data, error } = await supabase
       .from('friends')
-      .select('id, friend_email, created_at')
+      .select('id, friend_username, created_at')
       .eq('owner_id', userId)
       .order('created_at', { ascending: true });
 
@@ -112,10 +112,10 @@ export async function addFriend(userId, code) {
       .insert([
         {
           owner_id: userId,
-          friend_email: normalizedCode,
+          friend_username: normalizedCode,
         },
       ])
-      .select('id, friend_email, created_at')
+      .select('id, friend_username, created_at')
       .single();
 
     if (error) {
@@ -174,7 +174,7 @@ export async function removeFriend(userId, friend) {
       await supabase
         .from('friends')
         .delete()
-        .match({ owner_id: userId, friend_email: normalizedCode });
+        .match({ owner_id: userId, friend_username: normalizedCode });
     }
   } catch (err) {
     console.warn('Konnte Freund nicht über Supabase entfernen:', err?.message);

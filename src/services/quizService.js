@@ -1,4 +1,5 @@
-﻿import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabaseClient';
+import { getCampaignQuestions, CAMPAIGN_QUESTION_LIMIT } from '../data/campaignQuestions';
 import { ensureUserRecord } from './userService';
 
 const LEADERBOARD_CACHE_TTL = 30 * 1000;
@@ -32,6 +33,20 @@ function shuffleList(list) {
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
+}
+
+export { CAMPAIGN_QUESTION_LIMIT };
+
+export function fetchCampaignQuestions(limit = CAMPAIGN_QUESTION_LIMIT) {
+  const questions = getCampaignQuestions(limit);
+  if (!Array.isArray(questions) || !questions.length) {
+    return [];
+  }
+
+  return questions.map((question) => ({
+    ...question,
+    options: shuffleList(question.options),
+  }));
 }
 
 export async function fetchQuestions(difficulty = 'mittel', limit = 5) {
@@ -251,6 +266,3 @@ export async function submitScore(userId, points, difficulty = 'mittel') {
     return { ok: false, error: err };
   }
 }
-
-
-

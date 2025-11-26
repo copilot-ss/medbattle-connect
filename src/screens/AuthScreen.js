@@ -150,14 +150,31 @@ function parseSupabaseParams(url) {
   return params;
 }
 
-export default function AuthScreen() {
-  const [mode, setMode] = useState('signIn');
-  const [email, setEmail] = useState('');
+export default function AuthScreen({ route, navigation, onGuest }) {
+  const initialMode = route?.params?.mode ?? 'signIn';
+  const initialEmail = route?.params?.emailPreset ?? '';
+  const [mode, setMode] = useState(initialMode);
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
   const isSignUp = mode === 'signUp';
+  const handleGuest = async () => {
+    setMessage(null);
+    if (typeof onGuest === 'function') {
+      onGuest();
+    }
+  };
+
+  useEffect(() => {
+    if (route?.params?.mode) {
+      setMode(route.params.mode);
+    }
+    if (route?.params?.emailPreset) {
+      setEmail(route.params.emailPreset);
+    }
+  }, [route?.params?.mode, route?.params?.emailPreset]);
 
   async function syncAuthenticatedUserProfile() {
     try {
@@ -290,7 +307,16 @@ export default function AuthScreen() {
         await syncAuthenticatedUserProfile();
       }
     } catch (err) {
-      setMessage(err.message ?? 'Unbekannter Fehler.');
+      const alreadyRegistered =
+        err?.message?.toLowerCase?.().includes('already') ||
+        err?.status === 422;
+
+      if (alreadyRegistered && isSignUp) {
+        setMode('signIn');
+        setMessage('Diese E-Mail existiert bereits. Bitte melde dich an.');
+      } else {
+        setMessage(err.message ?? 'Unbekannter Fehler.');
+      }
     } finally {
       setLoading(false);
     }
@@ -350,6 +376,14 @@ export default function AuthScreen() {
             ? 'Schon einen Account? Hier einloggen.'
             : 'Noch keinen Account? Jetzt erstellen.'}
         </Text>
+      </Pressable>
+
+      <Pressable
+        onPress={handleGuest}
+        disabled={loading}
+        style={[styles.guestButton, loading ? styles.guestButtonDisabled : null]}
+      >
+        <Text style={styles.guestButtonText}>Als Gast fortfahren</Text>
       </Pressable>
 
       <View style={styles.socialGroup}>

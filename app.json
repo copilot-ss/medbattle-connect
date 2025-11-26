@@ -4,7 +4,14 @@
     "slug": "medbattle",
     "scheme": "medbattle",
     "owner": "sjigalin",
-    "ios": { "bundleIdentifier": "com.sjigalin.medbattle" },
-    "android": { "package": "com.sjigalin.medbattle" }
+    "ios": {
+      "bundleIdentifier": "com.sjigalin.medbattle"
+    },
+    "android": {
+      "package": "com.sjigalin.medbattle"
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

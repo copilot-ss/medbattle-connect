@@ -260,10 +260,16 @@ const styles = StyleSheet.create({
   modalButtonExit: {
     backgroundColor: 'rgba(239, 68, 68, 0.25)',
     borderColor: 'rgba(239, 68, 68, 0.6)',
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalButtonExitText: {
     color: '#FCA5A5',
-    fontWeight: '700',
+    fontWeight: '800',
+    fontSize: 16,
   },
   loadingContainer: {
     flex: 1,

@@ -103,6 +103,7 @@ export default function ResultScreen({ route, navigation }) {
     opponentName = null,
     matchJoinCode = null,
     playerRole = null,
+    mode = 'standard',
   } = route.params ?? {};
 
   const totalQuestions = total || questionLimit || 0;
@@ -166,7 +167,6 @@ export default function ResultScreen({ route, navigation }) {
           <View style={styles.statsRow}>
             <StatPill label="Score" value={`${score}/${totalQuestions}`} />
             <StatPill label="Trefferquote" value={`${accuracyValue}%`} />
-            <StatPill label="Level" value={difficulty} />
           </View>
 
           <View style={styles.progressBar}>
@@ -200,7 +200,13 @@ export default function ResultScreen({ route, navigation }) {
         ) : null}
 
         <Pressable
-          onPress={() => navigation.replace('Quiz', { difficulty: difficultyKey })}
+        onPress={() =>
+          navigation.replace('Quiz', {
+            difficulty: difficultyKey === 'campaign' ? 'mittel' : difficultyKey,
+            mode,
+            questionLimit,
+          })
+        }
           style={getPrimaryButtonStyle(badge.color)}
         >
           <Text style={styles.primaryButtonText}>Naechste Challenge</Text>
