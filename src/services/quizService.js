@@ -1,11 +1,23 @@
 import { supabase } from '../lib/supabaseClient';
-import { getCampaignQuestions, CAMPAIGN_QUESTION_LIMIT } from '../data/campaignQuestions';
+import {
+  getCampaignQuestions,
+  getCampaignQuestionsForStage,
+  getCampaignStageByKey,
+  CAMPAIGN_QUESTION_LIMIT,
+  CAMPAIGN_STAGES,
+} from '../data/campaignQuestions';
 import { ensureUserRecord } from './userService';
 
 const LEADERBOARD_CACHE_TTL = 30 * 1000;
 const leaderboardCache = {
   data: null,
   fetchedAt: 0,
+};
+const BASE_MATCH_POINTS = 12;
+const DIFFICULTY_MULTIPLIERS = {
+  leicht: 0.8,
+  mittel: 1,
+  schwer: 1.25,
 };
 
 function parseOptions(rawOptions) {
@@ -35,10 +47,22 @@ function shuffleList(list) {
   return copy;
 }
 
-export { CAMPAIGN_QUESTION_LIMIT };
+export { CAMPAIGN_QUESTION_LIMIT, CAMPAIGN_STAGES, getCampaignStageByKey };
 
 export function fetchCampaignQuestions(limit = CAMPAIGN_QUESTION_LIMIT) {
   const questions = getCampaignQuestions(limit);
+  if (!Array.isArray(questions) || !questions.length) {
+    return [];
+  }
+
+  return questions.map((question) => ({
+    ...question,
+    options: shuffleList(question.options),
+  }));
+}
+
+export function fetchCampaignStageQuestions(stageKey, limit) {
+  const questions = getCampaignQuestionsForStage(stageKey, limit);
   if (!Array.isArray(questions) || !questions.length) {
     return [];
   }
@@ -103,6 +127,19 @@ export async function fetchQuestions(difficulty = 'mittel', limit = 5) {
     console.error('Unerwarteter Fehler beim Laden der Fragen:', err);
     return [];
   }
+}
+
+export function calculateMatchPoints({ correct = 0, total = 0, difficulty = 'mittel' } = {}) {
+  const safeTotal = Math.max(1, Number.isFinite(total) ? total : 0);
+  const normalizedDifficulty =
+    typeof difficulty === 'string' && difficulty.trim()
+      ? difficulty.trim().toLowerCase()
+      : 'mittel';
+  const multiplier = DIFFICULTY_MULTIPLIERS[normalizedDifficulty] ?? 1;
+  const accuracy = Math.max(0, Math.min(correct / safeTotal, 1));
+  const rawPoints = BASE_MATCH_POINTS * multiplier * accuracy;
+
+  return Math.max(0, Math.round(rawPoints));
 }
 
 export async function fetchLeaderboard(limit = 20, { force = false } = {}) {

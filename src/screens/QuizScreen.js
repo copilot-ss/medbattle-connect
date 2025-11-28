@@ -73,6 +73,7 @@ export default function QuizScreen({ navigation, route }) {
         difficultyLabel={difficultyLabel}
         totalQuestions={totalQuestions}
         questionLimit={questionLimit}
+        activeIndex={activeIndex}
         onExit={handleExitRequest}
       />
 

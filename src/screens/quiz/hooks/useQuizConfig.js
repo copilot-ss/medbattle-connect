@@ -14,6 +14,14 @@ export default function useQuizConfig(route) {
     typeof route?.params?.joinCode === 'string' ? route.params.joinCode : null;
   const mode = typeof route?.params?.mode === 'string' ? route.params.mode : 'standard';
   const isCampaign = mode === 'campaign';
+  const campaignStage =
+    typeof route?.params?.campaignStage === 'string' ? route.params.campaignStage : null;
+  const campaignLabel =
+    typeof route?.params?.campaignLabel === 'string' ? route.params.campaignLabel : null;
+  const campaignNextStage =
+    typeof route?.params?.campaignNextStage === 'string'
+      ? route.params.campaignNextStage
+      : null;
   const isMultiplayer = Boolean(matchId);
   const difficultyParam =
     typeof route?.params?.difficulty === 'string' ? route.params.difficulty : 'mittel';
@@ -21,7 +29,7 @@ export default function useQuizConfig(route) {
     ? difficultyParam
     : 'mittel';
   const difficultyLabel = isCampaign
-    ? 'Campaign'
+    ? campaignLabel ?? 'Campaign'
     : DIFFICULTY_LABELS[normalizedDifficulty] ?? DIFFICULTY_LABELS.mittel;
   const requestedQuestionLimit =
     typeof route?.params?.questionLimit === 'number' && Number.isFinite(route.params.questionLimit)
@@ -36,5 +44,8 @@ export default function useQuizConfig(route) {
     normalizedDifficulty,
     difficultyLabel,
     requestedQuestionLimit,
+    campaignStage,
+    campaignLabel,
+    campaignNextStage,
   };
 }

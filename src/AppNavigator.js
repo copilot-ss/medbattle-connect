@@ -8,6 +8,7 @@ import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
 import LeaderboardScreen from './screens/LeaderboardScreen';
 import MultiplayerLobbyScreen from './screens/MultiplayerLobbyScreen';
+import CampaignPathScreen from './screens/CampaignPathScreen';
 import QuizScreen from './screens/QuizScreen';
 import ResultScreen from './screens/ResultScreen';
 import SettingsScreen from './screens/SettingsScreen';
@@ -56,6 +57,7 @@ export default function AppNavigator() {
                 <Stack.Screen name="UsernameSetup" component={UsernameSetupScreen} />
               ) : null}
               <Stack.Screen name="Home" component={HomeScreen} />
+              <Stack.Screen name="CampaignPath" component={CampaignPathScreen} />
               <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
               <Stack.Screen name="MultiplayerLobby" component={MultiplayerLobbyScreen} />
               <Stack.Screen name="Quiz" component={QuizScreen} />

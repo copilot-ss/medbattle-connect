@@ -5,7 +5,11 @@ import { usePreferences } from '../../context/PreferencesContext';
 import useCountdownTimer from '../../hooks/useCountdownTimer';
 import useSupabaseUserId from '../../hooks/useSupabaseUserId';
 import useMultiplayerMatch from '../../hooks/useMultiplayerMatch';
-import { CAMPAIGN_QUESTION_LIMIT, submitScore } from '../../services/quizService';
+import {
+  CAMPAIGN_QUESTION_LIMIT,
+  calculateMatchPoints,
+  submitScore,
+} from '../../services/quizService';
 import useQuizConfig, { TIMER_DURATION } from './hooks/useQuizConfig';
 import useSoloQuestionLoader from './hooks/useSoloQuestionLoader';
 import useQuizInteractionHandlers from './hooks/useQuizInteractionHandlers';
@@ -27,6 +31,9 @@ export default function useQuizController({ navigation, route }) {
     normalizedDifficulty,
     difficultyLabel,
     requestedQuestionLimit,
+    campaignStage,
+    campaignLabel,
+    campaignNextStage,
   } = useQuizConfig(route);
 
   const {
@@ -68,6 +75,7 @@ export default function useQuizController({ navigation, route }) {
     isCampaign,
     normalizedDifficulty,
     questionLimit,
+    campaignStage,
   });
 
   const activeQuestions = isMultiplayer
@@ -133,6 +141,11 @@ export default function useQuizController({ navigation, route }) {
       const resolvedScore = Number.isFinite(finalScoreValue)
         ? finalScoreValue
         : activeScore;
+      const earnedPoints = calculateMatchPoints({
+        correct: resolvedScore,
+        total: effectiveTotal,
+        difficulty: normalizedDifficulty,
+      });
 
       const shouldSubmitScore =
         submit && !isCampaign && userId && (!isMultiplayer || !wasSurrender);
@@ -141,7 +154,7 @@ export default function useQuizController({ navigation, route }) {
         try {
           const result = await submitScore(
             userId,
-            resolvedScore,
+            earnedPoints,
             normalizedDifficulty
           );
           if (!result?.ok) {
@@ -177,8 +190,9 @@ export default function useQuizController({ navigation, route }) {
       navigation.navigate('Result', {
         score: resolvedScore,
         total: effectiveTotal,
+        points: earnedPoints,
         userId,
-        difficulty: difficultyLabel,
+        difficulty: campaignLabel ?? difficultyLabel,
         difficultyKey: isCampaign ? 'campaign' : normalizedDifficulty,
         questionLimit,
         mode: isCampaign ? 'campaign' : 'standard',
@@ -189,6 +203,8 @@ export default function useQuizController({ navigation, route }) {
         opponentName: matchOpponentState?.username ?? null,
         matchJoinCode: matchJoinCode ?? initialJoinCode ?? null,
         playerRole: matchRole,
+        campaignStage,
+        campaignNextStage,
       });
     },
     [

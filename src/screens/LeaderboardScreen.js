@@ -137,10 +137,12 @@ export default function LeaderboardScreen({ navigation }) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>Zurueck</Text>
-        </Pressable>
-        <Text style={styles.headerTitle}>Rangliste</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.headerTitle}>Rangliste</Text>
+          <Pressable onPress={() => navigation.goBack()} style={styles.closeButton}>
+            <Text style={styles.closeButtonText}>X</Text>
+          </Pressable>
+        </View>
         <Text style={styles.headerSubtitle}>
           Die besten Ergebnisse der Community
         </Text>

@@ -1,10 +1,10 @@
-﻿import { useMemo } from 'react';
+import { useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
+import LottieView from 'lottie-react-native';
 import styles, {
   getBadgePillStyle,
   getLargeGlowStyle,
   getPrimaryButtonStyle,
-  getResultProgressFillStyle,
   getSparkleContainerStyle,
   getSparkleHorizontalStyle,
   getSparkleVerticalStyle,
@@ -49,10 +49,7 @@ const BADGES = [
 
 function findBadge(percentage) {
   const normalized = Math.max(0, Math.min(percentage, 100));
-  return (
-    BADGES.find((badge) => normalized >= badge.min && normalized <= badge.max) ??
-    BADGES[0]
-  );
+  return BADGES.find((badge) => normalized >= badge.min && normalized <= badge.max) ?? BADGES[0];
 }
 
 function Sparkle({ size, top, left, opacity, rotate = '0deg', color }) {
@@ -60,11 +57,7 @@ function Sparkle({ size, top, left, opacity, rotate = '0deg', color }) {
   const verticalWidth = size * 0.2;
   const centerOffset = (size - horizontalHeight) / 2;
   const containerStyle = getSparkleContainerStyle({ size, top, left, opacity, rotate });
-  const horizontalStyle = getSparkleHorizontalStyle({
-    centerOffset,
-    height: horizontalHeight,
-    color,
-  });
+  const horizontalStyle = getSparkleHorizontalStyle({ centerOffset, height: horizontalHeight, color });
   const verticalStyle = getSparkleVerticalStyle({
     leftOffset: (size - verticalWidth) / 2,
     width: verticalWidth,
@@ -92,10 +85,13 @@ export default function ResultScreen({ route, navigation }) {
   const {
     score = 0,
     total = 0,
+    points = 0,
     userId = null,
     difficulty = 'Mittel',
     difficultyKey = 'mittel',
     questionLimit = total,
+    campaignStage = null,
+    campaignNextStage = null,
     isMultiplayer = false,
     matchId = null,
     matchStatus = null,
@@ -115,17 +111,11 @@ export default function ResultScreen({ route, navigation }) {
   }, [score, totalQuestions]);
 
   const badge = useMemo(() => findBadge(percentage), [percentage]);
-  const accuracyValue = Math.max(0, Math.min(percentage, 100));
   const opponentDisplayName = useMemo(
-    () =>
-      opponentName && typeof opponentName === 'string'
-        ? opponentName
-        : 'Gegner',
+    () => (opponentName && typeof opponentName === 'string' ? opponentName : 'Gegner'),
     [opponentName]
   );
-  const opponentScoreValue = Number.isFinite(opponentScore)
-    ? opponentScore
-    : null;
+  const opponentScoreValue = Number.isFinite(opponentScore) ? opponentScore : null;
   const matchStatusLabel = useMemo(() => {
     if (!isMultiplayer) {
       return null;
@@ -141,11 +131,23 @@ export default function ResultScreen({ route, navigation }) {
         return 'Match laeuft noch';
     }
   }, [isMultiplayer, matchStatus]);
+  const showDoctorAnimation = useMemo(() => score >= 8 && score <= 10, [score]);
 
   return (
     <View style={styles.container}>
       <View style={getLargeGlowStyle(badge.glow)} />
       <View style={styles.backgroundGlowSmall} />
+
+      {showDoctorAnimation ? (
+        <View style={styles.celebrationContainer}>
+          <LottieView
+            source={require('../../assets/animations/doctor_pushups.json')}
+            autoPlay
+            loop
+            style={styles.celebrationAnimation}
+          />
+        </View>
+      ) : null}
 
       <Sparkle size={36} top={120} left={36} opacity={0.35} rotate="25deg" color={badge.glow} />
       <Sparkle size={24} top={80} left={280} opacity={0.28} rotate="-10deg" color="#60A5FA" />
@@ -157,20 +159,13 @@ export default function ResultScreen({ route, navigation }) {
           <Text style={styles.badgePillText}>{badge.title}</Text>
         </View>
 
-        <Text style={styles.heading}>
-          {percentage >= 95 ? 'Legendary Win!' : 'MedBattle abgeschlossen'}
-        </Text>
-
+        <Text style={styles.heading}>{percentage >= 95 ? 'Legendary Win!' : 'MedBattle abgeschlossen'}</Text>
         <Text style={styles.subtitle}>{badge.subtitle}</Text>
 
         <View style={styles.statsSection}>
           <View style={styles.statsRow}>
             <StatPill label="Score" value={`${score}/${totalQuestions}`} />
-            <StatPill label="Trefferquote" value={`${accuracyValue}%`} />
-          </View>
-
-          <View style={styles.progressBar}>
-            <View style={getResultProgressFillStyle(accuracyValue, badge.color)} />
+            <StatPill label="Leaderboard" value={`${points} Punkte`} />
           </View>
         </View>
 
@@ -187,9 +182,7 @@ export default function ResultScreen({ route, navigation }) {
               <View style={styles.multiplayerDivider} />
               <View style={styles.multiplayerColumn}>
                 <Text style={styles.multiplayerLabel}>{opponentDisplayName}</Text>
-                <Text style={styles.multiplayerScore}>
-                  {opponentScoreValue ?? '—'}
-                </Text>
+                <Text style={styles.multiplayerScore}>{opponentScoreValue ?? '-'}</Text>
               </View>
             </View>
             <Text style={styles.multiplayerMeta}>
@@ -200,23 +193,23 @@ export default function ResultScreen({ route, navigation }) {
         ) : null}
 
         <Pressable
-        onPress={() =>
-          navigation.replace('Quiz', {
-            difficulty: difficultyKey === 'campaign' ? 'mittel' : difficultyKey,
-            mode,
-            questionLimit,
-          })
-        }
+          onPress={() => {
+            if (mode === 'campaign') {
+              navigation.navigate('CampaignPath', {
+                completedStage: campaignStage,
+                nextStage: campaignNextStage,
+              });
+              return;
+            }
+            navigation.replace('Quiz', {
+              difficulty: difficultyKey === 'campaign' ? 'mittel' : difficultyKey,
+              mode,
+              questionLimit,
+            });
+          }}
           style={getPrimaryButtonStyle(badge.color)}
         >
-          <Text style={styles.primaryButtonText}>Naechste Challenge</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => navigation.navigate('Leaderboard')}
-          style={styles.secondaryButton}
-        >
-          <Text style={styles.secondaryButtonText}>Rangliste checken</Text>
+          <Text style={styles.primaryButtonText}>{mode === 'campaign' ? 'Fertig' : 'Nächste Challenge'}</Text>
         </Pressable>
 
         <Pressable onPress={() => navigation.navigate('Home')} style={styles.tertiaryButton}>
@@ -228,4 +221,3 @@ export default function ResultScreen({ route, navigation }) {
     </View>
   );
 }
-

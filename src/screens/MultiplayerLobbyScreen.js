@@ -19,6 +19,7 @@ import {
   updateMatchSettings,
   abandonMatch,
 } from '../services/matchService';
+import { calculateMatchPoints } from '../services/quizService';
 import styles from './styles/MultiplayerLobbyScreen.styles';
 
 const DIFFICULTY_LABELS = {
@@ -26,6 +27,11 @@ const DIFFICULTY_LABELS = {
   mittel: 'Mittel',
   schwer: 'Schwer',
 };
+const DIFFICULTY_OPTIONS = [
+  { key: 'leicht', label: 'Leicht', accent: '#34D399' },
+  { key: 'mittel', label: 'Mittel', accent: '#60A5FA' },
+  { key: 'schwer', label: 'Schwer', accent: '#F472B6' },
+];
 
 const MIN_QUESTION_LIMIT = 3;
 const MAX_QUESTION_LIMIT = 15;
@@ -124,6 +130,18 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       }
     };
   }, []);
+
+  const createPointHints = useMemo(() => {
+    const total = questionLimit || MIN_QUESTION_LIMIT;
+    return DIFFICULTY_OPTIONS.reduce((acc, item) => {
+      acc[item.key] = calculateMatchPoints({
+        correct: total,
+        total,
+        difficulty: item.key,
+      });
+      return acc;
+    }, {});
+  }, [questionLimit]);
 
   const difficultyLabel = useMemo(
     () => DIFFICULTY_LABELS[difficulty] ?? DIFFICULTY_LABELS.mittel,
@@ -566,6 +584,136 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
     return unsubscribe;
   }, [cancelLobbyAsHost, currentMatch, isHostWaiting, navigation]);
+
+  const showCreateSetup = isCreateOnly && !currentMatch;
+
+  if (showCreateSetup) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.createHeader}>
+          <Text style={styles.createTitle}>Lobby erstellen</Text>
+          <Pressable
+            style={[
+              styles.closeButton,
+              closingLobby ? styles.actionDisabled : null,
+            ]}
+            onPress={handleLeaveLobby}
+            disabled={closingLobby}
+          >
+            <Text style={styles.closeButtonText}>X</Text>
+          </Pressable>
+        </View>
+
+        {matchesError ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorTitle}>Oops!</Text>
+            <Text style={styles.errorMessage}>
+              {matchesError.message ?? 'Es ist ein Fehler aufgetreten.'}
+            </Text>
+          </View>
+        ) : null}
+
+        {loadingUser ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="small" color="#60A5FA" />
+            <Text style={styles.loadingText}>Profil wird geladen ...</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.createContent}>
+          <Text style={styles.createSubtitle}>Wähle Schwierigkeit</Text>
+          <View style={styles.createDifficultyColumn}>
+            {DIFFICULTY_OPTIONS.map((item, index) => {
+              const active = item.key === selectedDifficulty;
+              return (
+                <Pressable
+                  key={item.key}
+                  onPress={() => setSelectedDifficulty(item.key)}
+                  style={[
+                    styles.createDifficultyCard,
+                    {
+                      borderColor: active
+                        ? item.accent
+                        : 'rgba(148, 163, 184, 0.35)',
+                      backgroundColor: active
+                        ? 'rgba(15, 23, 42, 0.95)'
+                        : 'rgba(15, 23, 42, 0.8)',
+                      shadowColor: item.accent,
+                      shadowOpacity: active ? 0.35 : 0,
+                      shadowRadius: active ? 18 : 0,
+                      shadowOffset: { width: 0, height: active ? 10 : 0 },
+                      elevation: active ? 8 : 0,
+                    },
+                    index < DIFFICULTY_OPTIONS.length - 1
+                      ? styles.createDifficultySpacing
+                      : null,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.createDifficultyLabel,
+                      { color: item.accent },
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                  <Text style={styles.createDifficultyPoints}>
+                    Bis zu {createPointHints[item.key]} Punkte
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <View style={styles.createQuestionBlock}>
+            <Text style={styles.createQuestionLabel}>Fragenanzahl</Text>
+            <View style={styles.createStepper}>
+              <Pressable
+                onPress={() => adjustQuestionLimit(-1)}
+                style={[
+                  styles.stepperButton,
+                  questionLimit <= MIN_QUESTION_LIMIT
+                    ? styles.stepperButtonDisabled
+                    : null,
+                ]}
+                disabled={questionLimit <= MIN_QUESTION_LIMIT}
+              >
+                <Text style={styles.stepperButtonText}>-</Text>
+              </Pressable>
+              <Text style={styles.stepperValue}>{questionLimit}</Text>
+              <Pressable
+                onPress={() => adjustQuestionLimit(1)}
+                style={[
+                  styles.stepperButton,
+                  questionLimit >= MAX_QUESTION_LIMIT
+                    ? styles.stepperButtonDisabled
+                    : null,
+                ]}
+                disabled={questionLimit >= MAX_QUESTION_LIMIT}
+              >
+                <Text style={styles.stepperButtonText}>+</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          <View style={styles.createSeparator}>
+            <Pressable
+              onPress={handleCreateMatch}
+              disabled={creating || !userId}
+              style={[
+                styles.createPlayButton,
+                creating ? styles.actionDisabled : null,
+              ]}
+            >
+              <Text style={styles.createPlayButtonText}>
+                {creating ? 'Erstelle ...' : 'Los!'}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

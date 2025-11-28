@@ -19,6 +19,21 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
+  headerProgressPill: {
+    marginTop: 6,
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: 'rgba(96, 165, 250, 0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(96, 165, 250, 0.4)',
+  },
+  headerProgressText: {
+    color: '#E0F2FE',
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
   headerTitle: {
     color: '#F8FAFC',
     fontSize: 26,

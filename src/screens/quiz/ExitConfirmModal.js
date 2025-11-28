@@ -31,7 +31,7 @@ export default function ExitConfirmModal({
             onPress={onConfirm}
             style={[styles.modalButton, styles.modalButtonExit]}
           >
-            <Text style={styles.modalButtonExitText}>X</Text>
+            <Text style={styles.modalButtonExitText}>Beenden</Text>
           </Pressable>
         </View>
       </View>

@@ -13,24 +13,29 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: 'rgba(59, 130, 246, 0.3)',
   },
-  backButton: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.35)',
-    backgroundColor: 'rgba(2, 6, 23, 0.6)',
-    marginBottom: 18,
-  },
-  backButtonText: {
-    color: '#E0E7FF',
-    fontWeight: '600',
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   headerTitle: {
     fontSize: 30,
     fontWeight: '800',
     color: '#F8FAFC',
+  },
+  closeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.35)',
+    backgroundColor: 'rgba(2, 6, 23, 0.6)',
+  },
+  closeButtonText: {
+    color: '#E0E7FF',
+    fontWeight: '800',
+    fontSize: 16,
   },
   headerSubtitle: {
     color: '#CBD5F5',

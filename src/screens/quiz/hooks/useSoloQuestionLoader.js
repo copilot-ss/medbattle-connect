@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fetchCampaignQuestions, fetchQuestions } from '../../../services/quizService';
+import {
+  fetchCampaignQuestions,
+  fetchCampaignStageQuestions,
+  fetchQuestions,
+} from '../../../services/quizService';
 import { ALLOWED_DIFFICULTIES } from './useQuizConfig';
 
 function shuffleOptions(options) {
@@ -20,6 +24,7 @@ export default function useSoloQuestionLoader({
   isCampaign,
   normalizedDifficulty,
   questionLimit,
+  campaignStage,
 }) {
   const safeDifficulty = normalizeDifficulty(normalizedDifficulty);
   const [questions, setQuestions] = useState([]);
@@ -74,7 +79,7 @@ export default function useSoloQuestionLoader({
 
       try {
         const data = isCampaign
-          ? fetchCampaignQuestions(questionLimit)
+          ? fetchCampaignStageQuestions(campaignStage, questionLimit)
           : await fetchQuestions(safeDifficulty, questionLimit);
 
         const sourceQuestions =
@@ -88,8 +93,8 @@ export default function useSoloQuestionLoader({
           if (!cancelled) {
             setError(
               isCampaign
-                ? 'No campaign questions bundled yet. Please try again later.'
-                : 'Keine Fragen verfuegbar. Bitte versuche es gleich nochmal.'
+                ? 'Keine Kampagnenfragen vorhanden. Bitte versuche es später erneut.'
+                : 'Keine Fragen verfügbar. Bitte versuche es gleich nochmal.'
             );
             setQuestions([]);
           }
@@ -139,7 +144,7 @@ export default function useSoloQuestionLoader({
     return () => {
       cancelled = true;
     };
-  }, [isCampaign, isEnabled, questionLimit, safeDifficulty]);
+  }, [campaignStage, isCampaign, isEnabled, questionLimit, safeDifficulty]);
 
   return {
     questions,

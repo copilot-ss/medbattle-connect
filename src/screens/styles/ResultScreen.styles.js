@@ -27,6 +27,20 @@ const styles = StyleSheet.create({
     bottom: -80,
     right: -40,
   },
+  celebrationContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 220,
+    pointerEvents: 'none',
+  },
+  celebrationAnimation: {
+    width: 200,
+    height: 200,
+  },
   sparkle: {
     position: 'absolute',
   },
@@ -89,7 +103,7 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 14,
+    marginBottom: 0,
   },
   statPill: {
     paddingVertical: 8,
@@ -107,16 +121,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
     marginTop: 2,
-  },
-  progressBar: {
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: 'rgba(148, 163, 184, 0.2)',
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 6,
   },
   multiplayerCard: {
     width: '100%',
@@ -219,13 +223,6 @@ export function getLargeGlowStyle(color) {
 
 export function getBadgePillStyle(color) {
   return StyleSheet.compose(styles.badgePill, { backgroundColor: color });
-}
-
-export function getResultProgressFillStyle(accuracyPercent, color) {
-  return StyleSheet.compose(styles.progressFill, {
-    width: `${accuracyPercent}%`,
-    backgroundColor: color,
-  });
 }
 
 export function getPrimaryButtonStyle(color) {

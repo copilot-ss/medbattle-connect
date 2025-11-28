@@ -2,8 +2,6 @@ import { useMemo, useRef } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
-import { CAMPAIGN_QUESTION_LIMIT } from '../services/quizService';
-
 import styles, {
   getModeCardContainerStyle,
   getModeCardTitleStyle,
@@ -96,11 +94,7 @@ export default function HomeScreen({ navigation }) {
   }
 
   function startCampaign() {
-    navigation.navigate('Quiz', {
-      difficulty: DEFAULT_DIFFICULTY,
-      mode: 'campaign',
-      questionLimit: CAMPAIGN_QUESTION_LIMIT,
-    });
+    navigation.navigate('CampaignPath');
   }
 
   return (

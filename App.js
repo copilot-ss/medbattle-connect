@@ -1,12 +1,18 @@
 // App.js
+import 'react-native-gesture-handler';
 import * as WebBrowser from 'expo-web-browser';
 import { registerRootComponent } from 'expo';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AppNavigator from './src/AppNavigator';
 
 WebBrowser.maybeCompleteAuthSession(); // für OAuth-Return in Expo
 
 export default function App() {
-  return <AppNavigator />;
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppNavigator />
+    </GestureHandlerRootView>
+  );
 }
 
 registerRootComponent(App);
