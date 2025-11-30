@@ -36,7 +36,7 @@ function hexToRgba(hex, alpha = 1) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function ModeCard({ title, accent, onPress }) {
+function ModeCard({ title, accent, onPress, disabled = false }) {
   const glow = useRef(new Animated.Value(0)).current;
   const glowColors = useMemo(
     () => ({
@@ -67,10 +67,11 @@ function ModeCard({ title, accent, onPress }) {
       style={getModeCardContainerStyle(accent, glow, glowColors)}
     >
       <Pressable
-        style={styles.modeCardPressable}
+        style={[styles.modeCardPressable, disabled ? styles.modeCardDisabled : null]}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        onPress={onPress}
+        onPress={disabled ? undefined : onPress}
+        disabled={disabled}
       >
         <Text style={getModeCardTitleStyle(accent)}>{title}</Text>
       </Pressable>
@@ -78,8 +79,15 @@ function ModeCard({ title, accent, onPress }) {
   );
 }
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({ navigation, route }) {
+  const activeLobby = route?.params?.activeLobby ?? null;
+  const hasActiveLobby = Boolean(activeLobby?.code);
+
   function handleCreateLobby() {
+    if (hasActiveLobby) {
+      navigation.navigate('MultiplayerLobby');
+      return;
+    }
     navigation.navigate('MultiplayerLobby', {
       difficulty: DEFAULT_DIFFICULTY,
       mode: 'create',
@@ -87,6 +95,10 @@ export default function HomeScreen({ navigation }) {
   }
 
   function handleJoinLobby() {
+    if (hasActiveLobby) {
+      navigation.navigate('MultiplayerLobby');
+      return;
+    }
     navigation.navigate('MultiplayerLobby', {
       difficulty: DEFAULT_DIFFICULTY,
       mode: 'join',
@@ -94,6 +106,10 @@ export default function HomeScreen({ navigation }) {
   }
 
   function startCampaign() {
+    if (hasActiveLobby) {
+      navigation.navigate('MultiplayerLobby');
+      return;
+    }
     navigation.navigate('CampaignPath');
   }
 
@@ -119,6 +135,21 @@ export default function HomeScreen({ navigation }) {
         </View>
       </View>
 
+      {hasActiveLobby ? (
+        <Pressable
+          style={styles.activeLobbyBanner}
+          onPress={() =>
+            navigation.navigate('MultiplayerLobby', {
+              existingMatch: activeLobby.existingMatch ?? null,
+              mode: 'create',
+            })
+          }
+        >
+          <Text style={styles.activeLobbyTitle}>Lobby {activeLobby.players ?? 1}/{activeLobby.capacity ?? 2}</Text>
+          <Text style={styles.activeLobbyCode}>{activeLobby.code ?? ''}</Text>
+        </Pressable>
+      ) : null}
+
       <View style={styles.animationWrapper} pointerEvents="none">
         <LottieView
           source={doctorAnimation}
@@ -128,10 +159,15 @@ export default function HomeScreen({ navigation }) {
         />
       </View>
 
-      <View style={styles.modeSection}>
-        <ModeCard title="Create Lobby" accent="#38E4AE" onPress={handleCreateLobby} />
-        <ModeCard title="Join Lobby" accent="#60A5FA" onPress={handleJoinLobby} />
-        <ModeCard title="Campaign (Offline)" accent="#FDE68A" onPress={startCampaign} />
+      <View
+        style={[
+          styles.modeSection,
+          hasActiveLobby ? styles.modeSectionCompact : null,
+        ]}
+      >
+        <ModeCard title="Create Lobby" accent="#38E4AE" onPress={handleCreateLobby} disabled={hasActiveLobby} />
+        <ModeCard title="Join Lobby" accent="#60A5FA" onPress={handleJoinLobby} disabled={hasActiveLobby} />
+        <ModeCard title="Campaign (Offline)" accent="#FDE68A" onPress={startCampaign} disabled={hasActiveLobby} />
       </View>
 
       <View style={styles.flexSpacer} />

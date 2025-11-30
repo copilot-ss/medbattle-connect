@@ -163,6 +163,7 @@ function normalizeMatchState(state) {
       score: 0,
       finished: false,
       answers: [],
+      ready: false,
     },
     guest: {
       userId: null,
@@ -171,6 +172,7 @@ function normalizeMatchState(state) {
       score: 0,
       finished: false,
       answers: [],
+      ready: false,
     },
     history: [],
   };
@@ -189,6 +191,7 @@ function normalizeMatchState(state) {
       index: Number.isFinite(roleState.index) ? Math.max(roleState.index, 0) : 0,
       score: Number.isFinite(roleState.score) ? Math.max(roleState.score, 0) : 0,
       finished: Boolean(roleState.finished),
+      ready: Boolean(roleState.ready),
       answers: Array.isArray(roleState.answers)
         ? roleState.answers
             .map(sanitizeAnswer)
@@ -446,13 +449,12 @@ export async function joinMatch({ code, userId } = {}) {
         ...match.state.guest,
         userId: guestId,
         username: guestProfile.username,
+        ready: false,
       },
     });
 
     const updatePayload = {
       guest_id: guestId,
-      status: MATCH_STATUS.ACTIVE,
-      started_at: match.started_at ?? nowIso(),
       state: nextState,
       updated_at: nowIso(),
     };
@@ -479,6 +481,68 @@ export async function joinMatch({ code, userId } = {}) {
     return { ok: true, match: normalizeMatchRow(updated) };
   } catch (err) {
     console.error('Unerwarteter Fehler beim Beitreten des Matches:', err);
+    return { ok: false, error: err };
+  }
+}
+
+export async function startMatch({ matchId, userId } = {}) {
+  if (!matchId) {
+    return { ok: false, error: new Error('Match-ID fehlt.') };
+  }
+
+  if (!userId) {
+    return { ok: false, error: new Error('Kein Nutzer angemeldet.') };
+  }
+
+  const matchResult = await getMatchById(matchId);
+  if (!matchResult.ok) {
+    return matchResult;
+  }
+
+  const match = matchResult.match;
+  if (!match || match.host_id !== userId) {
+    return { ok: false, error: new Error('Nur der Host kann das Match starten.') };
+  }
+
+  if (match.status !== MATCH_STATUS.WAITING) {
+    return { ok: false, error: new Error('Match laeuft bereits oder ist beendet.') };
+  }
+
+  if (!match.guest_id && !match.state?.guest?.userId) {
+    return { ok: false, error: new Error('Es muss mindestens ein Gast in der Lobby sein.') };
+  }
+
+  const nextState = normalizeMatchState(match.state);
+  nextState.host = { ...nextState.host, ready: true };
+  nextState.guest = { ...nextState.guest, ready: true };
+
+  const payload = {
+    status: MATCH_STATUS.ACTIVE,
+    started_at: match.started_at ?? nowIso(),
+    state: nextState,
+    updated_at: nowIso(),
+  };
+
+  try {
+    let updateQuery = supabase.from('matches').update(payload).eq('id', match.id);
+    if (match.updated_at) {
+      updateQuery = updateQuery.eq('updated_at', match.updated_at);
+    }
+
+    const { data, error } = await updateQuery.select('*').single();
+
+    if (error) {
+      return { ok: false, error };
+    }
+
+    const updatedMatch = normalizeMatchRow(data);
+    if (match.status === MATCH_STATUS.WAITING || updatedMatch?.status === MATCH_STATUS.WAITING) {
+      invalidateOpenMatchesCache();
+    }
+
+    return { ok: true, match: updatedMatch };
+  } catch (err) {
+    console.error('Unerwarteter Fehler beim Starten des Matches:', err);
     return { ok: false, error: err };
   }
 }
@@ -647,8 +711,9 @@ export async function fetchOpenMatches({
   try {
     let query = supabase
       .from('matches')
-      .select('id, code, difficulty, question_limit, state, created_at')
+      .select('id, code, difficulty, question_limit, state, created_at, guest_id')
       .eq('status', MATCH_STATUS.WAITING)
+      .is('guest_id', null)
       .order('created_at', { ascending: true })
       .limit(24);
 

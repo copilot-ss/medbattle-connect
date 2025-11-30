@@ -1,25 +1,23 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View, Share, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Clipboard from 'expo-clipboard';
+import { Ionicons } from '@expo/vector-icons';
 
 import { supabase } from '../lib/supabaseClient';
 import {
   createMatch,
   deriveMatchRole,
   fetchOpenMatches,
+  getMatchById,
   joinMatch,
   subscribeToMatch,
   updateMatchSettings,
   abandonMatch,
+  startMatch,
 } from '../services/matchService';
-import { calculateMatchPoints } from '../services/quizService';
+import AVATARS from './settings/avatars';
+import { usePreferences } from '../context/PreferencesContext';
 import styles from './styles/MultiplayerLobbyScreen.styles';
 
 const DIFFICULTY_LABELS = {
@@ -35,6 +33,15 @@ const DIFFICULTY_OPTIONS = [
 
 const MIN_QUESTION_LIMIT = 3;
 const MAX_QUESTION_LIMIT = 15;
+const SHARE_ANIM = require('../../assets/animations/share_6172544.gif');
+
+function getInitials(name) {
+  if (!name || typeof name !== 'string') return '?';
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.[0] ?? '';
+  const last = parts[1]?.[0] ?? '';
+  return (first + last || first).toUpperCase();
+}
 
 function EmptyState() {
   return (
@@ -48,6 +55,14 @@ function EmptyState() {
 }
 
 export default function MultiplayerLobbyScreen({ navigation, route }) {
+  const { avatarId } = usePreferences();
+  const activeAvatarSource = useMemo(() => {
+    const entry = AVATARS.find((item) => item.id === avatarId);
+    return entry?.source ?? null;
+  }, [avatarId]);
+  const existingMatch = route?.params?.existingMatch ?? null;
+  const hostBadgeIcon = require('../../assets/icons_profile/caduceus_1839855.png');
+
   const initialDifficulty =
     typeof route?.params?.difficulty === 'string'
       ? route.params.difficulty
@@ -73,6 +88,9 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   const [joining, setJoining] = useState(false);
   const [updatingSettings, setUpdatingSettings] = useState(false);
   const [closingLobby, setClosingLobby] = useState(false);
+  const [startingMatch, setStartingMatch] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const subscriptionRef = useRef(null);
   const closingRef = useRef(false);
   const skipAutoCloseRef = useRef(false);
@@ -86,9 +104,12 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       if (next > MAX_QUESTION_LIMIT) {
         return MAX_QUESTION_LIMIT;
       }
+      if (isHostWaiting && currentMatch) {
+        pushHostSettings(selectedDifficulty, next);
+      }
       return next;
     });
-  }, []);
+  }, [currentMatch, isHostWaiting, pushHostSettings, selectedDifficulty]);
 
   useEffect(() => {
     let active = true;
@@ -130,18 +151,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       }
     };
   }, []);
-
-  const createPointHints = useMemo(() => {
-    const total = questionLimit || MIN_QUESTION_LIMIT;
-    return DIFFICULTY_OPTIONS.reduce((acc, item) => {
-      acc[item.key] = calculateMatchPoints({
-        correct: total,
-        total,
-        difficulty: item.key,
-      });
-      return acc;
-    }, {});
-  }, [questionLimit]);
 
   const difficultyLabel = useMemo(
     () => DIFFICULTY_LABELS[difficulty] ?? DIFFICULTY_LABELS.mittel,
@@ -207,6 +216,25 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       });
     }
   }, [currentMatch, difficulty, navigation, userId]);
+
+  useEffect(() => {
+    if (!currentMatch || currentMatch.status !== 'waiting') {
+      return undefined;
+    }
+
+    const intervalId = setInterval(async () => {
+      try {
+        const result = await getMatchById(currentMatch.id);
+        if (result.ok && result.match) {
+          setCurrentMatch(result.match);
+        }
+      } catch (err) {
+        console.warn('Konnte Lobby-Status nicht aktualisieren:', err);
+      }
+    }, 4000);
+
+    return () => clearInterval(intervalId);
+  }, [currentMatch]);
 
   const attachMatchSubscription = useCallback((matchId) => {
     if (subscriptionRef.current) {
@@ -363,55 +391,55 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     }
   }, [abandonMatch, currentMatch, isHostWaiting]);
 
-  const handleUpdateMatchSettings = useCallback(async () => {
-    if (!isHostWaiting || !currentMatch || updatingSettings) {
-      return;
-    }
-
-    setUpdatingSettings(true);
-    setMatchesError(null);
-
-    try {
-      const result = await updateMatchSettings({
-        matchId: currentMatch.id,
-        userId,
-        difficulty: selectedDifficulty,
-        questionLimit,
-      });
-
-      if (!result.ok) {
-        throw (
-          result.error ??
-          new Error('Einstellungen konnten nicht gespeichert werden.')
-        );
+  const pushHostSettings = useCallback(
+    async (nextDifficulty, nextQuestionLimit) => {
+      if (!isHostWaiting || !currentMatch || updatingSettings) {
+        return;
       }
 
-      setCurrentMatch(result.match);
-      setQuestionLimit(result.match.question_limit ?? questionLimit);
-      setSelectedDifficulty(result.match.difficulty ?? selectedDifficulty);
-    } catch (err) {
-      console.error('Fehler beim Aktualisieren der Lobby-Einstellungen:', err);
-      setMatchesError(err);
-    } finally {
-      setUpdatingSettings(false);
-    }
-  }, [
-    currentMatch,
-    isHostWaiting,
-    questionLimit,
-    selectedDifficulty,
-    updateMatchSettings,
-    updatingSettings,
-    userId,
-  ]);
+      setUpdatingSettings(true);
+      setMatchesError(null);
+
+      try {
+        const result = await updateMatchSettings({
+          matchId: currentMatch.id,
+          userId,
+          difficulty: nextDifficulty,
+          questionLimit: nextQuestionLimit,
+        });
+
+        if (!result.ok) {
+          throw result.error ?? new Error('Einstellungen konnten nicht gespeichert werden.');
+        }
+
+        setCurrentMatch(result.match);
+        setQuestionLimit(result.match.question_limit ?? nextQuestionLimit);
+        setSelectedDifficulty(result.match.difficulty ?? nextDifficulty);
+      } catch (err) {
+        console.error('Fehler beim Aktualisieren der Lobby-Einstellungen:', err);
+        setMatchesError(err);
+      } finally {
+        setUpdatingSettings(false);
+      }
+    },
+    [currentMatch, isHostWaiting, updateMatchSettings, updatingSettings, userId]
+  );
 
   const handleLeaveLobby = useCallback(async () => {
     if (closingRef.current) {
       return;
     }
 
+    setShowLeaveConfirm(true);
+  }, []);
+
+  const handleConfirmLeave = useCallback(async () => {
+    if (closingRef.current) {
+      return;
+    }
     closingRef.current = true;
     setClosingLobby(true);
+    setShowLeaveConfirm(false);
 
     await cancelLobbyAsHost();
 
@@ -420,6 +448,10 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     closingRef.current = false;
     navigation.goBack();
   }, [cancelLobbyAsHost, navigation]);
+
+  const handleCancelLeave = useCallback(() => {
+    setShowLeaveConfirm(false);
+  }, []);
 
   const renderMatch = useCallback(
     ({ item }) => (
@@ -458,6 +490,11 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         key: 'host',
         role: 'Host',
         name: hostState.username ?? 'Host',
+        avatarUrl: hostState.avatar_url ?? hostState.avatarUrl ?? null,
+        avatarSource:
+          hostState.avatar_source ??
+          hostState.avatarSource ??
+          (currentMatch.host_id === userId ? activeAvatarSource : null),
         ready: Boolean(hostState.ready),
         isPlaceholder: false,
       },
@@ -468,6 +505,11 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         key: 'guest',
         role: 'Gast',
         name: guestState.username ?? 'Gast',
+        avatarUrl: guestState.avatar_url ?? guestState.avatarUrl ?? null,
+        avatarSource:
+          guestState.avatar_source ??
+          guestState.avatarSource ??
+          (currentMatch.guest_id === userId ? activeAvatarSource : null),
         ready: Boolean(guestState.ready),
         isPlaceholder: false,
       });
@@ -478,11 +520,12 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         name: 'Warte auf Gegner',
         ready: false,
         isPlaceholder: true,
+        showHostBadge: false,
       });
     }
 
     return items;
-  }, [currentMatch]);
+  }, [activeAvatarSource, currentMatch, userId]);
 
   const isHostWaiting = useMemo(() => {
     if (!currentMatch || !userId) {
@@ -495,7 +538,14 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     );
   }, [currentMatch, userId]);
 
-  const showConfigCard = isCreateOnly && !currentMatch;
+  const hasGuestInLobby = useMemo(() => {
+    if (!currentMatch) {
+      return false;
+    }
+    return Boolean(currentMatch.guest_id || currentMatch.state?.guest?.userId);
+  }, [currentMatch]);
+
+  const showConfigCard = false;
 
   useEffect(() => {
     if (!currentMatch) {
@@ -556,6 +606,98 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   }, [isCreateOnly, refreshMatches, userId]);
 
   useEffect(() => {
+    if (!isCreateOnly || currentMatch || creating || loadingUser || !userId || existingMatch) {
+      return;
+    }
+    handleCreateMatch();
+  }, [creating, currentMatch, existingMatch, handleCreateMatch, isCreateOnly, loadingUser, userId]);
+
+  useEffect(() => {
+    if (currentMatch || !existingMatch) {
+      return;
+    }
+    setCurrentMatch(existingMatch);
+    if (existingMatch.id) {
+      attachMatchSubscription(existingMatch.id);
+    }
+  }, [attachMatchSubscription, currentMatch, existingMatch]);
+
+  const handleCopyCode = useCallback(async () => {
+    if (!currentJoinCode) {
+      return;
+    }
+    try {
+      await Clipboard.setStringAsync(currentJoinCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    } catch (err) {
+      console.warn('Code konnte nicht kopiert werden:', err);
+    }
+  }, [currentJoinCode]);
+
+  const handleShareCode = useCallback(async () => {
+    if (!currentJoinCode) {
+      return;
+    }
+    const deepLink = `medbattle://lobby/${currentJoinCode}`;
+    const message = `Join meine MedBattle-Lobby mit dem Code ${currentJoinCode}\n${deepLink}`;
+    try {
+      await Share.share({ message });
+    } catch (err) {
+      console.warn('Teilen fehlgeschlagen:', err);
+    }
+  }, [currentJoinCode]);
+
+  const handleNavigateHome = useCallback(async () => {
+    if (closingLobby) {
+      return;
+    }
+
+    setClosingLobby(true);
+    setMatchesError(null);
+
+    try {
+      if (isHostWaiting && currentMatch) {
+        await cancelLobbyAsHost();
+      }
+      skipAutoCloseRef.current = true;
+      navigation.navigate('Home');
+    } catch (err) {
+      console.error('Fehler beim Verlassen der Lobby:', err);
+      setMatchesError(err);
+    } finally {
+      setClosingLobby(false);
+    }
+  }, [cancelLobbyAsHost, closingLobby, currentMatch, isHostWaiting, navigation]);
+
+  const handleStartMatch = useCallback(async () => {
+    if (!isHostWaiting || !currentMatch || startingMatch || !hasGuestInLobby) {
+      return;
+    }
+
+    setStartingMatch(true);
+    setMatchesError(null);
+
+    try {
+      const result = await startMatch({
+        matchId: currentMatch.id,
+        userId,
+      });
+
+      if (!result.ok) {
+        throw result.error ?? new Error('Match konnte nicht gestartet werden.');
+      }
+
+      setCurrentMatch(result.match);
+    } catch (err) {
+      console.error('Fehler beim Starten des Matches:', err);
+      setMatchesError(err);
+    } finally {
+      setStartingMatch(false);
+    }
+  }, [currentMatch, hasGuestInLobby, isHostWaiting, startingMatch, userId]);
+
+  useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (event) => {
       if (skipAutoCloseRef.current) {
         skipAutoCloseRef.current = false;
@@ -585,7 +727,8 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     return unsubscribe;
   }, [cancelLobbyAsHost, currentMatch, isHostWaiting, navigation]);
 
-  const showCreateSetup = isCreateOnly && !currentMatch;
+  const showCreateSetup = false;
+  const participantCount = participants.filter((item) => !item.isPlaceholder).length;
 
   if (showCreateSetup) {
     return (
@@ -621,7 +764,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         ) : null}
 
         <View style={styles.createContent}>
-          <Text style={styles.createSubtitle}>Wähle Schwierigkeit</Text>
+          <Text style={styles.createSubtitle}>W�hle Schwierigkeit</Text>
           <View style={styles.createDifficultyColumn}>
             {DIFFICULTY_OPTIONS.map((item, index) => {
               const active = item.key === selectedDifficulty;
@@ -648,18 +791,15 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
                       ? styles.createDifficultySpacing
                       : null,
                   ]}
-                >
-                  <Text
-                    style={[
-                      styles.createDifficultyLabel,
-                      { color: item.accent },
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                  <Text style={styles.createDifficultyPoints}>
-                    Bis zu {createPointHints[item.key]} Punkte
-                  </Text>
+                    >
+                      <Text
+                        style={[
+                          styles.createDifficultyLabel,
+                          { color: item.accent },
+                        ]}
+                      >
+                        {item.label}
+                      </Text>
                 </Pressable>
               );
             })}
@@ -722,37 +862,60 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
           <Text style={styles.subtitle}>Multiplayer Arena</Text>
           <Text style={styles.title}>Online Battle</Text>
         </View>
-        <Pressable
-          style={[
-            styles.closeButton,
-            closingLobby ? styles.actionDisabled : null,
-          ]}
-          onPress={handleLeaveLobby}
-          disabled={closingLobby}
-        >
-          <Text style={styles.closeButtonText}>X</Text>
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable
+            style={[
+              styles.homeButton,
+              closingLobby ? styles.actionDisabled : null,
+            ]}
+            onPress={handleNavigateHome}
+            disabled={closingLobby}
+          >
+            <Ionicons name="home" size={18} color="#E2E8F0" />
+          </Pressable>
+          {isCreateOnly ? (
+            <Pressable
+              style={[
+                styles.closeButton,
+                closingLobby ? styles.actionDisabled : null,
+              ]}
+              onPress={handleLeaveLobby}
+              disabled={closingLobby}
+            >
+              <Text style={styles.closeButtonText}>X</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
 
       {loadingUser ? (
         <View style={styles.loadingBox}>
           <ActivityIndicator size="small" color="#60A5FA" />
-          <Text style={styles.loadingText}>Profil wird geladen ...</Text>
-        </View>
-      ) : null}
+      <Text style={styles.loadingText}>Profil wird geladen ...</Text>
+    </View>
+  ) : null}
 
-      {matchesError ? (
+  {matchesError ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorTitle}>Oops!</Text>
           <Text style={styles.errorMessage}>
             {matchesError.message ?? 'Es ist ein Fehler aufgetreten.'}
           </Text>
-        </View>
-      ) : null}
+    </View>
+  ) : null}
 
-      {showConfigCard ? (
-        <View style={styles.configCard}>
-          <Text style={styles.configTitle}>Lobby konfigurieren</Text>
+  {isCreateOnly && !currentMatch ? (
+    <View style={styles.loadingBox}>
+      <ActivityIndicator size="small" color="#60A5FA" />
+      <Text style={styles.loadingText}>
+        {creating ? 'Lobby wird erstellt ...' : 'Starte Lobby ...'}
+      </Text>
+    </View>
+  ) : null}
+
+  {showConfigCard ? (
+    <View style={styles.configCard}>
+      <Text style={styles.configTitle}>Lobby konfigurieren</Text>
 
           <View style={styles.configSection}>
             <Text style={styles.configLabel}>Schwierigkeit</Text>
@@ -907,36 +1070,71 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       {currentJoinCode ? (
         <View style={styles.lobbyCard}>
           <Text style={styles.lobbyTitle}>Warte auf Gegner</Text>
-          <View style={styles.codeBadge}>
-            <Text style={styles.codeBadgeText}>{currentJoinCode}</Text>
-          </View>
 
           <View style={styles.participantsHeader}>
             <Text style={styles.participantsTitle}>Spieler</Text>
             <Text style={styles.participantsCount}>
-              {participants.filter((item) => !item.isPlaceholder).length}/2
+              {participantCount}/2
             </Text>
           </View>
 
-          <View style={styles.participantList}>
+          <View style={styles.participantGrid}>
             {participants.map((participant) => (
-              <View key={participant.key} style={styles.participantRow}>
-                <View style={styles.participantBadge}>
-                  <Text style={styles.participantBadgeText}>
-                    {participant.role}
-                  </Text>
+              <View key={participant.key} style={styles.participantAvatarCard}>
+                <View
+                  style={[
+                    styles.participantAvatar,
+                    participant.isPlaceholder ? styles.participantAvatarGhost : null,
+                  ]}
+                >
+                  {participant.role === 'Host' && !participant.isPlaceholder ? (
+                    <Image source={hostBadgeIcon} style={styles.hostBadge} />
+                  ) : null}
+                  {participant.avatarSource && !participant.isPlaceholder ? (
+                    <Image source={participant.avatarSource} style={styles.participantAvatarImage} />
+                  ) : participant.avatarUrl && !participant.isPlaceholder ? (
+                    <Image source={{ uri: participant.avatarUrl }} style={styles.participantAvatarImage} />
+                  ) : (
+                    <Text style={styles.participantAvatarText}>
+                      {participant.isPlaceholder ? '?' : getInitials(participant.name)}
+                    </Text>
+                  )}
                 </View>
                 <Text
                   style={[
                     styles.participantName,
                     participant.isPlaceholder ? styles.participantPlaceholder : null,
                   ]}
+                  numberOfLines={1}
                 >
                   {participant.name}
                 </Text>
               </View>
             ))}
           </View>
+
+          {isHostWaiting ? (
+            <View style={styles.startRow}>
+              <Pressable
+                onPress={handleStartMatch}
+                style={[
+                  styles.primaryAction,
+                  styles.startButton,
+                  !hasGuestInLobby || startingMatch ? styles.actionDisabled : null,
+                ]}
+                disabled={!hasGuestInLobby || startingMatch}
+              >
+                <Text style={styles.primaryActionText}>
+                  {startingMatch ? 'Starte ...' : 'Loslegen'}
+                </Text>
+              </Pressable>
+              <Text style={styles.startHint}>
+                {hasGuestInLobby
+                  ? 'Host startet das Spiel fuer beide.'
+                  : 'Warte auf einen Gast vor dem Start.'}
+              </Text>
+            </View>
+          ) : null}
 
           {isHostWaiting ? (
             <View style={styles.lobbyConfig}>
@@ -950,7 +1148,12 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
                     return (
                       <Pressable
                         key={key}
-                        onPress={() => setSelectedDifficulty(key)}
+                        onPress={() => {
+                          setSelectedDifficulty(key);
+                          if (isHostWaiting && currentMatch) {
+                            pushHostSettings(key, questionLimit);
+                          }
+                        }}
                         style={[
                           styles.difficultyChip,
                           active ? styles.difficultyChipActive : null,
@@ -1001,32 +1204,50 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
                 </View>
               </View>
 
-              <Pressable
-                onPress={handleUpdateMatchSettings}
-                disabled={updatingSettings}
-                style={[
-                  styles.lobbyConfigAction,
-                  updatingSettings ? styles.actionDisabled : null,
-                ]}
-              >
-                <Text style={styles.lobbyConfigActionText}>
-                  {updatingSettings ? 'Speichere ...' : 'Einstellungen speichern'}
-                </Text>
-              </Pressable>
             </View>
           ) : null}
-
-          <Pressable
-            onPress={() => refreshMatches({ force: true })}
-            style={styles.refreshWaitingButton}
-          >
-            <Text style={styles.refreshWaitingText}>Status aktualisieren</Text>
-          </Pressable>
+          <View style={styles.codeActionsRow}>
+            <Pressable
+              onPress={handleCopyCode}
+              style={[
+                styles.codeBadge,
+                copied ? styles.codeBadgeSuccess : null,
+              ]}
+            >
+              <Text style={styles.codeBadgeText}>{currentJoinCode}</Text>
+              <Text style={copied ? styles.codeHintSuccess : styles.codeHint}>
+                {copied ? 'Kopiert!' : 'Tippen zum Kopieren'}
+              </Text>
+            </Pressable>
+            <Pressable onPress={handleShareCode} style={styles.shareButton}>
+              <Image source={SHARE_ANIM} style={styles.shareIconAnim} />
+            </Pressable>
+          </View>
         </View>
       ) : null}
+
+      {showLeaveConfirm ? (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Lobby verlassen?</Text>
+            <Text style={styles.modalMessage}>
+              Deine Lobby wird geschlossen und du kehrst zum Home-Screen zurueck.
+            </Text>
+            <View style={styles.modalActions}>
+              <Pressable onPress={handleCancelLeave} style={[styles.modalButton, styles.modalButtonContinue]}>
+                <Text style={styles.modalButtonContinueText}>Bleiben</Text>
+              </Pressable>
+              <Pressable onPress={handleConfirmLeave} style={[styles.modalButton, styles.modalButtonExit]}>
+                <Text style={styles.modalButtonExitText}>X</Text>
+              </Pressable>
+            </View>
+              </View>
+            </View>
+          ) : null}
     </View>
   );
 }
+
 
 
 

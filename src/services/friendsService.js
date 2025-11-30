@@ -8,6 +8,18 @@ function normalizeCode(value = '') {
   return value.replace(/[^a-zA-Z0-9_]/g, '').toUpperCase();
 }
 
+function deriveFriendCode(userId) {
+  if (!userId) {
+    return '';
+  }
+  const compact = String(userId).replace(/[^a-zA-Z0-9]/g, '');
+  if (!compact) {
+    return '';
+  }
+  const slice = compact.slice(-8).toUpperCase();
+  return slice.padStart(8, '0');
+}
+
 function getStorageKey(userId) {
   return `${STORAGE_PREFIX}:${userId}`;
 }
@@ -34,6 +46,7 @@ function sanitizeFriends(entries = []) {
 
     friends.push({
       id: entry.id ?? null,
+      owner_id: entry.owner_id ?? null,
       code,
       created_at: entry.created_at ?? null,
     });
@@ -75,22 +88,45 @@ export async function fetchFriends(userId) {
     return [];
   }
 
+  const myCode = deriveFriendCode(userId);
+
   try {
-    const { data, error } = await supabase
+    const { data: owned, error: ownedError } = await supabase
       .from('friends')
-      .select('id, friend_username, created_at')
+      .select('id, friend_code, owner_id, created_at')
       .eq('owner_id', userId)
       .order('created_at', { ascending: true });
 
-    if (error) {
-      throw error;
+    if (ownedError) {
+      throw ownedError;
     }
 
-    const friends = sanitizeFriends(data);
+    let inbound = [];
+
+    if (myCode) {
+      const { data: inboundData, error: inboundError } = await supabase
+        .from('friends')
+        .select('id, friend_code, owner_id, created_at')
+        .eq('friend_code', myCode)
+        .neq('owner_id', userId);
+
+      if (inboundError) {
+        throw inboundError;
+      }
+
+      inbound = inboundData || [];
+    }
+
+    const inboundMapped = inbound.map((entry) => ({
+      ...entry,
+      friend_code: deriveFriendCode(entry.owner_id),
+    }));
+
+    const friends = sanitizeFriends([...(owned || []), ...inboundMapped]);
     await persistLocalFriends(userId, friends);
     return friends;
   } catch (err) {
-    console.warn('Konnte Freunde nicht über Supabase laden:', err?.message);
+    console.warn('Konnte Freunde nicht Ǭber Supabase laden:', err?.message);
     return loadLocalFriends(userId);
   }
 }
@@ -103,7 +139,7 @@ export async function addFriend(userId, code) {
   const normalizedCode = normalizeCode(code ?? '');
 
   if (!normalizedCode) {
-    return { ok: false, error: new Error('Bitte gültigen Code angeben.') };
+    return { ok: false, error: new Error('Bitte gǬltigen Code angeben.') };
   }
 
   try {
@@ -112,10 +148,10 @@ export async function addFriend(userId, code) {
       .insert([
         {
           owner_id: userId,
-          friend_username: normalizedCode,
+          friend_code: normalizedCode,
         },
       ])
-      .select('id, friend_username, created_at')
+      .select('id, friend_code, owner_id, created_at')
       .single();
 
     if (error) {
@@ -155,10 +191,11 @@ export async function removeFriend(userId, friend) {
   }
 
   if (!friend?.code) {
-    return { ok: false, error: new Error('Ungültiger Freund.') };
+    return { ok: false, error: new Error('UngǬltiger Freund.') };
   }
 
   const normalizedCode = normalizeCode(friend.code);
+  const myCode = deriveFriendCode(userId);
 
   try {
     if (friend.id) {
@@ -174,10 +211,17 @@ export async function removeFriend(userId, friend) {
       await supabase
         .from('friends')
         .delete()
-        .match({ owner_id: userId, friend_username: normalizedCode });
+        .match({ owner_id: userId, friend_code: normalizedCode });
+    }
+
+    if (friend.owner_id && friend.owner_id !== userId && myCode) {
+      await supabase
+        .from('friends')
+        .delete()
+        .match({ owner_id: friend.owner_id, friend_code: myCode });
     }
   } catch (err) {
-    console.warn('Konnte Freund nicht über Supabase entfernen:', err?.message);
+    console.warn('Konnte Freund nicht Ǭber Supabase entfernen:', err?.message);
   }
 
   const current = await loadLocalFriends(userId);
