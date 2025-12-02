@@ -663,16 +663,12 @@ export async function updateMatchSettings({
       updated_at: nowIso(),
     };
 
-    let updateQuery = supabase
+    const { data, error } = await supabase
       .from('matches')
       .update(payload)
-      .eq('id', match.id);
-
-    if (match.updated_at) {
-      updateQuery = updateQuery.eq('updated_at', match.updated_at);
-    }
-
-    const { data, error } = await updateQuery.select('*').single();
+      .eq('id', match.id)
+      .select('*')
+      .single();
 
     if (error) {
       return { ok: false, error };

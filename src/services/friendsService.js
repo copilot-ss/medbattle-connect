@@ -232,3 +232,7 @@ export async function removeFriend(userId, friend) {
 
   return { ok: true, friends: updated };
 }
+
+export function getFriendCodeForUser(userId) {
+  return deriveFriendCode(userId);
+}

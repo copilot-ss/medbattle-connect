@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View, Share, Image } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, TextInput, View, Share, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 
 import { supabase } from '../lib/supabaseClient';
+import { fetchFriends, getFriendCodeForUser } from '../services/friendsService';
 import {
   createMatch,
   deriveMatchRole,
@@ -25,6 +26,11 @@ const DIFFICULTY_LABELS = {
   mittel: 'Mittel',
   schwer: 'Schwer',
 };
+const DIFFICULTY_ACCENTS = {
+  leicht: '#22C55E',
+  mittel: '#FACC15',
+  schwer: '#EF4444',
+};
 const DIFFICULTY_OPTIONS = [
   { key: 'leicht', label: 'Leicht', accent: '#34D399' },
   { key: 'mittel', label: 'Mittel', accent: '#60A5FA' },
@@ -33,6 +39,7 @@ const DIFFICULTY_OPTIONS = [
 
 const MIN_QUESTION_LIMIT = 3;
 const MAX_QUESTION_LIMIT = 15;
+const MAX_PLAYERS = 10;
 const SHARE_ANIM = require('../../assets/animations/share_6172544.gif');
 
 function getInitials(name) {
@@ -91,7 +98,14 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   const [startingMatch, setStartingMatch] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [friends, setFriends] = useState([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
+  const [onlineFriends, setOnlineFriends] = useState([]);
+  const [userCode, setUserCode] = useState('');
+  const [username, setUsername] = useState(null);
   const subscriptionRef = useRef(null);
+  const presenceChannelRef = useRef(null);
+  const friendCodesRef = useRef(new Set());
   const closingRef = useRef(false);
   const skipAutoCloseRef = useRef(false);
 
@@ -128,7 +142,16 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
           console.warn('Konnte Multiplayer-Nutzer nicht abrufen:', error.message);
         }
 
-        setUserId(data?.user?.id ?? null);
+        const authUser = data?.user;
+        const resolvedUserId = authUser?.id ?? null;
+        const resolvedUsername =
+          authUser?.user_metadata?.username ??
+          (authUser?.email ? authUser.email.split('@')[0] : null) ??
+          null;
+
+        setUserId(resolvedUserId);
+        setUserCode(getFriendCodeForUser(resolvedUserId));
+        setUsername(resolvedUsername);
       } catch (err) {
         if (active) {
           console.warn('Unerwarteter Fehler beim Abrufen des Nutzers:', err);
@@ -194,6 +217,46 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       return () => {};
     }, [isCreateOnly, refreshMatches, userId])
   );
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadFriends() {
+      if (!userId) {
+        setFriends([]);
+        setFriendsLoading(false);
+        return;
+      }
+
+      setFriendsLoading(true);
+      try {
+        const result = await fetchFriends(userId);
+        if (active) {
+          setFriends(Array.isArray(result) ? result : []);
+        }
+      } catch (err) {
+        if (active) {
+          console.warn('Freunde konnten nicht geladen werden:', err);
+        }
+      } finally {
+        if (active) {
+          setFriendsLoading(false);
+        }
+      }
+    }
+
+    loadFriends();
+
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
+  useEffect(() => {
+    friendCodesRef.current = new Set(
+      (friends ?? []).map((item) => item.code).filter(Boolean)
+    );
+  }, [friends]);
 
   useEffect(() => {
     if (!currentMatch || !userId) {
@@ -462,7 +525,10 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         <View style={styles.matchInfo}>
           <Text style={styles.matchCode}>{item.code}</Text>
           <Text style={styles.matchMeta}>
-            {DIFFICULTY_LABELS[item.difficulty] ?? difficultyLabel} -{' '}
+            <Text style={{ color: DIFFICULTY_ACCENTS[item.difficulty] ?? '#94A3B8' }}>
+              {DIFFICULTY_LABELS[item.difficulty] ?? difficultyLabel}
+            </Text>
+            {' - '}
             {item.questionLimit} Fragen
           </Text>
           {item.hostUsername ? (
@@ -513,15 +579,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         ready: Boolean(guestState.ready),
         isPlaceholder: false,
       });
-    } else {
-      items.push({
-        key: 'guest',
-        role: 'Gast',
-        name: 'Warte auf Gegner',
-        ready: false,
-        isPlaceholder: true,
-        showHostBadge: false,
-      });
     }
 
     return items;
@@ -537,13 +594,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       currentMatch.status === 'waiting'
     );
   }, [currentMatch, userId]);
-
-  const hasGuestInLobby = useMemo(() => {
-    if (!currentMatch) {
-      return false;
-    }
-    return Boolean(currentMatch.guest_id || currentMatch.state?.guest?.userId);
-  }, [currentMatch]);
 
   const showConfigCard = false;
 
@@ -622,6 +672,79 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     }
   }, [attachMatchSubscription, currentMatch, existingMatch]);
 
+  useEffect(() => {
+    if (!userId || !currentJoinCode) {
+      setOnlineFriends([]);
+      if (presenceChannelRef.current) {
+        supabase.removeChannel(presenceChannelRef.current);
+        presenceChannelRef.current = null;
+      }
+      return undefined;
+    }
+
+    const channel = supabase.channel('presence:friends', {
+      config: { presence: { key: userId } },
+    });
+    presenceChannelRef.current = channel;
+
+    const syncPresence = () => {
+      if (!channel.presenceState) {
+        return;
+      }
+      const state = channel.presenceState() || {};
+      const seen = new Set();
+      const friendCodes = friendCodesRef.current;
+      const next = [];
+
+      Object.values(state).forEach((entries) => {
+        (entries || []).forEach((entry) => {
+          const meta = entry?.presence ?? entry;
+          if (!meta || meta.userId === userId) {
+            return;
+          }
+          const code = meta.code ?? meta.friendCode ?? null;
+          if (!code || !friendCodes.has(code) || seen.has(code)) {
+            return;
+          }
+          seen.add(code);
+          next.push({
+            code,
+            username: meta.username ?? 'Freund:in',
+          });
+        });
+      });
+
+      setOnlineFriends(next);
+    };
+
+    channel.on('presence', { event: 'sync' }, syncPresence);
+    channel.on('presence', { event: 'join' }, syncPresence);
+    channel.on('presence', { event: 'leave' }, syncPresence);
+
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        channel
+          .track({
+            userId,
+            code: userCode,
+            username: username ?? 'MedBattle',
+            lobby: currentJoinCode,
+          })
+          .catch((err) => {
+            console.warn('Konnte Presence nicht tracken:', err);
+          });
+      } else if (status === 'CHANNEL_ERROR') {
+        console.warn('Presence-Channel konnte nicht verbunden werden.');
+      }
+    });
+
+    return () => {
+      setOnlineFriends([]);
+      supabase.removeChannel(channel);
+      presenceChannelRef.current = null;
+    };
+  }, [currentJoinCode, friends, userCode, userId, username]);
+
   const handleCopyCode = useCallback(async () => {
     if (!currentJoinCode) {
       return;
@@ -648,30 +771,50 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     }
   }, [currentJoinCode]);
 
+  const handleInviteFriend = useCallback(
+    async (friend) => {
+      if (!currentJoinCode) {
+        return;
+      }
+      const friendName = friend?.username ?? 'Freund:in';
+      const deepLink = `medbattle://lobby/${currentJoinCode}`;
+      const message = `Hey ${friendName}, join meine MedBattle-Lobby mit dem Code ${currentJoinCode}\n${deepLink}`;
+      try {
+        await Share.share({ message });
+      } catch (err) {
+        console.warn('Freund konnte nicht eingeladen werden:', err);
+      }
+    },
+    [currentJoinCode]
+  );
+
   const handleNavigateHome = useCallback(async () => {
     if (closingLobby) {
       return;
     }
-
     setClosingLobby(true);
     setMatchesError(null);
 
-    try {
-      if (isHostWaiting && currentMatch) {
-        await cancelLobbyAsHost();
-      }
-      skipAutoCloseRef.current = true;
-      navigation.navigate('Home');
-    } catch (err) {
-      console.error('Fehler beim Verlassen der Lobby:', err);
-      setMatchesError(err);
-    } finally {
-      setClosingLobby(false);
-    }
-  }, [cancelLobbyAsHost, closingLobby, currentMatch, isHostWaiting, navigation]);
+    const activeLobby = currentMatch
+      ? {
+          code: currentMatch.code ?? null,
+          players: currentMatch.state
+            ? [currentMatch.state.host, currentMatch.state.guest].filter(
+                (p) => p?.userId
+              ).length
+            : 1,
+          capacity: MAX_PLAYERS,
+          existingMatch: currentMatch,
+        }
+      : null;
+
+    skipAutoCloseRef.current = true;
+    navigation.navigate('Home', { activeLobby });
+    setClosingLobby(false);
+  }, [closingLobby, currentMatch, navigation]);
 
   const handleStartMatch = useCallback(async () => {
-    if (!isHostWaiting || !currentMatch || startingMatch || !hasGuestInLobby) {
+    if (!isHostWaiting || !currentMatch || startingMatch || !hasEnoughPlayers) {
       return;
     }
 
@@ -695,40 +838,17 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     } finally {
       setStartingMatch(false);
     }
-  }, [currentMatch, hasGuestInLobby, isHostWaiting, startingMatch, userId]);
+  }, [currentMatch, hasEnoughPlayers, isHostWaiting, startingMatch, userId]);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (event) => {
-      if (skipAutoCloseRef.current) {
-        skipAutoCloseRef.current = false;
-        return;
-      }
-
-      if (!isHostWaiting || !currentMatch) {
-        return;
-      }
-
-      event.preventDefault();
-
-      if (closingRef.current) {
-        return;
-      }
-
-      closingRef.current = true;
-
-      cancelLobbyAsHost()
-        .catch(() => null)
-        .finally(() => {
-          closingRef.current = false;
-          navigation.dispatch(event.data.action);
-        });
+    return navigation.addListener('beforeRemove', () => {
+      skipAutoCloseRef.current = false;
     });
-
-    return unsubscribe;
-  }, [cancelLobbyAsHost, currentMatch, isHostWaiting, navigation]);
+  }, [navigation]);
 
   const showCreateSetup = false;
   const participantCount = participants.filter((item) => !item.isPlaceholder).length;
+  const hasEnoughPlayers = participantCount > 1;
 
   if (showCreateSetup) {
     return (
@@ -859,8 +979,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.subtitle}>Multiplayer Arena</Text>
-          <Text style={styles.title}>Online Battle</Text>
+          <Text style={styles.title}>Multiplayer Arena</Text>
         </View>
         <View style={styles.headerActions}>
           <Pressable
@@ -888,110 +1007,125 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         </View>
       </View>
 
-      {loadingUser ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator size="small" color="#60A5FA" />
-      <Text style={styles.loadingText}>Profil wird geladen ...</Text>
-    </View>
-  ) : null}
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {loadingUser ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="small" color="#60A5FA" />
+            <Text style={styles.loadingText}>Profil wird geladen ...</Text>
+          </View>
+        ) : null}
 
-  {matchesError ? (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorTitle}>Oops!</Text>
-          <Text style={styles.errorMessage}>
-            {matchesError.message ?? 'Es ist ein Fehler aufgetreten.'}
-          </Text>
-    </View>
-  ) : null}
+        {matchesError ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorTitle}>Oops!</Text>
+            <Text style={styles.errorMessage}>
+              {matchesError.message ?? 'Es ist ein Fehler aufgetreten.'}
+            </Text>
+          </View>
+        ) : null}
 
-  {isCreateOnly && !currentMatch ? (
-    <View style={styles.loadingBox}>
-      <ActivityIndicator size="small" color="#60A5FA" />
-      <Text style={styles.loadingText}>
-        {creating ? 'Lobby wird erstellt ...' : 'Starte Lobby ...'}
-      </Text>
-    </View>
-  ) : null}
+        {isCreateOnly && !currentMatch ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="small" color="#60A5FA" />
+            <Text style={styles.loadingText}>
+              {creating ? 'Lobby wird erstellt ...' : 'Starte Lobby ...'}
+            </Text>
+          </View>
+        ) : null}
 
-  {showConfigCard ? (
-    <View style={styles.configCard}>
-      <Text style={styles.configTitle}>Lobby konfigurieren</Text>
+        {showConfigCard ? (
+          <View style={styles.configCard}>
+            <Text style={styles.configTitle}>Lobby konfigurieren</Text>
 
-          <View style={styles.configSection}>
-            <Text style={styles.configLabel}>Schwierigkeit</Text>
-            <View style={styles.difficultyChips}>
-              {Object.keys(DIFFICULTY_LABELS).map((key) => {
-                const active = key === selectedDifficulty;
-                return (
-                  <Pressable
-                    key={key}
-                    onPress={() => setSelectedDifficulty(key)}
-                    style={[
-                      styles.difficultyChip,
-                      active ? styles.difficultyChipActive : null,
-                    ]}
-                  >
-                    <Text
+            <View style={styles.configSection}>
+              <Text style={styles.configLabel}>Schwierigkeit</Text>
+              <View style={styles.difficultyChips}>
+                {Object.keys(DIFFICULTY_LABELS).map((key) => {
+                  const active = key === selectedDifficulty;
+                  const accent = DIFFICULTY_ACCENTS[key] ?? '#60A5FA';
+                  return (
+                    <Pressable
+                      key={key}
+                      onPress={() => setSelectedDifficulty(key)}
                       style={[
-                        styles.difficultyChipText,
-                        active ? styles.difficultyChipTextActive : null,
+                        styles.difficultyChip,
+                        active
+                          ? [
+                              styles.difficultyChipActive,
+                              {
+                                borderColor: accent,
+                                backgroundColor: `${accent}22`,
+                              },
+                            ]
+                          : { borderColor: 'rgba(148, 163, 184, 0.3)' },
                       ]}
                     >
-                      {DIFFICULTY_LABELS[key]}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+                      <Text
+                        style={[
+                          styles.difficultyChipText,
+                          active
+                            ? [
+                                styles.difficultyChipTextActive,
+                                { color: accent },
+                              ]
+                            : { color: '#E2E8F0' },
+                        ]}
+                      >
+                        {DIFFICULTY_LABELS[key]}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
-          </View>
 
-          <View style={styles.configSection}>
-            <Text style={styles.configLabel}>Fragenanzahl</Text>
-            <View style={styles.questionStepper}>
-              <Pressable
-                onPress={() => adjustQuestionLimit(-1)}
-                style={[
-                  styles.stepperButton,
-                  questionLimit <= MIN_QUESTION_LIMIT
-                    ? styles.stepperButtonDisabled
-                    : null,
-                ]}
-                disabled={questionLimit <= MIN_QUESTION_LIMIT}
-              >
-                <Text style={styles.stepperButtonText}>-</Text>
-              </Pressable>
-              <Text style={styles.stepperValue}>{questionLimit}</Text>
-              <Pressable
-                onPress={() => adjustQuestionLimit(1)}
-                style={[
-                  styles.stepperButton,
-                  questionLimit >= MAX_QUESTION_LIMIT
-                    ? styles.stepperButtonDisabled
-                    : null,
-                ]}
-                disabled={questionLimit >= MAX_QUESTION_LIMIT}
-              >
-                <Text style={styles.stepperButtonText}>+</Text>
-              </Pressable>
+            <View style={styles.configSection}>
+              <Text style={styles.configLabel}>Fragenanzahl</Text>
+              <View style={styles.questionStepper}>
+                <Pressable
+                  onPress={() => adjustQuestionLimit(-1)}
+                  style={[
+                    styles.stepperButton,
+                    questionLimit <= MIN_QUESTION_LIMIT
+                      ? styles.stepperButtonDisabled
+                      : null,
+                  ]}
+                  disabled={questionLimit <= MIN_QUESTION_LIMIT}
+                >
+                  <Text style={styles.stepperButtonText}>-</Text>
+                </Pressable>
+                <Text style={styles.stepperValue}>{questionLimit}</Text>
+                <Pressable
+                  onPress={() => adjustQuestionLimit(1)}
+                  style={[
+                    styles.stepperButton,
+                    questionLimit >= MAX_QUESTION_LIMIT
+                      ? styles.stepperButtonDisabled
+                      : null,
+                  ]}
+                  disabled={questionLimit >= MAX_QUESTION_LIMIT}
+                >
+                  <Text style={styles.stepperButtonText}>+</Text>
+                </Pressable>
+              </View>
             </View>
+
+            <Pressable
+              onPress={handleCreateMatch}
+              disabled={creating || !userId}
+              style={[
+                styles.startAction,
+                creating ? styles.actionDisabled : null,
+              ]}
+            >
+              <Text style={styles.startActionText}>
+                {creating ? 'Erstelle Lobby ...' : 'Lobby starten'}
+              </Text>
+            </Pressable>
           </View>
+        ) : null}
 
-          <Pressable
-            onPress={handleCreateMatch}
-            disabled={creating || !userId}
-            style={[
-              styles.startAction,
-              creating ? styles.actionDisabled : null,
-            ]}
-          >
-            <Text style={styles.startActionText}>
-              {creating ? 'Erstelle Lobby ...' : 'Lobby starten'}
-            </Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      {!isJoinOnly && !isCreateOnly ? (
+        {!isJoinOnly && !isCreateOnly ? (
         <View style={styles.actionsRow}>
           <Pressable
             style={[
@@ -1002,13 +1136,13 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
             disabled={creating || !userId}
           >
             <Text style={styles.primaryActionText}>
-              {creating ? 'Erstelle Lobby ...' : 'Lobby hosten'}
+              {creating ? 'Erstelle Lobby ...' : 'Start'}
             </Text>
           </Pressable>
         </View>
       ) : null}
 
-      {!isCreateOnly ? (
+        {!isCreateOnly ? (
         <>
           <View style={styles.joinSection}>
             <Text style={styles.joinLabel}>Match-Code eingeben</Text>
@@ -1058,23 +1192,24 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
               data={openMatches}
               keyExtractor={(item) => item.id}
               renderItem={renderMatch}
+              scrollEnabled={false}
               contentContainerStyle={
                 openMatches.length ? styles.listContent : styles.listEmpty
               }
               ListEmptyComponent={<EmptyState />}
             />
           )}
-        </>
-      ) : null}
+          </>
+        ) : null}
 
-      {currentJoinCode ? (
-        <View style={styles.lobbyCard}>
-          <Text style={styles.lobbyTitle}>Warte auf Gegner</Text>
+        {currentJoinCode ? (
+          <View style={styles.lobbyCard}>
+          <Text style={styles.lobbyTitle}>Lobby erstellt</Text>
 
           <View style={styles.participantsHeader}>
             <Text style={styles.participantsTitle}>Spieler</Text>
             <Text style={styles.participantsCount}>
-              {participantCount}/2
+              {participantCount}/{MAX_PLAYERS}
             </Text>
           </View>
 
@@ -1120,18 +1255,18 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
                 style={[
                   styles.primaryAction,
                   styles.startButton,
-                  !hasGuestInLobby || startingMatch ? styles.actionDisabled : null,
+                  !hasEnoughPlayers || startingMatch ? styles.actionDisabled : null,
                 ]}
-                disabled={!hasGuestInLobby || startingMatch}
+                disabled={!hasEnoughPlayers || startingMatch}
               >
                 <Text style={styles.primaryActionText}>
-                  {startingMatch ? 'Starte ...' : 'Loslegen'}
+                  {startingMatch ? 'Starte ...' : 'Start'}
                 </Text>
               </Pressable>
               <Text style={styles.startHint}>
-                {hasGuestInLobby
+                {hasEnoughPlayers
                   ? 'Host startet das Spiel fuer beide.'
-                  : 'Warte auf einen Gast vor dem Start.'}
+                  : 'Warte auf weitere Spieler vor dem Start.'}
               </Text>
             </View>
           ) : null}
@@ -1145,6 +1280,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
                 <View style={styles.difficultyChips}>
                   {Object.keys(DIFFICULTY_LABELS).map((key) => {
                     const active = key === selectedDifficulty;
+                    const accent = DIFFICULTY_ACCENTS[key] ?? '#60A5FA';
                     return (
                       <Pressable
                         key={key}
@@ -1156,13 +1292,26 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
                         }}
                         style={[
                           styles.difficultyChip,
-                          active ? styles.difficultyChipActive : null,
+                          active
+                            ? [
+                                styles.difficultyChipActive,
+                                {
+                                  borderColor: accent,
+                                  backgroundColor: `${accent}22`,
+                                },
+                              ]
+                            : { borderColor: 'rgba(148, 163, 184, 0.3)' },
                         ]}
                       >
                         <Text
                           style={[
                             styles.difficultyChipText,
-                            active ? styles.difficultyChipTextActive : null,
+                            active
+                              ? [
+                                  styles.difficultyChipTextActive,
+                                  { color: accent },
+                                ]
+                              : { color: '#E2E8F0' },
                           ]}
                         >
                           {DIFFICULTY_LABELS[key]}
@@ -1223,8 +1372,48 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
               <Image source={SHARE_ANIM} style={styles.shareIconAnim} />
             </Pressable>
           </View>
+
+          <View style={styles.onlineFriendsSection}>
+            <Text style={styles.onlineFriendsTitle}>Freunde online</Text>
+            <Text style={styles.onlineFriendsSubtitle}>
+              Tippe, um direkt in deine Lobby einzuladen
+            </Text>
+
+            {friendsLoading ? (
+              <View style={styles.loadingInline}>
+                <ActivityIndicator size="small" color="#60A5FA" />
+                <Text style={styles.loadingInlineText}>Suche Freunde ...</Text>
+              </View>
+            ) : null}
+
+            {!friendsLoading && onlineFriends.length ? (
+              <View style={styles.onlineFriendList}>
+                {onlineFriends.map((friend) => (
+                  <Pressable
+                    key={friend.code}
+                    onPress={() => handleInviteFriend(friend)}
+                    style={styles.onlineFriendCard}
+                  >
+                    <Text style={styles.onlineFriendName}>
+                      {friend.username ?? 'Freund:in'}
+                    </Text>
+                    <Text style={styles.onlineFriendCode}>{friend.code}</Text>
+                    <Text style={styles.onlineFriendHint}>Einladen</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+
+            {!friendsLoading && !onlineFriends.length ? (
+              <Text style={styles.onlineFriendEmpty}>
+                Gerade ist niemand aus deiner Crew online. Teile den Code trotzdem!
+              </Text>
+            ) : null}
+          </View>
         </View>
       ) : null}
+
+      </ScrollView>
 
       {showLeaveConfirm ? (
         <View style={styles.modalOverlay}>

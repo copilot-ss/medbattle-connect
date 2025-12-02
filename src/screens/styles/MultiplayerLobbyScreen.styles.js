@@ -8,6 +8,10 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingBottom: 24,
   },
+  scrollContent: {
+    paddingBottom: 36,
+    gap: 16,
+  },
   createHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -99,8 +103,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   title: {
-    color: '#E0F2FE',
-    fontSize: 28,
+    color: '#F472B6',
+    fontSize: 26,
     fontWeight: '800',
     marginTop: 4,
   },
@@ -373,6 +377,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
+  participantGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    columnGap: 12,
+    rowGap: 12,
+  },
   participantsTitle: {
     color: '#BFDBFE',
     fontSize: 14,
@@ -392,7 +402,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   participantAvatarCard: {
-    width: '48%',
+    width: '30%',
     alignItems: 'center',
     gap: 6,
   },
@@ -482,16 +492,19 @@ const styles = StyleSheet.create({
   },
   actionsRow: {
     flexDirection: 'row',
-    columnGap: 12,
+    justifyContent: 'center',
     marginBottom: 20,
   },
   primaryAction: {
-    flex: 1,
+    alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#22C55E',
     borderRadius: 16,
-    paddingVertical: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    minWidth: 170,
+    maxWidth: 200,
     shadowColor: '#22C55E',
     shadowOpacity: 0.35,
     shadowRadius: 14,
@@ -499,9 +512,9 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   primaryActionText: {
-    color: '#052E16',
-    fontSize: 16,
-    fontWeight: '800',
+    color: '#02190F',
+    fontSize: 18,
+    fontWeight: '900',
   },
   actionDisabled: {
     opacity: 0.65,
@@ -637,6 +650,66 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  onlineFriendsSection: {
+    marginTop: 18,
+    padding: 16,
+    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(96, 165, 250, 0.35)',
+    rowGap: 10,
+  },
+  onlineFriendsTitle: {
+    color: '#E0F2FE',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  onlineFriendsSubtitle: {
+    color: '#94A3B8',
+    fontSize: 13,
+  },
+  loadingInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 10,
+  },
+  loadingInlineText: {
+    color: '#E2E8F0',
+  },
+  onlineFriendList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  onlineFriendCard: {
+    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+    borderColor: 'rgba(37, 99, 235, 0.45)',
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    minWidth: 120,
+  },
+  onlineFriendName: {
+    color: '#E2E8F0',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  onlineFriendCode: {
+    color: '#93C5FD',
+    fontSize: 12,
+    letterSpacing: 0.5,
+    marginTop: 4,
+  },
+  onlineFriendHint: {
+    color: '#60A5FA',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  onlineFriendEmpty: {
+    color: '#94A3B8',
+    fontSize: 13,
   },
   modalOverlay: {
     position: 'absolute',
