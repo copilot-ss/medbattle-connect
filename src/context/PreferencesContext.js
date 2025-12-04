@@ -66,7 +66,8 @@ export function PreferencesProvider({ children }) {
           return;
         }
 
-        setSoundEnabledState(storedSound === 'true');
+        const soundDefault = storedSound === null ? true : storedSound === 'true';
+        setSoundEnabledState(soundDefault);
         setVibrationEnabledState(
           storedVibration === null ? true : storedVibration === 'true'
         );

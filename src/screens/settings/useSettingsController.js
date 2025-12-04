@@ -331,12 +331,10 @@ export default function useSettingsController({ navigation, route, onClearSessio
     setLoadingEmail(true);
 
     try {
-      const { error } = await supabase.auth.updateUser(
-        { email: trimmed },
-        {
-          emailRedirectTo: EMAIL_UPDATE_REDIRECT,
-        }
-      );
+      const { error } = await supabase.auth.updateUser({
+        email: trimmed,
+        emailRedirectTo: EMAIL_UPDATE_REDIRECT,
+      });
 
       if (error) {
         throw error;
