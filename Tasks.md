@@ -1,5 +1,4 @@
-@"
-# ✅ TASKS.md — MedBattle Aufgabenliste
+# TASKS.md — MedBattle Aufgabenliste
 
 ## Aktive Aufgaben
 - [ ] Werbung (AdMob) einbauen
@@ -9,7 +8,7 @@
 - [x] Multiplayer-Duelle (Realtime)
 
 ## Erledigt
-- [x] Grundstruktur React Native + Expo  
-- [x] Supabase Verbindung  
-- [x] Quiz mit Fragen und Ergebnis  
-"@ | Out-File -FilePath TASKS.md -Encoding utf8
+- [x] Grundstruktur React Native + Expo
+- [x] Supabase Verbindung
+- [x] Quiz mit Fragen und Ergebnis
+- [x] Supabase CLI eingerichtet und mit Projekt `uxlwbzgohgxbnhcjiimh` verknüpft

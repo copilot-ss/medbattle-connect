@@ -118,6 +118,10 @@ export default function useSettingsController({ navigation, route, onClearSessio
   const emailCtaHint = isGuest
     ? 'Lege einen Account mit E-Mail an.'
     : 'Neue E-Mail wird nach Bestaetigung aktiv.';
+  const [authProvider, setAuthProvider] = useState('password');
+  const isOAuthUser = authProvider && authProvider !== 'password';
+  const showEmailActions = !isOAuthUser && !isGuest;
+  const showResetActions = !isOAuthUser && !isGuest;
 
   const showAudioSection = activeTab === 'settings';
   const showFriendsSection = activeTab === 'friends';
@@ -245,6 +249,11 @@ export default function useSettingsController({ navigation, route, onClearSessio
 
       const user = data?.user ?? null;
       const id = user?.id ?? null;
+      const provider =
+        Array.isArray(user?.app_metadata?.providers) && user.app_metadata.providers.length
+          ? user.app_metadata.providers[0]
+          : user?.app_metadata?.provider ?? user?.user_metadata?.provider ?? 'password';
+      setAuthProvider(provider || 'password');
       const metaName =
         user?.user_metadata?.full_name ?? user?.user_metadata?.display_name;
 
@@ -516,6 +525,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     emailCtaHint,
     loadingEmail,
     handleEmailUpdate,
+    showEmailActions,
     // friends
     friendCode,
     copySuccess,
@@ -539,5 +549,6 @@ export default function useSettingsController({ navigation, route, onClearSessio
     handlePasswordReset,
     signingOut,
     handleSignOut,
+    showResetActions,
   };
 }

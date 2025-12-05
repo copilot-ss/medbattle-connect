@@ -26,6 +26,7 @@ export default function ProfileSection({
   emailCtaHint,
   loadingEmail,
   onEmailUpdate,
+  showEmailActions = true,
 }) {
   return (
     <View style={[styles.card, styles.profileCard]}>
@@ -103,33 +104,35 @@ export default function ProfileSection({
         </View>
       ) : null}
 
-      <View style={styles.fieldGroup}>
-        <TextInput
-          value={newEmail}
-          onChangeText={setNewEmail}
-          placeholder="name@example.com"
-          placeholderTextColor="#64748B"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          style={styles.input}
-        />
-        <Text style={styles.helperText}>{emailCtaHint}</Text>
-        <Pressable
-          onPress={onEmailUpdate}
-          disabled={loadingEmail}
-          style={[
-            styles.actionButton,
-            styles.primaryButton,
-            loadingEmail ? styles.disabledButton : null,
-          ]}
-        >
-          {loadingEmail ? (
-            <ActivityIndicator color="#F8FAFC" />
-          ) : (
-            <Text style={styles.primaryButtonText}>{emailCtaLabel}</Text>
-          )}
-        </Pressable>
-      </View>
+      {showEmailActions ? (
+        <View style={styles.fieldGroup}>
+          <TextInput
+            value={newEmail}
+            onChangeText={setNewEmail}
+            placeholder="name@example.com"
+            placeholderTextColor="#64748B"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            style={styles.input}
+          />
+          <Text style={styles.helperText}>{emailCtaHint}</Text>
+          <Pressable
+            onPress={onEmailUpdate}
+            disabled={loadingEmail}
+            style={[
+              styles.actionButton,
+              styles.primaryButton,
+              loadingEmail ? styles.disabledButton : null,
+            ]}
+          >
+            {loadingEmail ? (
+              <ActivityIndicator color="#F8FAFC" />
+            ) : (
+              <Text style={styles.primaryButtonText}>{emailCtaLabel}</Text>
+            )}
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }

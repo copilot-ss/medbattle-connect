@@ -10,19 +10,22 @@ export default function SettingsFooter({
   onResetPassword,
   signingOut,
   onSignOut,
+  showResetActions = true,
 }) {
   return (
     <View style={styles.fixedFooter}>
-      <Pressable
-        onPress={onToggleResetForm}
-        style={styles.inlineLink}
-        accessibilityRole="button"
-        accessibilityLabel="Passwort vergessen"
-      >
-        <Text style={styles.inlineLinkText}>Passwort vergessen?</Text>
-      </Pressable>
+      {showResetActions ? (
+        <Pressable
+          onPress={onToggleResetForm}
+          style={styles.inlineLink}
+          accessibilityRole="button"
+          accessibilityLabel="Passwort vergessen"
+        >
+          <Text style={styles.inlineLinkText}>Passwort vergessen?</Text>
+        </Pressable>
+      ) : null}
 
-      {showResetForm ? (
+      {showResetActions && showResetForm ? (
         <View style={styles.resetContainer}>
           <TextInput
             value={resetEmail}

@@ -58,6 +58,7 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
     emailCtaHint,
     loadingEmail,
     handleEmailUpdate,
+    showEmailActions,
     feedback,
     showResetForm,
     handleToggleResetForm,
@@ -67,6 +68,7 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
     handlePasswordReset,
     signingOut,
     handleSignOut,
+    showResetActions,
   } = useSettingsController({ navigation, route, onClearSession });
 
   return (
@@ -132,6 +134,7 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
             emailCtaHint={emailCtaHint}
             loadingEmail={loadingEmail}
             onEmailUpdate={handleEmailUpdate}
+            showEmailActions={showEmailActions}
           />
         ) : null}
 
@@ -159,6 +162,7 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
           onResetPassword={handlePasswordReset}
           signingOut={signingOut}
           onSignOut={handleSignOut}
+          showResetActions={showResetActions}
         />
       ) : null}
     </View>

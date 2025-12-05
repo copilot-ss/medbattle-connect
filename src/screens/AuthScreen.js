@@ -27,10 +27,7 @@ const EXPO_PROXY_REDIRECT =
 
 const NATIVE_SCHEME_REDIRECT = `medbattle://${REDIRECT_PATH}`;
 
-const OAUTH_REDIRECT =
-  APP_OWNERSHIP === 'expo' || Platform.OS === 'web'
-    ? EXPO_PROXY_REDIRECT
-    : NATIVE_SCHEME_REDIRECT;
+const OAUTH_REDIRECT = NATIVE_SCHEME_REDIRECT;
 
 async function loginOAuth(provider, setMessage, setLoading) {
   try {
