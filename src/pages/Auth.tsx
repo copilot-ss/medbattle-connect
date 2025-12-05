@@ -42,7 +42,7 @@ const Auth = () => {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'twitter') => {
+  const handleSocialLogin = async (provider: 'google' | 'discord' | 'twitter') => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -223,12 +223,12 @@ const Auth = () => {
               </button>
 
               <button
-                onClick={() => handleSocialLogin('facebook')}
+                onClick={() => handleSocialLogin('discord')}
                 disabled={loading}
-                className="flex items-center justify-center py-3 bg-muted hover:bg-muted/80 border border-border rounded-xl transition-all hover:scale-105 hover:border-[#1877F2]/50 disabled:opacity-50 group"
+                className="flex items-center justify-center py-3 bg-muted hover:bg-muted/80 border border-border rounded-xl transition-all hover:scale-105 hover:border-[#5865F2]/50 disabled:opacity-50 group"
               >
-                <svg className="w-5 h-5 text-[#1877F2] group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                <svg className="w-5 h-5 text-[#5865F2] group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20 0H4C1.8 0 0 1.8 0 4v12c0 2.2 1.8 4 4 4h12l-.6-2.1 1.5 1.4L18 20l2.4 2 1.6-1.8-1.3-1.3.9-.7c.9-.7 1.4-1.8 1.4-3V4c0-2.2-1.8-4-4-4Zm-3.7 13.3c0 .1-.1.2-.2.2-1.5.4-2.9.4-4.3 0-.1 0-.2-.1-.2-.2v-.5c-.5.1-1.1.2-1.6.2-1 0-1.8-.3-2.5-.8-.1-.1-.1-.2 0-.3l.4-.7c0-.1.1-.1.2-.1h.1c.7.5 1.4.7 2.1.7.5 0 1-.1 1.5-.3v-.1c0-.2.1-.3.2-.4-.8-.2-1.5-.6-2-.2-.2.2-.4.4-.6.6 0 .1-.2.1-.3 0-.5-.3-.9-.7-1.2-1.2-.1-.1 0-.3.1-.3.5-.4 1-.6 1.6-.7.1 0 .2.1.3.2.3.5.9.7 1.4.5l1-.3c.1 0 .3 0 .4.1l.3.3c.1.1.3.1.4 0l.3-.3c.1-.1.2-.1.4-.1l1 .3c.5.2 1.1 0 1.4-.5.1-.1.2-.2.3-.2.6.1 1.1.4 1.6.7.1.1.2.2.1.3-.3.5-.7.9-1.2 1.2-.1.1-.2.1-.3 0-.2-.2-.4-.4-.6-.6-.5-.4-1.2 0-2 .2.1.1.2.3.2.4v.1c.5.2 1 .3 1.5.3.7 0 1.4-.2 2.1-.7.1-.1.2 0 .2.1l.4.7c.1.1.1.2 0 .3-.6.5-1.4.8-2.4.8-.6 0-1.1-.1-1.6-.2v.5Z"/>
                 </svg>
               </button>
 
