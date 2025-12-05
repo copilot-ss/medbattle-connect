@@ -42,7 +42,7 @@ const Auth = () => {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'discord' | 'twitter') => {
+  const handleSocialLogin = async (provider: 'google' | 'discord') => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -208,7 +208,7 @@ const Auth = () => {
             </div>
 
             {/* Social Buttons */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => handleSocialLogin('google')}
                 disabled={loading}
@@ -232,15 +232,6 @@ const Auth = () => {
                 </svg>
               </button>
 
-              <button
-                onClick={() => handleSocialLogin('twitter')}
-                disabled={loading}
-                className="flex items-center justify-center py-3 bg-muted hover:bg-muted/80 border border-border rounded-xl transition-all hover:scale-105 hover:border-foreground/30 disabled:opacity-50 group"
-              >
-                <svg className="w-5 h-5 text-foreground group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-              </button>
             </div>
           </>
         )}

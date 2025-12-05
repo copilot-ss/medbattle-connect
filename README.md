@@ -7,8 +7,8 @@ Kurzsetup, damit du im Lovable-Repo sofort mit Expo und Codex starten kannst.
 2. `.env` aus `.env.example` anlegen und Supabase-URL/-Anon-Key eintragen.
 3. `npm run start` (oder `npm run android` / `npm run ios` / `npm run web`).
 
-## OAuth (Google, Discord, Twitter)
-- Im Supabase Dashboard unter Authentication → Providers Google/Discord/Twitter aktivieren und App-ID/Secret hinterlegen.
+## OAuth (Google, Discord)
+- Im Supabase Dashboard unter Authentication → Providers Google/Discord aktivieren und App-ID/Secret hinterlegen.
 - Redirect-URL erlauben: `http://localhost:5173/` (bzw. deine Prod-Domain).
 - Danach funktionieren die Social Buttons im Auth-Screen sofort über Supabase OAuth.
 
