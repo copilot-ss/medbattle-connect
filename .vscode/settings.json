@@ -1,0 +1,6 @@
+
+{
+  "mcp.rules": [
+    "Always use context7 when code generation, setup/config, or API documentation is needed."
+  ]
+}
