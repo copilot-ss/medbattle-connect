@@ -448,7 +448,10 @@ export default function useSettingsController({ navigation, route, onClearSessio
     setSigningOut(true);
 
     try {
-      await supabase.auth.signOut();
+      // Logouts von OAuth-Providern (z.B. Google) schlagen seltener fehl, wenn nur lokale Session gelöscht wird.
+      await supabase.auth.signOut({ scope: 'local' });
+      // Fallback: kompletter Logout, falls Remote-Session aktiv ist.
+      await supabase.auth.signOut().catch(() => {});
       if (onClearSession) {
         onClearSession();
       }
