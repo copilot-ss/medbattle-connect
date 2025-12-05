@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
@@ -82,6 +82,26 @@ function ModeCard({ title, accent, onPress, disabled = false }) {
 export default function HomeScreen({ navigation, route }) {
   const activeLobby = route?.params?.activeLobby ?? null;
   const hasActiveLobby = Boolean(activeLobby?.code);
+  const streakPulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(streakPulse, {
+          toValue: 1,
+          duration: 2400,
+          useNativeDriver: false,
+        }),
+        Animated.timing(streakPulse, {
+          toValue: 0,
+          duration: 2400,
+          useNativeDriver: false,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [streakPulse]);
 
   function handleCreateLobby() {
     if (hasActiveLobby) {
@@ -111,6 +131,14 @@ export default function HomeScreen({ navigation, route }) {
       return;
     }
     navigation.navigate('CampaignPath');
+  }
+
+  function startQuickSolo() {
+    navigation.navigate('Quiz', {
+      mode: 'standard',
+      difficulty: DEFAULT_DIFFICULTY,
+      questionLimit: 5,
+    });
   }
 
   return (
@@ -149,6 +177,48 @@ export default function HomeScreen({ navigation, route }) {
           <Text style={styles.activeLobbyCode}>{activeLobby.code ?? ''}</Text>
         </Pressable>
       ) : null}
+
+      <View style={styles.momentumCard}>
+        <View style={styles.momentumHeader}>
+          <Text style={styles.momentumTitle}>Momentum</Text>
+          <View style={styles.momentumBadge}>
+            <Text style={styles.momentumBadgeText}>Next reward +50 XP</Text>
+          </View>
+        </View>
+
+        <View style={styles.streakRow}>
+          <Text style={styles.streakLabel}>Streak</Text>
+          <Text style={styles.streakValue}>3 Tage</Text>
+        </View>
+        <View style={styles.streakBarOuter}>
+          <Animated.View
+            style={[
+              styles.streakBarInner,
+              {
+                width: streakPulse.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['38%', '92%'],
+                }),
+              },
+            ]}
+          />
+        </View>
+
+        <View style={styles.statRow}>
+          <View style={styles.statPill}>
+            <Text style={styles.statPillLabel}>XP</Text>
+            <Text style={styles.statPillValue}>1.240</Text>
+          </View>
+          <View style={styles.statPill}>
+            <Text style={styles.statPillLabel}>Rang</Text>
+            <Text style={styles.statPillValue}>#128</Text>
+          </View>
+          <Pressable style={styles.quickQuizButton} onPress={startQuickSolo}>
+            <Ionicons name="flash" size={18} color="#0EA5E9" />
+            <Text style={styles.quickQuizText}>Quick Quiz</Text>
+          </Pressable>
+        </View>
+      </View>
 
       <View style={styles.animationWrapper} pointerEvents="none">
         <LottieView
