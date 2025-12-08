@@ -3,7 +3,7 @@
 ## Aktive Aufgaben
 - [ ] Werbung (AdMob) einbauen
 - [ ] Premium-Modus ohne Werbung
-- [ ] Supabase Auth (E-Mail + Google)
+- [ ] Supabase Auth (E-Mail)
 - [x] Highscore / Rangliste
 - [x] Multiplayer-Duelle (Realtime)
 
@@ -12,3 +12,4 @@
 - [x] Supabase Verbindung
 - [x] Quiz mit Fragen und Ergebnis
 - [x] Supabase CLI eingerichtet und mit Projekt `uxlwbzgohgxbnhcjiimh` verknüpft
+- [x] Supabase Auth (Google OAuth)

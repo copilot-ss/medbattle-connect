@@ -1,8 +1,8 @@
 {
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "import:questions": "node scripts/importQuestions.js"
   },
@@ -14,7 +14,7 @@
     "@supabase/supabase-js": "^2.77.0",
     "@tanstack/react-query": "^5.90.12",
     "@vitejs/plugin-react-swc": "^4.2.2",
-    "expo": "~54.0.26",
+    "expo": "^54.0.27",
     "expo-auth-session": "~7.0.9",
     "expo-clipboard": "^8.0.7",
     "expo-dev-client": "^6.0.19",
@@ -41,5 +41,7 @@
   "devDependencies": {
     "@types/react": "~18.3.12",
     "typescript": "~5.9.2"
-  }
+  },
+  "name": "medbattle-connect",
+  "version": "1.0.0"
 }

@@ -38,6 +38,15 @@ function parseOptions(rawOptions) {
   return [];
 }
 
+function normalizeOptions(rawOptions, correctAnswer) {
+  const options = parseOptions(rawOptions);
+  const unique = Array.from(new Set(options.filter(Boolean)));
+  if (correctAnswer && !unique.includes(correctAnswer)) {
+    unique.push(correctAnswer);
+  }
+  return shuffleList(unique);
+}
+
 function shuffleList(list) {
   const copy = Array.isArray(list) ? [...list] : [];
   for (let i = copy.length - 1; i > 0; i -= 1) {
@@ -57,20 +66,68 @@ export function fetchCampaignQuestions(limit = CAMPAIGN_QUESTION_LIMIT) {
 
   return questions.map((question) => ({
     ...question,
-    options: shuffleList(question.options),
+    options: normalizeOptions(question.options, question.correct_answer),
   }));
 }
 
 export function fetchCampaignStageQuestions(stageKey, limit) {
-  const questions = getCampaignQuestionsForStage(stageKey, limit);
-  if (!Array.isArray(questions) || !questions.length) {
-    return [];
+  const stage = getCampaignStageByKey(stageKey);
+  const safeLimit = Number.isFinite(limit)
+    ? Math.max(1, limit)
+    : stage.questionLimit ?? CAMPAIGN_QUESTION_LIMIT;
+  const localFallback = getCampaignQuestionsForStage(stage.key, safeLimit).map((question) => ({
+    ...question,
+    difficulty: question.difficulty ?? stage.difficulty ?? 'mittel',
+    options: normalizeOptions(question.options, question.correct_answer),
+  }));
+
+  // Wenn Supabase nicht konfiguriert ist, sofort auf lokale Kampagnenfragen zurueckfallen.
+  if (!supabase || typeof supabase.from !== 'function') {
+    return localFallback;
   }
 
-  return questions.map((question) => ({
-    ...question,
-    options: shuffleList(question.options),
-  }));
+  return supabase
+    .from('questions')
+    .select('*')
+    .eq('category', stage.region)
+    .eq('difficulty', stage.difficulty)
+    .order('created_at', { ascending: false })
+    .limit(safeLimit * 2)
+    .then(({ data, error }) => {
+      if (error) {
+        console.warn('Konnte Kampagnenfragen nicht aus Supabase laden:', error.message);
+        return localFallback;
+      }
+
+      const rows = Array.isArray(data) ? data : [];
+      if (!rows.length) {
+        return localFallback;
+      }
+
+      const normalized = rows
+        .map((question) => ({
+          ...question,
+          difficulty: question.difficulty ?? stage.difficulty ?? 'mittel',
+          options: normalizeOptions(question.options, question.correct_answer),
+        }))
+        .filter(
+          (question) =>
+            question.question &&
+            question.correct_answer &&
+            Array.isArray(question.options) &&
+            question.options.length >= 2
+        );
+
+      if (!normalized.length) {
+        return localFallback;
+      }
+
+      return normalized.slice(0, safeLimit);
+    })
+    .catch((err) => {
+      console.warn('Unerwarteter Fehler beim Laden der Kampagnenfragen:', err);
+      return localFallback;
+    });
 }
 
 export async function fetchQuestions(difficulty = 'mittel', limit = 5) {
@@ -102,11 +159,10 @@ export async function fetchQuestions(difficulty = 'mittel', limit = 5) {
 
     const normalized = rows
       .map((question) => {
-        const options = parseOptions(question.options);
         return {
           ...question,
           difficulty: question.difficulty ?? normalizedDifficulty,
-          options,
+          options: normalizeOptions(question.options, question.correct_answer),
         };
       })
       .filter(

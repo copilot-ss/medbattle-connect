@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '../integrations/supabase/client';
+import { supabase, isSupabaseConfigured } from '../integrations/supabase/client';
 
 type AuthMode = 'login' | 'signup' | 'forgot';
 
@@ -9,9 +9,19 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const supabaseReady = isSupabaseConfigured;
+  const actionDisabled = loading || !supabaseReady;
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!supabaseReady) {
+      setMessage({
+        type: 'error',
+        text: 'Supabase ist nicht konfiguriert. Bitte VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY setzen.',
+      });
+      return;
+    }
+
     setLoading(true);
     setMessage(null);
 
@@ -24,13 +34,13 @@ const Auth = () => {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/` }
+          options: { emailRedirectTo: `${window.location.origin}/` },
         });
         if (error) throw error;
-        setMessage({ type: 'success', text: 'Check deine E-Mails für den Bestätigungslink!' });
+        setMessage({ type: 'success', text: 'Check deine E-Mails fuer den Bestaetigungslink!' });
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth`
+          redirectTo: `${window.location.origin}/auth`,
         });
         if (error) throw error;
         setMessage({ type: 'success', text: 'Password-Reset E-Mail wurde gesendet!' });
@@ -43,11 +53,19 @@ const Auth = () => {
   };
 
   const handleSocialLogin = async (provider: 'google' | 'discord') => {
+    if (!supabaseReady) {
+      setMessage({
+        type: 'error',
+        text: 'Supabase ist nicht konfiguriert. Bitte VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY setzen.',
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: `${window.location.origin}/` }
+        options: { redirectTo: `${window.location.origin}/` },
       });
       if (error) throw error;
     } catch (error: any) {
@@ -68,21 +86,27 @@ const Auth = () => {
       </div>
 
       {/* Floating Medical Icons */}
-      <div className="absolute top-20 left-20 text-primary/30 text-6xl float pulse-neon">✚</div>
-      <div className="absolute bottom-32 right-20 text-secondary/30 text-4xl float" style={{ animationDelay: '1s' }}>💊</div>
-      <div className="absolute top-40 right-32 text-accent/30 text-5xl float" style={{ animationDelay: '2s' }}>🩺</div>
-      <div className="absolute bottom-20 left-32 text-primary/30 text-4xl float" style={{ animationDelay: '0.5s' }}>🧬</div>
+      <div className="absolute top-20 left-20 text-primary/30 text-6xl float pulse-neon">RX</div>
+      <div className="absolute bottom-32 right-20 text-secondary/30 text-4xl float" style={{ animationDelay: '1s' }}>EKG</div>
+      <div className="absolute top-40 right-32 text-accent/30 text-5xl float" style={{ animationDelay: '2s' }}>BP</div>
+      <div className="absolute bottom-20 left-32 text-primary/30 text-4xl float" style={{ animationDelay: '0.5s' }}>LAB</div>
 
       {/* Main Card */}
       <div className="glass rounded-3xl p-8 w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary neon-glow mb-4">
-            <span className="text-4xl">🏥</span>
+            <span className="text-4xl">MB</span>
           </div>
           <h1 className="text-3xl font-bold gradient-text" style={{ fontFamily: "'Orbitron', sans-serif" }}>MedBattle</h1>
           <p className="text-muted-foreground mt-2">Medical Quiz Arena</p>
         </div>
+
+        {!supabaseReady && (
+          <div className="mb-4 p-3 rounded-xl bg-destructive/10 text-destructive border border-destructive/30 text-sm">
+            Supabase ist nicht konfiguriert. Bitte VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY (oder EXPO_PUBLIC_ Varianten) setzen.
+          </div>
+        )}
 
         {/* Tabs */}
         {!isForgotMode && (
@@ -112,7 +136,7 @@ const Auth = () => {
 
         {isForgotMode && (
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-center text-foreground">Passwort zurücksetzen</h2>
+            <h2 className="text-xl font-semibold text-center text-foreground">Passwort zuruecksetzen</h2>
             <p className="text-muted-foreground text-center text-sm mt-1">Wir senden dir einen Reset-Link</p>
           </div>
         )}
@@ -139,7 +163,7 @@ const Auth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none input-glow transition-all"
-                placeholder="••••••••"
+                placeholder="********"
                 required
                 minLength={6}
               />
@@ -162,7 +186,7 @@ const Auth = () => {
               onClick={() => { setMode('login'); setMessage(null); }}
               className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
             >
-              ← Zurück zum Login
+              Zurueck zum Login
             </button>
           )}
 
@@ -179,7 +203,7 @@ const Auth = () => {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={actionDisabled}
             className={`w-full py-3.5 rounded-xl font-semibold transition-all btn-shine ${
               mode === 'signup'
                 ? 'bg-gradient-to-r from-secondary to-pink-500 text-white neon-glow-purple'
@@ -211,7 +235,7 @@ const Auth = () => {
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => handleSocialLogin('google')}
-                disabled={loading}
+                disabled={actionDisabled}
                 className="flex items-center justify-center py-3 bg-muted hover:bg-muted/80 border border-border rounded-xl transition-all hover:scale-105 hover:border-primary/50 disabled:opacity-50 group"
               >
                 <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
@@ -224,11 +248,11 @@ const Auth = () => {
 
               <button
                 onClick={() => handleSocialLogin('discord')}
-                disabled={loading}
+                disabled={actionDisabled}
                 className="flex items-center justify-center py-3 bg-muted hover:bg-muted/80 border border-border rounded-xl transition-all hover:scale-105 hover:border-[#5865F2]/50 disabled:opacity-50 group"
               >
                 <svg className="w-5 h-5 text-[#5865F2] group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20 0H4C1.8 0 0 1.8 0 4v12c0 2.2 1.8 4 4 4h12l-.6-2.1 1.5 1.4L18 20l2.4 2 1.6-1.8-1.3-1.3.9-.7c.9-.7 1.4-1.8 1.4-3V4c0-2.2-1.8-4-4-4Zm-3.7 13.3c0 .1-.1.2-.2.2-1.5.4-2.9.4-4.3 0-.1 0-.2-.1-.2-.2v-.5c-.5.1-1.1.2-1.6.2-1 0-1.8-.3-2.5-.8-.1-.1-.1-.2 0-.3l.4-.7c0-.1.1-.1.2-.1h.1c.7.5 1.4.7 2.1.7.5 0 1-.1 1.5-.3v-.1c0-.2.1-.3.2-.4-.8-.2-1.5-.6-2-.2-.2.2-.4.4-.6.6 0 .1-.2.1-.3 0-.5-.3-.9-.7-1.2-1.2-.1-.1 0-.3.1-.3.5-.4 1-.6 1.6-.7.1 0 .2.1.3.2.3.5.9.7 1.4.5l1-.3c.1 0 .3 0 .4.1l.3.3c.1.1.3.1.4 0l.3-.3c.1-.1.2-.1.4-.1l1 .3c.5.2 1.1 0 1.4-.5.1-.1.2-.2.3-.2.6.1 1.1.4 1.6.7.1.1.2.2.1.3-.3.5-.7.9-1.2 1.2-.1.1-.2.1-.3 0-.2-.2-.4-.4-.6-.6-.5-.4-1.2 0-2 .2.1.1.2.3.2.4v.1c.5.2 1 .3 1.5.3.7 0 1.4-.2 2.1-.7.1-.1.2 0 .2.1l.4.7c.1.1.1.2 0 .3-.6.5-1.4.8-2.4.8-.6 0-1.1-.1-1.6-.2v.5Z"/>
+                  <path d="M20 0H4C1.8 0 0 1.8 0 4v12c0 2.2 1.8 4 4 4h12l-.6-2.1 1.5 1.4L18 20l2.4 2 1.6-1.8-1.3-1.3.9-.7c.9-.7 1.4-1.8 1.4-3V4c0-2.2-1.8-4-4-4Zm-3.7 13.3c0 .1-.1.2-.2.2-1.5.4-2.9.4-4.3 0-.1 0-.2-.1-.2-.2v-.5c-.5.1-1.1.2-1.6.2-1 0-1.8-.3-2.5-.8-.1-.1-.1-.2 0-.3l.4-.7c0-.1.1-.1.2-.1h.1c.7.5 1.4.7 2.1.7.5 0 1-.1 1.5-.3v-.1c0-.2.1-.3.2-.4-.8-.2-1.5-.6-2-.2-.2.2-.4.4-.6.6 0 .1-.2.1-.3 0-.5-.3-.9-.7-1.2-1.2-.1-.1 0-.3.1-.3.5-.4 1-.6 1.6-.7.1 0 .2.1 .3.2.3.5.9.7 1.4.5l1-.3c.1 0 .3 0 .4.1l.3.3c.1.1.3.1.4 0l.3-.3c.1-.1.2-.1.4-.1l1 .3c.5.2 1.1 0 1.4-.5.1-.1.2-.2.3-.2.6.1 1.1.4 1.6.7.1.1.2.2.1.3-.3.5-.7.9-1.2 1.2-.1.1-.2.1-.3 0-.2-.2-.4-.4-.6-.6-.5-.4-1.2 0-2 .2.1.1.2.3.2.4v.1c.5.2 1 .3 1.5 .3.7 0 1.4-.2 2.1-.7.1-.1.2 0 .2.1l.4.7c.1.1.1.2 0 .3-.6.5-1.4.8-2.4.8-.6 0-1.1-.1-1.6-.2v.5Z"/>
                 </svg>
               </button>
 

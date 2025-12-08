@@ -56,11 +56,11 @@ export function PreferencesProvider({ children }) {
                 const raw = await AsyncStorage.getItem(key);
                 const value = raw ? sanitizeStreakValue(raw) : 0;
                 nextStreaks[difficulty] = value;
-            } catch (err) {
-              console.warn(`Konnte Streak fuer ${difficulty} nicht laden:`, err);
-            }
-          }),
-        ]);
+              } catch (err) {
+                console.warn(`Konnte Streak fuer ${difficulty} nicht laden:`, err);
+              }
+            }),
+          ]);
 
         if (!active) {
           return;

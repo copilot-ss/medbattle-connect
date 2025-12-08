@@ -19,6 +19,22 @@ function normalizeDifficulty(value) {
   return ALLOWED_DIFFICULTIES.includes(value) ? value : 'mittel';
 }
 
+function prepareQuestions(questions) {
+  return (Array.isArray(questions) ? questions : []).map((question) => {
+    const baseOptions = Array.isArray(question.options)
+      ? question.options.filter(Boolean)
+      : [];
+    const optionsSet = new Set(baseOptions);
+    if (question.correct_answer && !optionsSet.has(question.correct_answer)) {
+      baseOptions.push(question.correct_answer);
+    }
+    return {
+      ...question,
+      options: shuffleOptions(baseOptions),
+    };
+  });
+}
+
 export default function useSoloQuestionLoader({
   isEnabled,
   isCampaign,
@@ -50,70 +66,33 @@ export default function useSoloQuestionLoader({
     async function loadQuestions() {
       setLoading(true);
       setQuestions([]);
+
       const localFallback =
-        !isCampaign && questionLimit > 0 ? fetchCampaignQuestions(questionLimit) : [];
-
-      const useLocalFallback = Array.isArray(localFallback) && localFallback.length > 0;
-
-      if (useLocalFallback) {
-        const preparedFallback = localFallback.map((question) => {
-          const baseOptions = Array.isArray(question.options)
-            ? question.options.filter(Boolean)
-            : [];
-          const optionsSet = new Set(baseOptions);
-          if (question.correct_answer && !optionsSet.has(question.correct_answer)) {
-            baseOptions.push(question.correct_answer);
-          }
-          return {
-            ...question,
-            options: shuffleOptions(baseOptions),
-          };
-        });
-
-        if (!cancelled) {
-          setQuestions(preparedFallback);
-          setError(null);
-          setLoading(false);
-        }
-      }
+        questionLimit > 0 ? fetchCampaignQuestions(questionLimit) : [];
+      const preparedFallback = prepareQuestions(localFallback);
+      const hasLocalFallback = preparedFallback.length > 0;
 
       try {
         const data = isCampaign
-          ? fetchCampaignStageQuestions(campaignStage, questionLimit)
+          ? await fetchCampaignStageQuestions(campaignStage, questionLimit)
           : await fetchQuestions(safeDifficulty, questionLimit);
 
         const sourceQuestions =
-          Array.isArray(data) && data.length
-            ? data
-            : useLocalFallback
-            ? localFallback
-            : [];
+          Array.isArray(data) && data.length ? data : preparedFallback;
 
         if (!sourceQuestions.length) {
           if (!cancelled) {
             setError(
               isCampaign
-                ? 'Keine Kampagnenfragen vorhanden. Bitte versuche es später erneut.'
-                : 'Keine Fragen verfügbar. Bitte versuche es gleich nochmal.'
+                ? 'Keine Kampagnenfragen vorhanden. Bitte versuche es spaeter erneut.'
+                : 'Keine Fragen verfuegbar. Bitte versuche es gleich nochmal.'
             );
             setQuestions([]);
           }
           return;
         }
 
-        const prepared = sourceQuestions.map((question) => {
-          const baseOptions = Array.isArray(question.options)
-            ? question.options.filter(Boolean)
-            : [];
-          const optionsSet = new Set(baseOptions);
-          if (question.correct_answer && !optionsSet.has(question.correct_answer)) {
-            baseOptions.push(question.correct_answer);
-          }
-          return {
-            ...question,
-            options: shuffleOptions(baseOptions),
-          };
-        });
+        const prepared = prepareQuestions(sourceQuestions);
 
         if (!cancelled) {
           setError(null);
@@ -123,8 +102,9 @@ export default function useSoloQuestionLoader({
       } catch (err) {
         console.error('Fehler beim Laden der Fragen', err);
         if (!cancelled) {
-          if (useLocalFallback) {
+          if (hasLocalFallback) {
             setError(null);
+            setQuestions(preparedFallback);
             setLoading(false);
           } else {
             setError('Die Fragen konnten nicht geladen werden. Bitte versuche es spaeter erneut.');

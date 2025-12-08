@@ -86,6 +86,15 @@ begin
   end if;
 
   if not exists (
+    select 1 from pg_policies where schemaname = 'public' and tablename = 'users' and policyname = 'Users public select'
+  ) then
+    create policy "Users public select" on public.users
+      for select
+      to authenticated
+      using (true);
+  end if;
+
+  if not exists (
     select 1 from pg_policies where schemaname = 'public' and tablename = 'users' and policyname = 'Users insert self'
   ) then
     create policy "Users insert self" on public.users
