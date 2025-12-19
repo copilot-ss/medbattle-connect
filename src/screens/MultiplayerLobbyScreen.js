@@ -108,6 +108,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   const friendCodesRef = useRef(new Set());
   const closingRef = useRef(false);
   const skipAutoCloseRef = useRef(false);
+  const hostSettingsVersionRef = useRef(0);
 
   const adjustQuestionLimit = useCallback((delta) => {
     setQuestionLimit((prev) => {
@@ -460,6 +461,8 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         return;
       }
 
+      const requestVersion = hostSettingsVersionRef.current + 1;
+      hostSettingsVersionRef.current = requestVersion;
       setUpdatingSettings(true);
       setMatchesError(null);
 
@@ -475,14 +478,18 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
           throw result.error ?? new Error('Einstellungen konnten nicht gespeichert werden.');
         }
 
-        setCurrentMatch(result.match);
-        setQuestionLimit(result.match.question_limit ?? nextQuestionLimit);
-        setSelectedDifficulty(result.match.difficulty ?? nextDifficulty);
+        if (requestVersion === hostSettingsVersionRef.current) {
+          setCurrentMatch(result.match);
+          setQuestionLimit(result.match.question_limit ?? nextQuestionLimit);
+          setSelectedDifficulty(result.match.difficulty ?? nextDifficulty);
+        }
       } catch (err) {
         console.error('Fehler beim Aktualisieren der Lobby-Einstellungen:', err);
         setMatchesError(err);
       } finally {
-        setUpdatingSettings(false);
+        if (requestVersion === hostSettingsVersionRef.current) {
+          setUpdatingSettings(false);
+        }
       }
     },
     [currentMatch, isHostWaiting, updateMatchSettings, updatingSettings, userId]
@@ -504,13 +511,23 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     setClosingLobby(true);
     setShowLeaveConfirm(false);
 
-    await cancelLobbyAsHost();
+    try {
+      if (currentMatch && currentMatch.status === 'waiting') {
+        const role = deriveMatchRole(currentMatch, userId);
+        if (role === 'host' || role === 'guest') {
+          await abandonMatch({ match: currentMatch, role });
+        }
+      }
+    } catch (err) {
+      console.warn('Konnte Lobby nicht verlassen:', err);
+    }
 
     setClosingLobby(false);
+    setCurrentMatch(null);
     skipAutoCloseRef.current = true;
     closingRef.current = false;
     navigation.goBack();
-  }, [cancelLobbyAsHost, navigation]);
+  }, [abandonMatch, currentMatch, navigation, userId]);
 
   const handleCancelLeave = useCallback(() => {
     setShowLeaveConfirm(false);
@@ -550,6 +567,12 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     }
     const hostState = currentMatch.state.host ?? {};
     const guestState = currentMatch.state.guest ?? {};
+    const hostIsSelf =
+      currentMatch.host_id === userId ||
+      hostState.userId === userId;
+    const guestIsSelf =
+      currentMatch.guest_id === userId ||
+      guestState.userId === userId;
 
     const items = [
       {
@@ -557,10 +580,9 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         role: 'Host',
         name: hostState.username ?? 'Host',
         avatarUrl: hostState.avatar_url ?? hostState.avatarUrl ?? null,
-        avatarSource:
-          hostState.avatar_source ??
-          hostState.avatarSource ??
-          (currentMatch.host_id === userId ? activeAvatarSource : null),
+        avatarSource: hostState.avatar_source
+          ?? hostState.avatarSource
+          ?? (hostIsSelf ? activeAvatarSource : null),
         ready: Boolean(hostState.ready),
         isPlaceholder: false,
       },
@@ -572,10 +594,9 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         role: 'Gast',
         name: guestState.username ?? 'Gast',
         avatarUrl: guestState.avatar_url ?? guestState.avatarUrl ?? null,
-        avatarSource:
-          guestState.avatar_source ??
-          guestState.avatarSource ??
-          (currentMatch.guest_id === userId ? activeAvatarSource : null),
+        avatarSource: guestState.avatar_source
+          ?? guestState.avatarSource
+          ?? (guestIsSelf ? activeAvatarSource : null),
         ready: Boolean(guestState.ready),
         isPlaceholder: false,
       });
@@ -848,7 +869,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
   const showCreateSetup = false;
   const participantCount = participants.filter((item) => !item.isPlaceholder).length;
-  const hasEnoughPlayers = participantCount > 1;
+  const hasEnoughPlayers = participantCount >= 1;
 
   if (showCreateSetup) {
     return (
@@ -1263,11 +1284,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
                   {startingMatch ? 'Starte ...' : 'Start'}
                 </Text>
               </Pressable>
-              <Text style={styles.startHint}>
-                {hasEnoughPlayers
-                  ? 'Host startet das Spiel fuer beide.'
-                  : 'Warte auf weitere Spieler vor dem Start.'}
-              </Text>
             </View>
           ) : null}
 
@@ -1375,9 +1391,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
           <View style={styles.onlineFriendsSection}>
             <Text style={styles.onlineFriendsTitle}>Freunde online</Text>
-            <Text style={styles.onlineFriendsSubtitle}>
-              Tippe, um direkt in deine Lobby einzuladen
-            </Text>
 
             {friendsLoading ? (
               <View style={styles.loadingInline}>
@@ -1406,7 +1419,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
             {!friendsLoading && !onlineFriends.length ? (
               <Text style={styles.onlineFriendEmpty}>
-                Gerade ist niemand aus deiner Crew online. Teile den Code trotzdem!
+                Keine Freunde online.
               </Text>
             ) : null}
           </View>
@@ -1419,20 +1432,18 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Lobby verlassen?</Text>
-            <Text style={styles.modalMessage}>
-              Deine Lobby wird geschlossen und du kehrst zum Home-Screen zurueck.
-            </Text>
+            <Text style={styles.modalMessage}>Willst du die Lobby verlassen?</Text>
             <View style={styles.modalActions}>
               <Pressable onPress={handleCancelLeave} style={[styles.modalButton, styles.modalButtonContinue]}>
                 <Text style={styles.modalButtonContinueText}>Bleiben</Text>
               </Pressable>
               <Pressable onPress={handleConfirmLeave} style={[styles.modalButton, styles.modalButtonExit]}>
-                <Text style={styles.modalButtonExitText}>X</Text>
+                <Text style={styles.modalButtonExitText}>Verlassen</Text>
               </Pressable>
             </View>
-              </View>
-            </View>
-          ) : null}
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }

@@ -294,8 +294,14 @@ const styles = StyleSheet.create({
   friendCodeText: {
     color: '#E2E8F0',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     letterSpacing: 2,
+  },
+  friendStatusText: {
+    color: '#A5B4FC',
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 2,
   },
   friendRemoveButton: {
     paddingHorizontal: 12,
@@ -400,6 +406,34 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 0.6,
   },
+  profileStatsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  profileStatCard: {
+    flex: 1,
+    backgroundColor: '#0B1220',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.35)',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  profileStatLabel: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  profileStatValue: {
+    color: '#F8FAFC',
+    fontSize: 18,
+    fontWeight: '800',
+    marginTop: 4,
+    letterSpacing: 0.2,
+  },
   achievementRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -454,25 +488,26 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
   },
   avatarTileLocked: {
-    opacity: 0.55,
+    opacity: 0.45,
   },
   avatarTileImage: {
     width: '100%',
     height: 84,
   },
-  avatarTileFooter: {
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-  },
-  avatarTileLabel: {
-    color: '#E2E8F0',
-    fontWeight: '700',
-    fontSize: 13,
+  avatarTileLockBanner: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+    paddingVertical: 6,
+    alignItems: 'center',
   },
   avatarTileLevel: {
-    color: '#94A3B8',
-    fontSize: 12,
-    marginTop: 2,
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.4,
   },
   avatarToggle: {
     marginTop: 8,

@@ -22,3 +22,4 @@ Kurzsetup, damit du im Lovable-Repo sofort mit Expo und Codex starten kannst.
 ## Hinweise
 - Keine Secrets committen (`.env` ist ignoriert).
 - Expo SDK ~54, React Native 0.81.5, Supabase JS v2.
+- Expo Go: Supabase-URL darf nicht auf localhost/127.0.0.1 stehen, sonst schlagen Logins/Queries auf echten Geräten fehl. Immer die gehostete Supabase-URL nutzen.

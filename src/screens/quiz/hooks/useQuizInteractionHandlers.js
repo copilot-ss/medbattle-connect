@@ -5,6 +5,7 @@ export default function useQuizInteractionHandlers({
   isMultiplayer,
   matchIsActive,
   currentQuestion,
+  navigation,
   activeIndex,
   activeScore,
   score,
@@ -58,26 +59,16 @@ export default function useQuizInteractionHandlers({
     setShowExitConfirm(false);
     if (isMultiplayer) {
       surrenderMatch().finally(() => {
-        finalizeQuiz(activeScore, {
-          total: activeIndex > 0 ? activeIndex : 1,
-          submit: false,
-          wasSurrender: true,
-        });
+        navigation.navigate('Home');
       });
       return;
     }
-    finalizeQuiz(score, {
-      total: index > 0 ? index : 1,
-      submit: false,
-    });
+    navigation.navigate('Home');
   }, [
     activeIndex,
-    activeScore,
-    finalizeQuiz,
-    index,
     isMultiplayer,
+    navigation,
     resetQuestionState,
-    score,
     surrenderMatch,
   ]);
 

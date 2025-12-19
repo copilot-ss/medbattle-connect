@@ -29,6 +29,7 @@ TASKS.md
 - UTF-8 für alle Dateien  
 - Keine doppelten Codeblöcke senden  
 - Immer nur Patch-Diffs posten
+- Supabase-URL in `.env` nicht auf localhost setzen (Expo Go erreicht das nicht)
 
 ## 💾 Coding Guidelines
 - 2 Spaces Einrückung  

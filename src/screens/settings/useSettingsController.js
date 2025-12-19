@@ -6,11 +6,23 @@ import { supabase } from '../../lib/supabaseClient';
 import {
   addFriend,
   fetchFriends,
+  getFriendCodeForUser,
+  getOrCreateGuestId,
+  migrateLocalFriends,
   removeFriend,
 } from '../../services/friendsService';
 import { fetchUserProfile } from '../../services/userService';
+import { fetchLeaderboard } from '../../services/quizService';
 import AVATARS from './avatars';
-import { deriveFriendCode, normalizeEmail } from './utils';
+import { normalizeEmail } from './utils';
+
+const sanitizeStatNumber = (value) => {
+  const parsed = parseInt(value, 10);
+  if (Number.isFinite(parsed) && parsed >= 0) {
+    return parsed;
+  }
+  return 0;
+};
 
 const PASSWORD_RESET_REDIRECT =
   process.env.EXPO_PUBLIC_PASSWORD_RESET_REDIRECT ??
@@ -33,6 +45,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     avatarId,
     setAvatarId,
     streaks,
+    userStats,
   } = usePreferences();
 
   const [newEmail, setNewEmail] = useState('');
@@ -46,17 +59,24 @@ export default function useSettingsController({ navigation, route, onClearSessio
   const [loadingFriends, setLoadingFriends] = useState(true);
   const [addingFriend, setAddingFriend] = useState(false);
   const [friendsFeedback, setFriendsFeedback] = useState(null);
+  const [onlineFriends, setOnlineFriends] = useState([]);
+  const [loadingOnline, setLoadingOnline] = useState(false);
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState(null);
+  const [authUserId, setAuthUserId] = useState(null);
+  const [friendsMigrated, setFriendsMigrated] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [showResetForm, setShowResetForm] = useState(false);
   const [focusTarget, setFocusTarget] = useState(route?.params?.focus ?? null);
   const [activeTab, setActiveTab] = useState('settings');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [leaderboardRank, setLeaderboardRank] = useState(null);
+  const [loadingRank, setLoadingRank] = useState(false);
   const scrollRef = useRef(null);
   const friendInputRef = useRef(null);
-  const isGuest = !userId;
+  const isGuest = !authUserId;
+  const presenceChannelRef = useRef(null);
 
   const soundStatus = useMemo(
     () => (soundEnabled ? 'Sound aktiv' : 'Sound stumm'),
@@ -89,6 +109,24 @@ export default function useSettingsController({ navigation, route, onClearSessio
     () => Math.max(1, Math.floor(totalStreak / 10) + 1),
     [totalStreak]
   );
+  const quizzesCompleted = useMemo(
+    () => sanitizeStatNumber(userStats?.quizzes),
+    [userStats?.quizzes]
+  );
+  const totalCorrect = useMemo(
+    () => sanitizeStatNumber(userStats?.correct),
+    [userStats?.correct]
+  );
+  const totalQuestions = useMemo(
+    () => sanitizeStatNumber(userStats?.questions),
+    [userStats?.questions]
+  );
+  const accuracyPercent = useMemo(() => {
+    if (!totalQuestions) {
+      return 0;
+    }
+    return Math.round((totalCorrect / totalQuestions) * 100);
+  }, [totalCorrect, totalQuestions]);
   const levelBadgeHeat = useMemo(() => {
     const intensity = Math.min(Math.max(totalStreak, 0) / 15, 1);
     const glow = 6 + 8 * intensity;
@@ -249,6 +287,10 @@ export default function useSettingsController({ navigation, route, onClearSessio
 
       const user = data?.user ?? null;
       const id = user?.id ?? null;
+      const localGuestId = await getOrCreateGuestId();
+      if (!active) {
+        return;
+      }
       const provider =
         Array.isArray(user?.app_metadata?.providers) && user.app_metadata.providers.length
           ? user.app_metadata.providers[0]
@@ -267,15 +309,32 @@ export default function useSettingsController({ navigation, route, onClearSessio
       }
 
       setUserName(profileName || 'Gast');
-      setUserId(id);
-      setFriendCode(deriveFriendCode(id));
-      loadFriends(id);
+      setAuthUserId(id);
+      const resolvedId = id || localGuestId;
+      setUserId(resolvedId);
+      setFriendCode(getFriendCodeForUser(resolvedId));
+
+      if (id && localGuestId && !friendsMigrated) {
+        try {
+          const migration = await migrateLocalFriends(localGuestId, id);
+          if (migration.ok && Array.isArray(migration.friends)) {
+            setFriends(migration.friends);
+          }
+          setFriendsMigrated(true);
+        } catch (migrateErr) {
+          console.warn('Konnte lokale Freunde nicht migrieren:', migrateErr);
+        }
+      } else if (!id) {
+        setFriendsMigrated(false);
+      }
+
+      loadFriends(resolvedId);
     });
 
     return () => {
       active = false;
     };
-  }, [loadFriends]);
+  }, [friendsMigrated, loadFriends]);
 
   useFocusEffect(
     useCallback(() => {
@@ -284,6 +343,41 @@ export default function useSettingsController({ navigation, route, onClearSessio
       }
     }, [loadFriends, userId])
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadRank() {
+      if (!authUserId) {
+        if (!cancelled) {
+          setLeaderboardRank(null);
+        }
+        return;
+      }
+      setLoadingRank(true);
+      try {
+        const board = await fetchLeaderboard(300, { force: true });
+        const index = Array.isArray(board)
+          ? board.findIndex((entry) => entry.userId === authUserId)
+          : -1;
+        if (!cancelled) {
+          setLeaderboardRank(index >= 0 ? index + 1 : null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setLeaderboardRank(null);
+        }
+        console.warn('Konnte Leaderboard-Rang nicht laden:', err);
+      } finally {
+        if (!cancelled) {
+          setLoadingRank(false);
+        }
+      }
+    }
+    loadRank();
+    return () => {
+      cancelled = true;
+    };
+  }, [authUserId]);
 
   const handlePasswordReset = useCallback(async () => {
     const targetEmail = normalizeEmail(resetEmail);
@@ -448,7 +542,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     setSigningOut(true);
 
     try {
-      // Logouts von OAuth-Providern (z.B. Google) schlagen seltener fehl, wenn nur lokale Session gelöscht wird.
+      // Logouts von OAuth-Providern (z.B. Google) schlagen seltener fehl, wenn nur lokale Session gelscht wird.
       await supabase.auth.signOut({ scope: 'local' });
       // Fallback: kompletter Logout, falls Remote-Session aktiv ist.
       await supabase.auth.signOut().catch(() => {});
@@ -486,6 +580,93 @@ export default function useSettingsController({ navigation, route, onClearSessio
     []
   );
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function attachPresence() {
+      if (!userId || !friendCode) {
+        setOnlineFriends([]);
+        return;
+      }
+
+      setLoadingOnline(true);
+
+      if (presenceChannelRef.current) {
+        supabase.removeChannel(presenceChannelRef.current);
+        presenceChannelRef.current = null;
+      }
+
+      const channel = supabase.channel('presence:friends', {
+        config: { presence: { key: userId } },
+      });
+      presenceChannelRef.current = channel;
+
+      const friendSet = new Set((friends ?? []).map((f) => f.code).filter(Boolean));
+
+      const sync = () => {
+        if (!channel.presenceState) {
+          return;
+        }
+        const state = channel.presenceState() || {};
+        const seen = new Set();
+        const next = [];
+
+        Object.values(state).forEach((entries) => {
+          (entries || []).forEach((entry) => {
+            const meta = entry?.presence ?? entry;
+            if (!meta || meta.userId === userId) {
+              return;
+            }
+            const code = meta.code ?? meta.friendCode ?? null;
+            if (!code || !friendSet.has(code) || seen.has(code)) {
+              return;
+            }
+            seen.add(code);
+            const lobby = meta.lobby ?? null;
+            next.push({
+              code,
+              username: meta.username ?? 'Freund:in',
+              status: lobby ? `In Lobby ${lobby}` : 'Online',
+            });
+          });
+        });
+
+        if (!cancelled) {
+          setOnlineFriends(next);
+          setLoadingOnline(false);
+        }
+      };
+
+      channel.on('presence', { event: 'sync' }, sync);
+      channel.on('presence', { event: 'join' }, sync);
+      channel.on('presence', { event: 'leave' }, sync);
+
+      channel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          channel
+            .track({
+              userId,
+              code: friendCode,
+              username: userName || 'MedBattle',
+              lobby: null,
+            })
+            .catch((err) => console.warn('Konnte Presence nicht tracken:', err));
+        }
+      });
+    }
+
+    attachPresence();
+
+    return () => {
+      cancelled = true;
+      setOnlineFriends([]);
+      if (presenceChannelRef.current) {
+        supabase.removeChannel(presenceChannelRef.current);
+        presenceChannelRef.current = null;
+      }
+    };
+  }, [friendCode, friends, userId, userName]);
+
   return {
     // refs
     scrollRef,
@@ -522,6 +703,10 @@ export default function useSettingsController({ navigation, route, onClearSessio
     showAvatarPicker,
     handleToggleAvatarPicker,
     handleSelectAvatar,
+    quizzesCompleted,
+    accuracyPercent,
+    leaderboardRank,
+    loadingRank,
     newEmail,
     setNewEmail,
     emailCtaLabel,
@@ -539,6 +724,8 @@ export default function useSettingsController({ navigation, route, onClearSessio
     addingFriend,
     friends,
     loadingFriends,
+    onlineFriends,
+    loadingOnline,
     onRemoveFriend: handleRemoveFriend,
     friendsFeedback,
     // feedback banners

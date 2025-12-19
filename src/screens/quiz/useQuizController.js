@@ -5,14 +5,19 @@ import { usePreferences } from '../../context/PreferencesContext';
 import useCountdownTimer from '../../hooks/useCountdownTimer';
 import useSupabaseUserId from '../../hooks/useSupabaseUserId';
 import useMultiplayerMatch from '../../hooks/useMultiplayerMatch';
-import {
-  CAMPAIGN_QUESTION_LIMIT,
-  calculateMatchPoints,
-  submitScore,
-} from '../../services/quizService';
+import { calculateMatchPoints, submitScore } from '../../services/quizService';
 import useQuizConfig, { TIMER_DURATION } from './hooks/useQuizConfig';
 import useSoloQuestionLoader from './hooks/useSoloQuestionLoader';
 import useQuizInteractionHandlers from './hooks/useQuizInteractionHandlers';
+
+const DEFAULT_SOLO_QUESTION_LIMIT = 6;
+const sanitizeStatNumber = (value) => {
+  const parsed = parseInt(value, 10);
+  if (Number.isFinite(parsed) && parsed >= 0) {
+    return parsed;
+  }
+  return 0;
+};
 
 export default function useQuizController({ navigation, route }) {
   const [index, setIndex] = useState(0);
@@ -20,21 +25,20 @@ export default function useQuizController({ navigation, route }) {
   const [timedOut, setTimedOut] = useState(false);
   const answerRef = useRef(null);
   const timeLeftRef = useRef(TIMER_DURATION);
-  const { setStreakValue } = usePreferences();
+  const { setStreakValue, updateUserStats } = usePreferences();
   const userId = useSupabaseUserId();
 
   const {
     matchId,
     initialJoinCode,
-    isCampaign,
+    mode,
+    isQuickPlay,
     isMultiplayer,
     normalizedDifficulty,
     difficultyLabel,
     requestedQuestionLimit,
-    campaignStage,
-    campaignLabel,
-    campaignNextStage,
   } = useQuizConfig(route);
+
 
   const {
     loading: matchLoading,
@@ -62,8 +66,8 @@ export default function useQuizController({ navigation, route }) {
     if (requestedQuestionLimit) {
       return requestedQuestionLimit;
     }
-    return isCampaign ? CAMPAIGN_QUESTION_LIMIT : 5;
-  }, [isCampaign, isMultiplayer, matchQuestions, requestedQuestionLimit]);
+    return DEFAULT_SOLO_QUESTION_LIMIT;
+  }, [isMultiplayer, matchQuestions, requestedQuestionLimit]);
 
   const {
     questions: soloQuestions,
@@ -72,10 +76,8 @@ export default function useQuizController({ navigation, route }) {
     reset: resetSoloQuestions,
   } = useSoloQuestionLoader({
     isEnabled: !isMultiplayer,
-    isCampaign,
     normalizedDifficulty,
     questionLimit,
-    campaignStage,
   });
 
   const activeQuestions = isMultiplayer
@@ -148,7 +150,7 @@ export default function useQuizController({ navigation, route }) {
       });
 
       const shouldSubmitScore =
-        submit && !isCampaign && userId && (!isMultiplayer || !wasSurrender);
+        submit && userId && (!isMultiplayer || !wasSurrender);
 
       if (shouldSubmitScore) {
         try {
@@ -168,22 +170,34 @@ export default function useQuizController({ navigation, route }) {
         }
       }
 
-      if (submit && !isMultiplayer && !isCampaign) {
+      if (submit) {
         const mistakes = totalQuestions - resolvedScore;
-        const shouldIncrease =
-          normalizedDifficulty === 'leicht'
-            ? true
-            : normalizedDifficulty === 'mittel'
-            ? mistakes <= 1
-            : mistakes === 0;
+        if (!isMultiplayer) {
+          const shouldIncrease =
+            normalizedDifficulty === 'leicht'
+              ? true
+              : normalizedDifficulty === 'mittel'
+              ? mistakes <= 1
+              : mistakes === 0;
+
+          try {
+            await setStreakValue(normalizedDifficulty, (current) => {
+              const safeCurrent = Number.isFinite(current) ? current : 0;
+              return shouldIncrease ? safeCurrent + 1 : 0;
+            });
+          } catch (err) {
+            console.warn('Konnte Streak nicht aktualisieren:', err);
+          }
+        }
 
         try {
-          await setStreakValue(normalizedDifficulty, (current) => {
-            const safeCurrent = Number.isFinite(current) ? current : 0;
-            return shouldIncrease ? safeCurrent + 1 : 0;
-          });
+          await updateUserStats((current) => ({
+            quizzes: sanitizeStatNumber((current?.quizzes ?? 0) + 1),
+            correct: sanitizeStatNumber((current?.correct ?? 0) + resolvedScore),
+            questions: sanitizeStatNumber((current?.questions ?? 0) + effectiveTotal),
+          }));
         } catch (err) {
-          console.warn('Konnte Streak nicht aktualisieren:', err);
+          console.warn('Konnte lokale Quiz-Statistik nicht aktualisieren:', err);
         }
       }
 
@@ -192,10 +206,10 @@ export default function useQuizController({ navigation, route }) {
         total: effectiveTotal,
         points: earnedPoints,
         userId,
-        difficulty: campaignLabel ?? difficultyLabel,
-        difficultyKey: isCampaign ? 'campaign' : normalizedDifficulty,
+        difficulty: difficultyLabel,
+        difficultyKey: normalizedDifficulty,
         questionLimit,
-        mode: isCampaign ? 'campaign' : 'standard',
+        mode,
         isMultiplayer,
         matchId,
         matchStatus: resolvedMatchStatus,
@@ -203,15 +217,12 @@ export default function useQuizController({ navigation, route }) {
         opponentName: matchOpponentState?.username ?? null,
         matchJoinCode: matchJoinCode ?? initialJoinCode ?? null,
         playerRole: matchRole,
-        campaignStage,
-        campaignNextStage,
       });
     },
     [
       activeScore,
       difficultyLabel,
       initialJoinCode,
-      isCampaign,
       isMultiplayer,
       matchJoinCode,
       matchOpponentState?.score,
@@ -223,8 +234,10 @@ export default function useQuizController({ navigation, route }) {
       questionLimit,
       resolvedMatchStatus,
       setStreakValue,
+      updateUserStats,
       totalQuestions,
       userId,
+      mode,
     ]
   );
 
@@ -241,6 +254,7 @@ export default function useQuizController({ navigation, route }) {
     isMultiplayer,
     matchIsActive,
     currentQuestion,
+    navigation,
     activeIndex,
     activeScore,
     score,
@@ -264,10 +278,10 @@ export default function useQuizController({ navigation, route }) {
     setTimedOut(false);
     resetQuestionState();
   }, [
-    isCampaign,
     isMultiplayer,
     normalizedDifficulty,
     questionLimit,
+    mode,
     resetQuestionState,
   ]);
 

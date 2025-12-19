@@ -10,12 +10,13 @@ export default function QuizHeader({
 }) {
   const total = totalQuestions || questionLimit || 0;
   const current = Math.min(activeIndex + 1, total || activeIndex + 1);
+  const isQuickPlay = difficultyLabel === 'Quick Play';
 
   return (
     <View style={styles.header}>
       <View>
-        <Text style={styles.headerMeta}>
-          {difficultyLabel} - {total} Fragen
+        <Text style={isQuickPlay ? styles.headerQuick : styles.headerMeta}>
+          {isQuickPlay ? 'Quick Play' : `${difficultyLabel} - ${total} Fragen`}
         </Text>
         <View style={styles.headerProgressPill}>
           <Text style={styles.headerProgressText}>

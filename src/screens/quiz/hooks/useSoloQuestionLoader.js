@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  fetchCampaignQuestions,
-  fetchCampaignStageQuestions,
-  fetchQuestions,
-} from '../../../services/quizService';
+import { fetchQuestions } from '../../../services/quizService';
 import { ALLOWED_DIFFICULTIES } from './useQuizConfig';
 
 function shuffleOptions(options) {
@@ -37,10 +33,8 @@ function prepareQuestions(questions) {
 
 export default function useSoloQuestionLoader({
   isEnabled,
-  isCampaign,
   normalizedDifficulty,
   questionLimit,
-  campaignStage,
 }) {
   const safeDifficulty = normalizeDifficulty(normalizedDifficulty);
   const [questions, setQuestions] = useState([]);
@@ -67,34 +61,18 @@ export default function useSoloQuestionLoader({
       setLoading(true);
       setQuestions([]);
 
-      const localFallback =
-        questionLimit > 0 ? fetchCampaignQuestions(questionLimit) : [];
-      const preparedFallback = prepareQuestions(localFallback);
-      const hasLocalFallback = preparedFallback.length > 0;
-
       try {
-        const data = isCampaign
-          ? await fetchCampaignStageQuestions(campaignStage, questionLimit)
-          : await fetchQuestions(safeDifficulty, questionLimit);
-
-        const sourceQuestions =
-          Array.isArray(data) && data.length ? data : preparedFallback;
-
-        if (!sourceQuestions.length) {
-          if (!cancelled) {
-            setError(
-              isCampaign
-                ? 'Keine Kampagnenfragen vorhanden. Bitte versuche es spaeter erneut.'
-                : 'Keine Fragen verfuegbar. Bitte versuche es gleich nochmal.'
-            );
-            setQuestions([]);
-          }
-          return;
-        }
-
-        const prepared = prepareQuestions(sourceQuestions);
+        const data = await fetchQuestions(safeDifficulty, questionLimit);
+        const prepared = prepareQuestions(data);
 
         if (!cancelled) {
+          if (!prepared.length) {
+            setError('Keine Fragen verfuegbar. Bitte versuche es gleich nochmal.');
+            setQuestions([]);
+            setLoading(false);
+            return;
+          }
+
           setError(null);
           setQuestions(prepared);
           setLoading(false);
@@ -102,18 +80,8 @@ export default function useSoloQuestionLoader({
       } catch (err) {
         console.error('Fehler beim Laden der Fragen', err);
         if (!cancelled) {
-          if (hasLocalFallback) {
-            setError(null);
-            setQuestions(preparedFallback);
-            setLoading(false);
-          } else {
-            setError('Die Fragen konnten nicht geladen werden. Bitte versuche es spaeter erneut.');
-            setQuestions([]);
-            setLoading(false);
-          }
-        }
-      } finally {
-        if (!cancelled) {
+          setError('Die Fragen konnten nicht geladen werden. Bitte versuche es spaeter erneut.');
+          setQuestions([]);
           setLoading(false);
         }
       }
@@ -124,7 +92,7 @@ export default function useSoloQuestionLoader({
     return () => {
       cancelled = true;
     };
-  }, [campaignStage, isCampaign, isEnabled, questionLimit, safeDifficulty]);
+  }, [isEnabled, questionLimit, safeDifficulty]);
 
   return {
     questions,

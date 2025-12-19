@@ -508,10 +508,6 @@ export async function startMatch({ matchId, userId } = {}) {
     return { ok: false, error: new Error('Match laeuft bereits oder ist beendet.') };
   }
 
-  if (!match.guest_id && !match.state?.guest?.userId) {
-    return { ok: false, error: new Error('Es muss mindestens ein Gast in der Lobby sein.') };
-  }
-
   const nextState = normalizeMatchState(match.state);
   nextState.host = { ...nextState.host, ready: true };
   nextState.guest = { ...nextState.guest, ready: true };

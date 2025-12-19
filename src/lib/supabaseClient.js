@@ -1,10 +1,66 @@
 import 'react-native-get-random-values';
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+function resolveLocalhostToLan(urlString) {
+  if (!urlString || typeof urlString !== 'string') {
+    return urlString;
+  }
+
+  try {
+    const parsed = new URL(urlString);
+    const hostIsLocal =
+      parsed.hostname === 'localhost' ||
+      parsed.hostname === '127.0.0.1' ||
+      parsed.hostname === '::1';
+
+    if (!hostIsLocal) {
+      return urlString;
+    }
+
+    const hostUri =
+      Constants?.expoConfig?.hostUri ||
+      Constants?.manifest?.debuggerHost ||
+      Constants?.manifest?.hostUri ||
+      Constants?.expoGoConfig?.hostUri;
+
+    if (!hostUri || typeof hostUri !== 'string') {
+      return urlString;
+    }
+
+    const hostPart = hostUri.split(':')[0];
+
+    if (!hostPart || hostPart === 'localhost' || hostPart === '127.0.0.1') {
+      return urlString;
+    }
+
+    parsed.hostname = hostPart;
+
+    const rewritten = parsed.toString();
+    console.warn(
+      `Supabase-URL wurde fuer echtes Geraet von ${urlString} auf ${rewritten} angepasst.`
+    );
+    return rewritten;
+  } catch {
+    return urlString;
+  }
+}
+
+function sanitizeEnv(value) {
+  if (typeof value !== 'string') {
+    return value;
+  }
+  const trimmed = value.trim();
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+}
+
+const SUPABASE_URL = resolveLocalhostToLan(sanitizeEnv(process.env.EXPO_PUBLIC_SUPABASE_URL));
+const SUPABASE_ANON_KEY = sanitizeEnv(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
 const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
 if (!hasSupabaseConfig) {

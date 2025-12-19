@@ -3,7 +3,7 @@
 ## Aktive Aufgaben
 - [ ] Werbung (AdMob) einbauen
 - [ ] Premium-Modus ohne Werbung
-- [ ] Supabase Auth (E-Mail)
+- [x] Supabase Auth (E-Mail)
 - [x] Highscore / Rangliste
 - [x] Multiplayer-Duelle (Realtime)
 

@@ -19,6 +19,13 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
+  headerQuick: {
+    color: '#C084FC',
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: 3,
+    textTransform: 'uppercase',
+  },
   headerProgressPill: {
     marginTop: 6,
     alignSelf: 'flex-start',

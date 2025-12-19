@@ -4,6 +4,7 @@
     "slug": "medbattle",
     "scheme": "medbattle",
     "owner": "sjigalin",
+    "jsEngine": "hermes",
     "ios": {
       "bundleIdentifier": "com.sjigalin.medbattle"
     },

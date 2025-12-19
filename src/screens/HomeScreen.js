@@ -1,14 +1,18 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { Animated, Pressable, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Pressable, Text, View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
+import * as InAppPurchases from 'expo-in-app-purchases';
 import styles, {
   getModeCardContainerStyle,
   getModeCardTitleStyle,
 } from './styles/HomeScreen.styles';
+import { usePreferences } from '../context/PreferencesContext';
+import { supabase } from '../lib/supabaseClient';
 
 const DEFAULT_DIFFICULTY = 'mittel';
 const doctorAnimation = require('../../assets/animations/doctor/doctor.json');
+const BOOST_PRODUCT_ID = 'energy_boost_20';
 
 
 
@@ -36,7 +40,7 @@ function hexToRgba(hex, alpha = 1) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function ModeCard({ title, accent, onPress, disabled = false }) {
+function ModeCard({ title, subtitle, accent, onPress, disabled = false }) {
   const glow = useRef(new Animated.Value(0)).current;
   const glowColors = useMemo(
     () => ({
@@ -74,6 +78,7 @@ function ModeCard({ title, accent, onPress, disabled = false }) {
         disabled={disabled}
       >
         <Text style={getModeCardTitleStyle(accent)}>{title}</Text>
+        {subtitle ? <Text style={styles.modeCardSubtitle}>{subtitle}</Text> : null}
       </Pressable>
     </Animated.View>
   );
@@ -82,26 +87,143 @@ function ModeCard({ title, accent, onPress, disabled = false }) {
 export default function HomeScreen({ navigation, route }) {
   const activeLobby = route?.params?.activeLobby ?? null;
   const hasActiveLobby = Boolean(activeLobby?.code);
-  const streakPulse = useRef(new Animated.Value(0)).current;
+  const {
+    energy,
+    energyMax,
+    nextEnergyAt,
+    consumeEnergy,
+    boostEnergy,
+    refreshEnergy,
+  } = usePreferences();
+  const [premium, setPremium] = useState(false);
+  const [energyMessage, setEnergyMessage] = useState(null);
+  const [boosting, setBoosting] = useState(false);
+  const [showBoostModal, setShowBoostModal] = useState(false);
+  const [iapReady, setIapReady] = useState(Platform.OS !== 'android');
+  const [nextEnergyCountdown, setNextEnergyCountdown] = useState('');
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(streakPulse, {
-          toValue: 1,
-          duration: 2400,
-          useNativeDriver: false,
-        }),
-        Animated.timing(streakPulse, {
-          toValue: 0,
-          duration: 2400,
-          useNativeDriver: false,
-        }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [streakPulse]);
+    refreshEnergy();
+    const intervalId = setInterval(() => {
+      refreshEnergy();
+    }, 30000);
+    return () => clearInterval(intervalId);
+  }, [refreshEnergy]);
+
+  useEffect(() => {
+    if (!nextEnergyAt) {
+      setNextEnergyCountdown('');
+      return undefined;
+    }
+
+    const formatCountdown = (target) => {
+      const diff = Math.max(0, target - Date.now());
+      const totalSeconds = Math.floor(diff / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    setNextEnergyCountdown(formatCountdown(nextEnergyAt));
+
+    const timerId = setInterval(() => {
+      const diff = nextEnergyAt - Date.now();
+      if (diff <= 0) {
+        refreshEnergy();
+        setNextEnergyCountdown('');
+        clearInterval(timerId);
+        return;
+      }
+      setNextEnergyCountdown(formatCountdown(nextEnergyAt));
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, [nextEnergyAt, refreshEnergy]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPremium() {
+      try {
+        const { data } = await supabase.auth.getUser();
+        if (!active) return;
+        const flag = Boolean(data?.user?.user_metadata?.premium);
+        setPremium(flag);
+      } catch {
+        if (active) setPremium(false);
+      }
+    }
+
+    loadPremium();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      const flag = Boolean(session?.user?.user_metadata?.premium);
+      setPremium(flag);
+    });
+
+    return () => {
+      active = false;
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    InAppPurchases.setPurchaseListener(async ({ responseCode, results, errorCode }) => {
+      if (responseCode === InAppPurchases.IAPResponseCode.OK) {
+        for (const purchase of results) {
+          if (purchase.productId === BOOST_PRODUCT_ID && !purchase.acknowledged) {
+            try {
+              await InAppPurchases.finishTransactionAsync(purchase, false);
+              await boostEnergy();
+              setEnergyMessage('⚡ Energie aufgefuellt!');
+              setShowBoostModal(false);
+            } catch (err) {
+              setEnergyMessage('Boost konnte nicht abgeschlossen werden.');
+            }
+          }
+        }
+      } else if (responseCode === InAppPurchases.IAPResponseCode.USER_CANCELED) {
+        setEnergyMessage('Boost abgebrochen.');
+      } else if (errorCode) {
+        setEnergyMessage('Boost fehlgeschlagen. Bitte spaeter erneut.');
+      }
+      setBoosting(false);
+    });
+
+    async function initIap() {
+      try {
+        await InAppPurchases.connectAsync();
+        await InAppPurchases.getProductsAsync([BOOST_PRODUCT_ID]);
+        if (!cancelled) {
+          setIapReady(true);
+        }
+      } catch (err) {
+        console.warn('IAP nicht verfuegbar:', err);
+        if (!cancelled) {
+          setEnergyMessage('Boost im Moment nicht verfuegbar.');
+        }
+      }
+    }
+
+    initIap();
+
+    return () => {
+      cancelled = true;
+      InAppPurchases.disconnectAsync().catch(() => {});
+    };
+  }, [boostEnergy]);
+
+  const quickPlayDisabled = !premium && energy <= 0;
+  const quickPlaySubtitle = premium
+    ? 'Premium: unbegrenzt spielen'
+    : `⚡ ${energy}/${energyMax}${nextEnergyCountdown ? ` • ${nextEnergyCountdown}` : ''}`;
 
   function handleCreateLobby() {
     if (hasActiveLobby) {
@@ -125,19 +247,20 @@ export default function HomeScreen({ navigation, route }) {
     });
   }
 
-  function startCampaign() {
-    if (hasActiveLobby) {
-      navigation.navigate('MultiplayerLobby');
-      return;
+  async function startQuickPlay() {
+    setEnergyMessage(null);
+    if (!premium) {
+      const result = await consumeEnergy();
+      if (!result.ok) {
+        setShowBoostModal(true);
+      setEnergyMessage('Keine Energie. Warte auf Aufladung oder nutze einen ⚡ Boost.');
+        return;
+      }
     }
-    navigation.navigate('CampaignPath');
-  }
-
-  function startQuickSolo() {
     navigation.navigate('Quiz', {
-      mode: 'standard',
       difficulty: DEFAULT_DIFFICULTY,
-      questionLimit: 5,
+      mode: 'quick',
+      questionLimit: 6,
     });
   }
 
@@ -178,48 +301,6 @@ export default function HomeScreen({ navigation, route }) {
         </Pressable>
       ) : null}
 
-      <View style={styles.momentumCard}>
-        <View style={styles.momentumHeader}>
-          <Text style={styles.momentumTitle}>Momentum</Text>
-          <View style={styles.momentumBadge}>
-            <Text style={styles.momentumBadgeText}>Next reward +50 XP</Text>
-          </View>
-        </View>
-
-        <View style={styles.streakRow}>
-          <Text style={styles.streakLabel}>Streak</Text>
-          <Text style={styles.streakValue}>3 Tage</Text>
-        </View>
-        <View style={styles.streakBarOuter}>
-          <Animated.View
-            style={[
-              styles.streakBarInner,
-              {
-                width: streakPulse.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['38%', '92%'],
-                }),
-              },
-            ]}
-          />
-        </View>
-
-        <View style={styles.statRow}>
-          <View style={styles.statPill}>
-            <Text style={styles.statPillLabel}>XP</Text>
-            <Text style={styles.statPillValue}>1.240</Text>
-          </View>
-          <View style={styles.statPill}>
-            <Text style={styles.statPillLabel}>Rang</Text>
-            <Text style={styles.statPillValue}>#128</Text>
-          </View>
-          <Pressable style={styles.quickQuizButton} onPress={startQuickSolo}>
-            <Ionicons name="flash" size={18} color="#0EA5E9" />
-            <Text style={styles.quickQuizText}>Quick Quiz</Text>
-          </Pressable>
-        </View>
-      </View>
-
       <View style={styles.animationWrapper} pointerEvents="none">
         <LottieView
           source={doctorAnimation}
@@ -237,10 +318,63 @@ export default function HomeScreen({ navigation, route }) {
       >
         <ModeCard title="Create Lobby" accent="#38E4AE" onPress={handleCreateLobby} disabled={hasActiveLobby} />
         <ModeCard title="Join Lobby" accent="#60A5FA" onPress={handleJoinLobby} disabled={hasActiveLobby} />
-        <ModeCard title="Campaign (Offline)" accent="#FDE68A" onPress={startCampaign} disabled={hasActiveLobby} />
+        <ModeCard
+          title="Quick Play"
+          subtitle={quickPlaySubtitle}
+          accent="#FDE68A"
+          onPress={startQuickPlay}
+          disabled={quickPlayDisabled}
+        />
       </View>
 
+      {energyMessage ? (
+        <Text style={styles.energyMessage}>{energyMessage}</Text>
+      ) : null}
+
       <View style={styles.flexSpacer} />
+
+      {!premium && showBoostModal ? (
+        <View style={styles.boostOverlay}>
+          <View style={styles.boostCard}>
+            <Text style={styles.boostTitle}>⚡ Energie leer</Text>
+            <Text style={styles.boostText}>
+              Warte 30 Minuten pro Blitz oder lade sofort auf.
+            </Text>
+            <View style={styles.boostActions}>
+              <Pressable
+                onPress={() => setShowBoostModal(false)}
+                style={[styles.boostButtonGhost]}
+                disabled={boosting}
+              >
+                <Text style={styles.boostGhostText}>Schliessen</Text>
+              </Pressable>
+              <Pressable
+                onPress={async () => {
+                  if (boosting) return;
+                  if (!iapReady) {
+                    setEnergyMessage('Boost im Moment nicht verfuegbar.');
+                    return;
+                  }
+                  setBoosting(true);
+                  try {
+                    await InAppPurchases.requestPurchaseAsync({ sku: BOOST_PRODUCT_ID });
+                  } catch (err) {
+                    setEnergyMessage('Boost fehlgeschlagen. Bitte spaeter erneut versuchen.');
+                    setBoosting(false);
+                  }
+                }}
+                style={[styles.boostButton, boosting ? styles.boostButtonDisabled : null]}
+                disabled={boosting}
+              >
+                <Text style={styles.boostButtonText}>
+                  {boosting ? 'Lade...' : 'Boost (99ct) auf 20/20'}
+                </Text>
+              </Pressable>
+            </View>
+            <Text style={styles.boostHint}>Blitze laden auch automatisch auf.</Text>
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }

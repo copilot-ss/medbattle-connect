@@ -1,0 +1,10 @@
+diff --git a/node_modules/react-native-gesture-handler/android/paper/src/main/java/com/facebook/react/uimanager/ViewManagerWithGeneratedInterface.java b/node_modules/react-native-gesture-handler/android/paper/src/main/java/com/facebook/react/uimanager/ViewManagerWithGeneratedInterface.java
+new file mode 100644
+index 0000000..d85d3de
+--- /dev/null
++++ b/node_modules/react-native-gesture-handler/android/paper/src/main/java/com/facebook/react/uimanager/ViewManagerWithGeneratedInterface.java
+@@ -0,0 +1,4 @@
++package com.facebook.react.uimanager;
++
++// Temporary stub because RN 0.77 removes this marker but RNGH still references it.
++public interface ViewManagerWithGeneratedInterface {}

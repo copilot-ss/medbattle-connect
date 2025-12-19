@@ -24,6 +24,7 @@ Kostenlose kompetitive Medizin-Quiz-App mit Supabase-Backend, Werbung und Premiu
 - Google Sign-In über Supabase funktioniert
 - E-Mail-Login noch offen
 - Werbung/Premium steht an
+- Expo Go: .env darf kein localhost/127.0.0.1 als Supabase-URL nutzen, sonst Auth/Fragen scheitern. HTTPS-Projekt-URL setzen.
 
 ## Tools & Setup
 - Supabase CLI v2.65.5, eingeloggt

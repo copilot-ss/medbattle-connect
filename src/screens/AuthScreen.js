@@ -26,20 +26,82 @@ const EXPO_PROXY_REDIRECT =
     : `https://auth.expo.dev/@${expoOwner}/${expoSlug}`;
 
 const NATIVE_SCHEME_REDIRECT = `medbattle://${REDIRECT_PATH}`;
+const OAUTH_REDIRECT =
+  APP_OWNERSHIP === 'expo' && EXPO_PROXY_REDIRECT
+    ? EXPO_PROXY_REDIRECT
+    : NATIVE_SCHEME_REDIRECT;
+const AUTH_TIMEOUT_MS = 12000;
+const SUPABASE_URL_HINT = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_HINT = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-const OAUTH_REDIRECT = NATIVE_SCHEME_REDIRECT;
+function validateSupabaseConfig() {
+  if (!SUPABASE_URL_HINT || !SUPABASE_ANON_HINT) {
+    return {
+      ok: false,
+      message: 'Supabase nicht konfiguriert (.env). Bitte URL + Anon Key setzen.',
+    };
+  }
+
+  const isLocalhost =
+    SUPABASE_URL_HINT.includes('127.0.0.1') ||
+    SUPABASE_URL_HINT.includes('localhost') ||
+    SUPABASE_URL_HINT.includes('::1');
+  const isHttp = SUPABASE_URL_HINT.startsWith('http://');
+  const isExpoGo = APP_OWNERSHIP === 'expo';
+
+  if (isLocalhost && isExpoGo) {
+    return {
+      ok: false,
+      message:
+        'Supabase-URL zeigt auf localhost. Auf echtem Geraet nicht erreichbar. Bitte die gehostete Supabase-URL nutzen.',
+    };
+  }
+
+  if (isHttp && Platform.OS === 'android') {
+    return {
+      ok: false,
+      message:
+        'Supabase-URL nutzt HTTP. Android blockiert ggf. Cleartext. Bitte https:// Projekt-URL aus Supabase verwenden.',
+    };
+  }
+
+  return { ok: true };
+}
+
+function withTimeout(promise, ms = AUTH_TIMEOUT_MS, message = 'Netzwerk-Timeout beim Auth-Request.') {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+
+  return Promise.race([
+    promise.finally(() => clearTimeout(timer)),
+    timeout,
+  ]);
+}
 
 async function loginOAuth(provider, setMessage, setLoading) {
   try {
     setMessage(null);
+
+    const validation = validateSupabaseConfig();
+    if (!validation.ok) {
+      setMessage(validation.message);
+      return;
+    }
+
     setLoading(true);
 
     await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: OAUTH_REDIRECT, skipBrowserRedirect: true },
-    });
+    const { data, error } = await withTimeout(
+      supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: OAUTH_REDIRECT, skipBrowserRedirect: true },
+      }),
+      AUTH_TIMEOUT_MS,
+      'Supabase nicht erreichbar (OAuth). Bitte Verbindung oder Supabase-URL pruefen.'
+    );
     if (error) throw error;
     if (!data?.url) throw new Error('Kein OAuth-URL erhalten.');
 
@@ -76,25 +138,37 @@ async function loginOAuth(provider, setMessage, setLoading) {
     const refreshToken = params.refresh_token;
 
     if (code) {
-      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession({
-        authCode: code,
-      });
+      const { error: exchangeError } = await withTimeout(
+        supabase.auth.exchangeCodeForSession({
+          authCode: code,
+        }),
+        AUTH_TIMEOUT_MS,
+        'Supabase nicht erreichbar (Code-Austausch).'
+      );
       if (exchangeError) throw exchangeError;
       return;
     }
 
     if (accessToken && refreshToken) {
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
+      const { error: sessionError } = await withTimeout(
+        supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        }),
+        AUTH_TIMEOUT_MS,
+        'Supabase nicht erreichbar (Token setzen).'
+      );
       if (sessionError) throw sessionError;
       return;
     }
 
     throw new Error('Nach OAuth wurde kein Code oder Token geliefert.');
   } catch (err) {
-    setMessage(err.message ?? 'OAuth fehlgeschlagen.');
+    const hint =
+      SUPABASE_URL_HINT && SUPABASE_URL_HINT.includes('127.0.0.1')
+        ? ' (Hinweis: Supabase-URL zeigt auf localhost und ist vom Geraet nicht erreichbar)'
+        : '';
+    setMessage((err.message ?? 'OAuth fehlgeschlagen.') + hint);
   } finally {
     setLoading(false);
   }
@@ -200,10 +274,14 @@ export default function AuthScreen({ route, navigation, onGuest }) {
       }
 
       try {
-        await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
+        await withTimeout(
+          supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          }),
+          AUTH_TIMEOUT_MS,
+          'Supabase nicht erreichbar (Session setzen).'
+        );
         await syncAuthenticatedUserProfile();
       } catch (err) {
         console.warn('Konnte Sitzung nach E-Mail-Bestaetigung nicht setzen:', err);
@@ -265,6 +343,12 @@ export default function AuthScreen({ route, navigation, onGuest }) {
       return;
     }
 
+    const validation = validateSupabaseConfig();
+    if (!validation.ok) {
+      setMessage(validation.message);
+      return;
+    }
+
     setLoading(true);
     setMessage(null);
 
@@ -272,13 +356,17 @@ export default function AuthScreen({ route, navigation, onGuest }) {
       const trimmedEmail = normalizeEmail(email);
 
       if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
-          email: trimmedEmail,
-          password,
-          options: {
-            emailRedirectTo: EMAIL_CONFIRM_REDIRECT,
-          },
-        });
+        const { data, error } = await withTimeout(
+          supabase.auth.signUp({
+            email: trimmedEmail,
+            password,
+            options: {
+              emailRedirectTo: EMAIL_CONFIRM_REDIRECT,
+            },
+          }),
+          AUTH_TIMEOUT_MS,
+          'Supabase nicht erreichbar. Bitte Verbindung oder Supabase-URL pruefen.'
+        );
 
         if (error) {
           throw error;
@@ -292,10 +380,14 @@ export default function AuthScreen({ route, navigation, onGuest }) {
           await syncAuthenticatedUserProfile();
         }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: trimmedEmail,
-          password,
-        });
+        const { error } = await withTimeout(
+          supabase.auth.signInWithPassword({
+            email: trimmedEmail,
+            password,
+          }),
+          AUTH_TIMEOUT_MS,
+          'Supabase nicht erreichbar. Bitte Verbindung oder Supabase-URL pruefen.'
+        );
 
         if (error) {
           throw error;
@@ -312,7 +404,11 @@ export default function AuthScreen({ route, navigation, onGuest }) {
         setMode('signIn');
         setMessage('Diese E-Mail existiert bereits. Bitte melde dich an.');
       } else {
-        setMessage(err.message ?? 'Unbekannter Fehler.');
+        const hint =
+          SUPABASE_URL_HINT && SUPABASE_URL_HINT.includes('127.0.0.1')
+            ? ' (Hinweis: Supabase-URL zeigt auf localhost und ist vom Geraet nicht erreichbar)'
+            : '';
+        setMessage((err.message ?? 'Unbekannter Fehler.') + hint);
       }
     } finally {
       setLoading(false);
@@ -326,79 +422,83 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.brand}>MedBattle</Text>
+      <View style={styles.panel}>
+        <Text style={styles.brand}>MedBattle</Text>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>E-Mail</Text>
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          placeholder="name@example.com"
-          style={styles.input}
-        />
-      </View>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>E-Mail</Text>
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            placeholder="name@example.com"
+            placeholderTextColor="#94A3B8"
+            style={styles.input}
+          />
+        </View>
 
-      <View style={[styles.inputGroup, styles.inputGroupLarge]}>
-        <Text style={styles.label}>Passwort</Text>
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          placeholder="Mindestens 6 Zeichen"
-          style={styles.input}
-        />
-      </View>
+        <View style={[styles.inputGroup, styles.inputGroupLarge]}>
+          <Text style={styles.label}>Passwort</Text>
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            placeholder="Mindestens 6 Zeichen"
+            placeholderTextColor="#94A3B8"
+            style={styles.input}
+          />
+        </View>
 
-      {message ? <Text style={styles.message}>{message}</Text> : null}
+        {message ? <Text style={styles.message}>{message}</Text> : null}
 
-      <Pressable
-        onPress={handleSubmit}
-        disabled={loading}
-        style={[styles.primaryButton, loading ? styles.primaryButtonDisabled : null]}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.primaryButtonText}>
-            {isSignUp ? 'Account erstellen' : 'Einloggen'}
+        <Pressable
+          onPress={handleSubmit}
+          disabled={loading}
+          style={[styles.primaryButton, loading ? styles.primaryButtonDisabled : null]}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.primaryButtonText}>
+              {isSignUp ? 'Account erstellen' : 'Einloggen'}
+            </Text>
+          )}
+        </Pressable>
+
+        <Pressable onPress={toggleMode} disabled={loading}>
+          <Text style={styles.toggleText}>
+            {isSignUp
+              ? 'Schon einen Account? Hier einloggen.'
+              : 'Noch keinen Account? Jetzt erstellen.'}
           </Text>
-        )}
-      </Pressable>
-
-      <Pressable onPress={toggleMode} disabled={loading}>
-        <Text style={styles.toggleText}>
-          {isSignUp
-            ? 'Schon einen Account? Hier einloggen.'
-            : 'Noch keinen Account? Jetzt erstellen.'}
-        </Text>
-      </Pressable>
-
-      <Pressable
-        onPress={handleGuest}
-        disabled={loading}
-        style={[styles.guestButton, loading ? styles.guestButtonDisabled : null]}
-      >
-        <Text style={styles.guestButtonText}>Als Gast fortfahren</Text>
-      </Pressable>
-
-      <View style={styles.socialGroup}>
-        <Pressable
-          onPress={() => loginOAuth('google', setMessage, setLoading)}
-          disabled={loading}
-          style={[styles.socialButton, styles.googleButton]}
-        >
-          <Text style={styles.socialButtonText}>Mit Google anmelden</Text>
         </Pressable>
 
         <Pressable
-          onPress={() => loginOAuth('facebook', setMessage, setLoading)}
+          onPress={handleGuest}
           disabled={loading}
-          style={[styles.socialButton, styles.facebookButton]}
+          style={[styles.guestButton, loading ? styles.guestButtonDisabled : null]}
         >
-          <Text style={styles.socialButtonText}>Mit Facebook anmelden</Text>
+          <Text style={styles.guestButtonText}>Als Gast fortfahren</Text>
         </Pressable>
+
+        <View style={styles.socialGroup}>
+          <Pressable
+            onPress={() => loginOAuth('google', setMessage, setLoading)}
+            disabled={loading}
+            style={[styles.socialButton, styles.googleButton]}
+          >
+            <Text style={styles.socialButtonText}>Mit Google anmelden</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => loginOAuth('facebook', setMessage, setLoading)}
+            disabled={loading}
+            style={[styles.socialButton, styles.facebookButton]}
+          >
+            <Text style={styles.socialButtonText}>Mit Facebook anmelden</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );

@@ -20,6 +20,10 @@ export default function ProfileSection({
   showAvatarPicker,
   onToggleAvatarPicker,
   onSelectAvatar,
+  quizzesCompleted = 0,
+  accuracyPercent = 0,
+  leaderboardRank = null,
+  loadingRank = false,
   newEmail,
   setNewEmail,
   emailCtaLabel,
@@ -63,9 +67,26 @@ export default function ProfileSection({
           <Text style={styles.profileName}>{userName}</Text>
           <View style={[styles.levelBadge, levelBadgeHeat]}>
             <Text style={styles.levelBadgeText}>
-              {`Level ${userLevel}${totalStreak > 0 ? ` 🔥 ${totalStreak}x` : ''}`}
+              {`Level ${userLevel}${totalStreak > 0 ? ` x${totalStreak}` : ''}`}
             </Text>
           </View>
+        </View>
+      </View>
+
+      <View style={styles.profileStatsRow}>
+        <View style={styles.profileStatCard}>
+          <Text style={styles.profileStatLabel}>Leaderboard</Text>
+          <Text style={styles.profileStatValue}>
+            {loadingRank ? '...' : leaderboardRank ? `#${leaderboardRank}` : '-'}
+          </Text>
+        </View>
+        <View style={styles.profileStatCard}>
+          <Text style={styles.profileStatLabel}>Quizzes</Text>
+          <Text style={styles.profileStatValue}>{quizzesCompleted}</Text>
+        </View>
+        <View style={styles.profileStatCard}>
+          <Text style={styles.profileStatLabel}>Trefferquote</Text>
+          <Text style={styles.profileStatValue}>{accuracyPercent}%</Text>
         </View>
       </View>
 
@@ -92,12 +113,11 @@ export default function ProfileSection({
                   style={styles.avatarTileImage}
                   resizeMode="cover"
                 />
-                <View style={styles.avatarTileFooter}>
-                  <Text style={styles.avatarTileLabel}>{item.label}</Text>
-                  <Text style={styles.avatarTileLevel}>
-                    {locked ? `Level ${item.level}` : 'Frei'}
-                  </Text>
-                </View>
+                {locked ? (
+                  <View style={styles.avatarTileLockBanner}>
+                    <Text style={styles.avatarTileLevel}>Level {item.level}</Text>
+                  </View>
+                ) : null}
               </Pressable>
             );
           })}

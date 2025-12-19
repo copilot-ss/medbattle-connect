@@ -90,8 +90,6 @@ export default function ResultScreen({ route, navigation }) {
     difficulty = 'Mittel',
     difficultyKey = 'mittel',
     questionLimit = total,
-    campaignStage = null,
-    campaignNextStage = null,
     isMultiplayer = false,
     matchId = null,
     matchStatus = null,
@@ -194,22 +192,17 @@ export default function ResultScreen({ route, navigation }) {
 
         <Pressable
           onPress={() => {
-            if (mode === 'campaign') {
-              navigation.navigate('CampaignPath', {
-                completedStage: campaignStage,
-                nextStage: campaignNextStage,
-              });
-              return;
-            }
             navigation.replace('Quiz', {
-              difficulty: difficultyKey === 'campaign' ? 'mittel' : difficultyKey,
+              difficulty: difficultyKey,
               mode,
               questionLimit,
             });
           }}
           style={getPrimaryButtonStyle(badge.color)}
         >
-          <Text style={styles.primaryButtonText}>{mode === 'campaign' ? 'Fertig' : 'Nächste Challenge'}</Text>
+          <Text style={styles.primaryButtonText}>
+            {mode === 'quick' ? 'Nochmal Quick Play' : 'Naechste Challenge'}
+          </Text>
         </Pressable>
 
         <Pressable onPress={() => navigation.navigate('Home')} style={styles.tertiaryButton}>

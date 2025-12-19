@@ -40,6 +40,8 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
     addingFriend,
     friends,
     loadingFriends,
+    onlineFriends,
+    loadingOnline,
     onRemoveFriend,
     friendsFeedback,
     userName,
@@ -52,6 +54,10 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
     showAvatarPicker,
     handleToggleAvatarPicker,
     handleSelectAvatar,
+    quizzesCompleted,
+    accuracyPercent,
+    leaderboardRank,
+    loadingRank,
     newEmail,
     setNewEmail,
     emailCtaLabel,
@@ -109,8 +115,8 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
             friendInputRef={friendInputRef}
             onAddFriend={onAddFriend}
             addingFriend={addingFriend}
-            friends={friends}
-            loadingFriends={loadingFriends}
+            onlineFriends={onlineFriends}
+            loadingOnline={loadingOnline}
             onRemoveFriend={onRemoveFriend}
           />
         ) : null}
@@ -128,6 +134,10 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
             showAvatarPicker={showAvatarPicker}
             onToggleAvatarPicker={handleToggleAvatarPicker}
             onSelectAvatar={handleSelectAvatar}
+            quizzesCompleted={quizzesCompleted}
+            accuracyPercent={accuracyPercent}
+            leaderboardRank={leaderboardRank}
+            loadingRank={loadingRank}
             newEmail={newEmail}
             setNewEmail={setNewEmail}
             emailCtaLabel={emailCtaLabel}

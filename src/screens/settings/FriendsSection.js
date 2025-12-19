@@ -20,8 +20,8 @@ export default function FriendsSection({
   friendInputRef,
   onAddFriend,
   addingFriend,
-  friends,
-  loadingFriends,
+  onlineFriends,
+  loadingOnline,
   onRemoveFriend,
 }) {
   return (
@@ -38,9 +38,9 @@ export default function FriendsSection({
       </View>
 
       <View style={styles.friendHeroRow}>
-        <Text style={styles.friendHeroEmoji}>🤝</Text>
+        <Text style={styles.friendHeroEmoji}></Text>
         <View style={styles.friendHeroTextGroup}>
-          <Text style={styles.friendHeroTitle}>Freunde hinzufügen</Text>
+          <Text style={styles.friendHeroTitle}>Freunde hinzufuegen</Text>
           <Text style={styles.friendHeroSubtitle}>
             Teile deinen Code und hol deine Crew ins Battle.
           </Text>
@@ -58,7 +58,7 @@ export default function FriendsSection({
             {friendCode || '------'}
           </Text>
           <Text style={styles.friendCodeCopy}>
-            {copySuccess ? 'Kopiert!' : '📋'}
+            {copySuccess ? 'Kopiert!' : '->'}
           </Text>
         </Pressable>
       </View>
@@ -87,34 +87,37 @@ export default function FriendsSection({
           {addingFriend ? (
             <ActivityIndicator color="#F8FAFC" />
           ) : (
-            <Text style={styles.successButtonText}>Freund hinzufügen</Text>
+            <Text style={styles.successButtonText}>Freund hinzufuegen</Text>
           )}
         </Pressable>
       </View>
 
       <View style={styles.friendList}>
         <View style={styles.friendListHeader}>
-          <Text style={styles.friendListTitle}>Deine Crew</Text>
+          <Text style={styles.friendListTitle}>Freunde online</Text>
           <Text style={styles.friendListCount}>
-            {friends.length ? `${friends.length} Spieler` : ''}
+            {onlineFriends.length ? `${onlineFriends.length}` : ''}
           </Text>
         </View>
 
-        {loadingFriends ? (
+        {loadingOnline ? (
           <View style={styles.friendLoading}>
             <ActivityIndicator color="#60A5FA" />
             <Text style={styles.friendLoadingText}>
-              Freunde werden geladen ...
+              Online-Status wird geladen ...
             </Text>
           </View>
-        ) : friends.length ? (
-          friends.map((friend) => (
-            <View key={friend.id ?? friend.code} style={styles.friendRow}>
-              <Text style={styles.friendCodeText}>
-                {friend.code ?? '------'}
-              </Text>
+        ) : onlineFriends.length ? (
+          onlineFriends.map((friend) => (
+            <View key={friend.code} style={styles.friendRow}>
+              <View>
+                <Text style={styles.friendCodeText}>
+                  {friend.username ?? 'Freund'}
+                </Text>
+                <Text style={styles.friendStatusText}>{friend.status ?? 'Online'}</Text>
+              </View>
               <Pressable
-                onPress={() => onRemoveFriend(friend)}
+                onPress={() => onRemoveFriend({ code: friend.code })}
                 style={styles.friendRemoveButton}
               >
                 <Text style={styles.friendRemoveText}>Entfernen</Text>
@@ -123,7 +126,7 @@ export default function FriendsSection({
           ))
         ) : (
           <Text style={styles.friendEmptyText}>
-            Noch keine Freundesliste – teile deinen Code und starte!
+            Keine Freunde online. Teile deinen Code und starte!
           </Text>
         )}
       </View>
