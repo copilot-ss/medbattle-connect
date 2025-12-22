@@ -196,6 +196,7 @@ export default function HomeScreen({ navigation, route }) {
   }, [boostEnergy, iapAvailable, iapModule]);
 
   const quickPlayDisabled = !premium && energy <= 0;
+  const showEnergyAd = !premium && energy <= 0;
   const quickPlaySubtitle = premium
     ? 'Premium: unbegrenzt spielen'
     : `Energie ${energy}/${energyMax}${nextEnergyCountdown ? ` - ${nextEnergyCountdown}` : ''}`;
@@ -307,7 +308,7 @@ export default function HomeScreen({ navigation, route }) {
       ) : null}
 
       <View style={styles.flexSpacer} />
-      <AdBanner style={styles.adSlot} />
+      {showEnergyAd ? <AdBanner style={styles.adSlot} /> : null}
 
       {!premium && showBoostModal ? (
         <View style={styles.boostOverlay}>
@@ -343,7 +344,7 @@ export default function HomeScreen({ navigation, route }) {
                 disabled={boosting}
               >
                 <Text style={styles.boostButtonText}>
-                  {boosting ? 'Lade...' : 'Boost (99ct) auf 20/20'}
+                  {boosting ? 'Lade...' : 'Energie voll (1,99 EUR)'}
                 </Text>
               </Pressable>
             </View>

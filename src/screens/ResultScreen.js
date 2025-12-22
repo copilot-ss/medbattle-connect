@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import LottieView from 'lottie-react-native';
 import AdBanner from '../components/AdBanner';
+import { usePreferences } from '../context/PreferencesContext';
 import styles, {
   getBadgePillStyle,
   getLargeGlowStyle,
@@ -100,6 +101,8 @@ export default function ResultScreen({ route, navigation }) {
     playerRole = null,
     mode = 'standard',
   } = route.params ?? {};
+  const { energy } = usePreferences();
+  const showEnergyAd = energy <= 0;
 
   const totalQuestions = total || questionLimit || 0;
   const percentage = useMemo(() => {
@@ -211,7 +214,7 @@ export default function ResultScreen({ route, navigation }) {
         </Pressable>
       </View>
 
-      <AdBanner style={styles.adSlot} />
+      {showEnergyAd ? <AdBanner style={styles.adSlot} /> : null}
 
       {badge.spotlight ? <View style={styles.spotlight} /> : null}
     </View>

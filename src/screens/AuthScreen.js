@@ -468,7 +468,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             accessibilityRole="button"
             accessibilityLabel="Mit Google anmelden"
           >
-            <FontAwesome5 name="google" size={16} color="#F8FAFC" brand />
+            <FontAwesome5 name="google" size={22} color="#F8FAFC" brand />
           </Pressable>
 
           <Pressable
@@ -478,7 +478,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             accessibilityRole="button"
             accessibilityLabel="Mit Discord anmelden"
           >
-            <FontAwesome5 name="discord" size={16} color="#F8FAFC" brand />
+            <FontAwesome5 name="discord" size={26} color="#F8FAFC" brand />
           </Pressable>
         </View>
       </View>

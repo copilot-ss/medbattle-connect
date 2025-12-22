@@ -5,7 +5,7 @@ export const DIFFICULTY_LABELS = {
 };
 
 export const ALLOWED_DIFFICULTIES = ['leicht', 'mittel', 'schwer'];
-export const TIMER_DURATION = 6000;
+export const TIMER_DURATION = 10000;
 
 export default function useQuizConfig(route) {
   const matchId =
