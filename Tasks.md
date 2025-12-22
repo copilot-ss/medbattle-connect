@@ -19,7 +19,9 @@
 - [x] Quiz mit Fragen und Ergebnis
 - [x] Supabase CLI eingerichtet und mit Projekt `uxlwbzgohgxbnhcjiimh` verknuepft
 - [x] Supabase Auth (Google OAuth)
+- [x] Supabase Auth (Discord OAuth UI)
 - [x] Supabase Auth (E-Mail)
+- [x] Social OAuth Buttons mit Provider-Icons
 - [x] Werbung (AdMob) einbauen
 - [x] Premium-Modus ohne Werbung
 - [x] Highscore / Rangliste

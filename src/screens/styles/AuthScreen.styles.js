@@ -90,7 +90,8 @@ const styles = StyleSheet.create({
   },
   socialGroup: {
     marginTop: 24,
-    rowGap: 10,
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   guestButton: {
     marginTop: 12,
@@ -110,20 +111,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   socialButton: {
-    paddingVertical: 12,
+    width: 52,
+    height: 52,
     borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 6,
   },
   googleButton: {
     backgroundColor: '#DB4437',
   },
-  facebookButton: {
-    backgroundColor: '#1877F2',
-  },
-  socialButtonText: {
-    color: '#F8FAFC',
-    fontSize: 16,
-    fontWeight: '700',
+  discordButton: {
+    backgroundColor: '#5865F2',
   },
 });
 

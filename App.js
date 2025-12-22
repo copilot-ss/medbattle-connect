@@ -3,7 +3,7 @@ import 'react-native-gesture-handler';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect } from 'react';
 import { registerRootComponent } from 'expo';
-import { StatusBar } from 'react-native';
+import { StatusBar, DevSettings } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AppNavigator from './src/AppNavigator';
 import GlobalErrorBoundary from './src/components/GlobalErrorBoundary';
@@ -17,6 +17,9 @@ registerGlobalErrorLogging();
 
 function App() {
   useEffect(() => {
+    if (__DEV__ && DevSettings?.setHotLoadingEnabled) {
+      DevSettings.setHotLoadingEnabled(true);
+    }
     initializeAds();
     const unregisterUpdates = registerUpdates();
 

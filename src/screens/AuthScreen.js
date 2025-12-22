@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TextInput, Pressable, ActivityIndicator, Linking, Platform } from 'react-native';
+import { FontAwesome5 } from '@expo/vector-icons';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
@@ -10,23 +11,25 @@ import { supabase } from '../lib/supabaseClient';
 import styles from './styles/AuthScreen.styles';
 
 const REDIRECT_PATH = 'auth/callback';
-const APP_OWNERSHIP = Constants.appOwnership ?? 'expo';
+const APP_OWNERSHIP = Constants.appOwnership ?? 'standalone';
 const expoOwner = Constants.expoConfig?.owner ?? 'sjigalin';
 const expoSlug = Constants.expoConfig?.slug ?? 'medbattle';
+const isExpoGo = APP_OWNERSHIP === 'expo';
 
 const defaultProxyRedirect = AuthSession.makeRedirectUri({
-  useProxy: true,
+  useProxy: isExpoGo,
   scheme: 'medbattle',
 });
 
-const EXPO_PROXY_REDIRECT =
-  defaultProxyRedirect && defaultProxyRedirect.startsWith('https://')
+const EXPO_PROXY_REDIRECT = isExpoGo
+  ? defaultProxyRedirect && defaultProxyRedirect.startsWith('https://')
     ? defaultProxyRedirect
-    : `https://auth.expo.dev/@${expoOwner}/${expoSlug}`;
+    : `https://auth.expo.dev/@${expoOwner}/${expoSlug}`
+  : null;
 
 const NATIVE_SCHEME_REDIRECT = `medbattle://${REDIRECT_PATH}`;
 const OAUTH_REDIRECT =
-  APP_OWNERSHIP === 'expo' && EXPO_PROXY_REDIRECT
+  isExpoGo && EXPO_PROXY_REDIRECT
     ? EXPO_PROXY_REDIRECT
     : NATIVE_SCHEME_REDIRECT;
 const AUTH_TIMEOUT_MS = 12000;
@@ -411,8 +414,6 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
-            placeholder="name@example.com"
-            placeholderTextColor="#94A3B8"
             style={styles.input}
           />
         </View>
@@ -423,8 +424,6 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
-            placeholder="Mindestens 6 Zeichen"
-            placeholderTextColor="#94A3B8"
             style={styles.input}
           />
         </View>
@@ -466,16 +465,20 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             onPress={() => loginOAuth('google', setMessage, setLoading)}
             disabled={loading}
             style={[styles.socialButton, styles.googleButton]}
+            accessibilityRole="button"
+            accessibilityLabel="Mit Google anmelden"
           >
-            <Text style={styles.socialButtonText}>Mit Google anmelden</Text>
+            <FontAwesome5 name="google" size={16} color="#F8FAFC" brand />
           </Pressable>
 
           <Pressable
-            onPress={() => loginOAuth('facebook', setMessage, setLoading)}
+            onPress={() => loginOAuth('discord', setMessage, setLoading)}
             disabled={loading}
-            style={[styles.socialButton, styles.facebookButton]}
+            style={[styles.socialButton, styles.discordButton]}
+            accessibilityRole="button"
+            accessibilityLabel="Mit Discord anmelden"
           >
-            <Text style={styles.socialButtonText}>Mit Facebook anmelden</Text>
+            <FontAwesome5 name="discord" size={16} color="#F8FAFC" brand />
           </Pressable>
         </View>
       </View>
