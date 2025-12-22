@@ -3,3 +3,13 @@ node_modules
 .env
 supabase/.temp/
 supabase/.branches/
+_eas/
+credentials.json
+credentials/
+android/app/debug.keystore
+android/app/build/
+android/build/
+android/.gradle/
+android/.cxx/
+*.keystore
+dist/

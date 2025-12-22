@@ -43,7 +43,7 @@ export async function updateUsername(userId, nextUsername) {
   const sanitized = sanitizeUsername(nextUsername, '').trim();
 
   if (!sanitized) {
-    return { ok: false, error: new Error('Bitte einen gültigen Nutzernamen eingeben.') };
+    return { ok: false, error: new Error('Bitte einen gueltigen Nutzernamen eingeben.') };
   }
 
   try {

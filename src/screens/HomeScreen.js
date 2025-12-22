@@ -157,7 +157,7 @@ export default function HomeScreen({ navigation, route }) {
             try {
               await iapModule.finishTransactionAsync(purchase, false);
               await boostEnergy();
-              setEnergyMessage('⚡ Energie aufgefuellt!');
+              setEnergyMessage('Energie aufgefuellt!');
               setShowBoostModal(false);
             } catch (err) {
               setEnergyMessage('Boost konnte nicht abgeschlossen werden.');
@@ -198,7 +198,7 @@ export default function HomeScreen({ navigation, route }) {
   const quickPlayDisabled = !premium && energy <= 0;
   const quickPlaySubtitle = premium
     ? 'Premium: unbegrenzt spielen'
-    : `⚡ ${energy}/${energyMax}${nextEnergyCountdown ? ` • ${nextEnergyCountdown}` : ''}`;
+    : `Energie ${energy}/${energyMax}${nextEnergyCountdown ? ` - ${nextEnergyCountdown}` : ''}`;
 
   function handleCreateLobby() {
     if (hasActiveLobby) {
@@ -228,7 +228,7 @@ export default function HomeScreen({ navigation, route }) {
       const result = await consumeEnergy();
       if (!result.ok) {
         setShowBoostModal(true);
-      setEnergyMessage('Keine Energie. Warte auf Aufladung oder nutze einen ⚡ Boost.');
+        setEnergyMessage('Keine Energie. Warte auf Aufladung oder nutze einen Boost.');
         return;
       }
     }
@@ -312,7 +312,7 @@ export default function HomeScreen({ navigation, route }) {
       {!premium && showBoostModal ? (
         <View style={styles.boostOverlay}>
           <View style={styles.boostCard}>
-            <Text style={styles.boostTitle}>⚡ Energie leer</Text>
+            <Text style={styles.boostTitle}>Energie leer</Text>
             <Text style={styles.boostText}>
               Warte 30 Minuten pro Blitz oder lade sofort auf.
             </Text>

@@ -101,7 +101,10 @@ android {
     }
     signingConfigs {
         debug {
-            storeFile file('debug.keystore')
+            def projectDebugKeystore = file('debug.keystore')
+            def defaultDebugKeystore = file("${System.properties['user.home']}/.android/debug.keystore")
+            // Prefer repo-local debug keystore, fall back to default Android debug keystore.
+            storeFile projectDebugKeystore.exists() ? projectDebugKeystore : defaultDebugKeystore
             storePassword 'android'
             keyAlias 'androiddebugkey'
             keyPassword 'android'

@@ -32,3 +32,4 @@ dist/
 coverage/
 *.apk
 *.aab
+_eas/

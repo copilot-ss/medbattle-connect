@@ -53,7 +53,7 @@ async function closeWaitingMatches({ includeAllOpen = false } = {}) {
 
     return data?.length ?? 0;
   } catch (err) {
-    console.warn('Konnte inaktive Lobbys nicht schließen:', err?.message ?? err);
+    console.warn('Konnte inaktive Lobbys nicht schliessen:', err?.message ?? err);
     return 0;
   }
 }

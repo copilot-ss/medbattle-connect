@@ -99,7 +99,7 @@ export default function UsernameSetupScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Wビhle deinen Namen</Text>
+      <Text style={styles.title}>Waehle deinen Namen</Text>
       <Text style={styles.subtitle}>
         Dieser Name wird in Lobbys, Ranglisten und deinem Profil angezeigt.
       </Text>

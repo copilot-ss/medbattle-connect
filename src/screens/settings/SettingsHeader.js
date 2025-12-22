@@ -8,7 +8,7 @@ export default function SettingsHeader({ onClose }) {
       <Pressable
         onPress={onClose}
         style={styles.headerCloseButton}
-        accessibilityLabel="Schließen"
+        accessibilityLabel="Schliessen"
       >
         <Text style={styles.headerCloseText}>X</Text>
       </Pressable>

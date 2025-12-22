@@ -147,7 +147,7 @@ const safeAsyncStorage = {
   },
   async removeItem(key) {
     try { await AsyncStorage.removeItem(key); }
-    catch (err) { console.warn('Konnte Supabase-Sitzung nicht löschen:', err); }
+    catch (err) { console.warn('Konnte Supabase-Sitzung nicht loeschen:', err); }
   },
 };
 

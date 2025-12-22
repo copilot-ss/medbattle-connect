@@ -905,7 +905,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         ) : null}
 
         <View style={styles.createContent}>
-          <Text style={styles.createSubtitle}>W�hle Schwierigkeit</Text>
+          <Text style={styles.createSubtitle}>Waehle Schwierigkeit</Text>
           <View style={styles.createDifficultyColumn}>
             {DIFFICULTY_OPTIONS.map((item, index) => {
               const active = item.key === selectedDifficulty;

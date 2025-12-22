@@ -1,16 +1,16 @@
-# 🧠 AGENTS.md — MedBattle Quiz App
+﻿# AGENTS.md - MedBattle Quiz App
 
-## 🎯 Ziel
-Dies ist die zentrale Agent-Anleitung für das Projekt **MedBattle**.
+## Ziel
+Zentrale Agent-Anleitung fuer MedBattle.
 Codex soll effizient arbeiten, Token sparen und nur relevante Dateien laden.
 
-## ⚙️ Regeln
+## Regeln
 - Immer zuerst `PLANNING.md` lesen
-- Vor Änderungen `TASKS.md` prüfen
-- Nie große Ordner wie node_modules, .expo, .git laden
-- Nur gezielte Dateien öffnen, z. B. `src/screens/QuizScreen.js`
+- Vor Aenderungen `TASKS.md` pruefen
+- Nie grosse Ordner wie node_modules, .expo, .git laden
+- Nur gezielte Dateien oeffnen (z. B. `src/screens/QuizScreen.js`)
 
-## 🧩 Relevante Dateien
+## Relevante Dateien
 src/AppNavigator.js
 src/lib/supabaseClient.js
 src/services/quizService.js
@@ -20,28 +20,34 @@ src/screens/ResultScreen.js
 App.js
 PLANNING.md
 TASKS.md
+android/app/src/main/AndroidManifest.xml
+android/app/src/main/java/com/sjigalin/medbattle/MainApplication.kt
+android/gradle.properties
+eas.json
+.easignore
+patches/expo-modules-core+3.0.28.patch
 
-## 🧠 Prinzipien
-- Wenn codex eine aufgabe selbst machen kann soll der agent das erst selbst versuchen und nicht dem user die aufgabe geben
+## Prinzipien
+- Wenn Codex eine Aufgabe selbst machen kann, zuerst selbst versuchen.
 - Max 300 Zeilen pro Chunk laden
 - Nur betroffene Funktionen analysieren
 - Supabase-Abfragen cachen
-- UTF-8 für alle Dateien
-- Keine doppelten Codeblöcke senden
+- UTF-8 fuer alle Dateien
+- Keine doppelten Codebloecke senden
 - Immer nur Patch-Diffs posten
 - Supabase-URL in `.env` nicht auf localhost setzen (Expo Go erreicht das nicht)
 
-## 💾 Coding Guidelines
-- 2 Spaces Einrückung
+## Coding Guidelines
+- 2 Spaces Einrueckung
 - Komponenten PascalCase
 - Async + Error-Handling bei API-Calls
 - Keine Hardcoded Keys
-- Vermeide lange Dateien, lieber refactoren und outsourcen und eine neue erstellen
+- Vermeide lange Dateien; lieber refactoren und auslagern
 
-## ✅ Kurzfassung
+## Kurzfassung
 always read PLANNING.md
 check TASKS.md
-load only src/ files
+load only relevant files
 avoid node_modules
 use UTF-8
 summaries + patches only
