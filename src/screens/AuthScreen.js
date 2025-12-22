@@ -7,7 +7,6 @@ import Constants from 'expo-constants';
 WebBrowser.maybeCompleteAuthSession();
 
 import { supabase } from '../lib/supabaseClient';
-import { ensureUserRecord } from '../services/userService';
 import styles from './styles/AuthScreen.styles';
 
 const REDIRECT_PATH = 'auth/callback';
@@ -247,21 +246,6 @@ export default function AuthScreen({ route, navigation, onGuest }) {
     }
   }, [route?.params?.mode, route?.params?.emailPreset]);
 
-  async function syncAuthenticatedUserProfile() {
-    try {
-      const { data, error } = await supabase.auth.getUser();
-
-      if (!error && data?.user) {
-        const result = await ensureUserRecord(data.user);
-        if (!result.ok && result.error) {
-          console.warn('Konnte Nutzerprofil nach Login nicht synchronisieren:', result.error);
-        }
-      }
-    } catch (err) {
-      console.warn('Konnte Nutzerprofil nach Login nicht abrufen:', err);
-    }
-  }
-
   useEffect(() => {
     let active = true;
 
@@ -282,7 +266,6 @@ export default function AuthScreen({ route, navigation, onGuest }) {
           AUTH_TIMEOUT_MS,
           'Supabase nicht erreichbar (Session setzen).'
         );
-        await syncAuthenticatedUserProfile();
       } catch (err) {
         console.warn('Konnte Sitzung nach E-Mail-Bestaetigung nicht setzen:', err);
       }
@@ -376,8 +359,6 @@ export default function AuthScreen({ route, navigation, onGuest }) {
           setMessage(
             'Account erstellt. Bitte bestaetige deine E-Mail, bevor du dich einloggst.'
           );
-        } else {
-          await syncAuthenticatedUserProfile();
         }
       } else {
         const { error } = await withTimeout(
@@ -392,8 +373,6 @@ export default function AuthScreen({ route, navigation, onGuest }) {
         if (error) {
           throw error;
         }
-
-        await syncAuthenticatedUserProfile();
       }
     } catch (err) {
       const alreadyRegistered =

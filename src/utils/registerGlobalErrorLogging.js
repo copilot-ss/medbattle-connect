@@ -1,4 +1,5 @@
 import { Alert } from 'react-native';
+import { logClientError } from '../services/loggingService';
 
 export default function registerGlobalErrorLogging() {
   const originalHandler = global.ErrorUtils?.getGlobalHandler?.();
@@ -6,6 +7,12 @@ export default function registerGlobalErrorLogging() {
   const handler = (error, isFatal) => {
     try {
       console.error('Global JS error', error);
+      logClientError({
+        level: isFatal ? 'fatal' : 'error',
+        message: error?.message ?? String(error),
+        stack: error?.stack,
+        context: { isFatal },
+      });
       Alert.alert(
         'Unerwarteter Fehler',
         `${isFatal ? 'Fatal: ' : ''}${error?.message ?? String(error)}`.slice(0, 400)

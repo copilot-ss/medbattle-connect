@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import LottieView from 'lottie-react-native';
+import AdBanner from '../components/AdBanner';
 import styles, {
   getBadgePillStyle,
   getLargeGlowStyle,
@@ -209,6 +210,8 @@ export default function ResultScreen({ route, navigation }) {
           <Text style={styles.tertiaryButtonText}>Zurueck zur Basis</Text>
         </Pressable>
       </View>
+
+      <AdBanner style={styles.adSlot} />
 
       {badge.spotlight ? <View style={styles.spotlight} /> : null}
     </View>

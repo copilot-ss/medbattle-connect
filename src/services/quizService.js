@@ -1,5 +1,4 @@
 import { supabase } from '../lib/supabaseClient';
-import { ensureUserRecord } from './userService';
 
 const LEADERBOARD_CACHE_TTL = 30 * 1000;
 const leaderboardCache = {
@@ -49,20 +48,23 @@ function shuffleList(list) {
   return copy;
 }
 
-export async function fetchQuestions(difficulty = 'mittel', limit = 6) {
+export async function fetchQuestions(difficulty = 'mittel', limit = 6, category = null) {
   const normalizedDifficulty = ['leicht', 'mittel', 'schwer'].includes(
     difficulty
   )
     ? difficulty
     : 'mittel';
+  const normalizedLimit =
+    Number.isFinite(limit) && limit > 0 ? Math.min(limit, 50) : 6;
+  const normalizedCategory =
+    typeof category === 'string' && category.trim() ? category.trim() : null;
 
   try {
-    const { data, error } = await supabase
-      .from('questions')
-      .select('*')
-      .eq('difficulty', normalizedDifficulty)
-      .order('created_at', { ascending: false })
-      .limit(limit);
+    const { data, error } = await supabase.rpc('get_questions', {
+      p_difficulty: normalizedDifficulty,
+      p_limit: normalizedLimit,
+      p_category: normalizedCategory,
+    });
 
     if (error) {
       console.warn('Fehler beim Laden der Fragen:', error.message);
@@ -97,7 +99,7 @@ export async function fetchQuestions(difficulty = 'mittel', limit = 6) {
       return [];
     }
 
-    return shuffleList(normalized).slice(0, limit);
+    return normalized;
   } catch (err) {
     console.error('Unerwarteter Fehler beim Laden der Fragen:', err);
     return [];
@@ -129,12 +131,9 @@ export async function fetchLeaderboard(limit = 20, { force = false } = {}) {
   }
 
   try {
-    const { data, error } = await supabase
-      .from('scores')
-      .select('id, user_id, points, difficulty, created_at, users:users(username)')
-      .order('points', { ascending: false })
-      .order('created_at', { ascending: true })
-      .limit(Math.max(limit * 3, 50));
+    const { data, error } = await supabase.rpc('get_leaderboard', {
+      p_limit: limit,
+    });
 
     if (error) {
       console.warn('Fehler beim Laden der Rangliste:', error.message);
@@ -145,29 +144,14 @@ export async function fetchLeaderboard(limit = 20, { force = false } = {}) {
       return [];
     }
 
-    const ranked = [];
-    const seen = new Set();
-
-    for (const item of data) {
-      if (!item?.user_id || seen.has(item.user_id)) {
-        continue;
-      }
-
-      seen.add(item.user_id);
-
-      ranked.push({
-        id: item.id,
-        userId: item.user_id,
-        username: item.users?.username ?? null,
-        points: Number.isFinite(item.points) ? item.points : 0,
-        difficulty: item.difficulty ?? 'unbekannt',
-        createdAt: item.created_at ?? null,
-      });
-
-      if (ranked.length >= limit) {
-        break;
-      }
-    }
+    const ranked = data.map((item) => ({
+      id: item.id,
+      userId: item.user_id,
+      username: item.username ?? null,
+      points: Number.isFinite(item.points) ? item.points : 0,
+      difficulty: item.difficulty ?? 'unbekannt',
+      createdAt: item.created_at ?? null,
+    }));
 
     leaderboardCache.data = ranked;
     leaderboardCache.fetchedAt = now;
@@ -188,91 +172,28 @@ export async function submitScore(userId, points, difficulty = 'mittel') {
     return { ok: false, error: new Error('Kein Nutzer angemeldet.') };
   }
 
+  if (safeUserId === 'guest') {
+    return { ok: false, error: new Error('Gaeste koennen keine Scores speichern.') };
+  }
+
   const sanitizedPoints = Number.isFinite(points) ? Math.max(points, 0) : 0;
   const sanitizedDifficulty =
     typeof difficulty === 'string' && difficulty.trim()
       ? difficulty.trim().toLowerCase()
       : 'mittel';
-  const payload = {
-    user_id: safeUserId,
-    points: sanitizedPoints,
-    difficulty: sanitizedDifficulty,
-  };
-
-  let authUser = null;
-
   try {
-    const { data, error } = await supabase.auth.getUser();
-
-    if (!error && data?.user) {
-      authUser = data.user;
-    }
-  } catch (err) {
-    console.warn('Konnte Nutzerinformationen fuer Score nicht abrufen:', err);
-  }
-
-  let ensuredProfile = false;
-
-  try {
-    const ensureTarget =
-      authUser && authUser.id === safeUserId
-        ? authUser
-        : {
-            id: safeUserId,
-            email: authUser?.email ?? null,
-            user_metadata: authUser?.user_metadata ?? {},
-          };
-
-    const ensureResult = await ensureUserRecord(ensureTarget);
-    ensuredProfile = ensureResult.ok;
-
-    if (!ensureResult.ok && ensureResult.error) {
-      console.warn('Konnte Nutzerprofil vor Score nicht anlegen:', ensureResult.error);
-    }
-  } catch (err) {
-    console.warn('Konnte Nutzerprofil vor Score nicht synchronisieren:', err);
-  }
-
-  async function insertScoreRow() {
-    return supabase.from('scores').insert([payload]);
-  }
-
-  try {
-    let { error } = await insertScoreRow();
+    const { data, error } = await supabase.rpc('submit_score', {
+      p_user_id: safeUserId,
+      p_points: sanitizedPoints,
+      p_difficulty: sanitizedDifficulty,
+    });
 
     if (error) {
-      const message = error.message ?? '';
-
-      if (message.includes('foreign key constraint')) {
-        const { data: userData, error: userFetchError } = await supabase.auth.getUser();
-
-        if (!userFetchError && userData?.user) {
-          const ensureResult =
-            ensuredProfile && userData.user.id === safeUserId
-              ? { ok: true }
-              : await ensureUserRecord(userData.user);
-
-          if (!ensureResult.ok && ensureResult.error) {
-            console.warn('Konnte Nutzerprofil beim erneuten Versuch nicht anlegen:', ensureResult.error);
-          }
-
-          if (ensureResult.ok) {
-            const retry = await insertScoreRow();
-
-            if (!retry.error) {
-              return { ok: true, retried: true };
-            }
-
-            error = retry.error;
-          }
-        }
-      }
-
-      console.error('Fehler beim Speichern des Scores:', error.message);
+      console.warn('Fehler beim Speichern des Scores:', error.message);
       return { ok: false, error };
     }
 
-    return { ok: true };
+    return { ok: true, data };
   } catch (err) {
     console.error('Unerwarteter Fehler beim Speichern des Scores:', err);
     return { ok: false, error: err };

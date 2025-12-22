@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { ensureUserRecord } from '../services/userService';
 
 const GUEST_SESSION = { user: { id: 'guest', email: null } };
 
@@ -87,28 +86,6 @@ export default function useAuthSession() {
       authListener?.subscription?.unsubscribe();
     };
   }, []);
-
-  useEffect(() => {
-    if (!session?.user || session?.user?.id === 'guest') {
-      return;
-    }
-
-    let cancelled = false;
-
-    async function syncUserProfile() {
-      const result = await ensureUserRecord(session.user);
-
-      if (!cancelled && !result.ok && result.error) {
-        console.warn('Konnte Nutzerprofil nicht anlegen:', result.error);
-      }
-    }
-
-    syncUserProfile();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [session?.user]);
 
   return {
     session,

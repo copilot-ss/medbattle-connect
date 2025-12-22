@@ -12,9 +12,10 @@ import {
   removeFriend,
 } from '../../services/friendsService';
 import { fetchUserProfile } from '../../services/userService';
-import { fetchLeaderboard } from '../../services/quizService';
 import AVATARS from './avatars';
 import { normalizeEmail } from './utils';
+import useFriendsPresence from './useFriendsPresence';
+import useLeaderboardRank from './useLeaderboardRank';
 
 const sanitizeStatNumber = (value) => {
   const parsed = parseInt(value, 10);
@@ -59,8 +60,6 @@ export default function useSettingsController({ navigation, route, onClearSessio
   const [loadingFriends, setLoadingFriends] = useState(true);
   const [addingFriend, setAddingFriend] = useState(false);
   const [friendsFeedback, setFriendsFeedback] = useState(null);
-  const [onlineFriends, setOnlineFriends] = useState([]);
-  const [loadingOnline, setLoadingOnline] = useState(false);
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState(null);
   const [authUserId, setAuthUserId] = useState(null);
@@ -71,12 +70,16 @@ export default function useSettingsController({ navigation, route, onClearSessio
   const [focusTarget, setFocusTarget] = useState(route?.params?.focus ?? null);
   const [activeTab, setActiveTab] = useState('settings');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-  const [leaderboardRank, setLeaderboardRank] = useState(null);
-  const [loadingRank, setLoadingRank] = useState(false);
   const scrollRef = useRef(null);
   const friendInputRef = useRef(null);
   const isGuest = !authUserId;
-  const presenceChannelRef = useRef(null);
+  const { rank: leaderboardRank, loading: loadingRank } = useLeaderboardRank(authUserId);
+  const { onlineFriends, loadingOnline } = useFriendsPresence({
+    userId,
+    friendCode,
+    userName,
+    friends,
+  });
 
   const soundStatus = useMemo(
     () => (soundEnabled ? 'Sound aktiv' : 'Sound stumm'),
@@ -174,43 +177,6 @@ export default function useSettingsController({ navigation, route, onClearSessio
     setFocusTarget(route.params.focus);
     navigation.setParams({ focus: null });
   }, [route?.params?.focus, navigation]);
-
-  useEffect(() => {
-    if (!focusTarget) {
-      return undefined;
-    }
-
-    const cleanupFns = [];
-
-    if (focusTarget === 'password') {
-      setActiveTab('profile');
-      setShowResetForm(true);
-    } else if (focusTarget === 'friendsAdd') {
-      setActiveTab('friends');
-      const timer = setTimeout(() => {
-        friendInputRef.current?.focus?.();
-      }, 100);
-      cleanupFns.push(() => clearTimeout(timer));
-    } else if (focusTarget === 'audio') {
-      setActiveTab('settings');
-    } else if (focusTarget === 'logout') {
-      setActiveTab('profile');
-      handleSignOut();
-    }
-
-    if (scrollRef.current) {
-      const y = focusTarget === 'audio' ? 0 : undefined;
-      if (typeof y === 'number') {
-        scrollRef.current.scrollTo({ y, animated: true });
-      } else {
-        scrollRef.current.scrollToEnd({ animated: true });
-      }
-    }
-
-    return () => {
-      cleanupFns.forEach((fn) => fn());
-    };
-  }, [focusTarget, handleSignOut]);
 
   const handleSoundToggle = useCallback((value) => {
     setSoundEnabled(value).catch((err) => {
@@ -343,41 +309,6 @@ export default function useSettingsController({ navigation, route, onClearSessio
       }
     }, [loadFriends, userId])
   );
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadRank() {
-      if (!authUserId) {
-        if (!cancelled) {
-          setLeaderboardRank(null);
-        }
-        return;
-      }
-      setLoadingRank(true);
-      try {
-        const board = await fetchLeaderboard(300, { force: true });
-        const index = Array.isArray(board)
-          ? board.findIndex((entry) => entry.userId === authUserId)
-          : -1;
-        if (!cancelled) {
-          setLeaderboardRank(index >= 0 ? index + 1 : null);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setLeaderboardRank(null);
-        }
-        console.warn('Konnte Leaderboard-Rang nicht laden:', err);
-      } finally {
-        if (!cancelled) {
-          setLoadingRank(false);
-        }
-      }
-    }
-    loadRank();
-    return () => {
-      cancelled = true;
-    };
-  }, [authUserId]);
 
   const handlePasswordReset = useCallback(async () => {
     const targetEmail = normalizeEmail(resetEmail);
@@ -557,6 +488,43 @@ export default function useSettingsController({ navigation, route, onClearSessio
     }
   }, [navigation, onClearSession, signingOut]);
 
+  useEffect(() => {
+    if (!focusTarget) {
+      return undefined;
+    }
+
+    const cleanupFns = [];
+
+    if (focusTarget === 'password') {
+      setActiveTab('profile');
+      setShowResetForm(true);
+    } else if (focusTarget === 'friendsAdd') {
+      setActiveTab('friends');
+      const timer = setTimeout(() => {
+        friendInputRef.current?.focus?.();
+      }, 100);
+      cleanupFns.push(() => clearTimeout(timer));
+    } else if (focusTarget === 'audio') {
+      setActiveTab('settings');
+    } else if (focusTarget === 'logout') {
+      setActiveTab('profile');
+      handleSignOut();
+    }
+
+    if (scrollRef.current) {
+      const y = focusTarget === 'audio' ? 0 : undefined;
+      if (typeof y === 'number') {
+        scrollRef.current.scrollTo({ y, animated: true });
+      } else {
+        scrollRef.current.scrollToEnd({ animated: true });
+      }
+    }
+
+    return () => {
+      cleanupFns.forEach((fn) => fn());
+    };
+  }, [focusTarget, handleSignOut]);
+
   const handleCopyFriendCode = useCallback(async () => {
     if (!friendCode) {
       return;
@@ -579,93 +547,6 @@ export default function useSettingsController({ navigation, route, onClearSessio
     () => setShowAvatarPicker((prev) => !prev),
     []
   );
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function attachPresence() {
-      if (!userId || !friendCode) {
-        setOnlineFriends([]);
-        return;
-      }
-
-      setLoadingOnline(true);
-
-      if (presenceChannelRef.current) {
-        supabase.removeChannel(presenceChannelRef.current);
-        presenceChannelRef.current = null;
-      }
-
-      const channel = supabase.channel('presence:friends', {
-        config: { presence: { key: userId } },
-      });
-      presenceChannelRef.current = channel;
-
-      const friendSet = new Set((friends ?? []).map((f) => f.code).filter(Boolean));
-
-      const sync = () => {
-        if (!channel.presenceState) {
-          return;
-        }
-        const state = channel.presenceState() || {};
-        const seen = new Set();
-        const next = [];
-
-        Object.values(state).forEach((entries) => {
-          (entries || []).forEach((entry) => {
-            const meta = entry?.presence ?? entry;
-            if (!meta || meta.userId === userId) {
-              return;
-            }
-            const code = meta.code ?? meta.friendCode ?? null;
-            if (!code || !friendSet.has(code) || seen.has(code)) {
-              return;
-            }
-            seen.add(code);
-            const lobby = meta.lobby ?? null;
-            next.push({
-              code,
-              username: meta.username ?? 'Freund:in',
-              status: lobby ? `In Lobby ${lobby}` : 'Online',
-            });
-          });
-        });
-
-        if (!cancelled) {
-          setOnlineFriends(next);
-          setLoadingOnline(false);
-        }
-      };
-
-      channel.on('presence', { event: 'sync' }, sync);
-      channel.on('presence', { event: 'join' }, sync);
-      channel.on('presence', { event: 'leave' }, sync);
-
-      channel.subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          channel
-            .track({
-              userId,
-              code: friendCode,
-              username: userName || 'MedBattle',
-              lobby: null,
-            })
-            .catch((err) => console.warn('Konnte Presence nicht tracken:', err));
-        }
-      });
-    }
-
-    attachPresence();
-
-    return () => {
-      cancelled = true;
-      setOnlineFriends([]);
-      if (presenceChannelRef.current) {
-        supabase.removeChannel(presenceChannelRef.current);
-        presenceChannelRef.current = null;
-      }
-    };
-  }, [friendCode, friends, userId, userName]);
 
   return {
     // refs

@@ -140,6 +140,10 @@ const styles = StyleSheet.create({
   flexSpacer: {
     flex: 1,
   },
+  adSlot: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
   energyMessage: {
     color: '#FCA5A5',
     textAlign: 'center',

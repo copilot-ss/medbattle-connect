@@ -7,13 +7,18 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "credentialsSource": "local"
+      "autoIncrement": true,
+      "credentialsSource": "local",
+      "channel": "development"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "autoIncrement": true,
+      "channel": "preview"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "channel": "production"
     }
   },
   "submit": {

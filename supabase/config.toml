@@ -1,4 +1,4 @@
 project_id = "uxlwbzgohgxbnhcjiimh"
 
 [db]
-shadow_port = 55432
+shadow_port = 55433

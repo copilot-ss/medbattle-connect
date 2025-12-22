@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, Platform } from 'react-native';
+import { logClientError } from '../services/loggingService';
 
 export default class GlobalErrorBoundary extends React.Component {
   constructor(props) {
@@ -13,6 +14,12 @@ export default class GlobalErrorBoundary extends React.Component {
 
   componentDidCatch(error, info) {
     console.error('GlobalErrorBoundary caught:', error, info);
+    logClientError({
+      level: 'error',
+      message: error?.message ?? String(error),
+      stack: error?.stack,
+      context: { componentStack: info?.componentStack },
+    });
   }
 
   render() {

@@ -11,6 +11,12 @@
     "android": {
       "package": "com.sjigalin.medbattle"
     },
+    "updates": {
+      "url": "https://u.expo.dev/87da2826-0629-40e0-8f9b-25ee7681af9d",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
+    "runtimeVersion": "54.0.0",
     "plugins": [
       "expo-font"
     ],

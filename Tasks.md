@@ -1,11 +1,10 @@
 # TASKS.md — MedBattle Aufgabenliste
 
-## Aktive Aufgaben
-- [ ] Werbung (AdMob) einbauen
-- [ ] Premium-Modus ohne Werbung
-- [x] Supabase Auth (E-Mail)
-- [x] Highscore / Rangliste
-- [x] Multiplayer-Duelle (Realtime)
+## Offen
+- Keine offenen Aufgaben erfasst.
+
+## In Arbeit
+- Keine Aufgaben in Arbeit erfasst.
 
 ## Erledigt
 - [x] Grundstruktur React Native + Expo
@@ -13,3 +12,8 @@
 - [x] Quiz mit Fragen und Ergebnis
 - [x] Supabase CLI eingerichtet und mit Projekt `uxlwbzgohgxbnhcjiimh` verknüpft
 - [x] Supabase Auth (Google OAuth)
+- [x] Supabase Auth (E-Mail)
+- [x] Werbung (AdMob) einbauen
+- [x] Premium-Modus ohne Werbung
+- [x] Highscore / Rangliste
+- [x] Multiplayer-Duelle (Realtime)

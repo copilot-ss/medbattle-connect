@@ -2,13 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, Text, View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
-import * as InAppPurchases from 'expo-in-app-purchases';
 import styles, {
   getModeCardContainerStyle,
   getModeCardTitleStyle,
 } from './styles/HomeScreen.styles';
 import { usePreferences } from '../context/PreferencesContext';
-import { supabase } from '../lib/supabaseClient';
+import { getInAppPurchases } from '../lib/inAppPurchases';
+import usePremiumStatus from '../hooks/usePremiumStatus';
+import AdBanner from '../components/AdBanner';
 
 const DEFAULT_DIFFICULTY = 'mittel';
 const doctorAnimation = require('../../assets/animations/doctor/doctor.json');
@@ -95,11 +96,13 @@ export default function HomeScreen({ navigation, route }) {
     boostEnergy,
     refreshEnergy,
   } = usePreferences();
-  const [premium, setPremium] = useState(false);
+  const { premium } = usePremiumStatus();
   const [energyMessage, setEnergyMessage] = useState(null);
   const [boosting, setBoosting] = useState(false);
   const [showBoostModal, setShowBoostModal] = useState(false);
-  const [iapReady, setIapReady] = useState(Platform.OS !== 'android');
+  const iapModule = useMemo(() => getInAppPurchases(), []);
+  const iapAvailable = Boolean(iapModule && typeof iapModule.connectAsync === 'function');
+  const [iapReady, setIapReady] = useState(iapAvailable && Platform.OS !== 'android');
   const [nextEnergyCountdown, setNextEnergyCountdown] = useState('');
 
   useEffect(() => {
@@ -141,46 +144,18 @@ export default function HomeScreen({ navigation, route }) {
   }, [nextEnergyAt, refreshEnergy]);
 
   useEffect(() => {
-    let active = true;
-
-    async function loadPremium() {
-      try {
-        const { data } = await supabase.auth.getUser();
-        if (!active) return;
-        const flag = Boolean(data?.user?.user_metadata?.premium);
-        setPremium(flag);
-      } catch {
-        if (active) setPremium(false);
-      }
-    }
-
-    loadPremium();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!active) return;
-      const flag = Boolean(session?.user?.user_metadata?.premium);
-      setPremium(flag);
-    });
-
-    return () => {
-      active = false;
-      authListener?.subscription?.unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (Platform.OS !== 'android') {
+    if (Platform.OS !== 'android' || !iapAvailable) {
       return undefined;
     }
 
     let cancelled = false;
 
-    InAppPurchases.setPurchaseListener(async ({ responseCode, results, errorCode }) => {
-      if (responseCode === InAppPurchases.IAPResponseCode.OK) {
+    iapModule.setPurchaseListener(async ({ responseCode, results, errorCode }) => {
+      if (responseCode === iapModule.IAPResponseCode.OK) {
         for (const purchase of results) {
           if (purchase.productId === BOOST_PRODUCT_ID && !purchase.acknowledged) {
             try {
-              await InAppPurchases.finishTransactionAsync(purchase, false);
+              await iapModule.finishTransactionAsync(purchase, false);
               await boostEnergy();
               setEnergyMessage('⚡ Energie aufgefuellt!');
               setShowBoostModal(false);
@@ -189,7 +164,7 @@ export default function HomeScreen({ navigation, route }) {
             }
           }
         }
-      } else if (responseCode === InAppPurchases.IAPResponseCode.USER_CANCELED) {
+      } else if (responseCode === iapModule.IAPResponseCode.USER_CANCELED) {
         setEnergyMessage('Boost abgebrochen.');
       } else if (errorCode) {
         setEnergyMessage('Boost fehlgeschlagen. Bitte spaeter erneut.');
@@ -199,8 +174,8 @@ export default function HomeScreen({ navigation, route }) {
 
     async function initIap() {
       try {
-        await InAppPurchases.connectAsync();
-        await InAppPurchases.getProductsAsync([BOOST_PRODUCT_ID]);
+        await iapModule.connectAsync();
+        await iapModule.getProductsAsync([BOOST_PRODUCT_ID]);
         if (!cancelled) {
           setIapReady(true);
         }
@@ -216,9 +191,9 @@ export default function HomeScreen({ navigation, route }) {
 
     return () => {
       cancelled = true;
-      InAppPurchases.disconnectAsync().catch(() => {});
+      iapModule.disconnectAsync().catch(() => {});
     };
-  }, [boostEnergy]);
+  }, [boostEnergy, iapAvailable, iapModule]);
 
   const quickPlayDisabled = !premium && energy <= 0;
   const quickPlaySubtitle = premium
@@ -332,6 +307,7 @@ export default function HomeScreen({ navigation, route }) {
       ) : null}
 
       <View style={styles.flexSpacer} />
+      <AdBanner style={styles.adSlot} />
 
       {!premium && showBoostModal ? (
         <View style={styles.boostOverlay}>
@@ -351,13 +327,13 @@ export default function HomeScreen({ navigation, route }) {
               <Pressable
                 onPress={async () => {
                   if (boosting) return;
-                  if (!iapReady) {
+                  if (!iapReady || !iapAvailable || !iapModule) {
                     setEnergyMessage('Boost im Moment nicht verfuegbar.');
                     return;
                   }
                   setBoosting(true);
                   try {
-                    await InAppPurchases.requestPurchaseAsync({ sku: BOOST_PRODUCT_ID });
+                    await iapModule.requestPurchaseAsync({ sku: BOOST_PRODUCT_ID });
                   } catch (err) {
                     setEnergyMessage('Boost fehlgeschlagen. Bitte spaeter erneut versuchen.');
                     setBoosting(false);
@@ -378,4 +354,5 @@ export default function HomeScreen({ navigation, route }) {
     </View>
   );
 }
+
 
