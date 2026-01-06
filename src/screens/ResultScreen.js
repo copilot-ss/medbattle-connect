@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
-import LottieView from 'lottie-react-native';
-import AdBanner from '../components/AdBanner';
+import { Ionicons } from '@expo/vector-icons';
 import { usePreferences } from '../context/PreferencesContext';
+import usePremiumStatus from '../hooks/usePremiumStatus';
 import styles, {
   getBadgePillStyle,
   getLargeGlowStyle,
@@ -33,7 +33,7 @@ const BADGES = [
     min: 80,
     max: 94,
     title: 'Surgery Ace',
-    subtitle: 'Fast makellos - noch ein Run fuer den Legendenstatus.',
+    subtitle: 'Fast makellos - noch ein Run f\u00fcr den Legendenstatus.',
     color: '#22C55E',
     glow: '#4ADE80',
     spotlight: true,
@@ -100,11 +100,15 @@ export default function ResultScreen({ route, navigation }) {
     matchJoinCode = null,
     playerRole = null,
     mode = 'standard',
+    offline = false,
+    scoreQueued = false,
   } = route.params ?? {};
-  const { energy } = usePreferences();
-  const showEnergyAd = energy <= 0;
-
+  const { energy, energyMax } = usePreferences();
+  const { premium } = usePremiumStatus();
   const totalQuestions = total || questionLimit || 0;
+  const isQuickPlay = mode === 'quick';
+  const quickPlayLocked = isQuickPlay && !premium && energy <= 0;
+  const energyLabel = premium ? `${energyMax}/${energyMax}` : `${energy}/${energyMax}`;
   const percentage = useMemo(() => {
     if (!totalQuestions) {
       return 0;
@@ -130,91 +134,103 @@ export default function ResultScreen({ route, navigation }) {
       case 'waiting':
         return 'Warte auf Gegner';
       default:
-        return 'Match laeuft noch';
+        return 'Match l\u00e4uft noch';
     }
   }, [isMultiplayer, matchStatus]);
-  const showDoctorAnimation = useMemo(() => score >= 8 && score <= 10, [score]);
+  const showOfflineNote = Boolean(offline || scoreQueued);
 
   return (
     <View style={styles.container}>
       <View style={getLargeGlowStyle(badge.glow)} />
       <View style={styles.backgroundGlowSmall} />
 
-      {showDoctorAnimation ? (
-        <View style={styles.celebrationContainer}>
-          <LottieView
-            source={require('../../assets/animations/doctor_pushups.json')}
-            autoPlay
-            loop
-            style={styles.celebrationAnimation}
-          />
-        </View>
-      ) : null}
-
       <Sparkle size={36} top={120} left={36} opacity={0.35} rotate="25deg" color={badge.glow} />
       <Sparkle size={24} top={80} left={280} opacity={0.28} rotate="-10deg" color="#60A5FA" />
       <Sparkle size={32} top={380} left={300} opacity={0.3} rotate="45deg" color="#34D399" />
       <Sparkle size={28} top={420} left={44} opacity={0.26} rotate="-30deg" color="#FCD34D" />
 
-      <View style={styles.card}>
-        <View style={getBadgePillStyle(badge.color)}>
-          <Text style={styles.badgePillText}>{badge.title}</Text>
-        </View>
-
-        <Text style={styles.heading}>{percentage >= 95 ? 'Legendary Win!' : 'MedBattle abgeschlossen'}</Text>
-        <Text style={styles.subtitle}>{badge.subtitle}</Text>
-
-        <View style={styles.statsSection}>
-          <View style={styles.statsRow}>
-            <StatPill label="Score" value={`${score}/${totalQuestions}`} />
-            <StatPill label="Leaderboard" value={`${points} Punkte`} />
+      <View style={styles.cardWrap}>
+        <View style={styles.card}>
+          <View style={getBadgePillStyle(badge.color)}>
+            <Text style={styles.badgePillText}>{badge.title}</Text>
           </View>
-        </View>
 
-        {isMultiplayer ? (
-          <View style={styles.multiplayerCard}>
-            <Text style={styles.multiplayerTitle}>Duell Ergebnis</Text>
-            <View style={styles.multiplayerRow}>
-              <View style={styles.multiplayerColumn}>
-                <Text style={styles.multiplayerLabel}>
-                  Du {playerRole ? `(${playerRole === 'guest' ? 'Gast' : 'Host'})` : ''}
-                </Text>
-                <Text style={styles.multiplayerScore}>{score}</Text>
-              </View>
-              <View style={styles.multiplayerDivider} />
-              <View style={styles.multiplayerColumn}>
-                <Text style={styles.multiplayerLabel}>{opponentDisplayName}</Text>
-                <Text style={styles.multiplayerScore}>{opponentScoreValue ?? '-'}</Text>
-              </View>
+          <Text style={styles.heading}>{percentage >= 95 ? 'Legendary Win!' : 'MedBattle abgeschlossen'}</Text>
+          <Text style={styles.subtitle}>{badge.subtitle}</Text>
+
+          <View style={styles.statsSection}>
+            <View style={styles.statsRow}>
+              <StatPill label="Score" value={`${score}/${totalQuestions}`} />
+              <StatPill label="Leaderboard" value={`${points} Punkte`} />
             </View>
-            <Text style={styles.multiplayerMeta}>
-              {matchStatusLabel}
-              {matchJoinCode ? ` - Code ${matchJoinCode}` : ''}
-            </Text>
           </View>
-        ) : null}
 
-        <Pressable
-          onPress={() => {
-            navigation.replace('Quiz', {
-              difficulty: difficultyKey,
-              mode,
-              questionLimit,
-            });
-          }}
-          style={getPrimaryButtonStyle(badge.color)}
-        >
-          <Text style={styles.primaryButtonText}>
-            {mode === 'quick' ? 'Nochmal Quick Play' : 'Naechste Challenge'}
-          </Text>
-        </Pressable>
+          {showOfflineNote ? (
+            <View style={styles.offlineBanner}>
+              <Text style={styles.offlineBannerTitle}>Offline Modus</Text>
+              <Text style={styles.offlineBannerText}>
+                Dein Score wird synchronisiert, sobald du wieder online bist.
+              </Text>
+            </View>
+          ) : null}
 
-        <Pressable onPress={() => navigation.navigate('Home')} style={styles.tertiaryButton}>
-          <Text style={styles.tertiaryButtonText}>Zurueck zur Basis</Text>
-        </Pressable>
+          {isMultiplayer ? (
+            <View style={styles.multiplayerCard}>
+              <Text style={styles.multiplayerTitle}>Duell Ergebnis</Text>
+              <View style={styles.multiplayerRow}>
+                <View style={styles.multiplayerColumn}>
+                  <Text style={styles.multiplayerLabel}>
+                    Du {playerRole ? `(${playerRole === 'guest' ? 'Gast' : 'Host'})` : ''}
+                  </Text>
+                  <Text style={styles.multiplayerScore}>{score}</Text>
+                </View>
+                <View style={styles.multiplayerDivider} />
+                <View style={styles.multiplayerColumn}>
+                  <Text style={styles.multiplayerLabel}>{opponentDisplayName}</Text>
+                  <Text style={styles.multiplayerScore}>{opponentScoreValue ?? '-'}</Text>
+                </View>
+              </View>
+              <Text style={styles.multiplayerMeta}>
+                {matchStatusLabel}
+                {matchJoinCode ? ` - Code ${matchJoinCode}` : ''}
+              </Text>
+            </View>
+          ) : null}
+
+          <Pressable
+            onPress={() => {
+              navigation.replace('Quiz', {
+                difficulty: difficultyKey,
+                mode,
+                questionLimit,
+              });
+            }}
+            style={[
+              getPrimaryButtonStyle(badge.color),
+              quickPlayLocked ? styles.primaryButtonDisabled : null,
+            ]}
+            disabled={quickPlayLocked}
+          >
+            <View style={styles.primaryButtonContent}>
+              <Text style={styles.primaryButtonText}>
+                {mode === 'quick' ? 'Nochmal Quick Play' : 'N\u00e4chste Challenge'}
+              </Text>
+              {isQuickPlay ? (
+                <View style={styles.primaryButtonMetaRow}>
+                  <Ionicons name="flash" size={14} color="#0F172A" />
+                  <Text style={styles.primaryButtonMetaText}>
+                    Energie {energyLabel}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          </Pressable>
+
+          <Pressable onPress={() => navigation.navigate('Home')} style={styles.tertiaryButton}>
+            <Text style={styles.tertiaryButtonText}>Zur\u00fcck zur Basis</Text>
+          </Pressable>
+        </View>
       </View>
-
-      {showEnergyAd ? <AdBanner style={styles.adSlot} /> : null}
 
       {badge.spotlight ? <View style={styles.spotlight} /> : null}
     </View>

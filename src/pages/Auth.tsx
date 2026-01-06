@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../integrations/supabase/client';
+import { formatUserError } from '../utils/formatUserError';
 
 type AuthMode = 'login' | 'signup' | 'forgot';
 
@@ -11,6 +12,9 @@ const Auth = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const supabaseReady = isSupabaseConfigured;
   const actionDisabled = loading || !supabaseReady;
+  const supabaseUrlHint =
+    import.meta.env?.VITE_SUPABASE_URL ??
+    import.meta.env?.EXPO_PUBLIC_SUPABASE_URL;
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +50,13 @@ const Auth = () => {
         setMessage({ type: 'success', text: 'Password-Reset E-Mail wurde gesendet!' });
       }
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message });
+      setMessage({
+        type: 'error',
+        text: formatUserError(error, {
+          supabaseUrl: supabaseUrlHint,
+          fallback: 'Unbekannter Fehler.',
+        }),
+      });
     } finally {
       setLoading(false);
     }
@@ -69,7 +79,13 @@ const Auth = () => {
       });
       if (error) throw error;
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message });
+      setMessage({
+        type: 'error',
+        text: formatUserError(error, {
+          supabaseUrl: supabaseUrlHint,
+          fallback: 'Unbekannter Fehler.',
+        }),
+      });
       setLoading(false);
     }
   };
@@ -136,7 +152,7 @@ const Auth = () => {
 
         {isForgotMode && (
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-center text-foreground">Passwort zuruecksetzen</h2>
+            <h2 className="text-xl font-semibold text-center text-foreground">Passwort zur\u00fccksetzen</h2>
             <p className="text-muted-foreground text-center text-sm mt-1">Wir senden dir einen Reset-Link</p>
           </div>
         )}
@@ -186,7 +202,7 @@ const Auth = () => {
               onClick={() => { setMode('login'); setMessage(null); }}
               className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
             >
-              Zurueck zum Login
+              Zur\u00fcck zum Login
             </button>
           )}
 

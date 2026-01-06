@@ -106,45 +106,19 @@ async function persistLocalFriends(userId, friends) {
 export async function fetchFriends(userId) {
   const resolvedUserId = userId || (await getOrCreateGuestId());
   const guestMode = isGuestId(resolvedUserId);
-  const myCode = deriveFriendCode(resolvedUserId);
 
   try {
     if (guestMode) {
       return loadLocalFriends(resolvedUserId);
     }
 
-    const { data: owned, error: ownedError } = await supabase
-      .from('friends')
-      .select('id, friend_code, owner_id, created_at')
-      .eq('owner_id', resolvedUserId)
-      .order('created_at', { ascending: true });
+    const { data, error } = await supabase.rpc('fetch_friends');
 
-    if (ownedError) {
-      throw ownedError;
+    if (error) {
+      throw error;
     }
 
-    let inbound = [];
-
-    if (myCode) {
-      const { data: inboundData, error: inboundError } = await supabase
-        .from('friends')
-        .select('id, friend_code, owner_id, created_at')
-        .eq('friend_code', myCode)
-        .neq('owner_id', resolvedUserId);
-
-      if (inboundError) {
-        throw inboundError;
-      }
-
-      inbound = inboundData || [];
-    }
-
-    const inboundMapped = inbound.map((entry) => ({
-      ...entry,
-      friend_code: deriveFriendCode(entry.owner_id),
-    }));
-
-    const friends = sanitizeFriends([...(owned || []), ...inboundMapped]);
+    const friends = sanitizeFriends(Array.isArray(data) ? data : []);
     await persistLocalFriends(resolvedUserId, friends);
     return friends;
   } catch (err) {
@@ -183,27 +157,18 @@ export async function addFriend(userId, code) {
       return { ok: true, friend: localFriend, friends: updated };
     }
 
-    const { data, error } = await supabase
-      .from('friends')
-      .insert([
-        {
-          owner_id: resolvedUserId,
-          friend_code: normalizedCode,
-        },
-      ])
-      .select('id, friend_code, owner_id, created_at')
-      .single();
+    const { data, error } = await supabase.rpc('add_friend', {
+      p_code: normalizedCode,
+    });
 
     if (error) {
       throw error;
     }
 
-    const newFriend = sanitizeFriends([data])[0];
+    const newFriend = sanitizeFriends([data])[0] ?? null;
     const current = await fetchFriends(resolvedUserId);
-    const updated = sanitizeFriends([...(current ?? []), newFriend]);
-    await persistLocalFriends(resolvedUserId, updated);
 
-    return { ok: true, friend: newFriend, friends: updated };
+    return { ok: true, friend: newFriend, friends: current };
   } catch (err) {
     console.warn('Supabase Freund konnte nicht gespeichert werden:', err?.message);
     const current = await loadLocalFriends(resolvedUserId);
@@ -234,7 +199,6 @@ export async function removeFriend(userId, friend) {
   }
 
   const normalizedCode = normalizeCode(friend.code);
-  const myCode = deriveFriendCode(resolvedUserId);
 
   try {
     if (guestMode) {
@@ -246,27 +210,12 @@ export async function removeFriend(userId, friend) {
       return { ok: true, friends: updated };
     }
 
-    if (friend.id) {
-      const { error } = await supabase
-        .from('friends')
-        .delete()
-        .match({ owner_id: resolvedUserId, id: friend.id });
+    const { error } = await supabase.rpc('remove_friend', {
+      p_code: normalizedCode,
+    });
 
-      if (error) {
-        throw error;
-      }
-    } else {
-      await supabase
-        .from('friends')
-        .delete()
-        .match({ owner_id: resolvedUserId, friend_code: normalizedCode });
-    }
-
-    if (friend.owner_id && friend.owner_id !== resolvedUserId && myCode) {
-      await supabase
-        .from('friends')
-        .delete()
-        .match({ owner_id: friend.owner_id, friend_code: myCode });
+    if (error) {
+      throw error;
     }
   } catch (err) {
     console.warn('Konnte Freund nicht ueber Supabase entfernen:', err?.message);

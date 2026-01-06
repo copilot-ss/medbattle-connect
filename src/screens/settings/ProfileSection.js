@@ -22,6 +22,9 @@ export default function ProfileSection({
   onSelectAvatar,
   quizzesCompleted = 0,
   accuracyPercent = 0,
+  xp = 0,
+  titleProgress = null,
+  unlockedAchievements = [],
   leaderboardRank = null,
   loadingRank = false,
   newEmail,
@@ -70,6 +73,22 @@ export default function ProfileSection({
               {`Level ${userLevel}${totalStreak > 0 ? ` x${totalStreak}` : ''}`}
             </Text>
           </View>
+          <View style={styles.profileTitleRow}>
+            <Text style={styles.profileTitleLabel}>Titel</Text>
+            <Text style={styles.profileTitleValue}>
+              {titleProgress?.current?.label ?? 'Med Rookie'}
+            </Text>
+          </View>
+          <Text style={styles.profileTitleHint}>
+            {titleProgress?.next
+              ? `N\u00e4chster Titel: ${titleProgress.next.label} bei ${titleProgress.next.minXp} XP`
+              : 'Max. Titel erreicht'}
+          </Text>
+          <Text style={styles.profileXpText}>
+            {titleProgress?.next
+              ? `XP ${xp} / ${titleProgress.next.minXp}`
+              : `XP ${xp}`}
+          </Text>
         </View>
       </View>
 
@@ -88,6 +107,18 @@ export default function ProfileSection({
           <Text style={styles.profileStatLabel}>Trefferquote</Text>
           <Text style={styles.profileStatValue}>{accuracyPercent}%</Text>
         </View>
+      </View>
+
+      <View style={styles.achievementRow}>
+        {unlockedAchievements.length ? (
+          unlockedAchievements.map((achievement) => (
+            <View key={achievement.key} style={styles.achievementPill}>
+              <Text style={styles.achievementText}>{achievement.label}</Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.achievementText}>Noch keine Errungenschaften.</Text>
+        )}
       </View>
 
       {showAvatarPicker ? (

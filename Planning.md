@@ -27,6 +27,9 @@ Kostenlose kompetitive Medizin-Quiz-App mit Supabase-Backend, Werbung und Premiu
 - Dev-Client Bundle-Fehler (`Unexpected token '?'`) behoben: Hermes wieder aktiviert (Bundle passt zur Engine).
 - EAS Dev Build aktuell blockiert (Free-Plan Build-Limit) -> lokal bauen, bis Limit frei ist.
 - Expo Go: `.env` darf kein localhost/127.0.0.1 als Supabase-URL nutzen, sonst Auth/Fragen scheitern. HTTPS-Projekt-URL setzen.
+- Banner-Werbung entfernt; bei leerer Energie erscheint ein Vollbild-Dialog mit Kauf (1,99 EUR) oder Rewarded Ad (+5 Energie).
+- Supabase Functions: search_path gesetzt, Security-Warnungen bereinigt.
+- Leaked Password Protection (HIBP) ist im Free-Plan nicht aktivierbar (API verweigert, Pro erforderlich).
 
 ## Tools & Setup
 - Supabase CLI v2.65.5, eingeloggt

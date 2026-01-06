@@ -17,8 +17,13 @@ registerGlobalErrorLogging();
 
 function App() {
   useEffect(() => {
-    if (__DEV__ && DevSettings?.setHotLoadingEnabled) {
-      DevSettings.setHotLoadingEnabled(true);
+    if (__DEV__) {
+      if (DevSettings?.setLiveReloadEnabled) {
+        DevSettings.setLiveReloadEnabled(false);
+      }
+      if (DevSettings?.setHotLoadingEnabled) {
+        DevSettings.setHotLoadingEnabled(true);
+      }
     }
     initializeAds();
     const unregisterUpdates = registerUpdates();

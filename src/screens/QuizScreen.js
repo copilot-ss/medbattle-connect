@@ -1,15 +1,17 @@
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import styles from './styles/QuizScreen.styles';
 import QuizHeader from './quiz/QuizHeader';
-import MatchStatusCard from './quiz/MatchStatusCard';
 import TimerBar from './quiz/TimerBar';
 import QuestionCard from './quiz/QuestionCard';
 import OptionsList from './quiz/OptionsList';
 import TimeoutBanner from './quiz/TimeoutBanner';
 import ExitConfirmModal from './quiz/ExitConfirmModal';
 import useQuizController from './quiz/useQuizController';
+import { useConnectivity } from '../context/ConnectivityContext';
 
 export default function QuizScreen({ navigation, route }) {
+  const { isOnline, isChecking, checkOnline } = useConnectivity();
+  const isOffline = isOnline === false;
   const {
     activeIndex,
     answer,
@@ -19,17 +21,12 @@ export default function QuizScreen({ navigation, route }) {
     handleExitConfirm,
     handleExitRequest,
     hasQuestions,
-    initialJoinCode,
     isAnswerLocked,
     isMultiplayer,
     matchIsActive,
-    matchJoinCode,
-    matchOpponentState,
-    matchPlayerState,
     progressPercent,
     questionLimit,
     resolvedError,
-    resolvedMatchStatus,
     selectedOption,
     showExitConfirm,
     showLoading,
@@ -37,6 +34,10 @@ export default function QuizScreen({ navigation, route }) {
     timedOut,
     totalQuestions,
   } = useQuizController({ navigation, route });
+
+  async function handleGoOnline() {
+    await checkOnline({ force: true });
+  }
 
   if (showLoading) {
     return (
@@ -51,13 +52,13 @@ export default function QuizScreen({ navigation, route }) {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>
-          {resolvedError ?? 'Keine Fragen verfuegbar. Bitte versuche es spaeter erneut.'}
+          {resolvedError ?? 'Keine Fragen verf\u00fcgbar. Bitte versuche es sp\u00e4ter erneut.'}
         </Text>
         <Pressable
           onPress={() => navigation.navigate('Home')}
           style={styles.errorButton}
         >
-          <Text style={styles.errorButtonText}>Zurueck zur Basis</Text>
+          <Text style={styles.errorButtonText}>Zur\u00fcck zur Basis</Text>
         </Pressable>
       </View>
     );
@@ -77,16 +78,24 @@ export default function QuizScreen({ navigation, route }) {
         onExit={handleExitRequest}
       />
 
-      {isMultiplayer ? (
-        <MatchStatusCard
-          matchPlayerState={matchPlayerState}
-          matchOpponentState={matchOpponentState}
-          activeIndex={activeIndex}
-          totalQuestions={totalQuestions}
-          matchJoinCode={matchJoinCode}
-          initialJoinCode={initialJoinCode}
-          resolvedMatchStatus={resolvedMatchStatus}
-        />
+      {isOffline ? (
+        <View style={styles.offlineBanner}>
+          <View style={styles.offlineBannerRow}>
+            <Text style={styles.offlineBannerTitle}>Offline Modus</Text>
+            <Pressable
+              onPress={handleGoOnline}
+              style={[styles.offlineButton, isChecking ? styles.offlineButtonDisabled : null]}
+              disabled={isChecking}
+            >
+              <Text style={styles.offlineButtonText}>
+                {isChecking ? 'Verbindung pr\u00fcfen...' : 'Online gehen'}
+              </Text>
+            </Pressable>
+          </View>
+          <Text style={styles.offlineBannerText}>
+            Du spielst offline. Dein Score wird synchronisiert, sobald du online bist.
+          </Text>
+        </View>
       ) : null}
 
       <TimerBar

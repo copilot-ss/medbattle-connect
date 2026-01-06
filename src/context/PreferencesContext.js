@@ -29,6 +29,7 @@ const DEFAULT_USER_STATS = {
   quizzes: 0,
   correct: 0,
   questions: 0,
+  xp: 0,
 };
 
 function sanitizeStreakValue(value) {
@@ -120,6 +121,7 @@ export function PreferencesProvider({ children }) {
                     quizzes: sanitizeStatNumber(parsed?.quizzes),
                     correct: sanitizeStatNumber(parsed?.correct),
                     questions: sanitizeStatNumber(parsed?.questions),
+                    xp: sanitizeStatNumber(parsed?.xp),
                   };
                 }
               } catch (err) {
@@ -244,6 +246,7 @@ export function PreferencesProvider({ children }) {
         quizzes: sanitizeStatNumber(next.quizzes),
         correct: sanitizeStatNumber(next.correct),
         questions: sanitizeStatNumber(next.questions),
+        xp: sanitizeStatNumber(next.xp),
       };
       AsyncStorage.setItem(USER_STATS_STORAGE_KEY, JSON.stringify(sanitized)).catch((err) => {
         console.warn('Konnte User-Stats nicht speichern:', err);
@@ -274,6 +277,37 @@ export function PreferencesProvider({ children }) {
       console.warn('Konnte Energie-Boost nicht speichern:', err);
     }
     return { ok: true, energy: MAX_ENERGY };
+  }, []);
+
+  const addEnergy = useCallback(async (amount) => {
+    const increment = sanitizeStatNumber(amount);
+    if (increment <= 0) {
+      return { ok: false, energy: 0, nextAt: null };
+    }
+
+    let result = { ok: false, energy: 0, nextAt: null };
+
+    setEnergyState((prev) => {
+      const recalc = recalcEnergy(prev, energyTimestampRef.current);
+      const nextEnergy = Math.min(MAX_ENERGY, recalc.energy + increment);
+      const nextAt = nextEnergy >= MAX_ENERGY ? null : Date.now() + ENERGY_RECHARGE_MS;
+      const now = Date.now();
+
+      energyTimestampRef.current = now;
+      setNextEnergyAt(nextAt);
+
+      AsyncStorage.multiSet([
+        [ENERGY_VALUE_KEY, String(nextEnergy)],
+        [ENERGY_TIMESTAMP_KEY, String(now)],
+      ]).catch((err) => {
+        console.warn('Konnte Energie nicht speichern:', err);
+      });
+
+      result = { ok: true, energy: nextEnergy, nextAt };
+      return nextEnergy;
+    });
+
+    return result;
   }, []);
 
   const consumeEnergy = useCallback(
@@ -367,9 +401,11 @@ export function PreferencesProvider({ children }) {
       refreshEnergy,
       consumeEnergy,
       boostEnergy,
+      addEnergy,
       loading,
     }),
     [
+      addEnergy,
       loading,
       setSoundEnabled,
       setStreakValue,

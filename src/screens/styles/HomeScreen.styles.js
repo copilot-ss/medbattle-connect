@@ -1,5 +1,21 @@
 import { StyleSheet } from 'react-native';
 
+const quickActionButtonBase = {
+  width: 52,
+  height: 52,
+  borderRadius: 20,
+  backgroundColor: 'rgba(15, 23, 42, 0.95)',
+  borderWidth: 1,
+  borderColor: 'rgba(148, 163, 184, 0.45)',
+  alignItems: 'center',
+  justifyContent: 'center',
+  shadowColor: '#0EA5E9',
+  shadowOpacity: 0.3,
+  shadowRadius: 12,
+  shadowOffset: { width: 0, height: 8 },
+  elevation: 8,
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -25,38 +41,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   leaderboardButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(96, 165, 250, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(96, 165, 250, 0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    ...quickActionButtonBase,
   },
   leaderboardIcon: {
-    width: 24,
-    height: 24,
+    width: 26,
+    height: 26,
   },
   menuButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 20,
-    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    ...quickActionButtonBase,
     marginLeft: 16,
-    shadowColor: '#0EA5E9',
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
   },
   menuIcon: {
     width: 28,
     height: 28,
+  },
+  quickActionDisabled: {
+    opacity: 0.45,
   },
   animationWrapper: {
     alignItems: 'center',
@@ -67,7 +67,17 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     height: 260,
   },
+  activeLobbyAnchor: {
+    position: 'relative',
+    height: 0,
+    zIndex: 5,
+    overflow: 'visible',
+  },
   activeLobbyBanner: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -83,6 +93,7 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 10 },
     elevation: 6,
+    zIndex: 6,
   },
   activeLobbyTitle: {
     color: '#F8FAFC',
@@ -96,15 +107,64 @@ const styles = StyleSheet.create({
     fontSize: 14,
     letterSpacing: 1.2,
   },
+  offlineBanner: {
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.35)',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 12,
+  },
+  offlineHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  offlineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#F87171',
+    marginRight: 8,
+  },
+  offlineTitle: {
+    color: '#F8FAFC',
+    fontWeight: '800',
+    fontSize: 14,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  offlineText: {
+    color: '#CBD5F5',
+    marginTop: 8,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  offlineButton: {
+    alignSelf: 'flex-start',
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.6)',
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+  },
+  offlineButtonDisabled: {
+    opacity: 0.6,
+  },
+  offlineButtonText: {
+    color: '#BFDBFE',
+    fontWeight: '700',
+    fontSize: 12,
+    letterSpacing: 0.4,
+  },
   modeSection: {
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
     rowGap: 18,
     marginTop: 60,
-  },
-  modeSectionCompact: {
-    marginTop: 28,
   },
   modeCard: {
     width: '100%',
@@ -131,18 +191,48 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.5,
   },
+  modeCardTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modeCardTitleMeta: {
+    marginLeft: 10,
+  },
   modeCardSubtitle: {
     color: '#E5E7EB',
     marginTop: 6,
     fontSize: 12,
     letterSpacing: 0.3,
   },
+  energyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(250, 204, 21, 0.55)',
+    backgroundColor: 'rgba(250, 204, 21, 0.15)',
+  },
+  energyBadgeEmpty: {
+    borderColor: 'rgba(248, 113, 113, 0.55)',
+    backgroundColor: 'rgba(248, 113, 113, 0.16)',
+  },
+  energyBadgeIcon: {
+    marginRight: 6,
+  },
+  energyBadgeText: {
+    color: '#FACC15',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  energyBadgeTextEmpty: {
+    color: '#FCA5A5',
+  },
   flexSpacer: {
     flex: 1,
-  },
-  adSlot: {
-    marginTop: 16,
-    alignItems: 'center',
   },
   energyMessage: {
     color: '#FCA5A5',
@@ -157,6 +247,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(245, 158, 11, 0.6)',
     backgroundColor: 'rgba(245, 158, 11, 0.18)',
+    alignItems: 'center',
+    width: '100%',
   },
   boostButtonDisabled: {
     opacity: 0.6,
@@ -172,19 +264,17 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
+    backgroundColor: 'rgba(3, 7, 18, 0.95)',
+    alignItems: 'stretch',
   },
   boostCard: {
+    flex: 1,
     width: '100%',
-    maxWidth: 360,
     backgroundColor: '#0B1220',
-    borderRadius: 16,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.4)',
+    paddingTop: 70,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    justifyContent: 'center',
   },
   boostTitle: {
     color: '#F8FAFC',
@@ -196,29 +286,36 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 14,
   },
+  boostMessage: {
+    color: '#FCA5A5',
+    fontSize: 13,
+    marginTop: 12,
+    fontWeight: '700',
+  },
   boostActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 14,
-    columnGap: 10,
+    marginTop: 24,
+    rowGap: 12,
   },
   boostButtonGhost: {
-    flex: 1,
     paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.5)',
     alignItems: 'center',
+    width: '100%',
   },
   boostGhostText: {
     color: '#E2E8F0',
     fontWeight: '700',
   },
-  boostHint: {
+  boostCancel: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  boostCancelText: {
     color: '#94A3B8',
-    fontSize: 12,
-    marginTop: 10,
+    fontSize: 13,
+    fontWeight: '700',
   },
 });
 

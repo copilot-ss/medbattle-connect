@@ -8,6 +8,8 @@ import Constants from 'expo-constants';
 WebBrowser.maybeCompleteAuthSession();
 
 import { supabase } from '../lib/supabaseClient';
+import { loadRememberMe, saveRememberMe } from '../utils/authPersistence';
+import { formatUserError } from '../utils/formatUserError';
 import styles from './styles/AuthScreen.styles';
 
 const REDIRECT_PATH = 'auth/callback';
@@ -33,6 +35,15 @@ const OAUTH_REDIRECT =
     ? EXPO_PROXY_REDIRECT
     : NATIVE_SCHEME_REDIRECT;
 const AUTH_TIMEOUT_MS = 12000;
+const PASSWORD_POLICY = {
+  minLength: 12,
+  requireLower: true,
+  requireUpper: true,
+  requireNumber: true,
+  requireSymbol: true,
+};
+const PASSWORD_HINT =
+  'Mindestens 12 Zeichen, Gross- und Kleinbuchstaben, Zahl und Sonderzeichen.';
 const SUPABASE_URL_HINT = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_HINT = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -170,7 +181,11 @@ async function loginOAuth(provider, setMessage, setLoading) {
       SUPABASE_URL_HINT && SUPABASE_URL_HINT.includes('127.0.0.1')
         ? ' (Hinweis: Supabase-URL zeigt auf localhost und ist vom Geraet nicht erreichbar)'
         : '';
-    setMessage((err.message ?? 'OAuth fehlgeschlagen.') + hint);
+    const formatted = formatUserError(err, {
+      supabaseUrl: SUPABASE_URL_HINT,
+      fallback: 'OAuth fehlgeschlagen.',
+    });
+    setMessage(formatted + hint);
   } finally {
     setLoading(false);
   }
@@ -178,6 +193,35 @@ async function loginOAuth(provider, setMessage, setLoading) {
 
 function normalizeEmail(value) {
   return value.trim().toLowerCase();
+}
+
+function validatePasswordStrength(value) {
+  const issues = [];
+
+  if (!value || value.length < PASSWORD_POLICY.minLength) {
+    issues.push(`mindestens ${PASSWORD_POLICY.minLength} Zeichen`);
+  }
+  if (PASSWORD_POLICY.requireLower && !/[a-z]/.test(value)) {
+    issues.push('1 Kleinbuchstabe');
+  }
+  if (PASSWORD_POLICY.requireUpper && !/[A-Z]/.test(value)) {
+    issues.push('1 Grossbuchstabe');
+  }
+  if (PASSWORD_POLICY.requireNumber && !/\d/.test(value)) {
+    issues.push('1 Zahl');
+  }
+  if (PASSWORD_POLICY.requireSymbol && !/[^A-Za-z0-9]/.test(value)) {
+    issues.push('1 Sonderzeichen');
+  }
+
+  if (!issues.length) {
+    return { ok: true };
+  }
+
+  return {
+    ok: false,
+    message: `Passwort zu schwach. Bitte nutze ${issues.join(', ')}.`,
+  };
 }
 
 const FALLBACK_EMAIL_CONFIRM_REDIRECT =
@@ -231,6 +275,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const isSignUp = mode === 'signUp';
   const handleGuest = async () => {
@@ -248,6 +293,21 @@ export default function AuthScreen({ route, navigation, onGuest }) {
       setEmail(route.params.emailPreset);
     }
   }, [route?.params?.mode, route?.params?.emailPreset]);
+
+  useEffect(() => {
+    let active = true;
+    loadRememberMe()
+      .then((value) => {
+        if (active) {
+          setRememberMe(value);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -329,6 +389,14 @@ export default function AuthScreen({ route, navigation, onGuest }) {
       return;
     }
 
+    if (isSignUp) {
+      const passwordCheck = validatePasswordStrength(password);
+      if (!passwordCheck.ok) {
+        setMessage(passwordCheck.message);
+        return;
+      }
+    }
+
     const validation = validateSupabaseConfig();
     if (!validation.ok) {
       setMessage(validation.message);
@@ -377,6 +445,8 @@ export default function AuthScreen({ route, navigation, onGuest }) {
           throw error;
         }
       }
+
+      await saveRememberMe(rememberMe);
     } catch (err) {
       const alreadyRegistered =
         err?.message?.toLowerCase?.().includes('already') ||
@@ -390,7 +460,11 @@ export default function AuthScreen({ route, navigation, onGuest }) {
           SUPABASE_URL_HINT && SUPABASE_URL_HINT.includes('127.0.0.1')
             ? ' (Hinweis: Supabase-URL zeigt auf localhost und ist vom Geraet nicht erreichbar)'
             : '';
-        setMessage((err.message ?? 'Unbekannter Fehler.') + hint);
+        const formatted = formatUserError(err, {
+          supabaseUrl: SUPABASE_URL_HINT,
+          fallback: 'Unbekannter Fehler.',
+        });
+        setMessage(formatted + hint);
       }
     } finally {
       setLoading(false);
@@ -400,6 +474,12 @@ export default function AuthScreen({ route, navigation, onGuest }) {
   function toggleMode() {
     setMode(isSignUp ? 'signIn' : 'signUp');
     setMessage(null);
+  }
+
+  async function handleRememberToggle() {
+    const next = !rememberMe;
+    setRememberMe(next);
+    await saveRememberMe(next);
   }
 
   return (
@@ -426,7 +506,22 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             secureTextEntry
             style={styles.input}
           />
+          {isSignUp ? (
+            <Text style={styles.passwordHint}>{PASSWORD_HINT}</Text>
+          ) : null}
         </View>
+
+        <Pressable
+          onPress={handleRememberToggle}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: rememberMe }}
+          style={styles.rememberRow}
+        >
+          <View style={[styles.rememberBox, rememberMe ? styles.rememberBoxChecked : null]}>
+            {rememberMe ? <FontAwesome5 name="check" size={12} color="#0F172A" /> : null}
+          </View>
+          <Text style={styles.rememberLabel}>Angemeldet bleiben</Text>
+        </Pressable>
 
         {message ? <Text style={styles.message}>{message}</Text> : null}
 

@@ -1,5 +1,8 @@
 import { Alert } from 'react-native';
 import { logClientError } from '../services/loggingService';
+import { formatUserError } from './formatUserError';
+
+const SUPABASE_URL_HINT = process.env.EXPO_PUBLIC_SUPABASE_URL;
 
 export default function registerGlobalErrorLogging() {
   const originalHandler = global.ErrorUtils?.getGlobalHandler?.();
@@ -13,9 +16,13 @@ export default function registerGlobalErrorLogging() {
         stack: error?.stack,
         context: { isFatal },
       });
+      const displayMessage = formatUserError(error, {
+        supabaseUrl: SUPABASE_URL_HINT,
+        fallback: 'Unerwarteter Fehler.',
+      });
       Alert.alert(
         'Unerwarteter Fehler',
-        `${isFatal ? 'Fatal: ' : ''}${error?.message ?? String(error)}`.slice(0, 400)
+        `${isFatal ? 'Fatal: ' : ''}${displayMessage}`.slice(0, 400)
       );
     } catch (alertErr) {
       console.warn('Konnte Fehler nicht anzeigen:', alertErr);

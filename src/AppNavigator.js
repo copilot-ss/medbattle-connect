@@ -2,8 +2,10 @@ import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { ConnectivityProvider } from './context/ConnectivityContext';
 import { PreferencesProvider } from './context/PreferencesContext';
 import useAuthSession from './hooks/useAuthSession';
+import useOfflineSync from './hooks/useOfflineSync';
 import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
 import LeaderboardScreen from './screens/LeaderboardScreen';
@@ -16,7 +18,7 @@ import styles from './styles/AppNavigator.styles';
 
 const Stack = createNativeStackNavigator();
 
-export default function AppNavigator() {
+function AppNavigatorInner() {
   const {
     isAuthenticated,
     needsUsernameSetup,
@@ -24,6 +26,7 @@ export default function AppNavigator() {
     setGuestSession,
     clearSession,
   } = useAuthSession();
+  useOfflineSync();
   const navigatorKey = isAuthenticated
     ? `authenticated-${needsUsernameSetup ? 'username' : 'ready'}`
     : 'unauthenticated';
@@ -37,47 +40,36 @@ export default function AppNavigator() {
   }
 
   return (
-    <PreferencesProvider>
-      <NavigationContainer key={navigatorKey}>
-        <Stack.Navigator
-          key={navigatorKey}
-          initialRouteName={
-            isAuthenticated
-              ? needsUsernameSetup
-                ? 'UsernameSetup'
-                : 'Home'
-              : 'Auth'
-          }
-          screenOptions={{ headerShown: false }}
-        >
-          {isAuthenticated ? (
-            <>
-              {needsUsernameSetup ? (
-                <Stack.Screen name="UsernameSetup" component={UsernameSetupScreen} />
-              ) : null}
-              <Stack.Screen name="Home" component={HomeScreen} />
-              <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
-              <Stack.Screen name="MultiplayerLobby" component={MultiplayerLobbyScreen} />
-              <Stack.Screen name="Quiz" component={QuizScreen} />
-              <Stack.Screen name="Result" component={ResultScreen} />
-              <Stack.Screen name="Settings">
-                {(props) => (
-                  <SettingsScreen
-                    {...props}
-                    onClearSession={clearSession}
-                  />
-                )}
-              </Stack.Screen>
-              <Stack.Screen name="Auth">
-                {(props) => (
-                  <AuthScreen
-                    {...props}
-                    onGuest={setGuestSession}
-                  />
-                )}
-              </Stack.Screen>
-            </>
-          ) : (
+    <NavigationContainer key={navigatorKey}>
+      <Stack.Navigator
+        key={navigatorKey}
+        initialRouteName={
+          isAuthenticated
+            ? needsUsernameSetup
+              ? 'UsernameSetup'
+              : 'Home'
+            : 'Auth'
+        }
+        screenOptions={{ headerShown: false }}
+      >
+        {isAuthenticated ? (
+          <>
+            {needsUsernameSetup ? (
+              <Stack.Screen name="UsernameSetup" component={UsernameSetupScreen} />
+            ) : null}
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+            <Stack.Screen name="MultiplayerLobby" component={MultiplayerLobbyScreen} />
+            <Stack.Screen name="Quiz" component={QuizScreen} />
+            <Stack.Screen name="Result" component={ResultScreen} />
+            <Stack.Screen name="Settings">
+              {(props) => (
+                <SettingsScreen
+                  {...props}
+                  onClearSession={clearSession}
+                />
+              )}
+            </Stack.Screen>
             <Stack.Screen name="Auth">
               {(props) => (
                 <AuthScreen
@@ -86,9 +78,28 @@ export default function AppNavigator() {
                 />
               )}
             </Stack.Screen>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
-    </PreferencesProvider>
+          </>
+        ) : (
+          <Stack.Screen name="Auth">
+            {(props) => (
+              <AuthScreen
+                {...props}
+                onGuest={setGuestSession}
+              />
+            )}
+          </Stack.Screen>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+export default function AppNavigator() {
+  return (
+    <ConnectivityProvider>
+      <PreferencesProvider>
+        <AppNavigatorInner />
+      </PreferencesProvider>
+    </ConnectivityProvider>
   );
 }

@@ -7,6 +7,21 @@ export default function useSupabaseUserId() {
   useEffect(() => {
     let active = true;
 
+    const applySessionFallback = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!active) {
+          return;
+        }
+        setUserId(data?.session?.user?.id ?? null);
+      } catch (err) {
+        if (active) {
+          console.warn('Konnte Session nicht abrufen:', err);
+          setUserId(null);
+        }
+      }
+    };
+
     supabase.auth
       .getUser()
       .then(({ data, error }) => {
@@ -15,12 +30,15 @@ export default function useSupabaseUserId() {
         }
         if (error) {
           console.warn('Konnte Nutzer nicht abrufen:', error.message);
+          applySessionFallback();
+          return;
         }
         setUserId(data?.user?.id ?? null);
       })
       .catch((err) => {
         if (active) {
           console.warn('Konnte Nutzer nicht abrufen:', err);
+          applySessionFallback();
         }
       });
 

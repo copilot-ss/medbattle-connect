@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BackHandler } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { usePreferences } from '../../context/PreferencesContext';
+import usePremiumStatus from '../../hooks/usePremiumStatus';
 import useCountdownTimer from '../../hooks/useCountdownTimer';
 import useSupabaseUserId from '../../hooks/useSupabaseUserId';
 import useMultiplayerMatch from '../../hooks/useMultiplayerMatch';
 import { calculateMatchPoints, submitScore } from '../../services/quizService';
+import { calculateXpGain } from '../../services/titleService';
 import useQuizConfig, { TIMER_DURATION } from './hooks/useQuizConfig';
 import useSoloQuestionLoader from './hooks/useSoloQuestionLoader';
 import useQuizInteractionHandlers from './hooks/useQuizInteractionHandlers';
@@ -25,7 +28,10 @@ export default function useQuizController({ navigation, route }) {
   const [timedOut, setTimedOut] = useState(false);
   const answerRef = useRef(null);
   const timeLeftRef = useRef(TIMER_DURATION);
-  const { setStreakValue, updateUserStats } = usePreferences();
+  const { setStreakValue, updateUserStats, consumeEnergy } = usePreferences();
+  const { premium } = usePremiumStatus();
+  const energyChargedRef = useRef(false);
+  const { isOnline } = useConnectivity();
   const userId = useSupabaseUserId();
 
   const {
@@ -69,6 +75,7 @@ export default function useQuizController({ navigation, route }) {
     return DEFAULT_SOLO_QUESTION_LIMIT;
   }, [isMultiplayer, matchQuestions, requestedQuestionLimit]);
 
+  const isOffline = isOnline === false;
   const {
     questions: soloQuestions,
     loading: soloLoading,
@@ -78,6 +85,7 @@ export default function useQuizController({ navigation, route }) {
     isEnabled: !isMultiplayer,
     normalizedDifficulty,
     questionLimit,
+    isOffline,
   });
 
   const activeQuestions = isMultiplayer
@@ -130,6 +138,22 @@ export default function useQuizController({ navigation, route }) {
     return `${(progress * 100).toFixed(1)}%`;
   }, [matchIsActive, progress]);
 
+  useEffect(() => {
+    if (!isQuickPlay || isMultiplayer || premium || energyChargedRef.current) {
+      return;
+    }
+
+    energyChargedRef.current = true;
+    consumeEnergy().then((result) => {
+      if (!result.ok) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+      }
+    });
+  }, [consumeEnergy, isMultiplayer, isQuickPlay, navigation, premium]);
+
   const finalizeQuiz = useCallback(
     async (
       finalScoreValue,
@@ -148,17 +172,26 @@ export default function useQuizController({ navigation, route }) {
         total: effectiveTotal,
         difficulty: normalizedDifficulty,
       });
+      const xpEarned = calculateXpGain({
+        correct: resolvedScore,
+        total: effectiveTotal,
+        difficulty: normalizedDifficulty,
+        isMultiplayer,
+      });
 
       const shouldSubmitScore =
         submit && userId && (!isMultiplayer || !wasSurrender);
 
+      let scoreQueued = false;
       if (shouldSubmitScore) {
         try {
           const result = await submitScore(
             userId,
             earnedPoints,
-            normalizedDifficulty
+            normalizedDifficulty,
+            { offline: isOffline }
           );
+          scoreQueued = Boolean(result?.queued);
           if (!result?.ok) {
             console.warn(
               'Score konnte nicht gespeichert werden:',
@@ -195,6 +228,7 @@ export default function useQuizController({ navigation, route }) {
             quizzes: sanitizeStatNumber((current?.quizzes ?? 0) + 1),
             correct: sanitizeStatNumber((current?.correct ?? 0) + resolvedScore),
             questions: sanitizeStatNumber((current?.questions ?? 0) + effectiveTotal),
+            xp: sanitizeStatNumber((current?.xp ?? 0) + xpEarned),
           }));
         } catch (err) {
           console.warn('Konnte lokale Quiz-Statistik nicht aktualisieren:', err);
@@ -211,6 +245,8 @@ export default function useQuizController({ navigation, route }) {
         questionLimit,
         mode,
         isMultiplayer,
+        offline: isOffline,
+        scoreQueued,
         matchId,
         matchStatus: resolvedMatchStatus,
         opponentScore: matchOpponentState?.score ?? null,
@@ -238,6 +274,7 @@ export default function useQuizController({ navigation, route }) {
       totalQuestions,
       userId,
       mode,
+      isOffline,
     ]
   );
 

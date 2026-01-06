@@ -7,7 +7,7 @@ export function sanitizeUsername(value, fallback) {
 
   const normalized = String(value)
     .toLowerCase()
-    .replace(/[^a-z0-9_]/g, '')
+    .replace(/[^a-z0-9_\u00e4\u00f6\u00fc\u00df]/g, '')
     .slice(0, 24);
 
   return normalized || fallback;

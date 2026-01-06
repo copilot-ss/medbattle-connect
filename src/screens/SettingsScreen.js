@@ -56,6 +56,9 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
     handleSelectAvatar,
     quizzesCompleted,
     accuracyPercent,
+    xp,
+    titleProgress,
+    unlockedAchievements,
     leaderboardRank,
     loadingRank,
     newEmail,
@@ -115,6 +118,8 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
             friendInputRef={friendInputRef}
             onAddFriend={onAddFriend}
             addingFriend={addingFriend}
+            friends={friends}
+            loadingFriends={loadingFriends}
             onlineFriends={onlineFriends}
             loadingOnline={loadingOnline}
             onRemoveFriend={onRemoveFriend}
@@ -136,6 +141,9 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
             onSelectAvatar={handleSelectAvatar}
             quizzesCompleted={quizzesCompleted}
             accuracyPercent={accuracyPercent}
+            xp={xp}
+            titleProgress={titleProgress}
+            unlockedAchievements={unlockedAchievements}
             leaderboardRank={leaderboardRank}
             loadingRank={loadingRank}
             newEmail={newEmail}

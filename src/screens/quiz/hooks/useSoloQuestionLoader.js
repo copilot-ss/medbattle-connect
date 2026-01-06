@@ -35,6 +35,7 @@ export default function useSoloQuestionLoader({
   isEnabled,
   normalizedDifficulty,
   questionLimit,
+  isOffline = false,
 }) {
   const safeDifficulty = normalizeDifficulty(normalizedDifficulty);
   const [questions, setQuestions] = useState([]);
@@ -62,7 +63,9 @@ export default function useSoloQuestionLoader({
       setQuestions([]);
 
       try {
-        const data = await fetchQuestions(safeDifficulty, questionLimit);
+        const data = await fetchQuestions(safeDifficulty, questionLimit, null, {
+          offline: isOffline,
+        });
         const prepared = prepareQuestions(data);
 
         if (!cancelled) {
@@ -92,7 +95,7 @@ export default function useSoloQuestionLoader({
     return () => {
       cancelled = true;
     };
-  }, [isEnabled, questionLimit, safeDifficulty]);
+  }, [isEnabled, isOffline, questionLimit, safeDifficulty]);
 
   return {
     questions,

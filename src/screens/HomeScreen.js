@@ -6,14 +6,18 @@ import styles, {
   getModeCardContainerStyle,
   getModeCardTitleStyle,
 } from './styles/HomeScreen.styles';
+import { useConnectivity } from '../context/ConnectivityContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { getInAppPurchases } from '../lib/inAppPurchases';
 import usePremiumStatus from '../hooks/usePremiumStatus';
-import AdBanner from '../components/AdBanner';
+import { getAdsModule, getRewardedAdUnitId, initializeAds } from '../services/adsService';
 
 const DEFAULT_DIFFICULTY = 'mittel';
 const doctorAnimation = require('../../assets/animations/doctor/doctor.json');
 const BOOST_PRODUCT_ID = 'energy_boost_20';
+const REWARDED_ENERGY = 5;
+const ENERGY_BADGE_COLOR = '#FACC15';
+const ENERGY_BADGE_EMPTY_COLOR = '#FCA5A5';
 
 
 
@@ -41,7 +45,14 @@ function hexToRgba(hex, alpha = 1) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function ModeCard({ title, subtitle, accent, onPress, disabled = false }) {
+function ModeCard({
+  title,
+  subtitle,
+  accent,
+  onPress,
+  disabled = false,
+  titleMeta = null,
+}) {
   const glow = useRef(new Animated.Value(0)).current;
   const glowColors = useMemo(
     () => ({
@@ -78,7 +89,12 @@ function ModeCard({ title, subtitle, accent, onPress, disabled = false }) {
         onPress={disabled ? undefined : onPress}
         disabled={disabled}
       >
-        <Text style={getModeCardTitleStyle(accent)}>{title}</Text>
+        <View style={styles.modeCardTitleRow}>
+          <Text style={getModeCardTitleStyle(accent)}>{title}</Text>
+          {titleMeta ? (
+            <View style={styles.modeCardTitleMeta}>{titleMeta}</View>
+          ) : null}
+        </View>
         {subtitle ? <Text style={styles.modeCardSubtitle}>{subtitle}</Text> : null}
       </Pressable>
     </Animated.View>
@@ -87,23 +103,34 @@ function ModeCard({ title, subtitle, accent, onPress, disabled = false }) {
 
 export default function HomeScreen({ navigation, route }) {
   const activeLobby = route?.params?.activeLobby ?? null;
-  const hasActiveLobby = Boolean(activeLobby?.code);
+  const { isOnline, isChecking, checkOnline } = useConnectivity();
+  const isOffline = isOnline === false;
+  const hasLobby = Boolean(activeLobby?.code);
+  const hasActiveLobby = hasLobby && !isOffline;
   const {
     energy,
     energyMax,
     nextEnergyAt,
-    consumeEnergy,
     boostEnergy,
+    addEnergy,
     refreshEnergy,
   } = usePreferences();
   const { premium } = usePremiumStatus();
   const [energyMessage, setEnergyMessage] = useState(null);
   const [boosting, setBoosting] = useState(false);
+  const [rewarding, setRewarding] = useState(false);
   const [showBoostModal, setShowBoostModal] = useState(false);
   const iapModule = useMemo(() => getInAppPurchases(), []);
+  const adsModule = useMemo(() => getAdsModule(), []);
   const iapAvailable = Boolean(iapModule && typeof iapModule.connectAsync === 'function');
   const [iapReady, setIapReady] = useState(iapAvailable && Platform.OS !== 'android');
   const [nextEnergyCountdown, setNextEnergyCountdown] = useState('');
+
+  useEffect(() => {
+    if (isOffline && showBoostModal) {
+      setShowBoostModal(false);
+    }
+  }, [isOffline, showBoostModal]);
 
   useEffect(() => {
     refreshEnergy();
@@ -157,7 +184,7 @@ export default function HomeScreen({ navigation, route }) {
             try {
               await iapModule.finishTransactionAsync(purchase, false);
               await boostEnergy();
-              setEnergyMessage('Energie aufgefuellt!');
+              setEnergyMessage('Energie aufgef\u00fcllt!');
               setShowBoostModal(false);
             } catch (err) {
               setEnergyMessage('Boost konnte nicht abgeschlossen werden.');
@@ -167,7 +194,7 @@ export default function HomeScreen({ navigation, route }) {
       } else if (responseCode === iapModule.IAPResponseCode.USER_CANCELED) {
         setEnergyMessage('Boost abgebrochen.');
       } else if (errorCode) {
-        setEnergyMessage('Boost fehlgeschlagen. Bitte spaeter erneut.');
+        setEnergyMessage('Boost fehlgeschlagen. Bitte sp\u00e4ter erneut.');
       }
       setBoosting(false);
     });
@@ -180,9 +207,9 @@ export default function HomeScreen({ navigation, route }) {
           setIapReady(true);
         }
       } catch (err) {
-        console.warn('IAP nicht verfuegbar:', err);
+        console.warn('IAP nicht verf\u00fcgbar:', err);
         if (!cancelled) {
-          setEnergyMessage('Boost im Moment nicht verfuegbar.');
+          setEnergyMessage('Boost im Moment nicht verf\u00fcgbar.');
         }
       }
     }
@@ -195,11 +222,24 @@ export default function HomeScreen({ navigation, route }) {
     };
   }, [boostEnergy, iapAvailable, iapModule]);
 
-  const quickPlayDisabled = !premium && energy <= 0;
-  const showEnergyAd = !premium && energy <= 0;
-  const quickPlaySubtitle = premium
-    ? 'Premium: unbegrenzt spielen'
-    : `Energie ${energy}/${energyMax}${nextEnergyCountdown ? ` - ${nextEnergyCountdown}` : ''}`;
+  const rewardedAdUnitId = getRewardedAdUnitId();
+  const RewardedAd = adsModule?.RewardedAd;
+  const RewardedAdEventType = adsModule?.RewardedAdEventType;
+  const AdEventType = adsModule?.AdEventType;
+  const isBoostBusy = boosting || rewarding;
+  const quickPlayLocked = !premium && energy <= 0;
+  const quickPlayEnergyLabel = premium
+    ? `${energyMax}/${energyMax}`
+    : `${energy}/${energyMax}${nextEnergyCountdown ? ` - ${nextEnergyCountdown}` : ''}`;
+  const energyBadgeStyle = quickPlayLocked ? styles.energyBadgeEmpty : null;
+  const energyBadgeTextStyle = quickPlayLocked ? styles.energyBadgeTextEmpty : null;
+  const energyBadgeIconColor = quickPlayLocked
+    ? ENERGY_BADGE_EMPTY_COLOR
+    : ENERGY_BADGE_COLOR;
+
+  async function handleGoOnline() {
+    await checkOnline({ force: true });
+  }
 
   function handleCreateLobby() {
     if (hasActiveLobby) {
@@ -224,20 +264,116 @@ export default function HomeScreen({ navigation, route }) {
   }
 
   async function startQuickPlay() {
+    if (isBoostBusy || hasLobby) {
+      return;
+    }
     setEnergyMessage(null);
-    if (!premium) {
-      const result = await consumeEnergy();
-      if (!result.ok) {
-        setShowBoostModal(true);
-        setEnergyMessage('Keine Energie. Warte auf Aufladung oder nutze einen Boost.');
+    if (!premium && energy <= 0) {
+      if (isOffline) {
+        setEnergyMessage('Offline: Keine Energie. Geh online, um aufzuladen.');
         return;
       }
+      setShowBoostModal(true);
+      return;
     }
     navigation.navigate('Quiz', {
       difficulty: DEFAULT_DIFFICULTY,
       mode: 'quick',
       questionLimit: 6,
     });
+  }
+
+  async function watchAdForEnergy() {
+    if (isBoostBusy) {
+      return;
+    }
+    setEnergyMessage(null);
+
+    if (isOffline) {
+      setEnergyMessage('Offline: Werbung ist gerade nicht verf\u00fcgbar.');
+      return;
+    }
+
+    if (!rewardedAdUnitId || !RewardedAd || !RewardedAdEventType || !AdEventType) {
+      setEnergyMessage('Werbung im Moment nicht verf\u00fcgbar.');
+      return;
+    }
+
+    setRewarding(true);
+    const initResult = await initializeAds();
+    if (!initResult.ok) {
+      setRewarding(false);
+      setEnergyMessage('Werbung im Moment nicht verf\u00fcgbar.');
+      return;
+    }
+
+    const rewardedAd = RewardedAd.createForAdRequest(rewardedAdUnitId, {
+      requestNonPersonalizedAdsOnly: true,
+    });
+    let settled = false;
+    let unsubscribeLoaded;
+    let unsubscribeRewarded;
+    let unsubscribeClosed;
+    let unsubscribeError;
+
+    const cleanup = () => {
+      if (typeof unsubscribeLoaded === 'function') unsubscribeLoaded();
+      if (typeof unsubscribeRewarded === 'function') unsubscribeRewarded();
+      if (typeof unsubscribeClosed === 'function') unsubscribeClosed();
+      if (typeof unsubscribeError === 'function') unsubscribeError();
+    };
+
+    const finalize = (message, closeModal = false) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      if (message) {
+        setEnergyMessage(message);
+      }
+      if (closeModal) {
+        setShowBoostModal(false);
+      }
+      setRewarding(false);
+      cleanup();
+    };
+
+    const handleLoaded = () => {
+      rewardedAd.show().catch(() => {
+        finalize('Werbung konnte nicht gestartet werden.');
+      });
+    };
+
+    const handleRewarded = async () => {
+      try {
+        const result = await addEnergy(REWARDED_ENERGY);
+        if (result.ok) {
+          finalize(`${REWARDED_ENERGY} Energie erhalten!`, true);
+        } else {
+          finalize('Energie konnte nicht aufgef\u00fcllt werden.', false);
+        }
+      } catch (err) {
+        finalize('Energie konnte nicht aufgef\u00fcllt werden.', false);
+      }
+    };
+
+    const handleClosed = () => {
+      finalize('Werbung beendet.');
+    };
+
+    const handleError = () => {
+      finalize('Werbung konnte nicht geladen werden.');
+    };
+
+    unsubscribeLoaded = rewardedAd.addAdEventListener(AdEventType.LOADED, handleLoaded);
+    unsubscribeRewarded = rewardedAd.addAdEventListener(
+      RewardedAdEventType.EARNED_REWARD,
+      handleRewarded
+    );
+    unsubscribeClosed = rewardedAd.addAdEventListener(AdEventType.CLOSED, handleClosed);
+    unsubscribeError = rewardedAd.addAdEventListener(AdEventType.ERROR, handleError);
+
+    rewardedAd.load();
   }
 
   return (
@@ -248,34 +384,59 @@ export default function HomeScreen({ navigation, route }) {
         <View style={styles.quickActions}>
           <Pressable
             onPress={() => navigation.navigate('Leaderboard')}
-            style={styles.leaderboardButton}
+            style={[styles.leaderboardButton, isOffline ? styles.quickActionDisabled : null]}
+            disabled={isOffline}
           >
-            <Ionicons name="trophy" size={22} color="#FACC15" style={styles.leaderboardIcon} />
+            <Ionicons name="trophy" size={26} color="#FACC15" style={styles.leaderboardIcon} />
           </Pressable>
 
           <Pressable
             onPress={() => navigation.navigate('Settings', { focus: 'audio' })}
-            style={styles.menuButton}
+            style={[styles.menuButton, isOffline ? styles.quickActionDisabled : null]}
+            disabled={isOffline}
           >
             <Ionicons name="settings" size={28} color="#E2E8F0" style={styles.menuIcon} />
           </Pressable>
         </View>
       </View>
 
-      {hasActiveLobby ? (
-        <Pressable
-          style={styles.activeLobbyBanner}
-          onPress={() =>
-            navigation.navigate('MultiplayerLobby', {
-              existingMatch: activeLobby.existingMatch ?? null,
-              mode: 'create',
-            })
-          }
-        >
-          <Text style={styles.activeLobbyTitle}>Lobby {activeLobby.players ?? 1}/{activeLobby.capacity ?? 2}</Text>
-          <Text style={styles.activeLobbyCode}>{activeLobby.code ?? ''}</Text>
-        </Pressable>
+      {isOffline ? (
+        <View style={styles.offlineBanner}>
+          <View style={styles.offlineHeader}>
+            <View style={styles.offlineDot} />
+            <Text style={styles.offlineTitle}>Offline Modus</Text>
+          </View>
+          <Text style={styles.offlineText}>
+            Quick Play bleibt verf\u00fcgbar. Multiplayer, Rangliste und Einstellungen sind offline gesperrt.
+          </Text>
+          <Pressable
+            onPress={handleGoOnline}
+            style={[styles.offlineButton, isChecking ? styles.offlineButtonDisabled : null]}
+            disabled={isChecking}
+          >
+            <Text style={styles.offlineButtonText}>
+              {isChecking ? 'Verbindung pr\u00fcfen...' : 'Online gehen'}
+            </Text>
+          </Pressable>
+        </View>
       ) : null}
+
+      <View style={styles.activeLobbyAnchor} pointerEvents="box-none">
+        {hasActiveLobby ? (
+          <Pressable
+            style={styles.activeLobbyBanner}
+            onPress={() =>
+              navigation.navigate('MultiplayerLobby', {
+                existingMatch: activeLobby.existingMatch ?? null,
+                mode: 'create',
+              })
+            }
+          >
+            <Text style={styles.activeLobbyTitle}>Lobby {activeLobby.players ?? 1}/{activeLobby.capacity ?? 2}</Text>
+            <Text style={styles.activeLobbyCode}>{activeLobby.code ?? ''}</Text>
+          </Pressable>
+        ) : null}
+      </View>
 
       <View style={styles.animationWrapper} pointerEvents="none">
         <LottieView
@@ -286,69 +447,98 @@ export default function HomeScreen({ navigation, route }) {
         />
       </View>
 
-      <View
-        style={[
-          styles.modeSection,
-          hasActiveLobby ? styles.modeSectionCompact : null,
-        ]}
-      >
-        <ModeCard title="Create Lobby" accent="#38E4AE" onPress={handleCreateLobby} disabled={hasActiveLobby} />
-        <ModeCard title="Join Lobby" accent="#60A5FA" onPress={handleJoinLobby} disabled={hasActiveLobby} />
+      <View style={styles.modeSection}>
+        <ModeCard
+          title="Create Lobby"
+          accent="#38E4AE"
+          onPress={handleCreateLobby}
+          disabled={hasActiveLobby || isOffline}
+        />
+        <ModeCard
+          title="Join Lobby"
+          accent="#60A5FA"
+          onPress={handleJoinLobby}
+          disabled={hasActiveLobby || isOffline}
+        />
         <ModeCard
           title="Quick Play"
-          subtitle={quickPlaySubtitle}
           accent="#FDE68A"
           onPress={startQuickPlay}
-          disabled={quickPlayDisabled}
+          disabled={isBoostBusy || hasLobby}
+          titleMeta={
+            <View style={[styles.energyBadge, energyBadgeStyle]}>
+              <Ionicons
+                name="flash"
+                size={12}
+                color={energyBadgeIconColor}
+                style={styles.energyBadgeIcon}
+              />
+              <Text
+                style={[styles.energyBadgeText, energyBadgeTextStyle]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {quickPlayEnergyLabel}
+              </Text>
+            </View>
+          }
         />
       </View>
 
-      {energyMessage ? (
+      {energyMessage && !showBoostModal ? (
         <Text style={styles.energyMessage}>{energyMessage}</Text>
       ) : null}
 
       <View style={styles.flexSpacer} />
-      {showEnergyAd ? <AdBanner style={styles.adSlot} /> : null}
 
       {!premium && showBoostModal ? (
         <View style={styles.boostOverlay}>
           <View style={styles.boostCard}>
             <Text style={styles.boostTitle}>Energie leer</Text>
             <Text style={styles.boostText}>
-              Warte 30 Minuten pro Blitz oder lade sofort auf.
+              Du brauchst Energie f\u00fcr ein weiteres Spiel. W\u00e4hle Kauf oder Werbung f\u00fcr 5 Energie.
             </Text>
+            {energyMessage ? <Text style={styles.boostMessage}>{energyMessage}</Text> : null}
             <View style={styles.boostActions}>
               <Pressable
-                onPress={() => setShowBoostModal(false)}
-                style={[styles.boostButtonGhost]}
-                disabled={boosting}
-              >
-                <Text style={styles.boostGhostText}>Schliessen</Text>
-              </Pressable>
-              <Pressable
                 onPress={async () => {
-                  if (boosting) return;
+                  if (isBoostBusy) return;
                   if (!iapReady || !iapAvailable || !iapModule) {
-                    setEnergyMessage('Boost im Moment nicht verfuegbar.');
+                    setEnergyMessage('Boost im Moment nicht verf\u00fcgbar.');
                     return;
                   }
                   setBoosting(true);
                   try {
                     await iapModule.requestPurchaseAsync({ sku: BOOST_PRODUCT_ID });
                   } catch (err) {
-                    setEnergyMessage('Boost fehlgeschlagen. Bitte spaeter erneut versuchen.');
+                    setEnergyMessage('Boost fehlgeschlagen. Bitte sp\u00e4ter erneut versuchen.');
                     setBoosting(false);
                   }
                 }}
-                style={[styles.boostButton, boosting ? styles.boostButtonDisabled : null]}
-                disabled={boosting}
+                style={[styles.boostButton, isBoostBusy ? styles.boostButtonDisabled : null]}
+                disabled={isBoostBusy}
               >
                 <Text style={styles.boostButtonText}>
-                  {boosting ? 'Lade...' : 'Energie voll (1,99 EUR)'}
+                  {boosting ? 'Zahlung l\u00e4uft...' : 'Energie voll (1,99 EUR)'}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={watchAdForEnergy}
+                style={[styles.boostButtonGhost, isBoostBusy ? styles.boostButtonDisabled : null]}
+                disabled={isBoostBusy}
+              >
+                <Text style={styles.boostGhostText}>
+                  {rewarding ? 'Werbung l\u00e4dt...' : 'Werbung ansehen (5 Energie)'}
                 </Text>
               </Pressable>
             </View>
-            <Text style={styles.boostHint}>Blitze laden auch automatisch auf.</Text>
+            <Pressable
+              onPress={() => setShowBoostModal(false)}
+              style={styles.boostCancel}
+              disabled={isBoostBusy}
+            >
+              <Text style={styles.boostCancelText}>Sp\u00e4ter</Text>
+            </Pressable>
           </View>
         </View>
       ) : null}

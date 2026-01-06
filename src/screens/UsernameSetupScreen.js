@@ -3,7 +3,10 @@ import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-nativ
 
 import { supabase } from '../lib/supabaseClient';
 import { fetchUserProfile, sanitizeUsername, updateUsername } from '../services/userService';
+import { formatUserError } from '../utils/formatUserError';
 import styles from './styles/UsernameSetupScreen.styles';
+
+const SUPABASE_URL_HINT = process.env.EXPO_PUBLIC_SUPABASE_URL;
 
 export default function UsernameSetupScreen({ navigation }) {
   const [username, setUsername] = useState('');
@@ -71,7 +74,7 @@ export default function UsernameSetupScreen({ navigation }) {
     const candidate = sanitizeUsername(username, '').trim();
 
     if (!candidate || candidate.length < 3) {
-      setMessage('Bitte mind. 3 Zeichen, nur Buchstaben/Zahlen/_.');
+      setMessage('Bitte mind. 3 Zeichen, nur Buchstaben/Zahlen/_ und Umlaute.');
       return;
     }
 
@@ -81,7 +84,12 @@ export default function UsernameSetupScreen({ navigation }) {
     const result = await updateUsername(userId, candidate);
 
     if (!result.ok) {
-      setMessage(result.error?.message ?? 'Name konnte nicht gespeichert werden.');
+      setMessage(
+        formatUserError(result.error, {
+          supabaseUrl: SUPABASE_URL_HINT,
+          fallback: 'Name konnte nicht gespeichert werden.',
+        })
+      );
     } else {
       navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
     }
@@ -99,7 +107,7 @@ export default function UsernameSetupScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Waehle deinen Namen</Text>
+      <Text style={styles.title}>W\u00e4hle deinen Namen</Text>
       <Text style={styles.subtitle}>
         Dieser Name wird in Lobbys, Ranglisten und deinem Profil angezeigt.
       </Text>

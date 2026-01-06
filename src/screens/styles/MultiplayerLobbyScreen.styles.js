@@ -64,11 +64,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 10,
   },
-  createStepper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    columnGap: 12,
-  },
   createSeparator: {
     width: '100%',
     borderTopWidth: 1,
@@ -119,6 +114,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  headerStreak: {
+    height: 3,
+    borderRadius: 999,
+    backgroundColor: '#F472B6',
+    marginHorizontal: -20,
+    marginBottom: 18,
+    shadowColor: '#F472B6',
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   homeButton: {
     paddingHorizontal: 12,
@@ -274,12 +281,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#0B1020',
     borderRadius: 20,
     padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(236, 72, 153, 0.35)',
-    shadowColor: '#C084FC',
-    shadowOpacity: 0.3,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
     marginBottom: 20,
   },
   lobbyTitle: {
@@ -288,6 +289,16 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.5,
     marginBottom: 10,
+  },
+  lobbySettingsButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(147, 197, 253, 0.45)',
+    backgroundColor: 'rgba(59, 130, 246, 0.18)',
   },
   lobbyConfig: {
     marginTop: 16,
@@ -383,6 +394,11 @@ const styles = StyleSheet.create({
     columnGap: 12,
     rowGap: 12,
   },
+  participantSlot: {
+    alignItems: 'center',
+    gap: 6,
+    width: '30%',
+  },
   participantsTitle: {
     color: '#BFDBFE',
     fontSize: 14,
@@ -402,9 +418,11 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   participantAvatarCard: {
-    width: '30%',
     alignItems: 'center',
     gap: 6,
+  },
+  participantAvatarCardSelected: {
+    opacity: 0.95,
   },
   participantAvatar: {
     width: 64,
@@ -415,6 +433,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(96, 165, 250, 0.45)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  participantAvatarKick: {
+    borderColor: 'rgba(248, 113, 113, 0.8)',
+    backgroundColor: 'rgba(248, 113, 113, 0.18)',
   },
   hostBadge: {
     position: 'absolute',
@@ -446,10 +468,32 @@ const styles = StyleSheet.create({
   participantPlaceholder: {
     color: '#94A3B8',
   },
+  kickButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    columnGap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(248, 113, 113, 0.75)',
+    backgroundColor: 'rgba(248, 113, 113, 0.12)',
+  },
+  kickButtonText: {
+    color: '#FCA5A5',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  kickButtonDisabled: {
+    opacity: 0.6,
+  },
   startRow: {
-    marginTop: 4,
+    marginTop: 6,
     marginBottom: 8,
-    gap: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 10,
   },
   startButton: {
     alignSelf: 'flex-start',
@@ -646,6 +690,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 8,
   },
+  emptyIcon: {
+    width: 120,
+    height: 120,
+    marginTop: 6,
+  },
   emptySubtitle: {
     color: '#94A3B8',
     textAlign: 'center',
@@ -722,6 +771,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
   modalCard: {
     width: '100%',
     maxWidth: 340,
@@ -732,15 +788,48 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(148, 163, 184, 0.25)',
     rowGap: 16,
   },
+  settingsModalCard: {
+    maxWidth: 360,
+  },
   modalTitle: {
     color: '#F8FAFC',
     fontSize: 20,
     fontWeight: '700',
   },
-  modalMessage: {
-    color: '#CBD5F5',
+  settingsModalTitle: {
+    color: '#F8FAFC',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  settingsModalSection: {
+    rowGap: 10,
+  },
+  settingsModalLabel: {
+    color: '#E2E8F0',
     fontSize: 14,
-    lineHeight: 20,
+    fontWeight: '700',
+  },
+  settingsApplyButton: {
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    overflow: 'hidden',
+  },
+  settingsApplyFill: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 16,
+    opacity: 0.35,
+  },
+  settingsApplyText: {
+    color: '#E2E8F0',
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   modalActions: {
     flexDirection: 'row',

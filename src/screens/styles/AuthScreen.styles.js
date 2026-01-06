@@ -54,6 +54,37 @@ const styles = StyleSheet.create({
     color: '#E2E8F0',
     backgroundColor: '#0F172A',
   },
+  passwordHint: {
+    color: '#94A3B8',
+    marginTop: 6,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  rememberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  rememberBox: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#334155',
+    backgroundColor: '#0F172A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  rememberBoxChecked: {
+    backgroundColor: '#38BDF8',
+    borderColor: '#38BDF8',
+  },
+  rememberLabel: {
+    color: '#CBD5E1',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   message: {
     color: '#FCA5A5',
     marginBottom: 16,

@@ -1,17 +1,11 @@
 import { supabase } from '../lib/supabaseClient';
-import { fetchQuestions } from './quizService';
-import { fetchUserProfile } from './userService';
 import {
   LOBBY_IDLE_TIMEOUT_MINUTES,
   MATCH_CACHE_TTL,
   MATCH_STATUS,
-  generateJoinCode,
   normalizeDifficulty,
   normalizeMatchRow,
-  normalizeMatchState,
-  nowIso,
   sanitizeAnswer,
-  sanitizeQuestionsForMatch,
 } from './match/matchHelpers';
 
 const openMatchesCache = {
@@ -25,33 +19,21 @@ let lastIdleCleanupAt = 0;
 
 async function closeWaitingMatches({ includeAllOpen = false } = {}) {
   try {
-    let query = supabase
-      .from('matches')
-      .update({
-        status: MATCH_STATUS.CANCELLED,
-        finished_at: nowIso(),
-        updated_at: nowIso(),
-      })
-      .eq('status', MATCH_STATUS.WAITING);
-
-    if (!includeAllOpen) {
-      const cutoff = new Date(
-        Date.now() - LOBBY_IDLE_TIMEOUT_MINUTES * 60 * 1000
-      ).toISOString();
-      query = query.lte('created_at', cutoff);
-    }
-
-    const { data, error } = await query.select('id');
+    const { data, error } = await supabase.rpc('close_waiting_matches', {
+      p_include_all: includeAllOpen,
+    });
 
     if (error) {
       throw error;
     }
 
-    if (data?.length) {
+    const count = Number.isFinite(data) ? data : 0;
+
+    if (count > 0) {
       invalidateOpenMatchesCache();
     }
 
-    return data?.length ?? 0;
+    return count;
   } catch (err) {
     console.warn('Konnte inaktive Lobbys nicht schliessen:', err?.message ?? err);
     return 0;
@@ -88,6 +70,15 @@ function invalidateOpenMatchesCache() {
   openMatchesCache.data = null;
 }
 
+function maybeInvalidateOpenMatchesCache(previousMatch, updatedMatch) {
+  if (
+    previousMatch?.status === MATCH_STATUS.WAITING ||
+    updatedMatch?.status === MATCH_STATUS.WAITING
+  ) {
+    invalidateOpenMatchesCache();
+  }
+}
+
 
 export function deriveMatchRole(match, userId) {
   if (!match || !userId) {
@@ -117,76 +108,17 @@ export async function createMatch({
   }
 
   const normalizedDifficulty = normalizeDifficulty(difficulty);
-  const limit = Number.isFinite(questionLimit) ? Math.max(1, questionLimit) : 5;
+  const limit = Number.isFinite(questionLimit)
+    ? Math.max(1, Math.min(questionLimit, 50))
+    : 5;
 
   try {
     await ensureLobbyCleanup({ force: true });
 
-    const questions = await fetchQuestions(normalizedDifficulty, limit);
-
-    if (!questions.length) {
-      return {
-        ok: false,
-        error: new Error('Keine Fragen fuer Multiplayer verfuegbar.'),
-      };
-    }
-
-    const sanitizedQuestions = sanitizeQuestionsForMatch(questions);
-
-    if (!sanitizedQuestions.length) {
-      return {
-        ok: false,
-        error: new Error('Fragenliste konnte fuer Multiplayer nicht vorbereitet werden.'),
-      };
-    }
-
-    const questionIds = sanitizedQuestions
-      .map((item) => item.id)
-      .filter((value) => typeof value === 'string');
-
-    const joinCode = generateJoinCode();
-    const hostProfile = await fetchUserProfile(hostId);
-    const hostUsername = hostProfile.ok ? hostProfile.profile?.username ?? null : null;
-    const state = normalizeMatchState({
-      host: {
-        userId: hostId,
-        username: hostUsername,
-        index: 0,
-        score: 0,
-        finished: false,
-        answers: [],
-      },
-      guest: {
-        userId: null,
-        username: null,
-        index: 0,
-        score: 0,
-        finished: false,
-        answers: [],
-      },
-      history: [],
+    const { data, error } = await supabase.rpc('create_match', {
+      p_difficulty: normalizedDifficulty,
+      p_question_limit: limit,
     });
-
-    const payload = {
-      code: joinCode,
-      host_id: hostId,
-      guest_id: null,
-      difficulty: normalizedDifficulty,
-      question_limit: sanitizedQuestions.length,
-      question_ids: questionIds,
-      questions: sanitizedQuestions,
-      status: MATCH_STATUS.WAITING,
-      state,
-      started_at: null,
-      finished_at: null,
-      updated_at: nowIso(),
-    };
-
-    const { data, error } = await supabase
-      .from('matches')
-      .insert([payload])
-      .select('*')
-      .single();
 
     if (error) {
       console.error('Fehler beim Erstellen des Matches:', error.message);
@@ -218,73 +150,17 @@ export async function joinMatch({ code, userId } = {}) {
   try {
     await ensureLobbyCleanup({ force: true });
 
-    const { data: matchRow, error: fetchError } = await supabase
-      .from('matches')
-      .select('*')
-      .eq('code', sanitizedCode)
-      .maybeSingle();
-
-    if (fetchError) {
-      return { ok: false, error: fetchError };
-    }
-
-    if (!matchRow) {
-      return { ok: false, error: new Error('Match nicht gefunden.') };
-    }
-
-    const match = normalizeMatchRow(matchRow);
-    const role = deriveMatchRole(match, guestId);
-
-    if (role === 'host' || role === 'guest') {
-      return { ok: true, match };
-    }
-
-    if (match.status !== MATCH_STATUS.WAITING) {
-      return { ok: false, error: new Error('Dieses Match laeuft bereits oder ist beendet.') };
-    }
-
-    if (match.guest_id && match.guest_id !== guestId) {
-      return { ok: false, error: new Error('Dieses Match ist bereits voll.') };
-    }
-
-    const guestProfile = await fetchUserProfile(guestId);
-    const guestUsername = guestProfile.ok ? guestProfile.profile?.username ?? null : null;
-    const nextState = normalizeMatchState({
-      ...match.state,
-      guest: {
-        ...match.state.guest,
-        userId: guestId,
-        username: guestUsername,
-        ready: false,
-      },
+    const { data, error } = await supabase.rpc('join_match', {
+      p_code: sanitizedCode,
     });
 
-    const updatePayload = {
-      guest_id: guestId,
-      state: nextState,
-      updated_at: nowIso(),
-    };
-
-    let updateQuery = supabase
-      .from('matches')
-      .update(updatePayload)
-      .eq('id', match.id);
-
-    if (match.updated_at) {
-      updateQuery = updateQuery.eq('updated_at', match.updated_at);
-    }
-
-    const { data: updated, error: updateError } = await updateQuery
-      .select('*')
-      .single();
-
-    if (updateError) {
-      return { ok: false, error: updateError };
+    if (error) {
+      return { ok: false, error };
     }
 
     invalidateOpenMatchesCache();
 
-    return { ok: true, match: normalizeMatchRow(updated) };
+    return { ok: true, match: normalizeMatchRow(data) };
   } catch (err) {
     console.error('Unerwarteter Fehler beim Beitreten des Matches:', err);
     return { ok: false, error: err };
@@ -300,49 +176,18 @@ export async function startMatch({ matchId, userId } = {}) {
     return { ok: false, error: new Error('Kein Nutzer angemeldet.') };
   }
 
-  const matchResult = await getMatchById(matchId);
-  if (!matchResult.ok) {
-    return matchResult;
-  }
-
-  const match = matchResult.match;
-  if (!match || match.host_id !== userId) {
-    return { ok: false, error: new Error('Nur der Host kann das Match starten.') };
-  }
-
-  if (match.status !== MATCH_STATUS.WAITING) {
-    return { ok: false, error: new Error('Match laeuft bereits oder ist beendet.') };
-  }
-
-  const nextState = normalizeMatchState(match.state);
-  nextState.host = { ...nextState.host, ready: true };
-  nextState.guest = { ...nextState.guest, ready: true };
-
-  const payload = {
-    status: MATCH_STATUS.ACTIVE,
-    started_at: match.started_at ?? nowIso(),
-    state: nextState,
-    updated_at: nowIso(),
-  };
-
   try {
-    let updateQuery = supabase.from('matches').update(payload).eq('id', match.id);
-    if (match.updated_at) {
-      updateQuery = updateQuery.eq('updated_at', match.updated_at);
-    }
-
-    const { data, error } = await updateQuery.select('*').single();
+    const { data, error } = await supabase.rpc('start_match', {
+      p_match_id: matchId,
+    });
 
     if (error) {
       return { ok: false, error };
     }
 
-    const updatedMatch = normalizeMatchRow(data);
-    if (match.status === MATCH_STATUS.WAITING || updatedMatch?.status === MATCH_STATUS.WAITING) {
-      invalidateOpenMatchesCache();
-    }
+    invalidateOpenMatchesCache();
 
-    return { ok: true, match: updatedMatch };
+    return { ok: true, match: normalizeMatchRow(data) };
   } catch (err) {
     console.error('Unerwarteter Fehler beim Starten des Matches:', err);
     return { ok: false, error: err };
@@ -355,11 +200,9 @@ export async function getMatchById(matchId) {
   }
 
   try {
-    const { data, error } = await supabase
-      .from('matches')
-      .select('*')
-      .eq('id', matchId)
-      .maybeSingle();
+    const { data, error } = await supabase.rpc('get_match_by_id', {
+      p_match_id: matchId,
+    });
 
     if (error) {
       return { ok: false, error };
@@ -392,85 +235,17 @@ export async function updateMatchSettings({
     return { ok: false, error: new Error('Kein Nutzer angemeldet.') };
   }
 
-  const matchResult = await getMatchById(matchId);
-
-  if (!matchResult.ok) {
-    return matchResult;
-  }
-
-  const match = matchResult.match;
-
-  if (!match || match.host_id !== hostId) {
-    return { ok: false, error: new Error('Nur der Host kann die Lobby anpassen.') };
-  }
-
-  if (match.status !== MATCH_STATUS.WAITING) {
-    return { ok: false, error: new Error('Die Lobby laeuft bereits.') };
-  }
-
   const normalizedDifficulty = normalizeDifficulty(difficulty);
   const limit = Number.isFinite(questionLimit)
     ? Math.max(1, Math.min(questionLimit, 50))
-    : Math.max(match.question_limit ?? 5, 1);
+    : 5;
 
   try {
-    const questions = await fetchQuestions(normalizedDifficulty, limit);
-
-    if (!questions.length) {
-      return {
-        ok: false,
-        error: new Error('Keine Fragen fuer die gewaehlte Einstellung verfuegbar.'),
-      };
-    }
-
-    const sanitizedQuestions = sanitizeQuestionsForMatch(questions);
-
-    if (!sanitizedQuestions.length) {
-      return {
-        ok: false,
-        error: new Error('Fragenliste konnte nicht vorbereitet werden.'),
-      };
-    }
-
-    const questionIds = sanitizedQuestions
-      .map((item) => item.id)
-      .filter((value) => typeof value === 'string');
-
-    const nextState = normalizeMatchState(match.state);
-    nextState.host = {
-      ...nextState.host,
-      index: 0,
-      score: 0,
-      finished: false,
-      answers: [],
-    };
-    nextState.guest = {
-      userId: null,
-      username: null,
-      index: 0,
-      score: 0,
-      finished: false,
-      answers: [],
-    };
-    nextState.history = [];
-
-    const payload = {
-      difficulty: normalizedDifficulty,
-      question_limit: sanitizedQuestions.length,
-      question_ids: questionIds,
-      questions: sanitizedQuestions,
-      state: nextState,
-      status: MATCH_STATUS.WAITING,
-      started_at: null,
-      updated_at: nowIso(),
-    };
-
-    const { data, error } = await supabase
-      .from('matches')
-      .update(payload)
-      .eq('id', match.id)
-      .select('*')
-      .single();
+    const { data, error } = await supabase.rpc('update_match_settings', {
+      p_match_id: matchId,
+      p_difficulty: normalizedDifficulty,
+      p_question_limit: limit,
+    });
 
     if (error) {
       return { ok: false, error };
@@ -507,19 +282,9 @@ export async function fetchOpenMatches({
   }
 
   try {
-    let query = supabase
-      .from('matches')
-      .select('id, code, difficulty, question_limit, state, created_at, guest_id')
-      .eq('status', MATCH_STATUS.WAITING)
-      .is('guest_id', null)
-      .order('created_at', { ascending: true })
-      .limit(24);
-
-    if (normalizedDifficulty) {
-      query = query.eq('difficulty', normalizedDifficulty);
-    }
-
-    const { data, error } = await query;
+    const { data, error } = await supabase.rpc('get_open_matches', {
+      p_difficulty: normalizedDifficulty,
+    });
 
     if (error) {
       console.warn('Konnte offene Matches nicht laden:', error.message);
@@ -530,20 +295,18 @@ export async function fetchOpenMatches({
       Array.isArray(data) && data.length
         ? data
             .map((row) => {
-              const normalized = normalizeMatchRow(row);
-              if (!normalized) {
-                return null;
-              }
-              if (normalized.status !== MATCH_STATUS.WAITING) {
+              if (!row || !row.id || !row.code) {
                 return null;
               }
               return {
-                id: normalized.id,
-                code: normalized.code,
-                difficulty: normalized.difficulty,
-                createdAt: normalized.created_at ?? null,
-                questionLimit: normalized.question_limit,
-                hostUsername: normalized.state?.host?.username ?? null,
+                id: row.id,
+                code: row.code,
+                difficulty: row.difficulty ?? null,
+                createdAt: row.created_at ?? null,
+                questionLimit: Number.isFinite(row.question_limit)
+                  ? Math.max(1, row.question_limit)
+                  : 5,
+                hostUsername: row.host_username ?? null,
               };
             })
             .filter(Boolean)
@@ -618,94 +381,65 @@ export async function updateMatchProgress({
   }
 
   const nextAnswer = sanitizeAnswer(answer);
-  const state = normalizeMatchState(match.state);
-  const roleState = state[playerRole];
-
-  const updatedAnswers = nextAnswer
-    ? [...roleState.answers, nextAnswer].slice(-50)
-    : [...roleState.answers];
-
-  const updatedRoleState = {
-    ...roleState,
-    index: Number.isFinite(nextIndex) ? Math.max(nextIndex, 0) : roleState.index,
-    score: Number.isFinite(nextScore) ? Math.max(nextScore, 0) : roleState.score,
-    finished: finished ? true : roleState.finished,
-    answers: updatedAnswers,
-    lastAnswerAt: nextAnswer?.answeredAt ?? nowIso(),
-  };
-
-  const otherRole = playerRole === 'host' ? 'guest' : 'host';
-  const otherState = state[otherRole];
-
-  const nextState = {
-    ...state,
-    [playerRole]: updatedRoleState,
-  };
-
-  if (nextAnswer) {
-    nextState.history = [
-      ...state.history,
-      { ...nextAnswer, player: playerRole },
-    ].slice(-100);
-  } else {
-    nextState.history = [...state.history];
-  }
-
-  const bothFinished =
-    (finished || updatedRoleState.finished) && otherState.finished;
-
-  const payload = {
-    state: nextState,
-    updated_at: nowIso(),
-  };
-
-  if (match.status === MATCH_STATUS.WAITING) {
-    payload.status = MATCH_STATUS.ACTIVE;
-    payload.started_at = match.started_at ?? nowIso();
-  }
-
-  if (bothFinished) {
-    payload.status = MATCH_STATUS.COMPLETED;
-    payload.finished_at = nowIso();
-  }
+  const nextIndexValue = Number.isFinite(nextIndex) ? Math.max(nextIndex, 0) : null;
+  const nextScoreValue = Number.isFinite(nextScore) ? Math.max(nextScore, 0) : null;
 
   try {
-    let updateQuery = supabase.from('matches').update(payload).eq('id', match.id);
-
-    if (match.updated_at) {
-      updateQuery = updateQuery.eq('updated_at', match.updated_at);
-    }
-
-    const { data, error } = await updateQuery.select('*').single();
+    const { data, error } = await supabase.rpc('update_match_progress', {
+      p_match_id: match.id,
+      p_next_index: nextIndexValue,
+      p_next_score: nextScoreValue,
+      p_answer: nextAnswer,
+      p_finished: finished ? true : false,
+      p_expected_updated_at: match.updated_at ?? null,
+    });
 
     if (error) {
-      if (error.code === 'PGRST116' || error.code === 'PGRST109') {
-        return {
-          ok: false,
-          error: new Error('Match wurde bereits aktualisiert. Lade es neu und versuche es erneut.'),
-        };
-      }
       return { ok: false, error };
     }
 
     if (!data) {
       return {
         ok: false,
-        error: new Error('Match wurde parallel aktualisiert. Bitte neu laden.'),
+        error: new Error('Match konnte nicht aktualisiert werden. Bitte neu laden.'),
       };
     }
 
     const updatedMatch = normalizeMatchRow(data);
-    if (
-      match.status === MATCH_STATUS.WAITING ||
-      updatedMatch?.status === MATCH_STATUS.WAITING
-    ) {
-      invalidateOpenMatchesCache();
-    }
+    maybeInvalidateOpenMatchesCache(match, updatedMatch);
 
     return { ok: true, match: updatedMatch };
   } catch (err) {
     console.error('Unerwarteter Fehler beim Aktualisieren des Matches:', err);
+    return { ok: false, error: err };
+  }
+}
+
+export async function kickMatchGuest({ matchId, userId } = {}) {
+  const hostId = typeof userId === 'string' ? userId : null;
+
+  if (!matchId) {
+    return { ok: false, error: new Error('Match-ID fehlt.') };
+  }
+
+  if (!hostId) {
+    return { ok: false, error: new Error('Kein Nutzer angemeldet.') };
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('kick_match_guest', {
+      p_match_id: matchId,
+    });
+
+    if (error) {
+      return { ok: false, error };
+    }
+
+    invalidateOpenMatchesCache();
+
+    return { ok: true, match: normalizeMatchRow(data) };
+  } catch (err) {
+    console.error('Unerwarteter Fehler beim Entfernen des Spielers:', err);
     return { ok: false, error: err };
   }
 }
@@ -721,48 +455,18 @@ export async function markPlayerFinished({ match, role } = {}) {
     return { ok: false, error: new Error('Ungueltige Spielerrolle.') };
   }
 
-  const state = normalizeMatchState(match.state);
-  const nextState = {
-    ...state,
-    [playerRole]: {
-      ...state[playerRole],
-      finished: true,
-    },
-  };
-
-  const payload = {
-    state: nextState,
-    updated_at: nowIso(),
-  };
-
-  if (
-    nextState[playerRole].finished &&
-    nextState[playerRole === 'host' ? 'guest' : 'host'].finished
-  ) {
-    payload.status = MATCH_STATUS.COMPLETED;
-    payload.finished_at = nowIso();
-  }
-
   try {
-    let updateQuery = supabase.from('matches').update(payload).eq('id', match.id);
-
-    if (match.updated_at) {
-      updateQuery = updateQuery.eq('updated_at', match.updated_at);
-    }
-
-    const { data, error } = await updateQuery.select('*').single();
+    const { data, error } = await supabase.rpc('mark_player_finished', {
+      p_match_id: match.id,
+      p_expected_updated_at: match.updated_at ?? null,
+    });
 
     if (error) {
       return { ok: false, error };
     }
 
     const updatedMatch = normalizeMatchRow(data);
-    if (
-      match.status === MATCH_STATUS.WAITING ||
-      updatedMatch?.status === MATCH_STATUS.WAITING
-    ) {
-      invalidateOpenMatchesCache();
-    }
+    maybeInvalidateOpenMatchesCache(match, updatedMatch);
     return { ok: true, match: updatedMatch };
   } catch (err) {
     console.error('Unerwarteter Fehler beim Abschliessen des Matches:', err);
@@ -781,43 +485,17 @@ export async function abandonMatch({ match, role } = {}) {
     return { ok: false, error: new Error('Ungueltige Spielerrolle.') };
   }
 
-  const state = normalizeMatchState(match.state);
-  const nextState = {
-    ...state,
-    [playerRole]: {
-      ...state[playerRole],
-      finished: true,
-      gaveUp: true,
-    },
-  };
-
-  const payload = {
-    state: nextState,
-    status: MATCH_STATUS.CANCELLED,
-    finished_at: nowIso(),
-    updated_at: nowIso(),
-  };
-
   try {
-    let updateQuery = supabase.from('matches').update(payload).eq('id', match.id);
-
-    if (match.updated_at) {
-      updateQuery = updateQuery.eq('updated_at', match.updated_at);
-    }
-
-    const { data, error } = await updateQuery.select('*').single();
+    const { data, error } = await supabase.rpc('abandon_match', {
+      p_match_id: match.id,
+    });
 
     if (error) {
       return { ok: false, error };
     }
 
     const updatedMatch = normalizeMatchRow(data);
-    if (
-      match.status === MATCH_STATUS.WAITING ||
-      updatedMatch?.status === MATCH_STATUS.WAITING
-    ) {
-      invalidateOpenMatchesCache();
-    }
+    maybeInvalidateOpenMatchesCache(match, updatedMatch);
     return { ok: true, match: updatedMatch };
   } catch (err) {
     console.error('Unerwarteter Fehler beim Abbrechen des Matches:', err);

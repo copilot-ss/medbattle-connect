@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, TextInput, View, Share, Image } from 'react-native';
+import { ActivityIndicator, Animated, Easing, FlatList, Pressable, ScrollView, Text, TextInput, View, Share, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,12 +14,17 @@ import {
   joinMatch,
   subscribeToMatch,
   updateMatchSettings,
+  kickMatchGuest,
   abandonMatch,
   startMatch,
 } from '../services/matchService';
 import AVATARS from './settings/avatars';
 import { usePreferences } from '../context/PreferencesContext';
 import styles from './styles/MultiplayerLobbyScreen.styles';
+import DifficultyChips from './multiplayer/DifficultyChips';
+import LobbyLeaveConfirmModal from './multiplayer/LobbyLeaveConfirmModal';
+import LobbySettingsModal from './multiplayer/LobbySettingsModal';
+import QuestionLimitStepper from './multiplayer/QuestionLimitStepper';
 
 const DIFFICULTY_LABELS = {
   leicht: 'Leicht',
@@ -31,16 +36,12 @@ const DIFFICULTY_ACCENTS = {
   mittel: '#FACC15',
   schwer: '#EF4444',
 };
-const DIFFICULTY_OPTIONS = [
-  { key: 'leicht', label: 'Leicht', accent: '#34D399' },
-  { key: 'mittel', label: 'Mittel', accent: '#60A5FA' },
-  { key: 'schwer', label: 'Schwer', accent: '#F472B6' },
-];
-
 const MIN_QUESTION_LIMIT = 3;
-const MAX_QUESTION_LIMIT = 15;
+const MAX_QUESTION_LIMIT = 20;
 const MAX_PLAYERS = 10;
 const SHARE_ANIM = require('../../assets/animations/share_6172544.gif');
+const EMPTY_BATTLES_ICON = require('../../assets/animations/no-battles.gif');
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function getInitials(name) {
   if (!name || typeof name !== 'string') return '?';
@@ -54,9 +55,7 @@ function EmptyState() {
   return (
     <View style={styles.emptyState}>
       <Text style={styles.emptyTitle}>Noch keine offenen Battles</Text>
-      <Text style={styles.emptySubtitle}>
-        Starte selbst eine Lobby oder teile deinen Match-Code mit Freund:innen.
-      </Text>
+      <Image source={EMPTY_BATTLES_ICON} style={styles.emptyIcon} resizeMode="contain" />
     </View>
   );
 }
@@ -98,6 +97,11 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   const [startingMatch, setStartingMatch] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [draftDifficulty, setDraftDifficulty] = useState(initialDifficulty);
+  const [draftQuestionLimit, setDraftQuestionLimit] = useState(5);
+  const [kickCandidateKey, setKickCandidateKey] = useState(null);
+  const [kickingPlayer, setKickingPlayer] = useState(false);
   const [friends, setFriends] = useState([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
   const [onlineFriends, setOnlineFriends] = useState([]);
@@ -105,10 +109,75 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   const [username, setUsername] = useState(null);
   const subscriptionRef = useRef(null);
   const presenceChannelRef = useRef(null);
+  const lastPresencePayloadRef = useRef(null);
+  const autoCreateAttemptedRef = useRef(false);
   const friendCodesRef = useRef(new Set());
   const closingRef = useRef(false);
   const skipAutoCloseRef = useRef(false);
   const hostSettingsVersionRef = useRef(0);
+  const startPulseValue = useRef(new Animated.Value(0)).current;
+  const startPulseLoopRef = useRef(null);
+
+  const isHostWaiting = useMemo(() => {
+    if (!currentMatch || !userId) {
+      return false;
+    }
+
+    return (
+      deriveMatchRole(currentMatch, userId) === 'host' &&
+      currentMatch.status === 'waiting'
+    );
+  }, [currentMatch, userId]);
+
+  useEffect(() => {
+    if (!isHostWaiting) {
+      if (startPulseLoopRef.current) {
+        startPulseLoopRef.current.stop();
+        startPulseLoopRef.current = null;
+      }
+      startPulseValue.setValue(0);
+      return;
+    }
+
+    startPulseValue.setValue(0);
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(startPulseValue, {
+          toValue: 1,
+          duration: 1800,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: false,
+        }),
+        Animated.timing(startPulseValue, {
+          toValue: 0,
+          duration: 1800,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: false,
+        }),
+      ])
+    );
+
+    startPulseLoopRef.current = loop;
+    loop.start();
+
+    return () => {
+      loop.stop();
+    };
+  }, [isHostWaiting, startPulseValue]);
+
+  const startPulseStyle = useMemo(
+    () => ({
+      borderColor: startPulseValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['rgba(34, 197, 94, 0.35)', 'rgba(34, 197, 94, 0.9)'],
+      }),
+      borderWidth: startPulseValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: [1, 2],
+      }),
+    }),
+    [startPulseValue]
+  );
 
   const adjustQuestionLimit = useCallback((delta) => {
     setQuestionLimit((prev) => {
@@ -382,7 +451,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       attachMatchSubscription(result.match.id);
       setJoinCode('');
     } catch (err) {
-      console.error('Fehler beim Beitritt ueber Code:', err);
+      console.error('Fehler beim Beitritt \u00fcber Code:', err);
       setMatchesError(err);
     } finally {
       setJoining(false);
@@ -605,16 +674,106 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     return items;
   }, [activeAvatarSource, currentMatch, userId]);
 
-  const isHostWaiting = useMemo(() => {
-    if (!currentMatch || !userId) {
-      return false;
+  const handleOpenSettings = useCallback(() => {
+    if (!isHostWaiting) {
+      return;
+    }
+    setDraftDifficulty(selectedDifficulty);
+    setDraftQuestionLimit(questionLimit);
+    setShowSettingsModal(true);
+  }, [isHostWaiting, questionLimit, selectedDifficulty]);
+
+  const handleApplySettings = useCallback(() => {
+    setShowSettingsModal(false);
+
+    if (!isHostWaiting || !currentMatch) {
+      return;
     }
 
-    return (
-      deriveMatchRole(currentMatch, userId) === 'host' &&
-      currentMatch.status === 'waiting'
-    );
-  }, [currentMatch, userId]);
+    if (
+      draftDifficulty === selectedDifficulty &&
+      draftQuestionLimit === questionLimit
+    ) {
+      return;
+    }
+
+    pushHostSettings(draftDifficulty, draftQuestionLimit);
+  }, [
+    currentMatch,
+    draftDifficulty,
+    draftQuestionLimit,
+    isHostWaiting,
+    pushHostSettings,
+    questionLimit,
+    selectedDifficulty,
+  ]);
+
+  const adjustDraftQuestionLimit = useCallback((delta) => {
+    setDraftQuestionLimit((prev) => {
+      const next = prev + delta;
+      if (next < MIN_QUESTION_LIMIT) {
+        return MIN_QUESTION_LIMIT;
+      }
+      if (next > MAX_QUESTION_LIMIT) {
+        return MAX_QUESTION_LIMIT;
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSelectParticipant = useCallback(
+    (participantKey) => {
+      if (!isHostWaiting || participantKey !== 'guest') {
+        return;
+      }
+      setKickCandidateKey((prev) =>
+        prev === participantKey ? null : participantKey
+      );
+    },
+    [isHostWaiting]
+  );
+
+  const handleKickGuest = useCallback(async () => {
+    if (!currentMatch || !isHostWaiting || kickingPlayer) {
+      return;
+    }
+
+    setKickingPlayer(true);
+    setMatchesError(null);
+
+    try {
+      const result = await kickMatchGuest({
+        matchId: currentMatch.id,
+        userId,
+      });
+
+      if (!result.ok) {
+        throw result.error ?? new Error('Spieler konnte nicht entfernt werden.');
+      }
+
+      setCurrentMatch(result.match);
+      setKickCandidateKey(null);
+    } catch (err) {
+      console.error('Fehler beim Entfernen des Spielers:', err);
+      setMatchesError(err);
+    } finally {
+      setKickingPlayer(false);
+    }
+  }, [currentMatch, isHostWaiting, kickingPlayer, kickMatchGuest, userId]);
+
+  useEffect(() => {
+    if (!kickCandidateKey) {
+      return;
+    }
+    if (!isHostWaiting) {
+      setKickCandidateKey(null);
+      return;
+    }
+    const exists = participants.some((participant) => participant.key === kickCandidateKey);
+    if (!exists) {
+      setKickCandidateKey(null);
+    }
+  }, [isHostWaiting, kickCandidateKey, participants]);
 
   const showConfigCard = false;
 
@@ -663,6 +822,22 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   }, [currentMatch, isCreateOnly, refreshMatches]);
 
   useEffect(() => {
+    if (!currentMatch || !userId) {
+      return;
+    }
+
+    const role = deriveMatchRole(currentMatch, userId);
+    if (role) {
+      return;
+    }
+
+    setCurrentMatch(null);
+    if (!closingRef.current) {
+      setMatchesError(new Error('Du wurdest aus der Lobby entfernt.'));
+    }
+  }, [currentMatch, userId]);
+
+  useEffect(() => {
     if (!userId || isCreateOnly) {
       return () => {};
     }
@@ -680,8 +855,18 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     if (!isCreateOnly || currentMatch || creating || loadingUser || !userId || existingMatch) {
       return;
     }
+    if (autoCreateAttemptedRef.current) {
+      return;
+    }
+    autoCreateAttemptedRef.current = true;
     handleCreateMatch();
   }, [creating, currentMatch, existingMatch, handleCreateMatch, isCreateOnly, loadingUser, userId]);
+
+  useEffect(() => {
+    if (!isCreateOnly) {
+      autoCreateAttemptedRef.current = false;
+    }
+  }, [isCreateOnly]);
 
   useEffect(() => {
     if (currentMatch || !existingMatch) {
@@ -750,6 +935,8 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
             code: userCode,
             username: username ?? 'MedBattle',
             lobby: currentJoinCode,
+            lobbyPlayers: participantCount,
+            lobbyCapacity: MAX_PLAYERS,
           })
           .catch((err) => {
             console.warn('Konnte Presence nicht tracken:', err);
@@ -871,6 +1058,43 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   const participantCount = participants.filter((item) => !item.isPlaceholder).length;
   const hasEnoughPlayers = participantCount >= 1;
 
+  useEffect(() => {
+    const channel = presenceChannelRef.current;
+    if (!channel || !userId || !currentJoinCode) {
+      lastPresencePayloadRef.current = null;
+      return;
+    }
+
+    const resolvedUsername = username ?? 'MedBattle';
+    const nextPayload = {
+      userId,
+      code: userCode,
+      username: resolvedUsername,
+      lobby: currentJoinCode,
+      lobbyPlayers: participantCount,
+      lobbyCapacity: MAX_PLAYERS,
+    };
+
+    const prev = lastPresencePayloadRef.current;
+    const isSame =
+      prev &&
+      prev.userId === nextPayload.userId &&
+      prev.code === nextPayload.code &&
+      prev.username === nextPayload.username &&
+      prev.lobby === nextPayload.lobby &&
+      prev.lobbyPlayers === nextPayload.lobbyPlayers &&
+      prev.lobbyCapacity === nextPayload.lobbyCapacity;
+
+    if (isSame) {
+      return;
+    }
+
+    lastPresencePayloadRef.current = nextPayload;
+    channel.track(nextPayload).catch((err) => {
+      console.warn('Konnte Presence nicht aktualisieren:', err);
+    });
+  }, [currentJoinCode, participantCount, userCode, userId, username]);
+
   if (showCreateSetup) {
     return (
       <View style={styles.container}>
@@ -905,77 +1129,9 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         ) : null}
 
         <View style={styles.createContent}>
-          <Text style={styles.createSubtitle}>Waehle Schwierigkeit</Text>
-          <View style={styles.createDifficultyColumn}>
-            {DIFFICULTY_OPTIONS.map((item, index) => {
-              const active = item.key === selectedDifficulty;
-              return (
-                <Pressable
-                  key={item.key}
-                  onPress={() => setSelectedDifficulty(item.key)}
-                  style={[
-                    styles.createDifficultyCard,
-                    {
-                      borderColor: active
-                        ? item.accent
-                        : 'rgba(148, 163, 184, 0.35)',
-                      backgroundColor: active
-                        ? 'rgba(15, 23, 42, 0.95)'
-                        : 'rgba(15, 23, 42, 0.8)',
-                      shadowColor: item.accent,
-                      shadowOpacity: active ? 0.35 : 0,
-                      shadowRadius: active ? 18 : 0,
-                      shadowOffset: { width: 0, height: active ? 10 : 0 },
-                      elevation: active ? 8 : 0,
-                    },
-                    index < DIFFICULTY_OPTIONS.length - 1
-                      ? styles.createDifficultySpacing
-                      : null,
-                  ]}
-                    >
-                      <Text
-                        style={[
-                          styles.createDifficultyLabel,
-                          { color: item.accent },
-                        ]}
-                      >
-                        {item.label}
-                      </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <View style={styles.createQuestionBlock}>
-            <Text style={styles.createQuestionLabel}>Fragenanzahl</Text>
-            <View style={styles.createStepper}>
-              <Pressable
-                onPress={() => adjustQuestionLimit(-1)}
-                style={[
-                  styles.stepperButton,
-                  questionLimit <= MIN_QUESTION_LIMIT
-                    ? styles.stepperButtonDisabled
-                    : null,
-                ]}
-                disabled={questionLimit <= MIN_QUESTION_LIMIT}
-              >
-                <Text style={styles.stepperButtonText}>-</Text>
-              </Pressable>
-              <Text style={styles.stepperValue}>{questionLimit}</Text>
-              <Pressable
-                onPress={() => adjustQuestionLimit(1)}
-                style={[
-                  styles.stepperButton,
-                  questionLimit >= MAX_QUESTION_LIMIT
-                    ? styles.stepperButtonDisabled
-                    : null,
-                ]}
-                disabled={questionLimit >= MAX_QUESTION_LIMIT}
-              >
-                <Text style={styles.stepperButtonText}>+</Text>
-              </Pressable>
-            </View>
-          </View>
+          <Text style={styles.createSubtitle}>
+            Einstellungen sp\u00e4ter im Lobby-Men\u00fc anpassen.
+          </Text>
 
           <View style={styles.createSeparator}>
             <Pressable
@@ -1027,6 +1183,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
           ) : null}
         </View>
       </View>
+      <View style={styles.headerStreak} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {loadingUser ? (
@@ -1060,75 +1217,23 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
             <View style={styles.configSection}>
               <Text style={styles.configLabel}>Schwierigkeit</Text>
-              <View style={styles.difficultyChips}>
-                {Object.keys(DIFFICULTY_LABELS).map((key) => {
-                  const active = key === selectedDifficulty;
-                  const accent = DIFFICULTY_ACCENTS[key] ?? '#60A5FA';
-                  return (
-                    <Pressable
-                      key={key}
-                      onPress={() => setSelectedDifficulty(key)}
-                      style={[
-                        styles.difficultyChip,
-                        active
-                          ? [
-                              styles.difficultyChipActive,
-                              {
-                                borderColor: accent,
-                                backgroundColor: `${accent}22`,
-                              },
-                            ]
-                          : { borderColor: 'rgba(148, 163, 184, 0.3)' },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.difficultyChipText,
-                          active
-                            ? [
-                                styles.difficultyChipTextActive,
-                                { color: accent },
-                              ]
-                            : { color: '#E2E8F0' },
-                        ]}
-                      >
-                        {DIFFICULTY_LABELS[key]}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
+              <DifficultyChips
+                labels={DIFFICULTY_LABELS}
+                accents={DIFFICULTY_ACCENTS}
+                selectedKey={selectedDifficulty}
+                onSelect={(key) => setSelectedDifficulty(key)}
+              />
             </View>
 
             <View style={styles.configSection}>
               <Text style={styles.configLabel}>Fragenanzahl</Text>
-              <View style={styles.questionStepper}>
-                <Pressable
-                  onPress={() => adjustQuestionLimit(-1)}
-                  style={[
-                    styles.stepperButton,
-                    questionLimit <= MIN_QUESTION_LIMIT
-                      ? styles.stepperButtonDisabled
-                      : null,
-                  ]}
-                  disabled={questionLimit <= MIN_QUESTION_LIMIT}
-                >
-                  <Text style={styles.stepperButtonText}>-</Text>
-                </Pressable>
-                <Text style={styles.stepperValue}>{questionLimit}</Text>
-                <Pressable
-                  onPress={() => adjustQuestionLimit(1)}
-                  style={[
-                    styles.stepperButton,
-                    questionLimit >= MAX_QUESTION_LIMIT
-                      ? styles.stepperButtonDisabled
-                      : null,
-                  ]}
-                  disabled={questionLimit >= MAX_QUESTION_LIMIT}
-                >
-                  <Text style={styles.stepperButtonText}>+</Text>
-                </Pressable>
-              </View>
+              <QuestionLimitStepper
+                value={questionLimit}
+                min={MIN_QUESTION_LIMIT}
+                max={MAX_QUESTION_LIMIT}
+                onDecrement={() => adjustQuestionLimit(-1)}
+                onIncrement={() => adjustQuestionLimit(1)}
+              />
             </View>
 
             <Pressable
@@ -1147,85 +1252,85 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         ) : null}
 
         {!isJoinOnly && !isCreateOnly ? (
-        <View style={styles.actionsRow}>
-          <Pressable
-            style={[
-              styles.primaryAction,
-              creating ? styles.actionDisabled : null,
-            ]}
-            onPress={handleCreateMatch}
-            disabled={creating || !userId}
-          >
-            <Text style={styles.primaryActionText}>
-              {creating ? 'Erstelle Lobby ...' : 'Start'}
-            </Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-        {!isCreateOnly ? (
-        <>
-          <View style={styles.joinSection}>
-            <Text style={styles.joinLabel}>Match-Code eingeben</Text>
-            <View style={styles.joinRow}>
-              <TextInput
-                value={joinCode}
-                onChangeText={(value) =>
-                  setJoinCode(value.toUpperCase().slice(0, 6))
-                }
-                style={styles.joinInput}
-                placeholder="ABC12"
-                placeholderTextColor="#64748B"
-                autoCapitalize="characters"
-                autoCorrect={false}
-                maxLength={6}
-                autoFocus={isJoinOnly}
-              />
-              <Pressable
-                onPress={handleJoinByCode}
-                style={[
-                  styles.joinButton,
-                  joining ? styles.actionDisabled : null,
-                ]}
-                disabled={joining || !joinCode.trim()}
-              >
-                <Text style={styles.joinButtonText}>
-                  {joining ? 'Beitreten...' : 'Go'}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>Offene Lobbys</Text>
-            <Pressable onPress={() => refreshMatches({ force: true })}>
-              <Text style={styles.listRefresh}>Aktualisieren</Text>
+          <View style={styles.actionsRow}>
+            <Pressable
+              style={[
+                styles.primaryAction,
+                creating ? styles.actionDisabled : null,
+              ]}
+              onPress={handleCreateMatch}
+              disabled={creating || !userId}
+            >
+              <Text style={styles.primaryActionText}>
+                {creating ? 'Erstelle Lobby ...' : 'Start'}
+              </Text>
             </Pressable>
           </View>
+        ) : null}
 
-          {matchesLoading ? (
-            <View style={styles.loadingList}>
-              <ActivityIndicator size="small" color="#60A5FA" />
-              <Text style={styles.loadingListText}>Lade Lobbys ...</Text>
+        {!isCreateOnly ? (
+          <>
+            <View style={styles.joinSection}>
+              <Text style={styles.joinLabel}>Match-Code eingeben</Text>
+              <View style={styles.joinRow}>
+                <TextInput
+                  value={joinCode}
+                  onChangeText={(value) =>
+                    setJoinCode(value.toUpperCase().slice(0, 6))
+                  }
+                  style={styles.joinInput}
+                  placeholder="ABC12"
+                  placeholderTextColor="#64748B"
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  maxLength={6}
+                  autoFocus={isJoinOnly}
+                />
+                <Pressable
+                  onPress={handleJoinByCode}
+                  style={[
+                    styles.joinButton,
+                    joining ? styles.actionDisabled : null,
+                  ]}
+                  disabled={joining || !joinCode.trim()}
+                >
+                  <Text style={styles.joinButtonText}>
+                    {joining ? 'Beitreten...' : 'Go'}
+                  </Text>
+                </Pressable>
+              </View>
             </View>
-          ) : (
-            <FlatList
-              data={openMatches}
-              keyExtractor={(item) => item.id}
-              renderItem={renderMatch}
-              scrollEnabled={false}
-              contentContainerStyle={
-                openMatches.length ? styles.listContent : styles.listEmpty
-              }
-              ListEmptyComponent={<EmptyState />}
-            />
-          )}
+
+            <View style={styles.listHeader}>
+              <Text style={styles.listTitle}>Offene Lobbys</Text>
+              <Pressable onPress={() => refreshMatches({ force: true })}>
+                <Text style={styles.listRefresh}>Aktualisieren</Text>
+              </Pressable>
+            </View>
+
+            {matchesLoading ? (
+              <View style={styles.loadingList}>
+                <ActivityIndicator size="small" color="#60A5FA" />
+                <Text style={styles.loadingListText}>Lade Lobbys ...</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={openMatches}
+                keyExtractor={(item) => item.id}
+                renderItem={renderMatch}
+                scrollEnabled={false}
+                contentContainerStyle={
+                  openMatches.length ? styles.listContent : styles.listEmpty
+                }
+                ListEmptyComponent={<EmptyState />}
+              />
+            )}
           </>
         ) : null}
 
         {currentJoinCode ? (
           <View style={styles.lobbyCard}>
-          <Text style={styles.lobbyTitle}>Lobby erstellt</Text>
+          <Text style={styles.lobbyTitle}>Lobby</Text>
 
           <View style={styles.participantsHeader}>
             <Text style={styles.participantsTitle}>Spieler</Text>
@@ -1235,47 +1340,75 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
           </View>
 
           <View style={styles.participantGrid}>
-            {participants.map((participant) => (
-              <View key={participant.key} style={styles.participantAvatarCard}>
-                <View
-                  style={[
-                    styles.participantAvatar,
-                    participant.isPlaceholder ? styles.participantAvatarGhost : null,
-                  ]}
-                >
-                  {participant.role === 'Host' && !participant.isPlaceholder ? (
-                    <Image source={hostBadgeIcon} style={styles.hostBadge} />
-                  ) : null}
-                  {participant.avatarSource && !participant.isPlaceholder ? (
-                    <Image source={participant.avatarSource} style={styles.participantAvatarImage} />
-                  ) : participant.avatarUrl && !participant.isPlaceholder ? (
-                    <Image source={{ uri: participant.avatarUrl }} style={styles.participantAvatarImage} />
-                  ) : (
-                    <Text style={styles.participantAvatarText}>
-                      {participant.isPlaceholder ? '?' : getInitials(participant.name)}
+            {participants.map((participant) => {
+              const canKick = isHostWaiting && participant.key === 'guest';
+              const isSelected = kickCandidateKey === participant.key;
+              return (
+                <View key={participant.key} style={styles.participantSlot}>
+                  <Pressable
+                    onPress={() => handleSelectParticipant(participant.key)}
+                    disabled={!canKick}
+                    style={[
+                      styles.participantAvatarCard,
+                      canKick && isSelected ? styles.participantAvatarCardSelected : null,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.participantAvatar,
+                        participant.isPlaceholder ? styles.participantAvatarGhost : null,
+                        canKick && isSelected ? styles.participantAvatarKick : null,
+                      ]}
+                    >
+                      {participant.role === 'Host' && !participant.isPlaceholder ? (
+                        <Image source={hostBadgeIcon} style={styles.hostBadge} />
+                      ) : null}
+                      {participant.avatarSource && !participant.isPlaceholder ? (
+                        <Image source={participant.avatarSource} style={styles.participantAvatarImage} />
+                      ) : participant.avatarUrl && !participant.isPlaceholder ? (
+                        <Image source={{ uri: participant.avatarUrl }} style={styles.participantAvatarImage} />
+                      ) : (
+                        <Text style={styles.participantAvatarText}>
+                          {participant.isPlaceholder ? '?' : getInitials(participant.name)}
+                        </Text>
+                      )}
+                    </View>
+                    <Text
+                      style={[
+                        styles.participantName,
+                        participant.isPlaceholder ? styles.participantPlaceholder : null,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {participant.name}
                     </Text>
-                  )}
+                  </Pressable>
+                  {canKick && isSelected ? (
+                    <Pressable
+                      onPress={handleKickGuest}
+                      disabled={kickingPlayer}
+                      style={[
+                        styles.kickButton,
+                        kickingPlayer ? styles.kickButtonDisabled : null,
+                      ]}
+                    >
+                      <Ionicons name="close" size={14} color="#FCA5A5" />
+                      <Text style={styles.kickButtonText}>Entfernen</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
-                <Text
-                  style={[
-                    styles.participantName,
-                    participant.isPlaceholder ? styles.participantPlaceholder : null,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {participant.name}
-                </Text>
-              </View>
-            ))}
+              );
+            })}
           </View>
 
           {isHostWaiting ? (
             <View style={styles.startRow}>
-              <Pressable
+              <AnimatedPressable
                 onPress={handleStartMatch}
                 style={[
                   styles.primaryAction,
                   styles.startButton,
+                  startPulseStyle,
                   !hasEnoughPlayers || startingMatch ? styles.actionDisabled : null,
                 ]}
                 disabled={!hasEnoughPlayers || startingMatch}
@@ -1283,92 +1416,14 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
                 <Text style={styles.primaryActionText}>
                   {startingMatch ? 'Starte ...' : 'Start'}
                 </Text>
+              </AnimatedPressable>
+              <Pressable
+                onPress={handleOpenSettings}
+                style={styles.lobbySettingsButton}
+                accessibilityLabel="Lobby Einstellungen"
+              >
+                <Ionicons name="settings-outline" size={18} color="#93C5FD" />
               </Pressable>
-            </View>
-          ) : null}
-
-          {isHostWaiting ? (
-            <View style={styles.lobbyConfig}>
-              <Text style={styles.lobbyConfigTitle}>Lobby Einstellungen</Text>
-
-              <View style={styles.configSection}>
-                <Text style={styles.configLabel}>Schwierigkeit</Text>
-                <View style={styles.difficultyChips}>
-                  {Object.keys(DIFFICULTY_LABELS).map((key) => {
-                    const active = key === selectedDifficulty;
-                    const accent = DIFFICULTY_ACCENTS[key] ?? '#60A5FA';
-                    return (
-                      <Pressable
-                        key={key}
-                        onPress={() => {
-                          setSelectedDifficulty(key);
-                          if (isHostWaiting && currentMatch) {
-                            pushHostSettings(key, questionLimit);
-                          }
-                        }}
-                        style={[
-                          styles.difficultyChip,
-                          active
-                            ? [
-                                styles.difficultyChipActive,
-                                {
-                                  borderColor: accent,
-                                  backgroundColor: `${accent}22`,
-                                },
-                              ]
-                            : { borderColor: 'rgba(148, 163, 184, 0.3)' },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.difficultyChipText,
-                            active
-                              ? [
-                                  styles.difficultyChipTextActive,
-                                  { color: accent },
-                                ]
-                              : { color: '#E2E8F0' },
-                          ]}
-                        >
-                          {DIFFICULTY_LABELS[key]}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              </View>
-
-              <View style={styles.configSection}>
-                <Text style={styles.configLabel}>Fragenanzahl</Text>
-                <View style={styles.questionStepper}>
-                  <Pressable
-                    onPress={() => adjustQuestionLimit(-1)}
-                    style={[
-                      styles.stepperButton,
-                      questionLimit <= MIN_QUESTION_LIMIT
-                        ? styles.stepperButtonDisabled
-                        : null,
-                    ]}
-                    disabled={questionLimit <= MIN_QUESTION_LIMIT}
-                  >
-                    <Text style={styles.stepperButtonText}>-</Text>
-                  </Pressable>
-                  <Text style={styles.stepperValue}>{questionLimit}</Text>
-                  <Pressable
-                    onPress={() => adjustQuestionLimit(1)}
-                    style={[
-                      styles.stepperButton,
-                      questionLimit >= MAX_QUESTION_LIMIT
-                        ? styles.stepperButtonDisabled
-                        : null,
-                    ]}
-                    disabled={questionLimit >= MAX_QUESTION_LIMIT}
-                  >
-                    <Text style={styles.stepperButtonText}>+</Text>
-                  </Pressable>
-                </View>
-              </View>
-
             </View>
           ) : null}
           <View style={styles.codeActionsRow}>
@@ -1428,22 +1483,25 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
       </ScrollView>
 
-      {showLeaveConfirm ? (
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Lobby verlassen?</Text>
-            <Text style={styles.modalMessage}>Willst du die Lobby verlassen?</Text>
-            <View style={styles.modalActions}>
-              <Pressable onPress={handleCancelLeave} style={[styles.modalButton, styles.modalButtonContinue]}>
-                <Text style={styles.modalButtonContinueText}>Bleiben</Text>
-              </Pressable>
-              <Pressable onPress={handleConfirmLeave} style={[styles.modalButton, styles.modalButtonExit]}>
-                <Text style={styles.modalButtonExitText}>Verlassen</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      ) : null}
+      <LobbyLeaveConfirmModal
+        visible={showLeaveConfirm}
+        onCancel={handleCancelLeave}
+        onConfirm={handleConfirmLeave}
+      />
+      <LobbySettingsModal
+        visible={showSettingsModal}
+        labels={DIFFICULTY_LABELS}
+        accents={DIFFICULTY_ACCENTS}
+        difficulty={draftDifficulty}
+        questionLimit={draftQuestionLimit}
+        min={MIN_QUESTION_LIMIT}
+        max={MAX_QUESTION_LIMIT}
+        onChangeDifficulty={setDraftDifficulty}
+        onDecrement={() => adjustDraftQuestionLimit(-1)}
+        onIncrement={() => adjustDraftQuestionLimit(1)}
+        onApply={handleApplySettings}
+        isLoading={updatingSettings}
+      />
     </View>
   );
 }

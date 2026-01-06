@@ -27,20 +27,6 @@ const styles = StyleSheet.create({
     bottom: -80,
     right: -40,
   },
-  celebrationContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 220,
-    pointerEvents: 'none',
-  },
-  celebrationAnimation: {
-    width: 200,
-    height: 200,
-  },
   sparkle: {
     position: 'absolute',
   },
@@ -54,9 +40,14 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
   },
-  card: {
+  cardWrap: {
     width: '100%',
     maxWidth: 420,
+    position: 'relative',
+    alignItems: 'center',
+  },
+  card: {
+    width: '100%',
     borderRadius: 28,
     paddingVertical: 28,
     paddingHorizontal: 24,
@@ -64,6 +55,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.18)',
     alignItems: 'center',
+    zIndex: 1,
   },
   badgePill: {
     paddingVertical: 10,
@@ -99,6 +91,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(30, 64, 175, 0.25)',
     borderWidth: 1,
     borderColor: 'rgba(59, 130, 246, 0.4)',
+  },
+  offlineBanner: {
+    width: '100%',
+    marginTop: 16,
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(14, 116, 144, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(14, 165, 233, 0.4)',
+  },
+  offlineBannerTitle: {
+    color: '#7DD3FC',
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  offlineBannerText: {
+    color: '#E2E8F0',
+    fontSize: 13,
+    marginTop: 4,
   },
   statsRow: {
     flexDirection: 'row',
@@ -185,6 +197,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
+  primaryButtonContent: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  primaryButtonMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  primaryButtonMetaText: {
+    color: '#0F172A',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  primaryButtonDisabled: {
+    opacity: 0.6,
+  },
   secondaryButton: {
     width: '100%',
     paddingVertical: 14,
@@ -205,13 +234,6 @@ const styles = StyleSheet.create({
   tertiaryButtonText: {
     color: '#94A3B8',
     fontSize: 14,
-  },
-  adSlot: {
-    position: 'absolute',
-    bottom: 24,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
   },
   spotlight: {
     position: 'absolute',

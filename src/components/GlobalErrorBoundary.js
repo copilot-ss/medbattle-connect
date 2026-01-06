@@ -1,6 +1,9 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, Platform } from 'react-native';
 import { logClientError } from '../services/loggingService';
+import { formatUserError } from '../utils/formatUserError';
+
+const SUPABASE_URL_HINT = process.env.EXPO_PUBLIC_SUPABASE_URL;
 
 export default class GlobalErrorBoundary extends React.Component {
   constructor(props) {
@@ -28,12 +31,18 @@ export default class GlobalErrorBoundary extends React.Component {
       return this.props.children;
     }
 
+    const displayMessage = formatUserError(error, {
+      supabaseUrl: SUPABASE_URL_HINT,
+      fallback: 'Unerwarteter Fehler.',
+    });
+    const detailText = __DEV__ ? String(error) : displayMessage;
+
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Oops, etwas ist schiefgelaufen.</Text>
         <Text style={styles.subtitle}>Bitte Screenshot teilen, damit wir den Crash beheben.</Text>
         <ScrollView style={styles.box}>
-          <Text style={styles.errorText}>{String(error)}</Text>
+          <Text style={styles.errorText}>{detailText}</Text>
         </ScrollView>
       </View>
     );

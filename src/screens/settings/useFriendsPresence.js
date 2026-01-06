@@ -53,11 +53,21 @@ export default function useFriendsPresence({
               return;
             }
             seen.add(code);
-            const lobby = meta.lobby ?? null;
+            const lobby = typeof meta.lobby === 'string' && meta.lobby.trim()
+              ? meta.lobby.trim()
+              : null;
+            const lobbyPlayers = Number.isFinite(Number(meta.lobbyPlayers))
+              ? Number(meta.lobbyPlayers)
+              : null;
+            const lobbyCapacity = Number.isFinite(Number(meta.lobbyCapacity))
+              ? Number(meta.lobbyCapacity)
+              : null;
             next.push({
               code,
               username: meta.username ?? 'Freund:in',
-              status: lobby ? `In Lobby ${lobby}` : 'Online',
+              lobby,
+              lobbyPlayers,
+              lobbyCapacity,
             });
           });
         });
@@ -80,6 +90,8 @@ export default function useFriendsPresence({
               code: friendCode,
               username: userName || 'MedBattle',
               lobby: null,
+              lobbyPlayers: null,
+              lobbyCapacity: null,
             })
             .catch((err) => console.warn('Konnte Presence nicht tracken:', err));
         }

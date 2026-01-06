@@ -47,6 +47,13 @@ export default function useQuizInteractionHandlers({
     setShowExitConfirm(true);
   }, [resetQuestionState]);
 
+  const resetToHome = useCallback(() => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Home' }],
+    });
+  }, [navigation]);
+
   const handleExitCancel = useCallback(() => {
     setShowExitConfirm(false);
     if (currentQuestion && matchIsActive) {
@@ -59,16 +66,16 @@ export default function useQuizInteractionHandlers({
     setShowExitConfirm(false);
     if (isMultiplayer) {
       surrenderMatch().finally(() => {
-        navigation.navigate('Home');
+        resetToHome();
       });
       return;
     }
-    navigation.navigate('Home');
+    resetToHome();
   }, [
-    activeIndex,
     isMultiplayer,
     navigation,
     resetQuestionState,
+    resetToHome,
     surrenderMatch,
   ]);
 

@@ -232,6 +232,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
   },
+  friendCodeCopyIcon: {
+    marginTop: 4,
+  },
   friendCodeCaption: {
     color: '#E2E8F0',
     fontSize: 13,
@@ -291,17 +294,48 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.12)',
   },
+  friendRowLast: {
+    borderBottomWidth: 0,
+  },
   friendCodeText: {
     color: '#E2E8F0',
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 2,
   },
+  friendStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  friendStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  friendStatusDotOnline: {
+    backgroundColor: '#22C55E',
+  },
+  friendStatusDotOffline: {
+    backgroundColor: '#64748B',
+  },
+  friendStatusDotLobby: {
+    backgroundColor: '#38BDF8',
+  },
   friendStatusText: {
     color: '#A5B4FC',
     fontSize: 12,
     fontWeight: '700',
-    marginTop: 2,
+  },
+  friendStatusTextOnline: {
+    color: '#86EFAC',
+  },
+  friendStatusTextOffline: {
+    color: '#94A3B8',
+  },
+  friendStatusTextLobby: {
+    color: '#7DD3FC',
   },
   friendRemoveButton: {
     paddingHorizontal: 12,
@@ -386,6 +420,35 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
   },
+  profileTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 8,
+    marginTop: 8,
+  },
+  profileTitleLabel: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  profileTitleValue: {
+    color: '#FDE68A',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  profileTitleHint: {
+    color: '#94A3B8',
+    fontSize: 11,
+    marginTop: 4,
+  },
+  profileXpText: {
+    color: '#E2E8F0',
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 4,
+  },
   profileEmail: {
     color: '#94A3B8',
     fontSize: 13,
@@ -439,6 +502,14 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     marginTop: 10,
+  },
+  achievementPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.35)',
   },
   achievementText: {
     color: '#94A3B8',

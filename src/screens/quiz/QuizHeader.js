@@ -18,11 +18,13 @@ export default function QuizHeader({
         <Text style={isQuickPlay ? styles.headerQuick : styles.headerMeta}>
           {isQuickPlay ? 'Quick Play' : `${difficultyLabel} - ${total} Fragen`}
         </Text>
-        <View style={styles.headerProgressPill}>
-          <Text style={styles.headerProgressText}>
-            {current}/{total || '?'}
-          </Text>
-        </View>
+        {!isQuickPlay ? (
+          <View style={styles.headerProgressPill}>
+            <Text style={styles.headerProgressText}>
+              {current}/{total || '?'}
+            </Text>
+          </View>
+        ) : null}
       </View>
       <Pressable onPress={onExit} style={styles.exitButton}>
         <Text style={styles.exitButtonText}>X</Text>

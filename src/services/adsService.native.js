@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 
 const TEST_BANNER_ID = 'ca-app-pub-3940256099942544/6300978111';
+const TEST_REWARDED_ID = 'ca-app-pub-3940256099942544/5224354917';
 
 const adsState = {
   initialized: false,
@@ -70,6 +71,20 @@ export function getBannerAdUnitId() {
     Platform.OS === 'ios'
       ? process.env.EXPO_PUBLIC_ADMOB_BANNER_ID_IOS
       : process.env.EXPO_PUBLIC_ADMOB_BANNER_ID_ANDROID;
+  const normalized = sanitizeEnv(envValue);
+
+  return normalized || null;
+}
+
+export function getRewardedAdUnitId() {
+  if (__DEV__) {
+    return TEST_REWARDED_ID;
+  }
+
+  const envValue =
+    Platform.OS === 'ios'
+      ? process.env.EXPO_PUBLIC_ADMOB_REWARDED_ID_IOS
+      : process.env.EXPO_PUBLIC_ADMOB_REWARDED_ID_ANDROID;
   const normalized = sanitizeEnv(envValue);
 
   return normalized || null;

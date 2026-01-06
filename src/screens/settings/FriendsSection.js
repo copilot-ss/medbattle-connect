@@ -6,6 +6,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import styles from '../styles/SettingsScreen.styles';
 
 export default function FriendsSection({
@@ -20,10 +21,102 @@ export default function FriendsSection({
   friendInputRef,
   onAddFriend,
   addingFriend,
+  friends,
+  loadingFriends,
   onlineFriends,
   loadingOnline,
   onRemoveFriend,
 }) {
+  const onlineByCode = new Map(
+    (onlineFriends ?? []).map((friend) => [
+      friend.code,
+      friend,
+    ])
+  );
+  const seen = new Set();
+  const entries = [];
+
+  (friends ?? []).forEach((friend) => {
+    const code = friend?.code ?? '';
+    if (!code || seen.has(code)) {
+      return;
+    }
+    const presence = onlineByCode.get(code) ?? null;
+    entries.push({
+      code,
+      name: presence?.username ?? code,
+      isOnline: Boolean(presence),
+      lobby: presence?.lobby ?? null,
+      lobbyPlayers: presence?.lobbyPlayers ?? null,
+      lobbyCapacity: presence?.lobbyCapacity ?? null,
+    });
+    seen.add(code);
+  });
+
+  (onlineFriends ?? []).forEach((friend) => {
+    const code = friend?.code ?? '';
+    if (!code || seen.has(code)) {
+      return;
+    }
+    entries.push({
+      code,
+      name: friend?.username ?? code,
+      isOnline: true,
+      lobby: friend?.lobby ?? null,
+      lobbyPlayers: friend?.lobbyPlayers ?? null,
+      lobbyCapacity: friend?.lobbyCapacity ?? null,
+    });
+    seen.add(code);
+  });
+
+  entries.sort((a, b) => {
+    const rank = (entry) => (entry.lobby ? 2 : entry.isOnline ? 1 : 0);
+    const diff = rank(b) - rank(a);
+    if (diff !== 0) {
+      return diff;
+    }
+    return String(a.name).localeCompare(String(b.name));
+  });
+
+  const totalCount = entries.length;
+  const onlineCount = entries.filter((entry) => entry.isOnline).length;
+  const lobbyCount = entries.filter((entry) => entry.lobby).length;
+  const statusSummaryParts = [];
+  if (totalCount) {
+    statusSummaryParts.push(`${onlineCount}/${totalCount} online`);
+  }
+  if (lobbyCount) {
+    statusSummaryParts.push(`${lobbyCount} in Lobby`);
+  }
+  const statusSummary = statusSummaryParts.join(' | ');
+  const isLoading = loadingFriends || loadingOnline;
+
+  const formatStatus = (entry) => {
+    if (entry.lobby) {
+      const players = entry.lobbyPlayers;
+      const capacity = entry.lobbyCapacity;
+      if (Number.isFinite(players) && Number.isFinite(capacity)) {
+        return `Lobby ${players}/${capacity}`;
+      }
+      return 'Lobby';
+    }
+    return entry.isOnline ? 'Online' : 'Offline';
+  };
+
+  const resolveDotStyle = (entry) => {
+    if (entry.lobby) {
+      return styles.friendStatusDotLobby;
+    }
+    return entry.isOnline ? styles.friendStatusDotOnline : styles.friendStatusDotOffline;
+  };
+
+  const resolveStatusTextStyle = (entry) => {
+    if (entry.lobby) {
+      return styles.friendStatusTextLobby;
+    }
+    return entry.isOnline ? styles.friendStatusTextOnline : styles.friendStatusTextOffline;
+  };
+
   return (
     <View style={[styles.card, styles.squadCard]}>
       <View style={[styles.rowBetween, styles.friendToggleRow]}>
@@ -57,9 +150,16 @@ export default function FriendsSection({
           <Text style={styles.friendCodeValue}>
             {friendCode || '------'}
           </Text>
-          <Text style={styles.friendCodeCopy}>
-            {copySuccess ? 'Kopiert!' : '->'}
-          </Text>
+          {copySuccess ? (
+            <Text style={styles.friendCodeCopy}>Kopiert!</Text>
+          ) : (
+            <Ionicons
+              name="copy-outline"
+              size={18}
+              color="#93C5FD"
+              style={styles.friendCodeCopyIcon}
+            />
+          )}
         </Pressable>
       </View>
 
@@ -94,27 +194,43 @@ export default function FriendsSection({
 
       <View style={styles.friendList}>
         <View style={styles.friendListHeader}>
-          <Text style={styles.friendListTitle}>Freunde online</Text>
+          <Text style={styles.friendListTitle}>Freunde</Text>
           <Text style={styles.friendListCount}>
-            {onlineFriends.length ? `${onlineFriends.length}` : ''}
+            {statusSummary}
           </Text>
         </View>
 
-        {loadingOnline ? (
+        {isLoading ? (
           <View style={styles.friendLoading}>
             <ActivityIndicator color="#60A5FA" />
             <Text style={styles.friendLoadingText}>
               Online-Status wird geladen ...
             </Text>
           </View>
-        ) : onlineFriends.length ? (
-          onlineFriends.map((friend) => (
-            <View key={friend.code} style={styles.friendRow}>
+        ) : entries.length ? (
+          entries.map((friend, index) => (
+            <View
+              key={friend.code}
+              style={[
+                styles.friendRow,
+                index === entries.length - 1 ? styles.friendRowLast : null,
+              ]}
+            >
               <View>
                 <Text style={styles.friendCodeText}>
-                  {friend.username ?? 'Freund'}
+                  {friend.name || 'Freund'}
                 </Text>
-                <Text style={styles.friendStatusText}>{friend.status ?? 'Online'}</Text>
+                <View style={styles.friendStatusRow}>
+                  <View style={[styles.friendStatusDot, resolveDotStyle(friend)]} />
+                  <Text
+                    style={[
+                      styles.friendStatusText,
+                      resolveStatusTextStyle(friend),
+                    ]}
+                  >
+                    {formatStatus(friend)}
+                  </Text>
+                </View>
               </View>
               <Pressable
                 onPress={() => onRemoveFriend({ code: friend.code })}
@@ -126,7 +242,7 @@ export default function FriendsSection({
           ))
         ) : (
           <Text style={styles.friendEmptyText}>
-            Keine Freunde online. Teile deinen Code und starte!
+            Noch keine Freunde gespeichert. Teile deinen Code und starte!
           </Text>
         )}
       </View>

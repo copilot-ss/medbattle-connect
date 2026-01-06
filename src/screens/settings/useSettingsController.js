@@ -12,10 +12,12 @@ import {
   removeFriend,
 } from '../../services/friendsService';
 import { fetchUserProfile } from '../../services/userService';
+import { formatUserError } from '../../utils/formatUserError';
 import AVATARS from './avatars';
 import { normalizeEmail } from './utils';
 import useFriendsPresence from './useFriendsPresence';
 import useLeaderboardRank from './useLeaderboardRank';
+import { getTitleProgress, getUnlockedAchievements } from '../../services/titleService';
 
 const sanitizeStatNumber = (value) => {
   const parsed = parseInt(value, 10);
@@ -32,6 +34,7 @@ const PASSWORD_RESET_REDIRECT =
 const EMAIL_UPDATE_REDIRECT =
   process.env.EXPO_PUBLIC_EMAIL_UPDATE_REDIRECT ??
   'https://medbattle.app/email-confirmed';
+const SUPABASE_URL_HINT = process.env.EXPO_PUBLIC_SUPABASE_URL;
 
 export default function useSettingsController({ navigation, route, onClearSession }) {
   const {
@@ -124,12 +127,31 @@ export default function useSettingsController({ navigation, route, onClearSessio
     () => sanitizeStatNumber(userStats?.questions),
     [userStats?.questions]
   );
+  const xp = useMemo(
+    () => sanitizeStatNumber(userStats?.xp),
+    [userStats?.xp]
+  );
   const accuracyPercent = useMemo(() => {
     if (!totalQuestions) {
       return 0;
     }
     return Math.round((totalCorrect / totalQuestions) * 100);
   }, [totalCorrect, totalQuestions]);
+  const titleProgress = useMemo(
+    () => getTitleProgress(xp),
+    [xp]
+  );
+  const unlockedAchievements = useMemo(
+    () =>
+      getUnlockedAchievements({
+        xp,
+        quizzes: quizzesCompleted,
+        questions: totalQuestions,
+        accuracy: accuracyPercent,
+        streak: totalStreak,
+      }),
+    [accuracyPercent, quizzesCompleted, totalQuestions, totalStreak, xp]
+  );
   const levelBadgeHeat = useMemo(() => {
     const intensity = Math.min(Math.max(totalStreak, 0) / 15, 1);
     const glow = 6 + 8 * intensity;
@@ -230,7 +252,10 @@ export default function useSettingsController({ navigation, route, onClearSessio
         setFriends(list);
       } catch (err) {
         setFriendsFeedback(
-          err?.message ?? 'Freunde konnten nicht geladen werden.'
+          formatUserError(err, {
+            supabaseUrl: SUPABASE_URL_HINT,
+            fallback: 'Freunde konnten nicht geladen werden.',
+          })
         );
       } finally {
         setLoadingFriends(false);
@@ -332,12 +357,15 @@ export default function useSettingsController({ navigation, route, onClearSessio
         throw resetError;
       }
 
-      setFeedback('Link zum Zuruecksetzen wurde gesendet.');
+      setFeedback('Link zum Zur\u00fccksetzen wurde gesendet.');
       setResetEmail('');
       setShowResetForm(false);
     } catch (err) {
       setFeedback(
-        err?.message ?? 'Passwort konnte nicht zurueckgesetzt werden.'
+        formatUserError(err, {
+          supabaseUrl: SUPABASE_URL_HINT,
+          fallback: 'Passwort konnte nicht zur\u00fcckgesetzt werden.',
+        })
       );
     } finally {
       setLoadingReset(false);
@@ -380,8 +408,10 @@ export default function useSettingsController({ navigation, route, onClearSessio
       setNewEmail('');
     } catch (err) {
       setFeedback(
-        err?.message ??
-          'E-Mail konnte nicht aktualisiert werden. Bitte versuche es erneut.'
+        formatUserError(err, {
+          supabaseUrl: SUPABASE_URL_HINT,
+          fallback: 'E-Mail konnte nicht aktualisiert werden. Bitte versuche es erneut.',
+        })
       );
     } finally {
       setLoadingEmail(false);
@@ -434,7 +464,12 @@ export default function useSettingsController({ navigation, route, onClearSessio
       setFriendCodeInput('');
       setFriendsFeedback('Freund wurde hinzugefuegt.');
     } catch (err) {
-      setFriendsFeedback(err?.message ?? 'Freund konnte nicht hinzugefuegt werden.');
+      setFriendsFeedback(
+        formatUserError(err, {
+          supabaseUrl: SUPABASE_URL_HINT,
+          fallback: 'Freund konnte nicht hinzugefuegt werden.',
+        })
+      );
     } finally {
       setAddingFriend(false);
     }
@@ -460,7 +495,12 @@ export default function useSettingsController({ navigation, route, onClearSessio
         );
       }
     } catch (err) {
-      setFriendsFeedback(err?.message ?? 'Freund konnte nicht entfernt werden.');
+      setFriendsFeedback(
+        formatUserError(err, {
+          supabaseUrl: SUPABASE_URL_HINT,
+          fallback: 'Freund konnte nicht entfernt werden.',
+        })
+      );
     }
   }, [userId]);
 
@@ -482,7 +522,12 @@ export default function useSettingsController({ navigation, route, onClearSessio
       }
       navigation.navigate('Auth');
     } catch (err) {
-      setFeedback(err?.message ?? 'Abmelden fehlgeschlagen.');
+      setFeedback(
+        formatUserError(err, {
+          supabaseUrl: SUPABASE_URL_HINT,
+          fallback: 'Abmelden fehlgeschlagen.',
+        })
+      );
     } finally {
       setSigningOut(false);
     }
@@ -586,6 +631,9 @@ export default function useSettingsController({ navigation, route, onClearSessio
     handleSelectAvatar,
     quizzesCompleted,
     accuracyPercent,
+    xp,
+    titleProgress,
+    unlockedAchievements,
     leaderboardRank,
     loadingRank,
     newEmail,
