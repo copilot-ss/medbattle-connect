@@ -1,14 +1,12 @@
 # TASKS.md - MedBattle Aufgabenliste
 
 ## Offen
-- Supabase Pro-Plan aktivieren und HIBP einschalten (wartet auf Upgrade).
 - Release-Readiness: Store-Assets, Privacy Policy/AGB, Versionierung, Build-Nummern pruefen.
 - Refactor: grosse Screens (Settings/Multiplayer) in kleinere Hooks/Components splitten.
 - Data-Layer: Supabase-Timeouts/Fehlerhandling zentralisieren + Request-Tracking.
 - DB: Score-Retention (z.B. Top-N pro User) als Maintenance-Job definieren.
 - Offline: lokale Fragenbank erweitern + Sync beim Online-Gehen (Diff/Update-Strategie).
 - Performance: Start-Perf (Assets vorladen, Animationen lazy-load, Rendering reduzieren).
-- Release: Crash/Telemetry (Sentry oder Expo Crash Reporting) integrieren.
 - Multiplayer: Reconnect/Resume Flow fuer unterbrochene Lobbys testen und absichern.
 
 ## Release-Checklist
@@ -59,3 +57,4 @@
 - [x] Patch fuer `expo-modules-core` (FeatureFlags Fallback)
 - [x] Banner-Werbung entfernt; Energie-Dialog mit Kauf oder Rewarded Ad (+5 Energie).
 - [x] Supabase Functions: search_path gesetzt, Security-Warnungen bereinigt.
+- [x] Release: Crash/Telemetry (Sentry) integriert.

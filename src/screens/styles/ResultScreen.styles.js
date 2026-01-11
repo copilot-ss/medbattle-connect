@@ -151,30 +151,74 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 12,
   },
-  multiplayerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  scoreboardList: {
+    rowGap: 12,
     marginBottom: 12,
   },
-  multiplayerColumn: {
-    flex: 1,
+  scoreboardRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    backgroundColor: 'rgba(30, 41, 59, 0.7)',
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.2)',
   },
-  multiplayerLabel: {
-    color: '#94A3B8',
-    fontSize: 13,
-    marginBottom: 4,
+  scoreboardRowSelf: {
+    borderColor: 'rgba(56, 189, 248, 0.6)',
+    backgroundColor: 'rgba(59, 130, 246, 0.18)',
   },
-  multiplayerScore: {
-    color: '#38BDF8',
-    fontSize: 26,
+  scoreboardRank: {
+    width: 26,
+    color: '#E2E8F0',
+    fontWeight: '700',
+  },
+  scoreboardAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(148, 163, 184, 0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.35)',
+    marginRight: 12,
+  },
+  scoreboardAvatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
+  },
+  scoreboardAvatarText: {
+    color: '#F8FAFC',
     fontWeight: '800',
   },
-  multiplayerDivider: {
-    width: 1,
-    height: '70%',
-    backgroundColor: 'rgba(148, 163, 184, 0.35)',
+  scoreboardMeta: {
+    flex: 1,
+  },
+  scoreboardName: {
+    color: '#F8FAFC',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  scoreboardTag: {
+    color: '#93C5FD',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  scoreboardScoreBox: {
+    alignItems: 'flex-end',
+  },
+  scoreboardScore: {
+    color: '#38BDF8',
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  scoreboardScoreLabel: {
+    color: '#94A3B8',
+    fontSize: 11,
+    marginTop: 2,
   },
   multiplayerMeta: {
     color: '#94A3B8',

@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePreferences } from '../context/PreferencesContext';
 import usePremiumStatus from '../hooks/usePremiumStatus';
+import AVATARS from './settings/avatars';
 import styles, {
   getBadgePillStyle,
   getLargeGlowStyle,
@@ -54,6 +55,16 @@ function findBadge(percentage) {
   return BADGES.find((badge) => normalized >= badge.min && normalized <= badge.max) ?? BADGES[0];
 }
 
+function getInitials(name) {
+  if (!name || typeof name !== 'string') {
+    return '?';
+  }
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.[0] ?? '';
+  const last = parts[1]?.[0] ?? '';
+  return (first + last || first).toUpperCase();
+}
+
 function Sparkle({ size, top, left, opacity, rotate = '0deg', color }) {
   const horizontalHeight = size * 0.2;
   const verticalWidth = size * 0.2;
@@ -97,14 +108,20 @@ export default function ResultScreen({ route, navigation }) {
     matchStatus = null,
     opponentScore = null,
     opponentName = null,
+    playerState = null,
+    opponentState = null,
     matchJoinCode = null,
     playerRole = null,
     mode = 'standard',
     offline = false,
     scoreQueued = false,
   } = route.params ?? {};
-  const { energy, energyMax } = usePreferences();
+  const { energy, energyMax, avatarId } = usePreferences();
   const { premium } = usePremiumStatus();
+  const currentAvatar = useMemo(
+    () => AVATARS.find((item) => item.id === avatarId) ?? AVATARS[0],
+    [avatarId]
+  );
   const totalQuestions = total || questionLimit || 0;
   const isQuickPlay = mode === 'quick';
   const quickPlayLocked = isQuickPlay && !premium && energy <= 0;
@@ -117,14 +134,36 @@ export default function ResultScreen({ route, navigation }) {
   }, [score, totalQuestions]);
 
   const badge = useMemo(() => findBadge(percentage), [percentage]);
-  const opponentDisplayName = useMemo(
-    () => (opponentName && typeof opponentName === 'string' ? opponentName : 'Gegner'),
-    [opponentName]
-  );
-  const opponentScoreValue = Number.isFinite(opponentScore) ? opponentScore : null;
+  const hasOpponent = Boolean(opponentState?.userId);
+  const selfBaseName = useMemo(() => {
+    const name = typeof playerState?.username === 'string' ? playerState.username.trim() : '';
+    return name || 'Du';
+  }, [playerState?.username]);
+  const selfDisplayName =
+    playerState?.userId && userId && playerState.userId === userId && selfBaseName !== 'Du'
+      ? `${selfBaseName} (Du)`
+      : selfBaseName;
+  const opponentDisplayName = useMemo(() => {
+    if (typeof opponentState?.username === 'string' && opponentState.username.trim()) {
+      return opponentState.username.trim();
+    }
+    if (opponentName && typeof opponentName === 'string') {
+      return opponentName;
+    }
+    return 'Gegner';
+  }, [opponentName, opponentState?.username]);
+  const opponentScoreValue = Number.isFinite(opponentState?.score)
+    ? opponentState.score
+    : Number.isFinite(opponentScore)
+    ? opponentScore
+    : null;
+  const selfScoreValue = Number.isFinite(playerState?.score) ? playerState.score : score;
   const matchStatusLabel = useMemo(() => {
     if (!isMultiplayer) {
       return null;
+    }
+    if (!hasOpponent) {
+      return 'Kein Gegner beigetreten';
     }
     switch (matchStatus) {
       case 'completed':
@@ -133,11 +172,68 @@ export default function ResultScreen({ route, navigation }) {
         return 'Match abgebrochen';
       case 'waiting':
         return 'Warte auf Gegner';
+      case 'active':
+        return opponentState?.finished ? 'Ergebnis verf\u00fcgbar' : 'Warte auf Gegner';
       default:
-        return 'Match l\u00e4uft noch';
+        return 'Ergebnis verf\u00fcgbar';
     }
-  }, [isMultiplayer, matchStatus]);
+  }, [hasOpponent, isMultiplayer, matchStatus, opponentState?.finished]);
   const showOfflineNote = Boolean(offline || scoreQueued);
+  const multiplayerEntries = useMemo(() => {
+    if (!isMultiplayer) {
+      return [];
+    }
+    const entries = [
+      {
+        key: 'self',
+        name: selfDisplayName,
+        score: Number.isFinite(selfScoreValue) ? selfScoreValue : 0,
+        isSelf: true,
+        avatarSource: currentAvatar?.source ?? null,
+        initials: getInitials(selfDisplayName),
+      },
+    ];
+
+    if (hasOpponent) {
+      entries.push({
+        key: opponentState?.userId ?? 'opponent',
+        name: opponentDisplayName,
+        score: Number.isFinite(opponentScoreValue) ? opponentScoreValue : null,
+        isSelf: false,
+        avatarSource: null,
+        initials: getInitials(opponentDisplayName),
+      });
+    }
+
+    const scoreValue = (value) => (Number.isFinite(value) ? value : -1);
+    return entries
+      .sort((a, b) => {
+        const diff = scoreValue(b.score) - scoreValue(a.score);
+        if (diff !== 0) {
+          return diff;
+        }
+        if (a.isSelf && !b.isSelf) {
+          return -1;
+        }
+        if (!a.isSelf && b.isSelf) {
+          return 1;
+        }
+        return a.name.localeCompare(b.name);
+      })
+      .map((entry, index) => ({
+        ...entry,
+        rank: index + 1,
+      }));
+  }, [
+    currentAvatar?.source,
+    hasOpponent,
+    isMultiplayer,
+    opponentDisplayName,
+    opponentScoreValue,
+    opponentState?.userId,
+    selfDisplayName,
+    selfScoreValue,
+  ]);
 
   return (
     <View style={styles.container}>
@@ -151,19 +247,76 @@ export default function ResultScreen({ route, navigation }) {
 
       <View style={styles.cardWrap}>
         <View style={styles.card}>
-          <View style={getBadgePillStyle(badge.color)}>
-            <Text style={styles.badgePillText}>{badge.title}</Text>
-          </View>
-
-          <Text style={styles.heading}>{percentage >= 95 ? 'Legendary Win!' : 'MedBattle abgeschlossen'}</Text>
-          <Text style={styles.subtitle}>{badge.subtitle}</Text>
-
-          <View style={styles.statsSection}>
-            <View style={styles.statsRow}>
-              <StatPill label="Score" value={`${score}/${totalQuestions}`} />
-              <StatPill label="Leaderboard" value={`${points} Punkte`} />
+          {!isMultiplayer ? (
+            <View style={getBadgePillStyle(badge.color)}>
+              <Text style={styles.badgePillText}>{badge.title}</Text>
             </View>
-          </View>
+          ) : null}
+
+          <Text style={styles.heading}>
+            {isMultiplayer
+              ? 'Lobby Ergebnis'
+              : percentage >= 95
+              ? 'Legendary Win!'
+              : 'MedBattle abgeschlossen'}
+          </Text>
+          <Text style={styles.subtitle}>
+            {isMultiplayer ? 'Ranking nach richtigen Antworten' : badge.subtitle}
+          </Text>
+
+          {!isMultiplayer ? (
+            <View style={styles.statsSection}>
+              <View style={styles.statsRow}>
+                <StatPill label="Score" value={`${score}/${totalQuestions}`} />
+                <StatPill label="Leaderboard" value={`${points} Punkte`} />
+              </View>
+            </View>
+          ) : (
+            <View style={styles.multiplayerCard}>
+              <Text style={styles.multiplayerTitle}>Ranking</Text>
+              <View style={styles.scoreboardList}>
+                {multiplayerEntries.map((entry) => (
+                  <View
+                    key={entry.key}
+                    style={[
+                      styles.scoreboardRow,
+                      entry.isSelf ? styles.scoreboardRowSelf : null,
+                    ]}
+                  >
+                    <Text style={styles.scoreboardRank}>{entry.rank}.</Text>
+                    <View style={styles.scoreboardAvatar}>
+                      {entry.avatarSource ? (
+                        <Image
+                          source={entry.avatarSource}
+                          style={styles.scoreboardAvatarImage}
+                        />
+                      ) : (
+                        <Text style={styles.scoreboardAvatarText}>{entry.initials}</Text>
+                      )}
+                    </View>
+                    <View style={styles.scoreboardMeta}>
+                      <Text style={styles.scoreboardName} numberOfLines={1}>
+                        {entry.name}
+                      </Text>
+                      {entry.isSelf ? (
+                        <Text style={styles.scoreboardTag}>Du</Text>
+                      ) : null}
+                    </View>
+                    <View style={styles.scoreboardScoreBox}>
+                      <Text style={styles.scoreboardScore}>
+                        {Number.isFinite(entry.score) ? entry.score : '-'}
+                      </Text>
+                      <Text style={styles.scoreboardScoreLabel}>Richtig</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+              <Text style={styles.multiplayerMeta}>
+                {matchStatusLabel}
+                {matchJoinCode ? ` - Code ${matchJoinCode}` : ''}
+              </Text>
+            </View>
+          )}
 
           {showOfflineNote ? (
             <View style={styles.offlineBanner}>
@@ -174,57 +327,43 @@ export default function ResultScreen({ route, navigation }) {
             </View>
           ) : null}
 
-          {isMultiplayer ? (
-            <View style={styles.multiplayerCard}>
-              <Text style={styles.multiplayerTitle}>Duell Ergebnis</Text>
-              <View style={styles.multiplayerRow}>
-                <View style={styles.multiplayerColumn}>
-                  <Text style={styles.multiplayerLabel}>
-                    Du {playerRole ? `(${playerRole === 'guest' ? 'Gast' : 'Host'})` : ''}
-                  </Text>
-                  <Text style={styles.multiplayerScore}>{score}</Text>
-                </View>
-                <View style={styles.multiplayerDivider} />
-                <View style={styles.multiplayerColumn}>
-                  <Text style={styles.multiplayerLabel}>{opponentDisplayName}</Text>
-                  <Text style={styles.multiplayerScore}>{opponentScoreValue ?? '-'}</Text>
-                </View>
+          {!isMultiplayer ? (
+            <Pressable
+              onPress={() => {
+                navigation.replace('Quiz', {
+                  difficulty: difficultyKey,
+                  mode,
+                  questionLimit,
+                });
+              }}
+              style={[
+                getPrimaryButtonStyle(badge.color),
+                quickPlayLocked ? styles.primaryButtonDisabled : null,
+              ]}
+              disabled={quickPlayLocked}
+            >
+              <View style={styles.primaryButtonContent}>
+                <Text style={styles.primaryButtonText}>
+                  {mode === 'quick' ? 'Nochmal Quick Play' : 'N\u00e4chste Challenge'}
+                </Text>
+                {isQuickPlay ? (
+                  <View style={styles.primaryButtonMetaRow}>
+                    <Ionicons name="flash" size={14} color="#0F172A" />
+                    <Text style={styles.primaryButtonMetaText}>
+                      Energie {energyLabel}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
-              <Text style={styles.multiplayerMeta}>
-                {matchStatusLabel}
-                {matchJoinCode ? ` - Code ${matchJoinCode}` : ''}
-              </Text>
-            </View>
-          ) : null}
-
-          <Pressable
-            onPress={() => {
-              navigation.replace('Quiz', {
-                difficulty: difficultyKey,
-                mode,
-                questionLimit,
-              });
-            }}
-            style={[
-              getPrimaryButtonStyle(badge.color),
-              quickPlayLocked ? styles.primaryButtonDisabled : null,
-            ]}
-            disabled={quickPlayLocked}
-          >
-            <View style={styles.primaryButtonContent}>
-              <Text style={styles.primaryButtonText}>
-                {mode === 'quick' ? 'Nochmal Quick Play' : 'N\u00e4chste Challenge'}
-              </Text>
-              {isQuickPlay ? (
-                <View style={styles.primaryButtonMetaRow}>
-                  <Ionicons name="flash" size={14} color="#0F172A" />
-                  <Text style={styles.primaryButtonMetaText}>
-                    Energie {energyLabel}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-          </Pressable>
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={() => navigation.navigate('MultiplayerLobby', { mode: 'hub' })}
+              style={getPrimaryButtonStyle('#38BDF8')}
+            >
+              <Text style={styles.primaryButtonText}>Zur\u00fcck zur Arena</Text>
+            </Pressable>
+          )}
 
           <Pressable onPress={() => navigation.navigate('Home')} style={styles.tertiaryButton}>
             <Text style={styles.tertiaryButtonText}>Zur\u00fcck zur Basis</Text>

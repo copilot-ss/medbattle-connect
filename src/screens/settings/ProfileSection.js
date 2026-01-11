@@ -79,15 +79,8 @@ export default function ProfileSection({
               {titleProgress?.current?.label ?? 'Med Rookie'}
             </Text>
           </View>
-          <Text style={styles.profileTitleHint}>
-            {titleProgress?.next
-              ? `N\u00e4chster Titel: ${titleProgress.next.label} bei ${titleProgress.next.minXp} XP`
-              : 'Max. Titel erreicht'}
-          </Text>
           <Text style={styles.profileXpText}>
-            {titleProgress?.next
-              ? `XP ${xp} / ${titleProgress.next.minXp}`
-              : `XP ${xp}`}
+            {`XP ${xp}`}
           </Text>
         </View>
       </View>
@@ -109,17 +102,15 @@ export default function ProfileSection({
         </View>
       </View>
 
-      <View style={styles.achievementRow}>
-        {unlockedAchievements.length ? (
-          unlockedAchievements.map((achievement) => (
+      {unlockedAchievements.length ? (
+        <View style={styles.achievementRow}>
+          {unlockedAchievements.map((achievement) => (
             <View key={achievement.key} style={styles.achievementPill}>
               <Text style={styles.achievementText}>{achievement.label}</Text>
             </View>
-          ))
-        ) : (
-          <Text style={styles.achievementText}>Noch keine Errungenschaften.</Text>
-        )}
-      </View>
+          ))}
+        </View>
+      ) : null}
 
       {showAvatarPicker ? (
         <View style={styles.avatarGrid}>

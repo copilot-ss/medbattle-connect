@@ -18,7 +18,8 @@
     },
     "runtimeVersion": "54.0.0",
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "sentry-expo"
     ],
     "extra": {
       "eas": {

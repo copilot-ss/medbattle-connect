@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabaseClient';
 
 const STORAGE_PREFIX = 'medbattle_friends';
+const REQUESTS_STORAGE_PREFIX = 'medbattle_friend_requests';
 const GUEST_ID_STORAGE_KEY = 'medbattle_guest_id';
 
 function normalizeCode(value = '') {
@@ -23,6 +24,10 @@ export function deriveFriendCode(userId) {
 
 function getStorageKey(userId) {
   return `${STORAGE_PREFIX}:${userId}`;
+}
+
+function getRequestsStorageKey(userId) {
+  return `${REQUESTS_STORAGE_PREFIX}:${userId}`;
 }
 
 function isGuestId(value) {
@@ -75,6 +80,32 @@ function sanitizeFriends(entries = []) {
   return friends;
 }
 
+function sanitizeFriendRequests(entries = []) {
+  const seen = new Set();
+  const requests = [];
+
+  for (const entry of entries) {
+    const id = entry.id ?? null;
+    if (!id || seen.has(id)) {
+      continue;
+    }
+
+    const rawCode = entry.requester_code ?? entry.requesterCode ?? entry.code ?? '';
+    const code = normalizeCode(rawCode);
+
+    requests.push({
+      id,
+      requesterId: entry.requester_id ?? entry.requesterId ?? null,
+      code,
+      username: entry.requester_username ?? entry.requesterUsername ?? null,
+      created_at: entry.created_at ?? null,
+    });
+    seen.add(id);
+  }
+
+  return requests;
+}
+
 async function loadLocalFriends(userId) {
   try {
     const stored = await AsyncStorage.getItem(getStorageKey(userId));
@@ -103,6 +134,34 @@ async function persistLocalFriends(userId, friends) {
   }
 }
 
+async function loadLocalFriendRequests(userId) {
+  try {
+    const stored = await AsyncStorage.getItem(getRequestsStorageKey(userId));
+    if (!stored) {
+      return [];
+    }
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return sanitizeFriendRequests(parsed);
+  } catch (err) {
+    console.warn('Konnte lokale Freundesanfragen nicht laden:', err);
+    return [];
+  }
+}
+
+async function persistLocalFriendRequests(userId, requests) {
+  try {
+    await AsyncStorage.setItem(
+      getRequestsStorageKey(userId),
+      JSON.stringify(requests ?? [])
+    );
+  } catch (err) {
+    console.warn('Konnte lokale Freundesanfragen nicht speichern:', err);
+  }
+}
+
 export async function fetchFriends(userId) {
   const resolvedUserId = userId || (await getOrCreateGuestId());
   const guestMode = isGuestId(resolvedUserId);
@@ -124,6 +183,30 @@ export async function fetchFriends(userId) {
   } catch (err) {
     console.warn('Konnte Freunde nicht ueber Supabase laden:', err?.message);
     return loadLocalFriends(resolvedUserId);
+  }
+}
+
+export async function fetchFriendRequests(userId) {
+  const resolvedUserId = userId || (await getOrCreateGuestId());
+  const guestMode = isGuestId(resolvedUserId);
+
+  if (guestMode) {
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('fetch_friend_requests');
+
+    if (error) {
+      throw error;
+    }
+
+    const requests = sanitizeFriendRequests(Array.isArray(data) ? data : []);
+    await persistLocalFriendRequests(resolvedUserId, requests);
+    return requests;
+  } catch (err) {
+    console.warn('Konnte Freundesanfragen nicht laden:', err?.message);
+    return loadLocalFriendRequests(resolvedUserId);
   }
 }
 
@@ -157,7 +240,7 @@ export async function addFriend(userId, code) {
       return { ok: true, friend: localFriend, friends: updated };
     }
 
-    const { data, error } = await supabase.rpc('add_friend', {
+    const { data, error } = await supabase.rpc('send_friend_request', {
       p_code: normalizedCode,
     });
 
@@ -165,11 +248,13 @@ export async function addFriend(userId, code) {
       throw error;
     }
 
-    const newFriend = sanitizeFriends([data])[0] ?? null;
-    const current = await fetchFriends(resolvedUserId);
-
-    return { ok: true, friend: newFriend, friends: current };
+    return { ok: true, pending: true, requestId: data ?? null };
   } catch (err) {
+    if (!guestMode) {
+      console.warn('Supabase Freundesanfrage konnte nicht gesendet werden:', err?.message);
+      return { ok: false, error: err };
+    }
+
     console.warn('Supabase Freund konnte nicht gespeichert werden:', err?.message);
     const current = await loadLocalFriends(resolvedUserId);
     if (current.some((item) => item.code === normalizedCode)) {
@@ -230,6 +315,41 @@ export async function removeFriend(userId, friend) {
   return { ok: true, friends: updated };
 }
 
+export async function respondFriendRequest(userId, requestId, action) {
+  const resolvedUserId = userId || (await getOrCreateGuestId());
+  const guestMode = isGuestId(resolvedUserId);
+
+  if (guestMode) {
+    return { ok: false, error: new Error('Gastmodus unterstuetzt keine Anfragen.') };
+  }
+
+  if (!requestId) {
+    return { ok: false, error: new Error('Ungueltige Anfrage.') };
+  }
+
+  const normalizedAction = action === 'accept' ? 'accept' : 'decline';
+
+  try {
+    const { error } = await supabase.rpc('respond_friend_request', {
+      p_request_id: requestId,
+      p_action: normalizedAction,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    const current = await loadLocalFriendRequests(resolvedUserId);
+    const updated = current.filter((item) => item.id !== requestId);
+    await persistLocalFriendRequests(resolvedUserId, updated);
+
+    return { ok: true, requests: updated };
+  } catch (err) {
+    console.warn('Konnte Freundesanfrage nicht verarbeiten:', err?.message);
+    return { ok: false, error: err };
+  }
+}
+
 export async function migrateLocalFriends(fromUserId, toUserId) {
   if (!toUserId) {
     return { ok: false, error: new Error('Kein Zielnutzer uebergeben.') };
@@ -241,7 +361,7 @@ export async function migrateLocalFriends(fromUserId, toUserId) {
   }
 
   const sourceFriends = await loadLocalFriends(sourceId);
-  const targetFriends = await loadLocalFriends(toUserId);
+  const targetFriends = await fetchFriends(toUserId);
   const merged = new Map(targetFriends.map((f) => [f.code, f]));
 
   for (const entry of sourceFriends) {
@@ -254,8 +374,10 @@ export async function migrateLocalFriends(fromUserId, toUserId) {
         ? result.friends
         : result.friend
         ? [...merged.values(), result.friend]
-        : [...merged.values(), entry];
-      nextList.forEach((f) => merged.set(f.code, f));
+        : null;
+      if (nextList) {
+        nextList.forEach((f) => merged.set(f.code, f));
+      }
     }
   }
 

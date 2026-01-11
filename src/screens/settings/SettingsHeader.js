@@ -1,10 +1,10 @@
 import { Pressable, Text, View } from 'react-native';
 import styles from '../styles/SettingsScreen.styles';
 
-export default function SettingsHeader({ onClose }) {
+export default function SettingsHeader({ onClose, title = 'Einstellungen' }) {
   return (
     <View style={styles.header}>
-      <Text style={styles.headerTitle}>Einstellungen</Text>
+      <Text style={styles.headerTitle}>{title}</Text>
       <Pressable
         onPress={onClose}
         style={styles.headerCloseButton}

@@ -7,10 +7,12 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { supabase } from '../lib/supabaseClient';
 import styles from './styles/LeaderboardScreen.styles';
 import { fetchLeaderboard } from '../services/quizService';
+import { getTitleProgress } from '../services/titleService';
 
 function formatUserId(value) {
   if (!value) {
@@ -103,6 +105,9 @@ export default function LeaderboardScreen({ navigation }) {
     const isCurrent = currentUserId && item.userId === currentUserId;
     const containerBackground =
       index < 3 ? 'rgba(59, 130, 246, 0.18)' : 'rgba(15, 23, 42, 0.85)';
+    const title = Number.isFinite(item.xp)
+      ? getTitleProgress(item.xp).current.label
+      : '-';
 
     return (
       <View
@@ -124,7 +129,7 @@ export default function LeaderboardScreen({ navigation }) {
               return isCurrent ? `${name} (Du)` : name;
             })()}
           </Text>
-          <Text style={styles.entryDifficulty}>Schwierigkeit: {item.difficulty}</Text>
+          <Text style={styles.entryTitle}>Titel: {title}</Text>
         </View>
         <View style={styles.entryScoreWrap}>
           <Text style={styles.entryScore}>{item.points}</Text>
@@ -138,14 +143,19 @@ export default function LeaderboardScreen({ navigation }) {
     <View style={styles.screen}>
       <View style={styles.header}>
         <View style={styles.headerRow}>
-          <Text style={styles.headerTitle}>Rangliste</Text>
+          <View style={styles.headerTitleRow}>
+            <Text style={styles.headerTitle}>Rangliste</Text>
+            <Ionicons
+              name="trophy"
+              size={22}
+              color="#FACC15"
+              style={styles.headerTitleIcon}
+            />
+          </View>
           <Pressable onPress={() => navigation.goBack()} style={styles.closeButton}>
             <Text style={styles.closeButtonText}>X</Text>
           </Pressable>
         </View>
-        <Text style={styles.headerSubtitle}>
-          Die besten Ergebnisse der Community
-        </Text>
       </View>
 
       {loading ? (

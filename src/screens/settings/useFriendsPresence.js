@@ -5,6 +5,7 @@ export default function useFriendsPresence({
   userId,
   friendCode,
   userName,
+  userTitle,
   friends,
 }) {
   const [onlineFriends, setOnlineFriends] = useState([]);
@@ -65,6 +66,7 @@ export default function useFriendsPresence({
             next.push({
               code,
               username: meta.username ?? 'Freund:in',
+              title: meta.title ?? null,
               lobby,
               lobbyPlayers,
               lobbyCapacity,
@@ -89,6 +91,7 @@ export default function useFriendsPresence({
               userId,
               code: friendCode,
               username: userName || 'MedBattle',
+              title: userTitle ?? null,
               lobby: null,
               lobbyPlayers: null,
               lobbyCapacity: null,
@@ -108,7 +111,7 @@ export default function useFriendsPresence({
         presenceChannelRef.current = null;
       }
     };
-  }, [friendCode, friends, userId, userName]);
+  }, [friendCode, friends, userId, userName, userTitle]);
 
   return { onlineFriends, loadingOnline };
 }

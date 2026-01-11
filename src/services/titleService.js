@@ -1,23 +1,17 @@
 const TITLE_TIERS = [
   { key: 'med_rookie', label: 'Med Rookie', minXp: 0 },
-  { key: 'pj', label: 'PJ-ler', minXp: 1000 },
   { key: 'assistenzarzt', label: 'Assistenzarzt', minXp: 3000 },
   { key: 'facharzt', label: 'Facharzt', minXp: 6000 },
   { key: 'oberarzt', label: 'Oberarzt', minXp: 10000 },
   { key: 'chefarzt', label: 'Chefarzt', minXp: 16000 },
   { key: 'dr', label: 'Dr.', minXp: 22000 },
+  { key: 'dr_dr', label: 'Dr. Dr.', minXp: 26000 },
   { key: 'prof', label: 'Prof.', minXp: 28000 },
   { key: 'prof_dr', label: 'Prof. Dr.', minXp: 34000 },
   { key: 'prof_dr_dr', label: 'Prof. Dr. Dr.', minXp: 42000 },
 ];
 
 const ACHIEVEMENTS = [
-  {
-    key: 'erste_schritte',
-    label: 'Erste Schritte',
-    hint: '50 Fragen gespielt',
-    isUnlocked: ({ questions }) => questions >= 50,
-  },
   {
     key: 'quiz_veteran',
     label: 'Quiz-Veteran',

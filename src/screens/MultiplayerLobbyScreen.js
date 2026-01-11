@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, FlatList, Pressable, ScrollView, Text, TextInput, View, Share, Image } from 'react-native';
+import { ActivityIndicator, Animated, BackHandler, Easing, FlatList, Pressable, ScrollView, Text, TextInput, View, Share, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,11 +20,13 @@ import {
 } from '../services/matchService';
 import AVATARS from './settings/avatars';
 import { usePreferences } from '../context/PreferencesContext';
+import { getTitleProgress } from '../services/titleService';
 import styles from './styles/MultiplayerLobbyScreen.styles';
 import DifficultyChips from './multiplayer/DifficultyChips';
 import LobbyLeaveConfirmModal from './multiplayer/LobbyLeaveConfirmModal';
 import LobbySettingsModal from './multiplayer/LobbySettingsModal';
 import QuestionLimitStepper from './multiplayer/QuestionLimitStepper';
+import { clearActiveLobby, saveActiveLobby } from '../utils/activeLobbyStorage';
 
 const DIFFICULTY_LABELS = {
   leicht: 'Leicht',
@@ -61,11 +63,15 @@ function EmptyState() {
 }
 
 export default function MultiplayerLobbyScreen({ navigation, route }) {
-  const { avatarId } = usePreferences();
+  const { avatarId, userStats } = usePreferences();
   const activeAvatarSource = useMemo(() => {
     const entry = AVATARS.find((item) => item.id === avatarId);
     return entry?.source ?? null;
   }, [avatarId]);
+  const userTitle = useMemo(
+    () => getTitleProgress(userStats?.xp).current?.label ?? 'Med Rookie',
+    [userStats?.xp]
+  );
   const existingMatch = route?.params?.existingMatch ?? null;
   const hostBadgeIcon = require('../../assets/icons_profile/caduceus_1839855.png');
 
@@ -117,6 +123,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   const hostSettingsVersionRef = useRef(0);
   const startPulseValue = useRef(new Animated.Value(0)).current;
   const startPulseLoopRef = useRef(null);
+  const joinPressValue = useRef(new Animated.Value(0)).current;
 
   const isHostWaiting = useMemo(() => {
     if (!currentMatch || !userId) {
@@ -144,15 +151,15 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       Animated.sequence([
         Animated.timing(startPulseValue, {
           toValue: 1,
-          duration: 1800,
+          duration: 2200,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
         Animated.timing(startPulseValue, {
           toValue: 0,
-          duration: 1800,
+          duration: 2200,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
       ])
     );
@@ -167,16 +174,51 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
   const startPulseStyle = useMemo(
     () => ({
-      borderColor: startPulseValue.interpolate({
-        inputRange: [0, 1],
-        outputRange: ['rgba(34, 197, 94, 0.35)', 'rgba(34, 197, 94, 0.9)'],
-      }),
-      borderWidth: startPulseValue.interpolate({
-        inputRange: [0, 1],
-        outputRange: [1, 2],
-      }),
+      transform: [
+        { scale: 0.9 },
+        {
+          scale: startPulseValue.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0.96, 1.1],
+          }),
+        },
+      ],
     }),
     [startPulseValue]
+  );
+
+  const handleJoinPressIn = useCallback(() => {
+    Animated.timing(joinPressValue, {
+      toValue: 1,
+      duration: 140,
+      useNativeDriver: false,
+    }).start();
+  }, [joinPressValue]);
+
+  const handleJoinPressOut = useCallback(() => {
+    Animated.timing(joinPressValue, {
+      toValue: 0,
+      duration: 180,
+      useNativeDriver: false,
+    }).start();
+  }, [joinPressValue]);
+
+  const joinPressStyle = useMemo(
+    () => ({
+      transform: [
+        {
+          scale: joinPressValue.interpolate({
+            inputRange: [0, 1],
+            outputRange: [1, 1.06],
+          }),
+        },
+      ],
+      backgroundColor: joinPressValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['#38BDF8', '#7DD3FC'],
+      }),
+    }),
+    [joinPressValue]
   );
 
   const adjustQuestionLimit = useCallback((delta) => {
@@ -286,6 +328,24 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
       return () => {};
     }, [isCreateOnly, refreshMatches, userId])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (currentMatch) {
+          handleLeaveLobby();
+          return true;
+        }
+        return false;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => {
+        subscription.remove();
+      };
+    }, [currentMatch, handleLeaveLobby])
   );
 
   useEffect(() => {
@@ -593,9 +653,10 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
     setClosingLobby(false);
     setCurrentMatch(null);
+    clearActiveLobby();
     skipAutoCloseRef.current = true;
     closingRef.current = false;
-    navigation.goBack();
+    navigation.navigate('Home', { activeLobby: null, lobbyClosed: true });
   }, [abandonMatch, currentMatch, navigation, userId]);
 
   const handleCancelLeave = useCallback(() => {
@@ -804,6 +865,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       currentMatch.status === 'cancelled' ||
       currentMatch.status === 'completed'
     ) {
+      clearActiveLobby();
       if (subscriptionRef.current) {
         subscriptionRef.current();
         subscriptionRef.current = null;
@@ -831,6 +893,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       return;
     }
 
+    clearActiveLobby();
     setCurrentMatch(null);
     if (!closingRef.current) {
       setMatchesError(new Error('Du wurdest aus der Lobby entfernt.'));
@@ -879,6 +942,18 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   }, [attachMatchSubscription, currentMatch, existingMatch]);
 
   useEffect(() => {
+    if (!currentMatch?.id || !userId) {
+      return;
+    }
+
+    saveActiveLobby({
+      matchId: currentMatch.id,
+      code: currentMatch.code ?? null,
+      userId,
+    });
+  }, [currentMatch?.code, currentMatch?.id, userId]);
+
+  useEffect(() => {
     if (!userId || !currentJoinCode) {
       setOnlineFriends([]);
       if (presenceChannelRef.current) {
@@ -916,6 +991,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
           next.push({
             code,
             username: meta.username ?? 'Freund:in',
+            title: meta.title ?? null,
           });
         });
       });
@@ -934,6 +1010,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
             userId,
             code: userCode,
             username: username ?? 'MedBattle',
+            title: userTitle,
             lobby: currentJoinCode,
             lobbyPlayers: participantCount,
             lobbyCapacity: MAX_PLAYERS,
@@ -951,7 +1028,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       supabase.removeChannel(channel);
       presenceChannelRef.current = null;
     };
-  }, [currentJoinCode, friends, userCode, userId, username]);
+  }, [currentJoinCode, friends, userCode, userId, userTitle, username]);
 
   const handleCopyCode = useCallback(async () => {
     if (!currentJoinCode) {
@@ -1056,7 +1133,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
   const showCreateSetup = false;
   const participantCount = participants.filter((item) => !item.isPlaceholder).length;
-  const hasEnoughPlayers = participantCount >= 1;
+  const hasEnoughPlayers = participantCount >= 2;
 
   useEffect(() => {
     const channel = presenceChannelRef.current;
@@ -1070,6 +1147,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       userId,
       code: userCode,
       username: resolvedUsername,
+      title: userTitle,
       lobby: currentJoinCode,
       lobbyPlayers: participantCount,
       lobbyCapacity: MAX_PLAYERS,
@@ -1081,6 +1159,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       prev.userId === nextPayload.userId &&
       prev.code === nextPayload.code &&
       prev.username === nextPayload.username &&
+      prev.title === nextPayload.title &&
       prev.lobby === nextPayload.lobby &&
       prev.lobbyPlayers === nextPayload.lobbyPlayers &&
       prev.lobbyCapacity === nextPayload.lobbyCapacity;
@@ -1093,7 +1172,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     channel.track(nextPayload).catch((err) => {
       console.warn('Konnte Presence nicht aktualisieren:', err);
     });
-  }, [currentJoinCode, participantCount, userCode, userId, username]);
+  }, [currentJoinCode, participantCount, userCode, userId, userTitle, username]);
 
   if (showCreateSetup) {
     return (
@@ -1286,10 +1365,13 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
                   maxLength={6}
                   autoFocus={isJoinOnly}
                 />
-                <Pressable
+                <AnimatedPressable
                   onPress={handleJoinByCode}
+                  onPressIn={handleJoinPressIn}
+                  onPressOut={handleJoinPressOut}
                   style={[
                     styles.joinButton,
+                    joinPressStyle,
                     joining ? styles.actionDisabled : null,
                   ]}
                   disabled={joining || !joinCode.trim()}
@@ -1297,7 +1379,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
                   <Text style={styles.joinButtonText}>
                     {joining ? 'Beitreten...' : 'Go'}
                   </Text>
-                </Pressable>
+                </AnimatedPressable>
               </View>
             </View>
 
@@ -1413,7 +1495,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
                 ]}
                 disabled={!hasEnoughPlayers || startingMatch}
               >
-                <Text style={styles.primaryActionText}>
+                <Text style={[styles.primaryActionText, styles.startButtonText]}>
                   {startingMatch ? 'Starte ...' : 'Start'}
                 </Text>
               </AnimatedPressable>
@@ -1465,6 +1547,9 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
                     <Text style={styles.onlineFriendName}>
                       {friend.username ?? 'Freund:in'}
                     </Text>
+                    {friend.title ? (
+                      <Text style={styles.onlineFriendTitle}>{friend.title}</Text>
+                    ) : null}
                     <Text style={styles.onlineFriendCode}>{friend.code}</Text>
                     <Text style={styles.onlineFriendHint}>Einladen</Text>
                   </Pressable>

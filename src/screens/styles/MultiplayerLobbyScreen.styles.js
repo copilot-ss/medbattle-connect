@@ -498,6 +498,15 @@ const styles = StyleSheet.create({
   startButton: {
     alignSelf: 'flex-start',
     minWidth: 180,
+    borderWidth: 2,
+    borderColor: 'rgba(34, 197, 94, 0.7)',
+  },
+  startButtonText: {
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    textShadowColor: 'rgba(3, 105, 73, 0.35)',
+    textShadowRadius: 6,
+    textShadowOffset: { width: 0, height: 2 },
   },
   startHint: {
     color: '#94A3B8',
@@ -744,6 +753,12 @@ const styles = StyleSheet.create({
     color: '#E2E8F0',
     fontWeight: '700',
     fontSize: 14,
+  },
+  onlineFriendTitle: {
+    color: '#FDE68A',
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 4,
   },
   onlineFriendCode: {
     color: '#93C5FD',

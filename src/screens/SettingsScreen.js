@@ -1,7 +1,6 @@
 import { ScrollView, Text, View } from 'react-native';
 import styles from './styles/SettingsScreen.styles';
 import AudioSettingsCard from './settings/AudioSettingsCard';
-import FriendsSection from './settings/FriendsSection';
 import ProfileSection from './settings/ProfileSection';
 import SettingsFooter from './settings/SettingsFooter';
 import SettingsHeader from './settings/SettingsHeader';
@@ -14,7 +13,6 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
     activeTab,
     setActiveTab,
     showAudioSection,
-    showFriendsSection,
     showProfileSection,
     showSignOutSection,
     scrollRef,
@@ -27,23 +25,6 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
     handleSoundToggle,
     handleVibrationToggle,
     handlePushToggle,
-    friendRequestsEnabled,
-    friendRequestsStatus,
-    handleFriendRequestsToggle,
-    friendCode,
-    copySuccess,
-    handleCopyFriendCode,
-    friendCodeInput,
-    setFriendCodeInput,
-    friendInputRef,
-    onAddFriend,
-    addingFriend,
-    friends,
-    loadingFriends,
-    onlineFriends,
-    loadingOnline,
-    onRemoveFriend,
-    friendsFeedback,
     userName,
     userLevel,
     totalStreak,
@@ -105,27 +86,6 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
           />
         ) : null}
 
-        {showFriendsSection ? (
-          <FriendsSection
-            friendRequestsEnabled={friendRequestsEnabled}
-            friendRequestsStatus={friendRequestsStatus}
-            onToggleFriendRequests={handleFriendRequestsToggle}
-            friendCode={friendCode}
-            copySuccess={copySuccess}
-            onCopyFriendCode={handleCopyFriendCode}
-            friendCodeInput={friendCodeInput}
-            setFriendCodeInput={setFriendCodeInput}
-            friendInputRef={friendInputRef}
-            onAddFriend={onAddFriend}
-            addingFriend={addingFriend}
-            friends={friends}
-            loadingFriends={loadingFriends}
-            onlineFriends={onlineFriends}
-            loadingOnline={loadingOnline}
-            onRemoveFriend={onRemoveFriend}
-          />
-        ) : null}
-
         {showProfileSection ? (
           <ProfileSection
             userName={userName}
@@ -154,12 +114,6 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
             onEmailUpdate={handleEmailUpdate}
             showEmailActions={showEmailActions}
           />
-        ) : null}
-
-        {friendsFeedback && showFriendsSection ? (
-          <View style={styles.banner}>
-            <Text style={styles.bannerText}>{friendsFeedback}</Text>
-          </View>
         ) : null}
 
         {feedback && (showProfileSection || showSignOutSection) ? (

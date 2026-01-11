@@ -10,9 +10,11 @@ import GlobalErrorBoundary from './src/components/GlobalErrorBoundary';
 import registerGlobalErrorLogging from './src/utils/registerGlobalErrorLogging';
 import { initializeAds } from './src/services/adsService';
 import registerUpdates from './src/utils/registerUpdates';
+import { initTelemetry } from './src/utils/telemetry';
 
 // OAuth-Return in Expo
 WebBrowser.maybeCompleteAuthSession();
+initTelemetry();
 registerGlobalErrorLogging();
 
 function App() {

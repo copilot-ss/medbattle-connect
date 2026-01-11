@@ -47,6 +47,15 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
   },
+  friendsButton: {
+    ...quickActionButtonBase,
+    marginLeft: 16,
+    borderColor: 'rgba(251, 113, 133, 0.6)',
+    shadowColor: '#FB7185',
+  },
+  friendsEmoji: {
+    fontSize: 22,
+  },
   menuButton: {
     ...quickActionButtonBase,
     marginLeft: 16,

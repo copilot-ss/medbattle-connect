@@ -309,26 +309,38 @@ export type Database = {
       users: {
         Row: {
           created_at: string | null
+          correct: number
           email: string
           id: string
           premium: boolean
+          questions: number
+          quizzes: number
           updated_at: string
+          xp: number
           username: string
         }
         Insert: {
           created_at?: string | null
+          correct?: number
           email: string
           id?: string
           premium?: boolean
+          questions?: number
+          quizzes?: number
           updated_at?: string
+          xp?: number
           username: string
         }
         Update: {
           created_at?: string | null
+          correct?: number
           email?: string
           id?: string
           premium?: boolean
+          questions?: number
+          quizzes?: number
           updated_at?: string
+          xp?: number
           username?: string
         }
         Relationships: []

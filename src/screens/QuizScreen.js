@@ -76,6 +76,7 @@ export default function QuizScreen({ navigation, route }) {
         questionLimit={questionLimit}
         activeIndex={activeIndex}
         onExit={handleExitRequest}
+        showProgress={!isMultiplayer}
       />
 
       {isOffline ? (
@@ -109,6 +110,7 @@ export default function QuizScreen({ navigation, route }) {
         activeIndex={activeIndex}
         totalQuestions={totalQuestions}
         question={currentQuestion.question}
+        showProgress={!isMultiplayer}
       />
 
       <OptionsList

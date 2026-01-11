@@ -200,26 +200,26 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   friendCodeCard: {
-    marginBottom: 20,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 20,
+    marginBottom: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 16,
     backgroundColor: 'rgba(59, 130, 246, 0.12)',
     borderWidth: 1,
     borderColor: 'rgba(59, 130, 246, 0.45)',
   },
   friendCodeLabel: {
     color: '#93C5FD',
-    fontSize: 12,
-    letterSpacing: 1.2,
+    fontSize: 11,
+    letterSpacing: 1.1,
     textTransform: 'uppercase',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   friendCodeValue: {
     color: '#F8FAFC',
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '800',
-    letterSpacing: 4,
+    letterSpacing: 2,
   },
   friendCodeValueWrapper: {
     flexDirection: 'row',
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   friendCodeCopy: {
     marginTop: 4,
     color: '#93C5FD',
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '800',
   },
   friendCodeCopyIcon: {
@@ -255,6 +255,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.25)',
     maxHeight: 240,
+  },
+  friendListDivider: {
+    height: 1,
+    backgroundColor: 'rgba(148, 163, 184, 0.25)',
+    marginTop: 20,
+    marginBottom: 22,
   },
   friendListHeader: {
     flexDirection: 'row',
@@ -302,6 +308,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 2,
+  },
+  friendTitleText: {
+    color: '#FDE68A',
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 2,
   },
   friendStatusRow: {
     flexDirection: 'row',

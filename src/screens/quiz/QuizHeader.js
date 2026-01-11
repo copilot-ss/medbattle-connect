@@ -7,6 +7,7 @@ export default function QuizHeader({
   questionLimit,
   activeIndex = 0,
   onExit,
+  showProgress = true,
 }) {
   const total = totalQuestions || questionLimit || 0;
   const current = Math.min(activeIndex + 1, total || activeIndex + 1);
@@ -18,7 +19,7 @@ export default function QuizHeader({
         <Text style={isQuickPlay ? styles.headerQuick : styles.headerMeta}>
           {isQuickPlay ? 'Quick Play' : `${difficultyLabel} - ${total} Fragen`}
         </Text>
-        {!isQuickPlay ? (
+        {!isQuickPlay && showProgress ? (
           <View style={styles.headerProgressPill}>
             <Text style={styles.headerProgressText}>
               {current}/{total || '?'}

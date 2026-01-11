@@ -45,6 +45,7 @@ export default function FriendsSection({
     entries.push({
       code,
       name: presence?.username ?? code,
+      title: presence?.title ?? null,
       isOnline: Boolean(presence),
       lobby: presence?.lobby ?? null,
       lobbyPlayers: presence?.lobbyPlayers ?? null,
@@ -61,6 +62,7 @@ export default function FriendsSection({
     entries.push({
       code,
       name: friend?.username ?? code,
+      title: friend?.title ?? null,
       isOnline: true,
       lobby: friend?.lobby ?? null,
       lobbyPlayers: friend?.lobbyPlayers ?? null,
@@ -130,6 +132,66 @@ export default function FriendsSection({
         />
       </View>
 
+      <View style={styles.friendList}>
+        <View style={styles.friendListHeader}>
+          <Text style={styles.friendListTitle}>Freunde</Text>
+          <Text style={styles.friendListCount}>
+            {statusSummary}
+          </Text>
+        </View>
+
+        {isLoading ? (
+          <View style={styles.friendLoading}>
+            <ActivityIndicator color="#60A5FA" />
+            <Text style={styles.friendLoadingText}>
+              Online-Status wird geladen ...
+            </Text>
+          </View>
+        ) : entries.length ? (
+          entries.map((friend, index) => (
+            <View
+              key={friend.code}
+              style={[
+                styles.friendRow,
+                index === entries.length - 1 ? styles.friendRowLast : null,
+              ]}
+            >
+              <View>
+                <Text style={styles.friendCodeText}>
+                  {friend.name || 'Freund'}
+                </Text>
+                {friend.title ? (
+                  <Text style={styles.friendTitleText}>{friend.title}</Text>
+                ) : null}
+                <View style={styles.friendStatusRow}>
+                  <View style={[styles.friendStatusDot, resolveDotStyle(friend)]} />
+                  <Text
+                    style={[
+                      styles.friendStatusText,
+                      resolveStatusTextStyle(friend),
+                    ]}
+                  >
+                    {formatStatus(friend)}
+                  </Text>
+                </View>
+              </View>
+              <Pressable
+                onPress={() => onRemoveFriend({ code: friend.code })}
+                style={styles.friendRemoveButton}
+              >
+                <Text style={styles.friendRemoveText}>Entfernen</Text>
+              </Pressable>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.friendEmptyText}>
+            Noch keine Freunde gespeichert. Teile deinen Code und starte!
+          </Text>
+        )}
+      </View>
+
+      <View style={styles.friendListDivider} />
+
       <View style={styles.friendHeroRow}>
         <Text style={styles.friendHeroEmoji}></Text>
         <View style={styles.friendHeroTextGroup}>
@@ -190,61 +252,6 @@ export default function FriendsSection({
             <Text style={styles.successButtonText}>Freund hinzufuegen</Text>
           )}
         </Pressable>
-      </View>
-
-      <View style={styles.friendList}>
-        <View style={styles.friendListHeader}>
-          <Text style={styles.friendListTitle}>Freunde</Text>
-          <Text style={styles.friendListCount}>
-            {statusSummary}
-          </Text>
-        </View>
-
-        {isLoading ? (
-          <View style={styles.friendLoading}>
-            <ActivityIndicator color="#60A5FA" />
-            <Text style={styles.friendLoadingText}>
-              Online-Status wird geladen ...
-            </Text>
-          </View>
-        ) : entries.length ? (
-          entries.map((friend, index) => (
-            <View
-              key={friend.code}
-              style={[
-                styles.friendRow,
-                index === entries.length - 1 ? styles.friendRowLast : null,
-              ]}
-            >
-              <View>
-                <Text style={styles.friendCodeText}>
-                  {friend.name || 'Freund'}
-                </Text>
-                <View style={styles.friendStatusRow}>
-                  <View style={[styles.friendStatusDot, resolveDotStyle(friend)]} />
-                  <Text
-                    style={[
-                      styles.friendStatusText,
-                      resolveStatusTextStyle(friend),
-                    ]}
-                  >
-                    {formatStatus(friend)}
-                  </Text>
-                </View>
-              </View>
-              <Pressable
-                onPress={() => onRemoveFriend({ code: friend.code })}
-                style={styles.friendRemoveButton}
-              >
-                <Text style={styles.friendRemoveText}>Entfernen</Text>
-              </Pressable>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.friendEmptyText}>
-            Noch keine Freunde gespeichert. Teile deinen Code und starte!
-          </Text>
-        )}
       </View>
     </View>
   );

@@ -24,6 +24,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#F8FAFC',
   },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerTitleIcon: {
+    marginLeft: 8,
+  },
   closeButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -110,7 +117,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#F8FAFC',
   },
-  entryDifficulty: {
+  entryTitle: {
     fontSize: 12,
     color: '#94A3B8',
     marginTop: 4,

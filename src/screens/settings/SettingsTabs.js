@@ -2,9 +2,8 @@ import { Pressable, Text, View } from 'react-native';
 import styles from '../styles/SettingsScreen.styles';
 
 const TABS = [
-  { key: 'settings', label: 'Einstellungen' },
   { key: 'profile', label: 'Profil' },
-  { key: 'friends', label: 'Freunde' },
+  { key: 'settings', label: 'Einstellungen' },
 ];
 
 export default function SettingsTabs({ activeTab, onChange }) {

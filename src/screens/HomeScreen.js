@@ -9,8 +9,11 @@ import styles, {
 import { useConnectivity } from '../context/ConnectivityContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { getInAppPurchases } from '../lib/inAppPurchases';
+import useSupabaseUserId from '../hooks/useSupabaseUserId';
 import usePremiumStatus from '../hooks/usePremiumStatus';
 import { getAdsModule, getRewardedAdUnitId, initializeAds } from '../services/adsService';
+import { deriveMatchRole, getMatchById } from '../services/matchService';
+import { clearActiveLobby, loadActiveLobby } from '../utils/activeLobbyStorage';
 
 const DEFAULT_DIFFICULTY = 'mittel';
 const doctorAnimation = require('../../assets/animations/doctor/doctor.json');
@@ -18,6 +21,7 @@ const BOOST_PRODUCT_ID = 'energy_boost_20';
 const REWARDED_ENERGY = 5;
 const ENERGY_BADGE_COLOR = '#FACC15';
 const ENERGY_BADGE_EMPTY_COLOR = '#FCA5A5';
+const LOBBY_CAPACITY = 10;
 
 
 
@@ -102,11 +106,14 @@ function ModeCard({
 }
 
 export default function HomeScreen({ navigation, route }) {
-  const activeLobby = route?.params?.activeLobby ?? null;
+  const routeLobby = route?.params?.activeLobby;
+  const [activeLobbyState, setActiveLobbyState] = useState(null);
+  const activeLobby = routeLobby === undefined ? activeLobbyState : routeLobby;
   const { isOnline, isChecking, checkOnline } = useConnectivity();
   const isOffline = isOnline === false;
   const hasLobby = Boolean(activeLobby?.code);
   const hasActiveLobby = hasLobby && !isOffline;
+  const userId = useSupabaseUserId();
   const {
     energy,
     energyMax,
@@ -125,12 +132,101 @@ export default function HomeScreen({ navigation, route }) {
   const iapAvailable = Boolean(iapModule && typeof iapModule.connectAsync === 'function');
   const [iapReady, setIapReady] = useState(iapAvailable && Platform.OS !== 'android');
   const [nextEnergyCountdown, setNextEnergyCountdown] = useState('');
+  const restoreAttemptedRef = useRef(false);
 
   useEffect(() => {
     if (isOffline && showBoostModal) {
       setShowBoostModal(false);
     }
   }, [isOffline, showBoostModal]);
+
+  useEffect(() => {
+    if (routeLobby === undefined) {
+      return;
+    }
+    if (routeLobby === null) {
+      setActiveLobbyState(null);
+      clearActiveLobby();
+      return;
+    }
+    setActiveLobbyState(routeLobby);
+  }, [routeLobby]);
+
+  useEffect(() => {
+    restoreAttemptedRef.current = false;
+  }, [isOffline, routeLobby, userId]);
+
+  useEffect(() => {
+    let active = true;
+
+    if (
+      routeLobby !== undefined ||
+      activeLobbyState ||
+      isOffline ||
+      !userId ||
+      restoreAttemptedRef.current
+    ) {
+      return () => {
+        active = false;
+      };
+    }
+
+    restoreAttemptedRef.current = true;
+
+    const restoreLobby = async () => {
+      const stored = await loadActiveLobby();
+      if (!active || !stored?.matchId) {
+        return;
+      }
+
+      if (stored.userId && stored.userId !== userId) {
+        await clearActiveLobby();
+        return;
+      }
+
+      const result = await getMatchById(stored.matchId);
+      if (!active || !result.ok || !result.match) {
+        return;
+      }
+
+      if (
+        result.match.status === 'cancelled' ||
+        result.match.status === 'completed'
+      ) {
+        await clearActiveLobby();
+        return;
+      }
+
+      const role = deriveMatchRole(result.match, userId);
+      if (!role) {
+        await clearActiveLobby();
+        return;
+      }
+
+      const players = result.match.state
+        ? [result.match.state.host, result.match.state.guest].filter(
+            (player) => player?.userId
+          ).length
+        : 1;
+
+      setActiveLobbyState({
+        code: result.match.code ?? stored.code ?? null,
+        players,
+        capacity: LOBBY_CAPACITY,
+        existingMatch: result.match,
+      });
+    };
+
+    restoreLobby().catch((err) => {
+      if (active) {
+        console.warn('Konnte Lobby nicht wiederherstellen:', err);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [activeLobbyState, isOffline, routeLobby, userId]);
 
   useEffect(() => {
     refreshEnergy();
@@ -263,6 +359,10 @@ export default function HomeScreen({ navigation, route }) {
     });
   }
 
+  function handleOpenFriends() {
+    navigation.navigate('Friends');
+  }
+
   async function startQuickPlay() {
     if (isBoostBusy || hasLobby) {
       return;
@@ -391,7 +491,15 @@ export default function HomeScreen({ navigation, route }) {
           </Pressable>
 
           <Pressable
-            onPress={() => navigation.navigate('Settings', { focus: 'audio' })}
+            onPress={handleOpenFriends}
+            style={[styles.friendsButton, isOffline ? styles.quickActionDisabled : null]}
+            disabled={isOffline}
+          >
+            <Text style={styles.friendsEmoji}>{'\u{1F9C2}'}</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => navigation.navigate('Settings')}
             style={[styles.menuButton, isOffline ? styles.quickActionDisabled : null]}
             disabled={isOffline}
           >
@@ -407,7 +515,7 @@ export default function HomeScreen({ navigation, route }) {
             <Text style={styles.offlineTitle}>Offline Modus</Text>
           </View>
           <Text style={styles.offlineText}>
-            Quick Play bleibt verf\u00fcgbar. Multiplayer, Rangliste und Einstellungen sind offline gesperrt.
+            Quick Play bleibt verf\u00fcgbar. Multiplayer, Freunde, Rangliste und Einstellungen sind offline gesperrt.
           </Text>
           <Pressable
             onPress={handleGoOnline}

@@ -295,6 +295,7 @@ export async function fetchLeaderboard(limit = 20, { force = false } = {}) {
       id: item.id,
       userId: item.user_id,
       username: item.username ?? null,
+      xp: Number.isFinite(item.xp) ? item.xp : null,
       points: Number.isFinite(item.points) ? item.points : 0,
       difficulty: item.difficulty ?? 'unbekannt',
       createdAt: item.created_at ?? null,

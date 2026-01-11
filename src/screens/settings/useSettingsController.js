@@ -71,16 +71,21 @@ export default function useSettingsController({ navigation, route, onClearSessio
   const [resetEmail, setResetEmail] = useState('');
   const [showResetForm, setShowResetForm] = useState(false);
   const [focusTarget, setFocusTarget] = useState(route?.params?.focus ?? null);
-  const [activeTab, setActiveTab] = useState('settings');
+  const [activeTab, setActiveTab] = useState('profile');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const scrollRef = useRef(null);
   const friendInputRef = useRef(null);
   const isGuest = !authUserId;
+  const userTitle = useMemo(
+    () => getTitleProgress(userStats?.xp).current?.label ?? 'Med Rookie',
+    [userStats?.xp]
+  );
   const { rank: leaderboardRank, loading: loadingRank } = useLeaderboardRank(authUserId);
   const { onlineFriends, loadingOnline } = useFriendsPresence({
     userId,
     friendCode,
     userName,
+    userTitle,
     friends,
   });
 
@@ -187,7 +192,6 @@ export default function useSettingsController({ navigation, route, onClearSessio
   const showResetActions = !isOAuthUser && !isGuest;
 
   const showAudioSection = activeTab === 'settings';
-  const showFriendsSection = activeTab === 'friends';
   const showProfileSection = activeTab === 'profile';
   const showSignOutSection = activeTab === 'settings';
 
@@ -544,7 +548,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
       setActiveTab('profile');
       setShowResetForm(true);
     } else if (focusTarget === 'friendsAdd') {
-      setActiveTab('friends');
+      setActiveTab('profile');
       const timer = setTimeout(() => {
         friendInputRef.current?.focus?.();
       }, 100);
@@ -601,7 +605,6 @@ export default function useSettingsController({ navigation, route, onClearSessio
     activeTab,
     setActiveTab,
     showAudioSection,
-    showFriendsSection,
     showProfileSection,
     showSignOutSection,
     // preference toggles

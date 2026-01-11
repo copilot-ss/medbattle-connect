@@ -9,6 +9,7 @@ import useSupabaseUserId from '../../hooks/useSupabaseUserId';
 import useMultiplayerMatch from '../../hooks/useMultiplayerMatch';
 import { calculateMatchPoints, submitScore } from '../../services/quizService';
 import { calculateXpGain } from '../../services/titleService';
+import { syncUserProgressDelta } from '../../services/userProgressService';
 import useQuizConfig, { TIMER_DURATION } from './hooks/useQuizConfig';
 import useSoloQuestionLoader from './hooks/useSoloQuestionLoader';
 import useQuizInteractionHandlers from './hooks/useQuizInteractionHandlers';
@@ -206,12 +207,13 @@ export default function useQuizController({ navigation, route }) {
       if (submit) {
         const mistakes = totalQuestions - resolvedScore;
         if (!isMultiplayer) {
-          const shouldIncrease =
-            normalizedDifficulty === 'leicht'
-              ? true
-              : normalizedDifficulty === 'mittel'
-              ? mistakes <= 1
-              : mistakes === 0;
+          const shouldIncrease = isQuickPlay
+            ? mistakes === 0
+            : normalizedDifficulty === 'leicht'
+            ? true
+            : normalizedDifficulty === 'mittel'
+            ? mistakes <= 1
+            : mistakes === 0;
 
           try {
             await setStreakValue(normalizedDifficulty, (current) => {
@@ -223,6 +225,13 @@ export default function useQuizController({ navigation, route }) {
           }
         }
 
+        const progressDelta = {
+          quizzes: 1,
+          correct: resolvedScore,
+          questions: effectiveTotal,
+          xp: xpEarned,
+        };
+
         try {
           await updateUserStats((current) => ({
             quizzes: sanitizeStatNumber((current?.quizzes ?? 0) + 1),
@@ -233,7 +242,34 @@ export default function useQuizController({ navigation, route }) {
         } catch (err) {
           console.warn('Konnte lokale Quiz-Statistik nicht aktualisieren:', err);
         }
+
+        try {
+          await syncUserProgressDelta(userId, progressDelta, { offline: isOffline });
+        } catch (err) {
+          console.warn('Konnte Fortschritt nicht synchronisieren:', err);
+        }
       }
+
+      const playerSnapshot = isMultiplayer
+        ? {
+            userId: matchPlayerState?.userId ?? null,
+            username: matchPlayerState?.username ?? null,
+            score: Number.isFinite(matchPlayerState?.score)
+              ? matchPlayerState.score
+              : resolvedScore,
+            finished: Boolean(matchPlayerState?.finished),
+          }
+        : null;
+      const opponentSnapshot = isMultiplayer
+        ? {
+            userId: matchOpponentState?.userId ?? null,
+            username: matchOpponentState?.username ?? null,
+            score: Number.isFinite(matchOpponentState?.score)
+              ? matchOpponentState.score
+              : null,
+            finished: Boolean(matchOpponentState?.finished),
+          }
+        : null;
 
       navigation.navigate('Result', {
         score: resolvedScore,
@@ -251,6 +287,8 @@ export default function useQuizController({ navigation, route }) {
         matchStatus: resolvedMatchStatus,
         opponentScore: matchOpponentState?.score ?? null,
         opponentName: matchOpponentState?.username ?? null,
+        playerState: playerSnapshot,
+        opponentState: opponentSnapshot,
         matchJoinCode: matchJoinCode ?? initialJoinCode ?? null,
         playerRole: matchRole,
       });
@@ -260,8 +298,14 @@ export default function useQuizController({ navigation, route }) {
       difficultyLabel,
       initialJoinCode,
       isMultiplayer,
+      matchPlayerState?.finished,
+      matchPlayerState?.score,
+      matchPlayerState?.userId,
+      matchPlayerState?.username,
       matchJoinCode,
       matchOpponentState?.score,
+      matchOpponentState?.finished,
+      matchOpponentState?.userId,
       matchOpponentState?.username,
       matchRole,
       matchId,
@@ -271,6 +315,7 @@ export default function useQuizController({ navigation, route }) {
       resolvedMatchStatus,
       setStreakValue,
       updateUserStats,
+      syncUserProgressDelta,
       totalQuestions,
       userId,
       mode,
