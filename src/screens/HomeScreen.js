@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Pressable, Text, View, Platform } from 'react-native';
+import { Text, View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
-import styles, {
-  getModeCardContainerStyle,
-  getModeCardTitleStyle,
-} from './styles/HomeScreen.styles';
+import styles from './styles/HomeScreen.styles';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { getInAppPurchases } from '../lib/inAppPurchases';
@@ -14,6 +11,11 @@ import usePremiumStatus from '../hooks/usePremiumStatus';
 import { getAdsModule, getRewardedAdUnitId, initializeAds } from '../services/adsService';
 import { deriveMatchRole, getMatchById } from '../services/matchService';
 import { clearActiveLobby, loadActiveLobby } from '../utils/activeLobbyStorage';
+import ActiveLobbyBanner from './home/ActiveLobbyBanner';
+import EnergyBoostModal from './home/EnergyBoostModal';
+import HomeHeader from './home/HomeHeader';
+import ModeCard from './home/ModeCard';
+import OfflineBanner from './home/OfflineBanner';
 
 const DEFAULT_DIFFICULTY = 'mittel';
 const doctorAnimation = require('../../assets/animations/doctor/doctor.json');
@@ -22,88 +24,6 @@ const REWARDED_ENERGY = 5;
 const ENERGY_BADGE_COLOR = '#FACC15';
 const ENERGY_BADGE_EMPTY_COLOR = '#FCA5A5';
 const LOBBY_CAPACITY = 10;
-
-
-
-function parseHex(hex) {
-  const normalized = hex.replace('#', '');
-  const isShort = normalized.length === 3;
-  const full = isShort
-    ? normalized
-        .split('')
-        .map((char) => char + char)
-        .join('')
-    : normalized;
-
-  const parsed = Number.parseInt(full, 16);
-  const r = (parsed >> 16) & 255;
-  const g = (parsed >> 8) & 255;
-  const b = parsed & 255;
-
-  return { r, g, b };
-}
-
-function hexToRgba(hex, alpha = 1) {
-  const { r, g, b } = parseHex(hex);
-
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-function ModeCard({
-  title,
-  subtitle,
-  accent,
-  onPress,
-  disabled = false,
-  titleMeta = null,
-}) {
-  const glow = useRef(new Animated.Value(0)).current;
-  const glowColors = useMemo(
-    () => ({
-      inactive: hexToRgba(accent, 0.7),
-      active: hexToRgba(accent, 1),
-    }),
-    [accent]
-  );
-
-  function handlePressIn() {
-    Animated.timing(glow, {
-      toValue: 1,
-      duration: 160,
-      useNativeDriver: false,
-    }).start();
-  }
-
-  function handlePressOut() {
-    Animated.timing(glow, {
-      toValue: 0,
-      duration: 220,
-      useNativeDriver: false,
-    }).start();
-  }
-
-  return (
-    <Animated.View
-      style={getModeCardContainerStyle(accent, glow, glowColors)}
-    >
-      <Pressable
-        style={[styles.modeCardPressable, disabled ? styles.modeCardDisabled : null]}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={disabled ? undefined : onPress}
-        disabled={disabled}
-      >
-        <View style={styles.modeCardTitleRow}>
-          <Text style={getModeCardTitleStyle(accent)}>{title}</Text>
-          {titleMeta ? (
-            <View style={styles.modeCardTitleMeta}>{titleMeta}</View>
-          ) : null}
-        </View>
-        {subtitle ? <Text style={styles.modeCardSubtitle}>{subtitle}</Text> : null}
-      </Pressable>
-    </Animated.View>
-  );
-}
 
 export default function HomeScreen({ navigation, route }) {
   const routeLobby = route?.params?.activeLobby;
@@ -476,75 +396,48 @@ export default function HomeScreen({ navigation, route }) {
     rewardedAd.load();
   }
 
+  async function handlePurchaseBoost() {
+    if (isBoostBusy) {
+      return;
+    }
+    if (!iapReady || !iapAvailable || !iapModule) {
+      setEnergyMessage('Boost im Moment nicht verf\u00fcgbar.');
+      return;
+    }
+    setBoosting(true);
+    try {
+      await iapModule.requestPurchaseAsync({ sku: BOOST_PRODUCT_ID });
+    } catch (err) {
+      setEnergyMessage('Boost fehlgeschlagen. Bitte sp\u00e4ter erneut versuchen.');
+      setBoosting(false);
+    }
+  }
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>MedBattle</Text>
+      <HomeHeader
+        isOffline={isOffline}
+        onOpenLeaderboard={() => navigation.navigate('Leaderboard')}
+        onOpenFriends={handleOpenFriends}
+        onOpenSettings={() => navigation.navigate('Settings')}
+      />
 
-        <View style={styles.quickActions}>
-          <Pressable
-            onPress={() => navigation.navigate('Leaderboard')}
-            style={[styles.leaderboardButton, isOffline ? styles.quickActionDisabled : null]}
-            disabled={isOffline}
-          >
-            <Ionicons name="trophy" size={26} color="#FACC15" style={styles.leaderboardIcon} />
-          </Pressable>
+      <OfflineBanner
+        isVisible={isOffline}
+        isChecking={isChecking}
+        onGoOnline={handleGoOnline}
+      />
 
-          <Pressable
-            onPress={handleOpenFriends}
-            style={[styles.friendsButton, isOffline ? styles.quickActionDisabled : null]}
-            disabled={isOffline}
-          >
-            <Text style={styles.friendsEmoji}>{'\u{1F9C2}'}</Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => navigation.navigate('Settings')}
-            style={[styles.menuButton, isOffline ? styles.quickActionDisabled : null]}
-            disabled={isOffline}
-          >
-            <Ionicons name="settings" size={28} color="#E2E8F0" style={styles.menuIcon} />
-          </Pressable>
-        </View>
-      </View>
-
-      {isOffline ? (
-        <View style={styles.offlineBanner}>
-          <View style={styles.offlineHeader}>
-            <View style={styles.offlineDot} />
-            <Text style={styles.offlineTitle}>Offline Modus</Text>
-          </View>
-          <Text style={styles.offlineText}>
-            Quick Play bleibt verf\u00fcgbar. Multiplayer, Freunde, Rangliste und Einstellungen sind offline gesperrt.
-          </Text>
-          <Pressable
-            onPress={handleGoOnline}
-            style={[styles.offlineButton, isChecking ? styles.offlineButtonDisabled : null]}
-            disabled={isChecking}
-          >
-            <Text style={styles.offlineButtonText}>
-              {isChecking ? 'Verbindung pr\u00fcfen...' : 'Online gehen'}
-            </Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      <View style={styles.activeLobbyAnchor} pointerEvents="box-none">
-        {hasActiveLobby ? (
-          <Pressable
-            style={styles.activeLobbyBanner}
-            onPress={() =>
-              navigation.navigate('MultiplayerLobby', {
-                existingMatch: activeLobby.existingMatch ?? null,
-                mode: 'create',
-              })
-            }
-          >
-            <Text style={styles.activeLobbyTitle}>Lobby {activeLobby.players ?? 1}/{activeLobby.capacity ?? 2}</Text>
-            <Text style={styles.activeLobbyCode}>{activeLobby.code ?? ''}</Text>
-          </Pressable>
-        ) : null}
-      </View>
+      <ActiveLobbyBanner
+        activeLobby={activeLobby}
+        hasActiveLobby={hasActiveLobby}
+        onOpenLobby={() =>
+          navigation.navigate('MultiplayerLobby', {
+            existingMatch: activeLobby?.existingMatch ?? null,
+            mode: 'create',
+          })
+        }
+      />
 
       <View style={styles.animationWrapper} pointerEvents="none">
         <LottieView
@@ -599,57 +492,16 @@ export default function HomeScreen({ navigation, route }) {
 
       <View style={styles.flexSpacer} />
 
-      {!premium && showBoostModal ? (
-        <View style={styles.boostOverlay}>
-          <View style={styles.boostCard}>
-            <Text style={styles.boostTitle}>Energie leer</Text>
-            <Text style={styles.boostText}>
-              Du brauchst Energie f\u00fcr ein weiteres Spiel. W\u00e4hle Kauf oder Werbung f\u00fcr 5 Energie.
-            </Text>
-            {energyMessage ? <Text style={styles.boostMessage}>{energyMessage}</Text> : null}
-            <View style={styles.boostActions}>
-              <Pressable
-                onPress={async () => {
-                  if (isBoostBusy) return;
-                  if (!iapReady || !iapAvailable || !iapModule) {
-                    setEnergyMessage('Boost im Moment nicht verf\u00fcgbar.');
-                    return;
-                  }
-                  setBoosting(true);
-                  try {
-                    await iapModule.requestPurchaseAsync({ sku: BOOST_PRODUCT_ID });
-                  } catch (err) {
-                    setEnergyMessage('Boost fehlgeschlagen. Bitte sp\u00e4ter erneut versuchen.');
-                    setBoosting(false);
-                  }
-                }}
-                style={[styles.boostButton, isBoostBusy ? styles.boostButtonDisabled : null]}
-                disabled={isBoostBusy}
-              >
-                <Text style={styles.boostButtonText}>
-                  {boosting ? 'Zahlung l\u00e4uft...' : 'Energie voll (1,99 EUR)'}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={watchAdForEnergy}
-                style={[styles.boostButtonGhost, isBoostBusy ? styles.boostButtonDisabled : null]}
-                disabled={isBoostBusy}
-              >
-                <Text style={styles.boostGhostText}>
-                  {rewarding ? 'Werbung l\u00e4dt...' : 'Werbung ansehen (5 Energie)'}
-                </Text>
-              </Pressable>
-            </View>
-            <Pressable
-              onPress={() => setShowBoostModal(false)}
-              style={styles.boostCancel}
-              disabled={isBoostBusy}
-            >
-              <Text style={styles.boostCancelText}>Sp\u00e4ter</Text>
-            </Pressable>
-          </View>
-        </View>
-      ) : null}
+      <EnergyBoostModal
+        visible={!premium && showBoostModal}
+        energyMessage={energyMessage}
+        isBoostBusy={isBoostBusy}
+        boosting={boosting}
+        rewarding={rewarding}
+        onPurchase={handlePurchaseBoost}
+        onWatchAd={watchAdForEnergy}
+        onClose={() => setShowBoostModal(false)}
+      />
     </View>
   );
 }

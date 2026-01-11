@@ -1,18 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, BackHandler, Easing, FlatList, Pressable, ScrollView, Text, TextInput, View, Share, Image } from 'react-native';
+import { ActivityIndicator, Animated, BackHandler, Easing, Pressable, ScrollView, Text, View, Share } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
-import { Ionicons } from '@expo/vector-icons';
 
-import { supabase } from '../lib/supabaseClient';
-import { fetchFriends, getFriendCodeForUser } from '../services/friendsService';
 import {
   createMatch,
   deriveMatchRole,
-  fetchOpenMatches,
-  getMatchById,
   joinMatch,
-  subscribeToMatch,
   updateMatchSettings,
   kickMatchGuest,
   abandonMatch,
@@ -23,44 +17,26 @@ import { usePreferences } from '../context/PreferencesContext';
 import { getTitleProgress } from '../services/titleService';
 import styles from './styles/MultiplayerLobbyScreen.styles';
 import DifficultyChips from './multiplayer/DifficultyChips';
+import LobbyHeader from './multiplayer/LobbyHeader';
+import LobbyJoinSection from './multiplayer/LobbyJoinSection';
 import LobbyLeaveConfirmModal from './multiplayer/LobbyLeaveConfirmModal';
+import LobbyParticipantsCard from './multiplayer/LobbyParticipantsCard';
 import LobbySettingsModal from './multiplayer/LobbySettingsModal';
 import QuestionLimitStepper from './multiplayer/QuestionLimitStepper';
-import { clearActiveLobby, saveActiveLobby } from '../utils/activeLobbyStorage';
-
-const DIFFICULTY_LABELS = {
-  leicht: 'Leicht',
-  mittel: 'Mittel',
-  schwer: 'Schwer',
-};
-const DIFFICULTY_ACCENTS = {
-  leicht: '#22C55E',
-  mittel: '#FACC15',
-  schwer: '#EF4444',
-};
-const MIN_QUESTION_LIMIT = 3;
-const MAX_QUESTION_LIMIT = 20;
-const MAX_PLAYERS = 10;
-const SHARE_ANIM = require('../../assets/animations/share_6172544.gif');
-const EMPTY_BATTLES_ICON = require('../../assets/animations/no-battles.gif');
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-function getInitials(name) {
-  if (!name || typeof name !== 'string') return '?';
-  const parts = name.trim().split(/\s+/);
-  const first = parts[0]?.[0] ?? '';
-  const last = parts[1]?.[0] ?? '';
-  return (first + last || first).toUpperCase();
-}
-
-function EmptyState() {
-  return (
-    <View style={styles.emptyState}>
-      <Text style={styles.emptyTitle}>Noch keine offenen Battles</Text>
-      <Image source={EMPTY_BATTLES_ICON} style={styles.emptyIcon} resizeMode="contain" />
-    </View>
-  );
-}
+import {
+  DEFAULT_QUESTION_LIMIT,
+  DIFFICULTY_ACCENTS,
+  DIFFICULTY_LABELS,
+  MAX_PLAYERS,
+  MAX_QUESTION_LIMIT,
+  MIN_QUESTION_LIMIT,
+} from './multiplayer/lobbyConstants';
+import useLobbyFriends from './multiplayer/hooks/useLobbyFriends';
+import useLobbyMatchState from './multiplayer/hooks/useLobbyMatchState';
+import useLobbyOpenMatches from './multiplayer/hooks/useLobbyOpenMatches';
+import useLobbyPresence from './multiplayer/hooks/useLobbyPresence';
+import useLobbyUser from './multiplayer/hooks/useLobbyUser';
+import { clearActiveLobby } from '../utils/activeLobbyStorage';
 
 export default function MultiplayerLobbyScreen({ navigation, route }) {
   const { avatarId, userStats } = usePreferences();
@@ -73,7 +49,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     [userStats?.xp]
   );
   const existingMatch = route?.params?.existingMatch ?? null;
-  const hostBadgeIcon = require('../../assets/icons_profile/caduceus_1839855.png');
 
   const initialDifficulty =
     typeof route?.params?.difficulty === 'string'
@@ -86,16 +61,11 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   const isCreateOnly = normalizedMode === 'create';
   const isJoinOnly = normalizedMode === 'join';
 
-  const [difficulty] = useState(initialDifficulty);
+  const difficulty = initialDifficulty;
   const [selectedDifficulty, setSelectedDifficulty] = useState(initialDifficulty);
-  const [questionLimit, setQuestionLimit] = useState(5);
-  const [userId, setUserId] = useState(null);
-  const [loadingUser, setLoadingUser] = useState(true);
-  const [openMatches, setOpenMatches] = useState([]);
-  const [matchesLoading, setMatchesLoading] = useState(!isCreateOnly);
+  const [questionLimit, setQuestionLimit] = useState(DEFAULT_QUESTION_LIMIT);
   const [matchesError, setMatchesError] = useState(null);
   const [joinCode, setJoinCode] = useState('');
-  const [currentMatch, setCurrentMatch] = useState(null);
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
   const [updatingSettings, setUpdatingSettings] = useState(false);
@@ -105,25 +75,48 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [draftDifficulty, setDraftDifficulty] = useState(initialDifficulty);
-  const [draftQuestionLimit, setDraftQuestionLimit] = useState(5);
+  const [draftQuestionLimit, setDraftQuestionLimit] = useState(DEFAULT_QUESTION_LIMIT);
   const [kickCandidateKey, setKickCandidateKey] = useState(null);
   const [kickingPlayer, setKickingPlayer] = useState(false);
-  const [friends, setFriends] = useState([]);
-  const [friendsLoading, setFriendsLoading] = useState(false);
-  const [onlineFriends, setOnlineFriends] = useState([]);
-  const [userCode, setUserCode] = useState('');
-  const [username, setUsername] = useState(null);
-  const subscriptionRef = useRef(null);
-  const presenceChannelRef = useRef(null);
-  const lastPresencePayloadRef = useRef(null);
   const autoCreateAttemptedRef = useRef(false);
-  const friendCodesRef = useRef(new Set());
   const closingRef = useRef(false);
   const skipAutoCloseRef = useRef(false);
   const hostSettingsVersionRef = useRef(0);
   const startPulseValue = useRef(new Animated.Value(0)).current;
   const startPulseLoopRef = useRef(null);
   const joinPressValue = useRef(new Animated.Value(0)).current;
+
+  const { userId, userCode, username, loadingUser } = useLobbyUser();
+  const { friends, friendsLoading } = useLobbyFriends(userId);
+
+  const difficultyLabel = useMemo(
+    () => DIFFICULTY_LABELS[difficulty] ?? DIFFICULTY_LABELS.mittel,
+    [difficulty]
+  );
+  const {
+    openMatches,
+    matchesLoading,
+    refreshMatches,
+  } = useLobbyOpenMatches({
+    difficulty,
+    isCreateOnly,
+    userId,
+    setMatchesError,
+  });
+  const {
+    currentMatch,
+    setCurrentMatch,
+    attachMatchSubscription,
+  } = useLobbyMatchState({
+    navigation,
+    userId,
+    difficulty,
+    existingMatch,
+    isCreateOnly,
+    refreshMatches,
+    setMatchesError,
+    closingRef,
+  });
 
   const isHostWaiting = useMemo(() => {
     if (!currentMatch || !userId) {
@@ -237,99 +230,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     });
   }, [currentMatch, isHostWaiting, pushHostSettings, selectedDifficulty]);
 
-  useEffect(() => {
-    let active = true;
-
-    async function resolveUser() {
-      setLoadingUser(true);
-
-      try {
-        const { data, error } = await supabase.auth.getUser();
-
-        if (!active) {
-          return;
-        }
-
-        if (error) {
-          console.warn('Konnte Multiplayer-Nutzer nicht abrufen:', error.message);
-        }
-
-        const authUser = data?.user;
-        const resolvedUserId = authUser?.id ?? null;
-        const resolvedUsername =
-          authUser?.user_metadata?.username ??
-          (authUser?.email ? authUser.email.split('@')[0] : null) ??
-          null;
-
-        setUserId(resolvedUserId);
-        setUserCode(getFriendCodeForUser(resolvedUserId));
-        setUsername(resolvedUsername);
-      } catch (err) {
-        if (active) {
-          console.warn('Unerwarteter Fehler beim Abrufen des Nutzers:', err);
-          setUserId(null);
-        }
-      } finally {
-        if (active) {
-          setLoadingUser(false);
-        }
-      }
-    }
-
-    resolveUser();
-
-    return () => {
-      active = false;
-      if (subscriptionRef.current) {
-        subscriptionRef.current();
-        subscriptionRef.current = null;
-      }
-    };
-  }, []);
-
-  const difficultyLabel = useMemo(
-    () => DIFFICULTY_LABELS[difficulty] ?? DIFFICULTY_LABELS.mittel,
-    [difficulty]
-  );
-  const refreshMatches = useCallback(
-    async ({ force = false } = {}) => {
-      if (isCreateOnly) {
-        setOpenMatches([]);
-        setMatchesLoading(false);
-        return;
-      }
-
-      setMatchesLoading(true);
-      setMatchesError(null);
-
-      try {
-        const matches = await fetchOpenMatches({
-          difficulty,
-          force,
-        });
-        setOpenMatches(matches);
-      } catch (err) {
-        console.warn('Konnte offene Matches nicht laden:', err);
-        setMatchesError(err);
-      } finally {
-        setMatchesLoading(false);
-      }
-    },
-    [difficulty, isCreateOnly]
-  );
-
-  useFocusEffect(
-    useCallback(() => {
-      if (!userId || isCreateOnly) {
-        return () => {};
-      }
-
-      refreshMatches();
-
-      return () => {};
-    }, [isCreateOnly, refreshMatches, userId])
-  );
-
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
@@ -347,98 +247,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       };
     }, [currentMatch, handleLeaveLobby])
   );
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadFriends() {
-      if (!userId) {
-        setFriends([]);
-        setFriendsLoading(false);
-        return;
-      }
-
-      setFriendsLoading(true);
-      try {
-        const result = await fetchFriends(userId);
-        if (active) {
-          setFriends(Array.isArray(result) ? result : []);
-        }
-      } catch (err) {
-        if (active) {
-          console.warn('Freunde konnten nicht geladen werden:', err);
-        }
-      } finally {
-        if (active) {
-          setFriendsLoading(false);
-        }
-      }
-    }
-
-    loadFriends();
-
-    return () => {
-      active = false;
-    };
-  }, [userId]);
-
-  useEffect(() => {
-    friendCodesRef.current = new Set(
-      (friends ?? []).map((item) => item.code).filter(Boolean)
-    );
-  }, [friends]);
-
-  useEffect(() => {
-    if (!currentMatch || !userId) {
-      return;
-    }
-
-    const role = deriveMatchRole(currentMatch, userId);
-
-    if (!role) {
-      return;
-    }
-
-    if (currentMatch.status === 'active') {
-      navigation.replace('Quiz', {
-        difficulty: currentMatch.difficulty ?? difficulty,
-        mode: 'multiplayer',
-        matchId: currentMatch.id,
-        joinCode: currentMatch.code,
-        role,
-      });
-    }
-  }, [currentMatch, difficulty, navigation, userId]);
-
-  useEffect(() => {
-    if (!currentMatch || currentMatch.status !== 'waiting') {
-      return undefined;
-    }
-
-    const intervalId = setInterval(async () => {
-      try {
-        const result = await getMatchById(currentMatch.id);
-        if (result.ok && result.match) {
-          setCurrentMatch(result.match);
-        }
-      } catch (err) {
-        console.warn('Konnte Lobby-Status nicht aktualisieren:', err);
-      }
-    }, 4000);
-
-    return () => clearInterval(intervalId);
-  }, [currentMatch]);
-
-  const attachMatchSubscription = useCallback((matchId) => {
-    if (subscriptionRef.current) {
-      subscriptionRef.current();
-      subscriptionRef.current = null;
-    }
-
-    subscriptionRef.current = subscribeToMatch(matchId, (updated) => {
-      setCurrentMatch(updated);
-    });
-  }, []);
 
   const handleCreateMatch = useCallback(async () => {
     if (!userId || creating) {
@@ -857,64 +665,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   }, [currentMatch]);
 
   useEffect(() => {
-    if (!currentMatch) {
-      return;
-    }
-
-    if (
-      currentMatch.status === 'cancelled' ||
-      currentMatch.status === 'completed'
-    ) {
-      clearActiveLobby();
-      if (subscriptionRef.current) {
-        subscriptionRef.current();
-        subscriptionRef.current = null;
-      }
-
-      setCurrentMatch(null);
-
-      if (!isCreateOnly) {
-        refreshMatches({ force: true });
-      }
-
-      if (currentMatch.status === 'cancelled' && !closingRef.current) {
-        setMatchesError(new Error('Lobby wurde geschlossen.'));
-      }
-    }
-  }, [currentMatch, isCreateOnly, refreshMatches]);
-
-  useEffect(() => {
-    if (!currentMatch || !userId) {
-      return;
-    }
-
-    const role = deriveMatchRole(currentMatch, userId);
-    if (role) {
-      return;
-    }
-
-    clearActiveLobby();
-    setCurrentMatch(null);
-    if (!closingRef.current) {
-      setMatchesError(new Error('Du wurdest aus der Lobby entfernt.'));
-    }
-  }, [currentMatch, userId]);
-
-  useEffect(() => {
-    if (!userId || isCreateOnly) {
-      return () => {};
-    }
-
-    const intervalId = setInterval(() => {
-      refreshMatches({ force: true });
-    }, 15000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [isCreateOnly, refreshMatches, userId]);
-
-  useEffect(() => {
     if (!isCreateOnly || currentMatch || creating || loadingUser || !userId || existingMatch) {
       return;
     }
@@ -930,105 +680,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       autoCreateAttemptedRef.current = false;
     }
   }, [isCreateOnly]);
-
-  useEffect(() => {
-    if (currentMatch || !existingMatch) {
-      return;
-    }
-    setCurrentMatch(existingMatch);
-    if (existingMatch.id) {
-      attachMatchSubscription(existingMatch.id);
-    }
-  }, [attachMatchSubscription, currentMatch, existingMatch]);
-
-  useEffect(() => {
-    if (!currentMatch?.id || !userId) {
-      return;
-    }
-
-    saveActiveLobby({
-      matchId: currentMatch.id,
-      code: currentMatch.code ?? null,
-      userId,
-    });
-  }, [currentMatch?.code, currentMatch?.id, userId]);
-
-  useEffect(() => {
-    if (!userId || !currentJoinCode) {
-      setOnlineFriends([]);
-      if (presenceChannelRef.current) {
-        supabase.removeChannel(presenceChannelRef.current);
-        presenceChannelRef.current = null;
-      }
-      return undefined;
-    }
-
-    const channel = supabase.channel('presence:friends', {
-      config: { presence: { key: userId } },
-    });
-    presenceChannelRef.current = channel;
-
-    const syncPresence = () => {
-      if (!channel.presenceState) {
-        return;
-      }
-      const state = channel.presenceState() || {};
-      const seen = new Set();
-      const friendCodes = friendCodesRef.current;
-      const next = [];
-
-      Object.values(state).forEach((entries) => {
-        (entries || []).forEach((entry) => {
-          const meta = entry?.presence ?? entry;
-          if (!meta || meta.userId === userId) {
-            return;
-          }
-          const code = meta.code ?? meta.friendCode ?? null;
-          if (!code || !friendCodes.has(code) || seen.has(code)) {
-            return;
-          }
-          seen.add(code);
-          next.push({
-            code,
-            username: meta.username ?? 'Freund:in',
-            title: meta.title ?? null,
-          });
-        });
-      });
-
-      setOnlineFriends(next);
-    };
-
-    channel.on('presence', { event: 'sync' }, syncPresence);
-    channel.on('presence', { event: 'join' }, syncPresence);
-    channel.on('presence', { event: 'leave' }, syncPresence);
-
-    channel.subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        channel
-          .track({
-            userId,
-            code: userCode,
-            username: username ?? 'MedBattle',
-            title: userTitle,
-            lobby: currentJoinCode,
-            lobbyPlayers: participantCount,
-            lobbyCapacity: MAX_PLAYERS,
-          })
-          .catch((err) => {
-            console.warn('Konnte Presence nicht tracken:', err);
-          });
-      } else if (status === 'CHANNEL_ERROR') {
-        console.warn('Presence-Channel konnte nicht verbunden werden.');
-      }
-    });
-
-    return () => {
-      setOnlineFriends([]);
-      supabase.removeChannel(channel);
-      presenceChannelRef.current = null;
-    };
-  }, [currentJoinCode, friends, userCode, userId, userTitle, username]);
 
   const handleCopyCode = useCallback(async () => {
     if (!currentJoinCode) {
@@ -1134,45 +785,16 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   const showCreateSetup = false;
   const participantCount = participants.filter((item) => !item.isPlaceholder).length;
   const hasEnoughPlayers = participantCount >= 2;
-
-  useEffect(() => {
-    const channel = presenceChannelRef.current;
-    if (!channel || !userId || !currentJoinCode) {
-      lastPresencePayloadRef.current = null;
-      return;
-    }
-
-    const resolvedUsername = username ?? 'MedBattle';
-    const nextPayload = {
-      userId,
-      code: userCode,
-      username: resolvedUsername,
-      title: userTitle,
-      lobby: currentJoinCode,
-      lobbyPlayers: participantCount,
-      lobbyCapacity: MAX_PLAYERS,
-    };
-
-    const prev = lastPresencePayloadRef.current;
-    const isSame =
-      prev &&
-      prev.userId === nextPayload.userId &&
-      prev.code === nextPayload.code &&
-      prev.username === nextPayload.username &&
-      prev.title === nextPayload.title &&
-      prev.lobby === nextPayload.lobby &&
-      prev.lobbyPlayers === nextPayload.lobbyPlayers &&
-      prev.lobbyCapacity === nextPayload.lobbyCapacity;
-
-    if (isSame) {
-      return;
-    }
-
-    lastPresencePayloadRef.current = nextPayload;
-    channel.track(nextPayload).catch((err) => {
-      console.warn('Konnte Presence nicht aktualisieren:', err);
-    });
-  }, [currentJoinCode, participantCount, userCode, userId, userTitle, username]);
+  const { onlineFriends } = useLobbyPresence({
+    userId,
+    userCode,
+    username,
+    userTitle,
+    currentJoinCode,
+    participantCount,
+    maxPlayers: MAX_PLAYERS,
+    friends,
+  });
 
   if (showCreateSetup) {
     return (
@@ -1233,35 +855,12 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Multiplayer Arena</Text>
-        </View>
-        <View style={styles.headerActions}>
-          <Pressable
-            style={[
-              styles.homeButton,
-              closingLobby ? styles.actionDisabled : null,
-            ]}
-            onPress={handleNavigateHome}
-            disabled={closingLobby}
-          >
-            <Ionicons name="home" size={18} color="#E2E8F0" />
-          </Pressable>
-          {isCreateOnly ? (
-            <Pressable
-              style={[
-                styles.closeButton,
-                closingLobby ? styles.actionDisabled : null,
-              ]}
-              onPress={handleLeaveLobby}
-              disabled={closingLobby}
-            >
-              <Text style={styles.closeButtonText}>X</Text>
-            </Pressable>
-          ) : null}
-        </View>
-      </View>
+      <LobbyHeader
+        isCreateOnly={isCreateOnly}
+        closingLobby={closingLobby}
+        onNavigateHome={handleNavigateHome}
+        onLeaveLobby={handleLeaveLobby}
+      />
       <View style={styles.headerStreak} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -1347,224 +946,46 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
           </View>
         ) : null}
 
-        {!isCreateOnly ? (
-          <>
-            <View style={styles.joinSection}>
-              <Text style={styles.joinLabel}>Match-Code eingeben</Text>
-              <View style={styles.joinRow}>
-                <TextInput
-                  value={joinCode}
-                  onChangeText={(value) =>
-                    setJoinCode(value.toUpperCase().slice(0, 6))
-                  }
-                  style={styles.joinInput}
-                  placeholder="ABC12"
-                  placeholderTextColor="#64748B"
-                  autoCapitalize="characters"
-                  autoCorrect={false}
-                  maxLength={6}
-                  autoFocus={isJoinOnly}
-                />
-                <AnimatedPressable
-                  onPress={handleJoinByCode}
-                  onPressIn={handleJoinPressIn}
-                  onPressOut={handleJoinPressOut}
-                  style={[
-                    styles.joinButton,
-                    joinPressStyle,
-                    joining ? styles.actionDisabled : null,
-                  ]}
-                  disabled={joining || !joinCode.trim()}
-                >
-                  <Text style={styles.joinButtonText}>
-                    {joining ? 'Beitreten...' : 'Go'}
-                  </Text>
-                </AnimatedPressable>
-              </View>
-            </View>
-
-            <View style={styles.listHeader}>
-              <Text style={styles.listTitle}>Offene Lobbys</Text>
-              <Pressable onPress={() => refreshMatches({ force: true })}>
-                <Text style={styles.listRefresh}>Aktualisieren</Text>
-              </Pressable>
-            </View>
-
-            {matchesLoading ? (
-              <View style={styles.loadingList}>
-                <ActivityIndicator size="small" color="#60A5FA" />
-                <Text style={styles.loadingListText}>Lade Lobbys ...</Text>
-              </View>
-            ) : (
-              <FlatList
-                data={openMatches}
-                keyExtractor={(item) => item.id}
-                renderItem={renderMatch}
-                scrollEnabled={false}
-                contentContainerStyle={
-                  openMatches.length ? styles.listContent : styles.listEmpty
-                }
-                ListEmptyComponent={<EmptyState />}
-              />
-            )}
-          </>
-        ) : null}
+        <LobbyJoinSection
+          isCreateOnly={isCreateOnly}
+          isJoinOnly={isJoinOnly}
+          joinCode={joinCode}
+          onChangeJoinCode={setJoinCode}
+          onJoinByCode={handleJoinByCode}
+          onJoinPressIn={handleJoinPressIn}
+          onJoinPressOut={handleJoinPressOut}
+          joinPressStyle={joinPressStyle}
+          joining={joining}
+          matchesLoading={matchesLoading}
+          openMatches={openMatches}
+          onRefreshMatches={() => refreshMatches({ force: true })}
+          renderMatch={renderMatch}
+        />
 
         {currentJoinCode ? (
-          <View style={styles.lobbyCard}>
-          <Text style={styles.lobbyTitle}>Lobby</Text>
-
-          <View style={styles.participantsHeader}>
-            <Text style={styles.participantsTitle}>Spieler</Text>
-            <Text style={styles.participantsCount}>
-              {participantCount}/{MAX_PLAYERS}
-            </Text>
-          </View>
-
-          <View style={styles.participantGrid}>
-            {participants.map((participant) => {
-              const canKick = isHostWaiting && participant.key === 'guest';
-              const isSelected = kickCandidateKey === participant.key;
-              return (
-                <View key={participant.key} style={styles.participantSlot}>
-                  <Pressable
-                    onPress={() => handleSelectParticipant(participant.key)}
-                    disabled={!canKick}
-                    style={[
-                      styles.participantAvatarCard,
-                      canKick && isSelected ? styles.participantAvatarCardSelected : null,
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.participantAvatar,
-                        participant.isPlaceholder ? styles.participantAvatarGhost : null,
-                        canKick && isSelected ? styles.participantAvatarKick : null,
-                      ]}
-                    >
-                      {participant.role === 'Host' && !participant.isPlaceholder ? (
-                        <Image source={hostBadgeIcon} style={styles.hostBadge} />
-                      ) : null}
-                      {participant.avatarSource && !participant.isPlaceholder ? (
-                        <Image source={participant.avatarSource} style={styles.participantAvatarImage} />
-                      ) : participant.avatarUrl && !participant.isPlaceholder ? (
-                        <Image source={{ uri: participant.avatarUrl }} style={styles.participantAvatarImage} />
-                      ) : (
-                        <Text style={styles.participantAvatarText}>
-                          {participant.isPlaceholder ? '?' : getInitials(participant.name)}
-                        </Text>
-                      )}
-                    </View>
-                    <Text
-                      style={[
-                        styles.participantName,
-                        participant.isPlaceholder ? styles.participantPlaceholder : null,
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {participant.name}
-                    </Text>
-                  </Pressable>
-                  {canKick && isSelected ? (
-                    <Pressable
-                      onPress={handleKickGuest}
-                      disabled={kickingPlayer}
-                      style={[
-                        styles.kickButton,
-                        kickingPlayer ? styles.kickButtonDisabled : null,
-                      ]}
-                    >
-                      <Ionicons name="close" size={14} color="#FCA5A5" />
-                      <Text style={styles.kickButtonText}>Entfernen</Text>
-                    </Pressable>
-                  ) : null}
-                </View>
-              );
-            })}
-          </View>
-
-          {isHostWaiting ? (
-            <View style={styles.startRow}>
-              <AnimatedPressable
-                onPress={handleStartMatch}
-                style={[
-                  styles.primaryAction,
-                  styles.startButton,
-                  startPulseStyle,
-                  !hasEnoughPlayers || startingMatch ? styles.actionDisabled : null,
-                ]}
-                disabled={!hasEnoughPlayers || startingMatch}
-              >
-                <Text style={[styles.primaryActionText, styles.startButtonText]}>
-                  {startingMatch ? 'Starte ...' : 'Start'}
-                </Text>
-              </AnimatedPressable>
-              <Pressable
-                onPress={handleOpenSettings}
-                style={styles.lobbySettingsButton}
-                accessibilityLabel="Lobby Einstellungen"
-              >
-                <Ionicons name="settings-outline" size={18} color="#93C5FD" />
-              </Pressable>
-            </View>
-          ) : null}
-          <View style={styles.codeActionsRow}>
-            <Pressable
-              onPress={handleCopyCode}
-              style={[
-                styles.codeBadge,
-                copied ? styles.codeBadgeSuccess : null,
-              ]}
-            >
-              <Text style={styles.codeBadgeText}>{currentJoinCode}</Text>
-              <Text style={copied ? styles.codeHintSuccess : styles.codeHint}>
-                {copied ? 'Kopiert!' : 'Tippen zum Kopieren'}
-              </Text>
-            </Pressable>
-            <Pressable onPress={handleShareCode} style={styles.shareButton}>
-              <Image source={SHARE_ANIM} style={styles.shareIconAnim} />
-            </Pressable>
-          </View>
-
-          <View style={styles.onlineFriendsSection}>
-            <Text style={styles.onlineFriendsTitle}>Freunde online</Text>
-
-            {friendsLoading ? (
-              <View style={styles.loadingInline}>
-                <ActivityIndicator size="small" color="#60A5FA" />
-                <Text style={styles.loadingInlineText}>Suche Freunde ...</Text>
-              </View>
-            ) : null}
-
-            {!friendsLoading && onlineFriends.length ? (
-              <View style={styles.onlineFriendList}>
-                {onlineFriends.map((friend) => (
-                  <Pressable
-                    key={friend.code}
-                    onPress={() => handleInviteFriend(friend)}
-                    style={styles.onlineFriendCard}
-                  >
-                    <Text style={styles.onlineFriendName}>
-                      {friend.username ?? 'Freund:in'}
-                    </Text>
-                    {friend.title ? (
-                      <Text style={styles.onlineFriendTitle}>{friend.title}</Text>
-                    ) : null}
-                    <Text style={styles.onlineFriendCode}>{friend.code}</Text>
-                    <Text style={styles.onlineFriendHint}>Einladen</Text>
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
-
-            {!friendsLoading && !onlineFriends.length ? (
-              <Text style={styles.onlineFriendEmpty}>
-                Keine Freunde online.
-              </Text>
-            ) : null}
-          </View>
-        </View>
-      ) : null}
+          <LobbyParticipantsCard
+            participants={participants}
+            participantCount={participantCount}
+            maxPlayers={MAX_PLAYERS}
+            isHostWaiting={isHostWaiting}
+            onSelectParticipant={handleSelectParticipant}
+            kickCandidateKey={kickCandidateKey}
+            onKickGuest={handleKickGuest}
+            kickingPlayer={kickingPlayer}
+            onStartMatch={handleStartMatch}
+            hasEnoughPlayers={hasEnoughPlayers}
+            startingMatch={startingMatch}
+            startPulseStyle={startPulseStyle}
+            onOpenSettings={handleOpenSettings}
+            currentJoinCode={currentJoinCode}
+            copied={copied}
+            onCopyCode={handleCopyCode}
+            onShareCode={handleShareCode}
+            friendsLoading={friendsLoading}
+            onlineFriends={onlineFriends}
+            onInviteFriend={handleInviteFriend}
+          />
+        ) : null}
 
       </ScrollView>
 

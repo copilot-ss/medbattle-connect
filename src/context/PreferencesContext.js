@@ -1,74 +1,25 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const SOUND_STORAGE_KEY = 'medbattle_sound_enabled';
-const VIBRATION_STORAGE_KEY = 'medbattle_vibration_enabled';
-const PUSH_STORAGE_KEY = 'medbattle_push_enabled';
-const FRIEND_REQUESTS_STORAGE_KEY = 'medbattle_friend_requests_enabled';
-const AVATAR_STORAGE_KEY = 'medbattle_avatar_id';
-const USER_STATS_STORAGE_KEY = 'medbattle_user_stats';
-const ENERGY_VALUE_KEY = 'medbattle_energy_value';
-const ENERGY_TIMESTAMP_KEY = 'medbattle_energy_timestamp';
-const MAX_ENERGY = 20;
-const ENERGY_RECHARGE_MS = 30 * 60 * 1000;
-const BOOST_AMOUNT = MAX_ENERGY;
-
-export const STREAK_STORAGE_KEYS = {
-  leicht: 'medbattle_streak_leicht',
-  mittel: 'medbattle_streak_mittel',
-  schwer: 'medbattle_streak_schwer',
-};
-
-const DEFAULT_STREAKS = {
-  leicht: 0,
-  mittel: 0,
-  schwer: 0,
-};
-
-const DEFAULT_USER_STATS = {
-  quizzes: 0,
-  correct: 0,
-  questions: 0,
-  xp: 0,
-};
-
-function sanitizeStreakValue(value) {
-  const parsed = parseInt(value, 10);
-  if (Number.isFinite(parsed) && parsed >= 0) {
-    return parsed;
-  }
-  return 0;
-}
-
-function sanitizeStatNumber(value) {
-  const parsed = parseInt(value, 10);
-  if (Number.isFinite(parsed) && parsed >= 0) {
-    return parsed;
-  }
-  return 0;
-}
-
-function recalcEnergy(currentEnergy, lastTimestamp) {
-  const safeEnergy = sanitizeStatNumber(currentEnergy);
-  const safeTs = Number.isFinite(lastTimestamp) ? lastTimestamp : Date.now();
-
-  if (safeEnergy >= MAX_ENERGY) {
-    return { energy: MAX_ENERGY, ts: safeTs, nextAt: null };
-  }
-
-  const now = Date.now();
-  const elapsed = Math.max(0, now - safeTs);
-  const gained = Math.floor(elapsed / ENERGY_RECHARGE_MS);
-  const nextEnergy = Math.min(MAX_ENERGY, safeEnergy + gained);
-
-  if (nextEnergy >= MAX_ENERGY) {
-    return { energy: MAX_ENERGY, ts: now, nextAt: null };
-  }
-
-  const nextAt = safeTs + (gained + 1) * ENERGY_RECHARGE_MS;
-
-  return { energy: nextEnergy, ts: safeTs, nextAt };
-}
+import {
+  DEFAULT_STREAKS,
+  DEFAULT_USER_STATS,
+  ENERGY_RECHARGE_MS,
+  FRIEND_REQUESTS_STORAGE_KEY,
+  MAX_ENERGY,
+  PUSH_STORAGE_KEY,
+  SOUND_STORAGE_KEY,
+  STREAK_STORAGE_KEYS,
+  VIBRATION_STORAGE_KEY,
+} from './preferences/constants';
+import { recalcEnergy } from './preferences/energyUtils';
+import { sanitizeStatNumber, sanitizeStreakValue } from './preferences/sanitize';
+import {
+  loadPreferencesFromStorage,
+  persistAvatarId,
+  persistBooleanValue,
+  persistEnergy,
+  persistStreakValue,
+  persistUserStats,
+} from './preferences/storage';
 
 const PreferencesContext = createContext(null);
 
@@ -90,83 +41,22 @@ export function PreferencesProvider({ children }) {
 
     async function loadPreferences() {
       try {
-        const nextStreaks = { ...DEFAULT_STREAKS };
-        let nextUserStats = { ...DEFAULT_USER_STATS };
-        let loadedEnergy = MAX_ENERGY;
-        let loadedEnergyTs = Date.now();
-        const [storedSound, storedVibration, storedPush, storedRequests, storedAvatar] =
-          await Promise.all([
-            AsyncStorage.getItem(SOUND_STORAGE_KEY),
-            AsyncStorage.getItem(VIBRATION_STORAGE_KEY),
-            AsyncStorage.getItem(PUSH_STORAGE_KEY),
-            AsyncStorage.getItem(FRIEND_REQUESTS_STORAGE_KEY),
-            AsyncStorage.getItem(AVATAR_STORAGE_KEY),
-            AsyncStorage.getItem(ENERGY_VALUE_KEY),
-            AsyncStorage.getItem(ENERGY_TIMESTAMP_KEY),
-            ...Object.entries(STREAK_STORAGE_KEYS).map(async ([difficulty, key]) => {
-              try {
-                const raw = await AsyncStorage.getItem(key);
-                const value = raw ? sanitizeStreakValue(raw) : 0;
-                nextStreaks[difficulty] = value;
-              } catch (err) {
-                console.warn(`Konnte Streak fuer ${difficulty} nicht laden:`, err);
-              }
-            }),
-            (async () => {
-              try {
-                const rawStats = await AsyncStorage.getItem(USER_STATS_STORAGE_KEY);
-                if (rawStats) {
-                  const parsed = JSON.parse(rawStats);
-                  nextUserStats = {
-                    quizzes: sanitizeStatNumber(parsed?.quizzes),
-                    correct: sanitizeStatNumber(parsed?.correct),
-                    questions: sanitizeStatNumber(parsed?.questions),
-                    xp: sanitizeStatNumber(parsed?.xp),
-                  };
-                }
-              } catch (err) {
-                console.warn('Konnte User-Stats nicht laden:', err);
-              }
-            })(),
-            (async () => {
-              try {
-                const rawEnergy = await AsyncStorage.getItem(ENERGY_VALUE_KEY);
-                const rawTs = await AsyncStorage.getItem(ENERGY_TIMESTAMP_KEY);
-                if (rawEnergy) {
-                  loadedEnergy = sanitizeStatNumber(rawEnergy);
-                }
-                if (rawTs) {
-                  const parsedTs = parseInt(rawTs, 10);
-                  if (Number.isFinite(parsedTs)) {
-                    loadedEnergyTs = parsedTs;
-                  }
-                }
-              } catch (err) {
-                console.warn('Konnte Energie nicht laden:', err);
-              }
-            })(),
-          ]);
+        const loaded = await loadPreferencesFromStorage();
 
         if (!active) {
           return;
         }
 
-        const soundDefault = storedSound === null ? true : storedSound === 'true';
-        setSoundEnabledState(soundDefault);
-        setVibrationEnabledState(
-          storedVibration === null ? true : storedVibration === 'true'
-        );
-        setPushEnabledState(storedPush === null ? true : storedPush === 'true');
-        setFriendRequestsEnabledState(
-          storedRequests === null ? true : storedRequests === 'true'
-        );
-        setAvatarIdState(storedAvatar || null);
-        setStreaksState(nextStreaks);
-        setUserStatsState(nextUserStats);
-        const recalc = recalcEnergy(loadedEnergy, loadedEnergyTs);
-        energyTimestampRef.current = recalc.ts;
-        setEnergyState(recalc.energy);
-        setNextEnergyAt(recalc.nextAt);
+        setSoundEnabledState(loaded.soundEnabled);
+        setVibrationEnabledState(loaded.vibrationEnabled);
+        setPushEnabledState(loaded.pushEnabled);
+        setFriendRequestsEnabledState(loaded.friendRequestsEnabled);
+        setAvatarIdState(loaded.avatarId);
+        setStreaksState(loaded.streaks);
+        setUserStatsState(loaded.userStats);
+        energyTimestampRef.current = loaded.energyTimestamp;
+        setEnergyState(loaded.energy);
+        setNextEnergyAt(loaded.nextEnergyAt);
       } catch (err) {
         if (active) {
           console.warn('Konnte Nutzer-Praeferenzen nicht laden:', err);
@@ -188,55 +78,31 @@ export function PreferencesProvider({ children }) {
   const setSoundEnabled = useCallback(async (value) => {
     const normalized = Boolean(value);
     setSoundEnabledState(normalized);
-    try {
-      await AsyncStorage.setItem(SOUND_STORAGE_KEY, normalized ? 'true' : 'false');
-    } catch (err) {
-      console.warn('Konnte Sound-Einstellung nicht speichern:', err);
-    }
+    await persistBooleanValue(SOUND_STORAGE_KEY, normalized);
   }, []);
 
   const setVibrationEnabled = useCallback(async (value) => {
     const normalized = Boolean(value);
     setVibrationEnabledState(normalized);
-    try {
-      await AsyncStorage.setItem(VIBRATION_STORAGE_KEY, normalized ? 'true' : 'false');
-    } catch (err) {
-      console.warn('Konnte Vibrations-Einstellung nicht speichern:', err);
-    }
+    await persistBooleanValue(VIBRATION_STORAGE_KEY, normalized);
   }, []);
 
   const setPushEnabled = useCallback(async (value) => {
     const normalized = Boolean(value);
     setPushEnabledState(normalized);
-    try {
-      await AsyncStorage.setItem(PUSH_STORAGE_KEY, normalized ? 'true' : 'false');
-    } catch (err) {
-      console.warn('Konnte Push-Einstellung nicht speichern:', err);
-    }
+    await persistBooleanValue(PUSH_STORAGE_KEY, normalized);
   }, []);
 
   const setFriendRequestsEnabled = useCallback(async (value) => {
     const normalized = Boolean(value);
     setFriendRequestsEnabledState(normalized);
-    try {
-      await AsyncStorage.setItem(FRIEND_REQUESTS_STORAGE_KEY, normalized ? 'true' : 'false');
-    } catch (err) {
-      console.warn('Konnte Freundesanfragen-Einstellung nicht speichern:', err);
-    }
+    await persistBooleanValue(FRIEND_REQUESTS_STORAGE_KEY, normalized);
   }, []);
 
   const setAvatarId = useCallback(async (value) => {
     const normalized = value || null;
     setAvatarIdState(normalized);
-    try {
-      if (normalized) {
-        await AsyncStorage.setItem(AVATAR_STORAGE_KEY, normalized);
-      } else {
-        await AsyncStorage.removeItem(AVATAR_STORAGE_KEY);
-      }
-    } catch (err) {
-      console.warn('Konnte Avatar nicht speichern:', err);
-    }
+    await persistAvatarId(normalized);
   }, []);
 
   const updateUserStats = useCallback(async (updater) => {
@@ -248,9 +114,7 @@ export function PreferencesProvider({ children }) {
         questions: sanitizeStatNumber(next.questions),
         xp: sanitizeStatNumber(next.xp),
       };
-      AsyncStorage.setItem(USER_STATS_STORAGE_KEY, JSON.stringify(sanitized)).catch((err) => {
-        console.warn('Konnte User-Stats nicht speichern:', err);
-      });
+      persistUserStats(sanitized);
       return sanitized;
     });
   }, []);
@@ -268,14 +132,7 @@ export function PreferencesProvider({ children }) {
     setEnergyState(MAX_ENERGY);
     setNextEnergyAt(null);
     energyTimestampRef.current = Date.now();
-    try {
-      await AsyncStorage.multiSet([
-        [ENERGY_VALUE_KEY, String(MAX_ENERGY)],
-        [ENERGY_TIMESTAMP_KEY, String(energyTimestampRef.current)],
-      ]);
-    } catch (err) {
-      console.warn('Konnte Energie-Boost nicht speichern:', err);
-    }
+    await persistEnergy(MAX_ENERGY, energyTimestampRef.current);
     return { ok: true, energy: MAX_ENERGY };
   }, []);
 
@@ -296,12 +153,7 @@ export function PreferencesProvider({ children }) {
       energyTimestampRef.current = now;
       setNextEnergyAt(nextAt);
 
-      AsyncStorage.multiSet([
-        [ENERGY_VALUE_KEY, String(nextEnergy)],
-        [ENERGY_TIMESTAMP_KEY, String(now)],
-      ]).catch((err) => {
-        console.warn('Konnte Energie nicht speichern:', err);
-      });
+      persistEnergy(nextEnergy, now);
 
       result = { ok: true, energy: nextEnergy, nextAt };
       return nextEnergy;
@@ -335,12 +187,7 @@ export function PreferencesProvider({ children }) {
 
         setNextEnergyAt(nextAt);
 
-        AsyncStorage.multiSet([
-          [ENERGY_VALUE_KEY, String(nextEnergy)],
-          [ENERGY_TIMESTAMP_KEY, String(Date.now())],
-        ]).catch((err) => {
-          console.warn('Konnte Energie nicht speichern:', err);
-        });
+        persistEnergy(nextEnergy, Date.now());
 
         result = { ok: true, energy: nextEnergy, nextAt };
         return nextEnergy;
@@ -370,11 +217,7 @@ export function PreferencesProvider({ children }) {
       };
     });
 
-    try {
-      await AsyncStorage.setItem(key, String(nextValue));
-    } catch (err) {
-      console.warn(`Konnte Streak fuer ${difficulty} nicht speichern:`, err);
-    }
+    await persistStreakValue(key, nextValue);
 
     return nextValue;
   }, []);

@@ -1,98 +1,18 @@
 import { useMemo } from 'react';
-import { View, Text, Pressable, Image } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePreferences } from '../context/PreferencesContext';
 import usePremiumStatus from '../hooks/usePremiumStatus';
 import AVATARS from './settings/avatars';
+import { findBadge } from './result/resultConstants';
+import ResultScoreboard from './result/ResultScoreboard';
+import { Sparkle, StatPill } from './result/ResultWidgets';
+import { getInitials } from './result/resultUtils';
 import styles, {
   getBadgePillStyle,
   getLargeGlowStyle,
   getPrimaryButtonStyle,
-  getSparkleContainerStyle,
-  getSparkleHorizontalStyle,
-  getSparkleVerticalStyle,
 } from './styles/ResultScreen.styles';
-
-const BADGES = [
-  {
-    min: 0,
-    max: 49,
-    title: 'Med Rookie',
-    subtitle: 'Noch ein Versuch und du kletterst ins Mittelfeld!',
-    color: '#F97316',
-    glow: '#FB923C',
-  },
-  {
-    min: 50,
-    max: 79,
-    title: 'Knowledge Handler',
-    subtitle: 'Starke Leistung! Hol dir jetzt einen Platz in der Top 10.',
-    color: '#38BDF8',
-    glow: '#0EA5E9',
-  },
-  {
-    min: 80,
-    max: 94,
-    title: 'Surgery Ace',
-    subtitle: 'Fast makellos - noch ein Run f\u00fcr den Legendenstatus.',
-    color: '#22C55E',
-    glow: '#4ADE80',
-    spotlight: true,
-  },
-  {
-    min: 95,
-    max: 100,
-    title: 'Legendary Medic',
-    subtitle: 'Absolute Spitzenklasse. Teile deinen Triumph!',
-    color: '#FACC15',
-    glow: '#FDE047',
-    spotlight: true,
-  },
-];
-
-function findBadge(percentage) {
-  const normalized = Math.max(0, Math.min(percentage, 100));
-  return BADGES.find((badge) => normalized >= badge.min && normalized <= badge.max) ?? BADGES[0];
-}
-
-function getInitials(name) {
-  if (!name || typeof name !== 'string') {
-    return '?';
-  }
-  const parts = name.trim().split(/\s+/);
-  const first = parts[0]?.[0] ?? '';
-  const last = parts[1]?.[0] ?? '';
-  return (first + last || first).toUpperCase();
-}
-
-function Sparkle({ size, top, left, opacity, rotate = '0deg', color }) {
-  const horizontalHeight = size * 0.2;
-  const verticalWidth = size * 0.2;
-  const centerOffset = (size - horizontalHeight) / 2;
-  const containerStyle = getSparkleContainerStyle({ size, top, left, opacity, rotate });
-  const horizontalStyle = getSparkleHorizontalStyle({ centerOffset, height: horizontalHeight, color });
-  const verticalStyle = getSparkleVerticalStyle({
-    leftOffset: (size - verticalWidth) / 2,
-    width: verticalWidth,
-    color,
-  });
-
-  return (
-    <View pointerEvents="none" style={containerStyle}>
-      <View style={horizontalStyle} />
-      <View style={verticalStyle} />
-    </View>
-  );
-}
-
-function StatPill({ label, value }) {
-  return (
-    <View style={styles.statPill}>
-      <Text style={styles.statPillLabel}>{label}</Text>
-      <Text style={styles.statPillValue}>{value}</Text>
-    </View>
-  );
-}
 
 export default function ResultScreen({ route, navigation }) {
   const {
@@ -272,50 +192,11 @@ export default function ResultScreen({ route, navigation }) {
               </View>
             </View>
           ) : (
-            <View style={styles.multiplayerCard}>
-              <Text style={styles.multiplayerTitle}>Ranking</Text>
-              <View style={styles.scoreboardList}>
-                {multiplayerEntries.map((entry) => (
-                  <View
-                    key={entry.key}
-                    style={[
-                      styles.scoreboardRow,
-                      entry.isSelf ? styles.scoreboardRowSelf : null,
-                    ]}
-                  >
-                    <Text style={styles.scoreboardRank}>{entry.rank}.</Text>
-                    <View style={styles.scoreboardAvatar}>
-                      {entry.avatarSource ? (
-                        <Image
-                          source={entry.avatarSource}
-                          style={styles.scoreboardAvatarImage}
-                        />
-                      ) : (
-                        <Text style={styles.scoreboardAvatarText}>{entry.initials}</Text>
-                      )}
-                    </View>
-                    <View style={styles.scoreboardMeta}>
-                      <Text style={styles.scoreboardName} numberOfLines={1}>
-                        {entry.name}
-                      </Text>
-                      {entry.isSelf ? (
-                        <Text style={styles.scoreboardTag}>Du</Text>
-                      ) : null}
-                    </View>
-                    <View style={styles.scoreboardScoreBox}>
-                      <Text style={styles.scoreboardScore}>
-                        {Number.isFinite(entry.score) ? entry.score : '-'}
-                      </Text>
-                      <Text style={styles.scoreboardScoreLabel}>Richtig</Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-              <Text style={styles.multiplayerMeta}>
-                {matchStatusLabel}
-                {matchJoinCode ? ` - Code ${matchJoinCode}` : ''}
-              </Text>
-            </View>
+            <ResultScoreboard
+              entries={multiplayerEntries}
+              matchStatusLabel={matchStatusLabel}
+              matchJoinCode={matchJoinCode}
+            />
           )}
 
           {showOfflineNote ? (

@@ -2,7 +2,6 @@
 
 ## Offen
 - Release-Readiness: Store-Assets, Privacy Policy/AGB, Versionierung, Build-Nummern pruefen.
-- Refactor: grosse Screens (Settings/Multiplayer) in kleinere Hooks/Components splitten.
 - Data-Layer: Supabase-Timeouts/Fehlerhandling zentralisieren + Request-Tracking.
 - DB: Score-Retention (z.B. Top-N pro User) als Maintenance-Job definieren.
 - Offline: lokale Fragenbank erweitern + Sync beim Online-Gehen (Diff/Update-Strategie).
@@ -27,6 +26,7 @@
 - Keine Aufgaben in Arbeit erfasst.
 
 ## Erledigt
+- [x] Refactor: grosse Screens (Settings/Multiplayer) in kleinere Hooks/Components splitten.
 - [x] DB-Refactor: Indexe fuer Fragen/Leaderboard + updated_at Trigger fuer users/questions.
 - [x] Supabase Local Auth: Passwort-Policy in `supabase/config.toml` gesetzt.
 - [x] Alternative Passwort-Policy im Client erzwungen (min. 12 Zeichen, Gross/Klein, Zahl, Sonderzeichen).
