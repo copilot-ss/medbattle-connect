@@ -1,9 +1,9 @@
 import { StyleSheet } from 'react-native';
 
 const quickActionButtonBase = {
-  width: 52,
-  height: 52,
-  borderRadius: 20,
+  width: 44,
+  height: 44,
+  borderRadius: 16,
   backgroundColor: 'rgba(15, 23, 42, 0.95)',
   borderWidth: 1,
   borderColor: 'rgba(148, 163, 184, 0.45)',
@@ -39,30 +39,31 @@ const styles = StyleSheet.create({
   quickActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    transform: [{ translateX: 2 }],
   },
   leaderboardButton: {
     ...quickActionButtonBase,
   },
   leaderboardIcon: {
-    width: 26,
-    height: 26,
+    width: 22,
+    height: 22,
   },
   friendsButton: {
     ...quickActionButtonBase,
-    marginLeft: 16,
+    marginLeft: 8,
     borderColor: 'rgba(251, 113, 133, 0.6)',
     shadowColor: '#FB7185',
   },
   friendsEmoji: {
-    fontSize: 22,
+    fontSize: 18,
   },
   menuButton: {
     ...quickActionButtonBase,
-    marginLeft: 16,
+    marginLeft: 8,
   },
   menuIcon: {
-    width: 28,
-    height: 28,
+    width: 22,
+    height: 22,
   },
   quickActionDisabled: {
     opacity: 0.45,

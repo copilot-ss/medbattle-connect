@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
+import { runSupabaseRequest } from './supabaseRequest';
 
 export function sanitizeUsername(value, fallback) {
   if (!value) {
@@ -19,11 +20,15 @@ export async function fetchUserProfile(userId) {
   }
 
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('id, username, email')
-      .eq('id', userId)
-      .maybeSingle();
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase
+          .from('users')
+          .select('id, username, email')
+          .eq('id', userId)
+          .maybeSingle(),
+      { label: 'userService.fetchUserProfile' }
+    );
 
     if (error) {
       throw error;
@@ -47,12 +52,16 @@ export async function updateUsername(userId, nextUsername) {
   }
 
   try {
-    const { data: existing, error: existingError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('username', sanitized)
-      .neq('id', userId)
-      .maybeSingle();
+    const { data: existing, error: existingError } = await runSupabaseRequest(
+      () =>
+        supabase
+          .from('users')
+          .select('id')
+          .eq('username', sanitized)
+          .neq('id', userId)
+          .maybeSingle(),
+      { label: 'userService.checkUsername' }
+    );
 
     if (existingError) {
       throw existingError;
@@ -65,8 +74,13 @@ export async function updateUsername(userId, nextUsername) {
     let emailForUpsert = null;
 
     try {
-      const { data: authData } = await supabase.auth.getUser();
-      emailForUpsert = authData?.user?.email ?? null;
+      const { data: authData, error: authError } = await runSupabaseRequest(
+        () => supabase.auth.getUser(),
+        { label: 'userService.auth.getUser' }
+      );
+      if (!authError) {
+        emailForUpsert = authData?.user?.email ?? null;
+      }
     } catch {
       emailForUpsert = null;
     }
@@ -87,17 +101,25 @@ export async function updateUsername(userId, nextUsername) {
 
     const upsertPayload = { id: userId, username: sanitized, email: emailForUpsert };
 
-    const { error: upsertError } = await supabase
-      .from('users')
-      .upsert(upsertPayload, { onConflict: 'id' });
+    const { error: upsertError } = await runSupabaseRequest(
+      () =>
+        supabase
+          .from('users')
+          .upsert(upsertPayload, { onConflict: 'id' }),
+      { label: 'userService.upsertProfile' }
+    );
 
     if (upsertError) {
       throw upsertError;
     }
 
-    const { error: metaError } = await supabase.auth.updateUser({
-      data: { username: sanitized },
-    });
+    const { error: metaError } = await runSupabaseRequest(
+      () =>
+        supabase.auth.updateUser({
+          data: { username: sanitized },
+        }),
+      { label: 'userService.auth.updateUser' }
+    );
 
     if (metaError) {
       throw metaError;

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Text, View, Platform } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Text, View, Platform, InteractionManager } from 'react-native';
 import LottieView from 'lottie-react-native';
 import styles from './styles/HomeScreen.styles';
 import { useConnectivity } from '../context/ConnectivityContext';
@@ -12,6 +11,7 @@ import { getAdsModule, getRewardedAdUnitId, initializeAds } from '../services/ad
 import { deriveMatchRole, getMatchById } from '../services/matchService';
 import { clearActiveLobby, loadActiveLobby } from '../utils/activeLobbyStorage';
 import ActiveLobbyBanner from './home/ActiveLobbyBanner';
+import EnergyBadge from './home/EnergyBadge';
 import EnergyBoostModal from './home/EnergyBoostModal';
 import HomeHeader from './home/HomeHeader';
 import ModeCard from './home/ModeCard';
@@ -21,8 +21,6 @@ const DEFAULT_DIFFICULTY = 'mittel';
 const doctorAnimation = require('../../assets/animations/doctor/doctor.json');
 const BOOST_PRODUCT_ID = 'energy_boost_20';
 const REWARDED_ENERGY = 5;
-const ENERGY_BADGE_COLOR = '#FACC15';
-const ENERGY_BADGE_EMPTY_COLOR = '#FCA5A5';
 const LOBBY_CAPACITY = 10;
 
 export default function HomeScreen({ navigation, route }) {
@@ -47,11 +45,11 @@ export default function HomeScreen({ navigation, route }) {
   const [boosting, setBoosting] = useState(false);
   const [rewarding, setRewarding] = useState(false);
   const [showBoostModal, setShowBoostModal] = useState(false);
+  const [showAnimation, setShowAnimation] = useState(false);
   const iapModule = useMemo(() => getInAppPurchases(), []);
   const adsModule = useMemo(() => getAdsModule(), []);
   const iapAvailable = Boolean(iapModule && typeof iapModule.connectAsync === 'function');
   const [iapReady, setIapReady] = useState(iapAvailable && Platform.OS !== 'android');
-  const [nextEnergyCountdown, setNextEnergyCountdown] = useState('');
   const restoreAttemptedRef = useRef(false);
 
   useEffect(() => {
@@ -59,6 +57,21 @@ export default function HomeScreen({ navigation, route }) {
       setShowBoostModal(false);
     }
   }, [isOffline, showBoostModal]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const task = InteractionManager.runAfterInteractions(() => {
+      if (!cancelled) {
+        setShowAnimation(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+      if (task?.cancel) {
+        task.cancel();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (routeLobby === undefined) {
@@ -157,36 +170,6 @@ export default function HomeScreen({ navigation, route }) {
   }, [refreshEnergy]);
 
   useEffect(() => {
-    if (!nextEnergyAt) {
-      setNextEnergyCountdown('');
-      return undefined;
-    }
-
-    const formatCountdown = (target) => {
-      const diff = Math.max(0, target - Date.now());
-      const totalSeconds = Math.floor(diff / 1000);
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    };
-
-    setNextEnergyCountdown(formatCountdown(nextEnergyAt));
-
-    const timerId = setInterval(() => {
-      const diff = nextEnergyAt - Date.now();
-      if (diff <= 0) {
-        refreshEnergy();
-        setNextEnergyCountdown('');
-        clearInterval(timerId);
-        return;
-      }
-      setNextEnergyCountdown(formatCountdown(nextEnergyAt));
-    }, 1000);
-
-    return () => clearInterval(timerId);
-  }, [nextEnergyAt, refreshEnergy]);
-
-  useEffect(() => {
     if (Platform.OS !== 'android' || !iapAvailable) {
       return undefined;
     }
@@ -244,14 +227,6 @@ export default function HomeScreen({ navigation, route }) {
   const AdEventType = adsModule?.AdEventType;
   const isBoostBusy = boosting || rewarding;
   const quickPlayLocked = !premium && energy <= 0;
-  const quickPlayEnergyLabel = premium
-    ? `${energyMax}/${energyMax}`
-    : `${energy}/${energyMax}${nextEnergyCountdown ? ` - ${nextEnergyCountdown}` : ''}`;
-  const energyBadgeStyle = quickPlayLocked ? styles.energyBadgeEmpty : null;
-  const energyBadgeTextStyle = quickPlayLocked ? styles.energyBadgeTextEmpty : null;
-  const energyBadgeIconColor = quickPlayLocked
-    ? ENERGY_BADGE_EMPTY_COLOR
-    : ENERGY_BADGE_COLOR;
 
   async function handleGoOnline() {
     await checkOnline({ force: true });
@@ -440,12 +415,14 @@ export default function HomeScreen({ navigation, route }) {
       />
 
       <View style={styles.animationWrapper} pointerEvents="none">
-        <LottieView
-          source={doctorAnimation}
-          style={styles.animationView}
-          autoPlay
-          loop
-        />
+        {showAnimation ? (
+          <LottieView
+            source={doctorAnimation}
+            style={styles.animationView}
+            autoPlay
+            loop
+          />
+        ) : null}
       </View>
 
       <View style={styles.modeSection}>
@@ -467,21 +444,14 @@ export default function HomeScreen({ navigation, route }) {
           onPress={startQuickPlay}
           disabled={isBoostBusy || hasLobby}
           titleMeta={
-            <View style={[styles.energyBadge, energyBadgeStyle]}>
-              <Ionicons
-                name="flash"
-                size={12}
-                color={energyBadgeIconColor}
-                style={styles.energyBadgeIcon}
-              />
-              <Text
-                style={[styles.energyBadgeText, energyBadgeTextStyle]}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {quickPlayEnergyLabel}
-              </Text>
-            </View>
+            <EnergyBadge
+              energy={energy}
+              energyMax={energyMax}
+              nextEnergyAt={nextEnergyAt}
+              isPremium={premium}
+              isLocked={quickPlayLocked}
+              onRefreshEnergy={refreshEnergy}
+            />
           }
         />
       </View>

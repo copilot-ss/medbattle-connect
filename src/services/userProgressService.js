@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabaseClient';
+import { runSupabaseRequest } from './supabaseRequest';
 
 const PROGRESS_CACHE_TTL = 60 * 1000;
 const progressCache = {
@@ -78,11 +79,15 @@ export async function fetchUserProgress(userId, { force = false } = {}) {
   }
 
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('xp, quizzes, correct, questions')
-      .eq('id', userId)
-      .maybeSingle();
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase
+          .from('users')
+          .select('xp, quizzes, correct, questions')
+          .eq('id', userId)
+          .maybeSingle(),
+      { label: 'userProgressService.fetchUserProgress' }
+    );
 
     if (error) {
       throw error;
@@ -116,13 +121,17 @@ export async function incrementUserProgress(userId, delta) {
   }
 
   try {
-    const { error } = await supabase.rpc('increment_user_progress', {
-      p_user_id: userId,
-      p_quizzes: normalized.quizzes,
-      p_correct: normalized.correct,
-      p_questions: normalized.questions,
-      p_xp: normalized.xp,
-    });
+    const { error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('increment_user_progress', {
+          p_user_id: userId,
+          p_quizzes: normalized.quizzes,
+          p_correct: normalized.correct,
+          p_questions: normalized.questions,
+          p_xp: normalized.xp,
+        }),
+      { label: 'userProgressService.incrementUserProgress' }
+    );
 
     if (error) {
       throw error;

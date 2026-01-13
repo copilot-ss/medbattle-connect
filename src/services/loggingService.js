@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { supabase } from '../lib/supabaseClient';
+import { runSupabaseRequest } from './supabaseRequest';
 
 const LOG_DEDUPE_TTL_MS = 4000;
 const MAX_MESSAGE_LENGTH = 800;
@@ -62,7 +63,10 @@ export async function logClientError({ level = 'error', message, stack, context 
       stack: safeStack,
       context: buildContext(context),
     };
-    const { error } = await supabase.from('client_logs').insert([payload]);
+    const { error } = await runSupabaseRequest(
+      () => supabase.from('client_logs').insert([payload]),
+      { label: 'loggingService.insertClientLog' }
+    );
     if (error) {
       console.warn('Konnte Client-Log nicht speichern:', error.message);
       return { ok: false, error };

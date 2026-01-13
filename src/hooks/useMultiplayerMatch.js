@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useConnectivity } from '../context/ConnectivityContext';
 
 import {
   abandonMatch,
@@ -52,6 +53,9 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
     error: null,
   }));
   const lastLoadedIdRef = useRef(null);
+  const { isOnline } = useConnectivity();
+  const isOffline = isOnline === false;
+  const lastOnlineRef = useRef(isOnline);
 
   const expectedDifficulty = options.expectedDifficulty ?? null;
 
@@ -62,6 +66,15 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
       }
 
       if (skipIfSame && lastLoadedIdRef.current === matchId) {
+        return;
+      }
+
+      if (isOffline) {
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          error: prev.match ? prev.error : new Error('Offline. Match konnte nicht geladen werden.'),
+        }));
         return;
       }
 
@@ -77,7 +90,7 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
         setState((prev) => ({
           ...prev,
           loading: false,
-          match: null,
+          match: prev.match ?? null,
           error: result.error ?? new Error('Match konnte nicht geladen werden.'),
         }));
         return;
@@ -113,7 +126,7 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
         error: null,
       });
     },
-    [expectedDifficulty, matchId, userId]
+    [expectedDifficulty, isOffline, matchId, userId]
   );
 
   useEffect(() => {
@@ -156,7 +169,7 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
   }, [loadMatch, matchId, userId]);
 
   useEffect(() => {
-    if (!matchId || !userId) {
+    if (!matchId || !userId || isOffline) {
       return () => {};
     }
 
@@ -181,7 +194,20 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
     return () => {
       unsubscribe();
     };
-  }, [matchId, userId]);
+  }, [isOffline, matchId, userId]);
+
+  useEffect(() => {
+    const wasOffline = lastOnlineRef.current === false && isOnline === true;
+    lastOnlineRef.current = isOnline;
+
+    if (!wasOffline || !matchId || !userId) {
+      return;
+    }
+
+    loadMatch({ skipIfSame: false }).catch((err) => {
+      console.warn('Match konnte nach Reconnect nicht geladen werden:', err);
+    });
+  }, [isOnline, loadMatch, matchId, userId]);
 
   const role = useMemo(
     () => deriveMatchRole(state.match, userId),
@@ -215,6 +241,9 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
     } = {}) => {
       if (!state.match || !role) {
         return { ok: false, error: new Error('Kein aktives Match vorhanden.') };
+      }
+      if (isOffline) {
+        return { ok: false, error: new Error('Offline. Antwort konnte nicht gesendet werden.') };
       }
 
       const nextIndex = Math.min(playerState.index + 1, questions.length);
@@ -256,7 +285,15 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
 
       return response;
     },
-    [loadMatch, playerState.index, playerState.score, questions.length, role, state.match]
+    [
+      isOffline,
+      loadMatch,
+      playerState.index,
+      playerState.score,
+      questions.length,
+      role,
+      state.match,
+    ]
   );
 
   const finishMatch = useCallback(async () => {

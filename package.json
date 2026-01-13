@@ -46,5 +46,5 @@
     "typescript": "~5.9.2"
   },
   "name": "medbattle-connect",
-  "version": "1.0.0"
+  "version": "1.0.1"
 }

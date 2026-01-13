@@ -1,18 +1,26 @@
 import { useCallback, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { formatUserError } from '../../utils/formatUserError';
+import { linkOAuth } from '../auth/authOAuth';
 import { normalizeEmail } from './utils';
 
 const PASSWORD_RESET_REDIRECT =
   process.env.EXPO_PUBLIC_PASSWORD_RESET_REDIRECT ??
-  'https://medbattle.app/reset-success';
+  process.env.EXPO_PUBLIC_EMAIL_CONFIRM_REDIRECT ??
+  'medbattle://auth/callback';
 
 const EMAIL_UPDATE_REDIRECT =
   process.env.EXPO_PUBLIC_EMAIL_UPDATE_REDIRECT ??
-  'https://medbattle.app/email-confirmed';
+  process.env.EXPO_PUBLIC_EMAIL_CONFIRM_REDIRECT ??
+  'medbattle://auth/callback';
 const SUPABASE_URL_HINT = process.env.EXPO_PUBLIC_SUPABASE_URL;
 
-export default function useSettingsAuth({ navigation, onClearSession, authUserId }) {
+export default function useSettingsAuth({
+  navigation,
+  onClearSession,
+  authUserId,
+  isGuest,
+}) {
   const [newEmail, setNewEmail] = useState('');
   const [feedback, setFeedback] = useState(null);
   const [loadingReset, setLoadingReset] = useState(false);
@@ -20,6 +28,7 @@ export default function useSettingsAuth({ navigation, onClearSession, authUserId
   const [signingOut, setSigningOut] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [showResetForm, setShowResetForm] = useState(false);
+  const [linkingGoogle, setLinkingGoogle] = useState(false);
 
   const handlePasswordReset = useCallback(async () => {
     const targetEmail = normalizeEmail(resetEmail);
@@ -113,6 +122,14 @@ export default function useSettingsAuth({ navigation, onClearSession, authUserId
     setSigningOut(true);
 
     try {
+      if (isGuest || !authUserId) {
+        if (onClearSession) {
+          onClearSession();
+        }
+        navigation.navigate('Auth', { mode: 'signIn' });
+        return;
+      }
+
       // Logouts von OAuth-Providern (z.B. Google) schlagen seltener fehl, wenn nur lokale Session gelscht wird.
       await supabase.auth.signOut({ scope: 'local' });
       // Fallback: kompletter Logout, falls Remote-Session aktiv ist.
@@ -131,7 +148,24 @@ export default function useSettingsAuth({ navigation, onClearSession, authUserId
     } finally {
       setSigningOut(false);
     }
-  }, [navigation, onClearSession, signingOut]);
+  }, [authUserId, isGuest, navigation, onClearSession, signingOut]);
+
+  const handleLinkGoogle = useCallback(async () => {
+    if (linkingGoogle) {
+      return;
+    }
+
+    if (!authUserId) {
+      setFeedback('Bitte melde dich an, um Google zu verknuepfen.');
+      navigation.navigate('Auth', { mode: 'signIn' });
+      return;
+    }
+
+    const result = await linkOAuth('google', setFeedback, setLinkingGoogle);
+    if (result?.ok) {
+      setFeedback('Google verbunden. Du kannst dich jetzt mit Google anmelden.');
+    }
+  }, [authUserId, linkingGoogle, navigation]);
 
   const handleToggleResetForm = useCallback(
     () => setShowResetForm((prev) => !prev),
@@ -153,5 +187,7 @@ export default function useSettingsAuth({ navigation, onClearSession, authUserId
     handleEmailUpdate,
     signingOut,
     handleSignOut,
+    linkingGoogle,
+    handleLinkGoogle,
   };
 }

@@ -15,6 +15,10 @@ const Auth = () => {
   const supabaseUrlHint =
     import.meta.env?.VITE_SUPABASE_URL ??
     import.meta.env?.EXPO_PUBLIC_SUPABASE_URL;
+  const privacyUrl = import.meta.env?.VITE_PRIVACY_URL;
+  const termsUrl = import.meta.env?.VITE_TERMS_URL;
+  const legalLinkClass = (url?: string) =>
+    `text-primary hover:underline${url ? '' : ' opacity-50 pointer-events-none'}`;
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -279,8 +283,25 @@ const Auth = () => {
         {/* Footer */}
         <p className="text-center text-muted-foreground text-xs mt-6">
           Mit der Anmeldung akzeptierst du unsere{' '}
-          <a href="#" className="text-primary hover:underline">AGB</a> und{' '}
-          <a href="#" className="text-primary hover:underline">Datenschutz</a>
+          <a
+            href={termsUrl || '#'}
+            className={legalLinkClass(termsUrl)}
+            aria-disabled={!termsUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            AGB
+          </a>{' '}
+          und{' '}
+          <a
+            href={privacyUrl || '#'}
+            className={legalLinkClass(privacyUrl)}
+            aria-disabled={!privacyUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Datenschutz
+          </a>
         </p>
       </div>
     </div>

@@ -383,6 +383,30 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textDecorationLine: 'underline',
   },
+  legalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    columnGap: 8,
+    marginTop: 6,
+  },
+  legalLink: {
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+  },
+  legalLinkText: {
+    color: '#93C5FD',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  legalDivider: {
+    color: '#64748B',
+    fontSize: 12,
+  },
+  legalLinkDisabled: {
+    opacity: 0.4,
+  },
   helperText: {
     marginTop: 6,
     color: '#94A3B8',

@@ -18,7 +18,7 @@ export default function HomeHeader({
           style={[styles.leaderboardButton, isOffline ? styles.quickActionDisabled : null]}
           disabled={isOffline}
         >
-          <Ionicons name="trophy" size={26} color="#FACC15" style={styles.leaderboardIcon} />
+          <Ionicons name="trophy" size={22} color="#FACC15" style={styles.leaderboardIcon} />
         </Pressable>
 
         <Pressable
@@ -34,7 +34,7 @@ export default function HomeHeader({
           style={[styles.menuButton, isOffline ? styles.quickActionDisabled : null]}
           disabled={isOffline}
         >
-          <Ionicons name="settings" size={28} color="#E2E8F0" style={styles.menuIcon} />
+          <Ionicons name="settings" size={22} color="#E2E8F0" style={styles.menuIcon} />
         </Pressable>
       </View>
     </View>

@@ -9,6 +9,7 @@ import {
   AUTH_TIMEOUT_MS,
   EMAIL_CONFIRM_REDIRECT,
   PASSWORD_HINT,
+  SUPABASE_ANON_HINT,
   SUPABASE_URL_HINT,
 } from './auth/authConfig';
 import { loginOAuth } from './auth/authOAuth';
@@ -27,11 +28,15 @@ export default function AuthScreen({ route, navigation, onGuest }) {
   const [mode, setMode] = useState(initialMode);
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetPasswordConfirm, setResetPasswordConfirm] = useState('');
+  const [recoveryAccessToken, setRecoveryAccessToken] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [rememberMe, setRememberMe] = useState(true);
 
   const isSignUp = mode === 'signUp';
+  const isRecovery = mode === 'recovery';
   const handleGuest = async () => {
     setMessage(null);
     if (typeof onGuest === 'function') {
@@ -84,39 +89,79 @@ export default function AuthScreen({ route, navigation, onGuest }) {
           'Supabase nicht erreichbar (Session setzen).'
         );
       } catch (err) {
-        console.warn('Konnte Sitzung nach E-Mail-Bestaetigung nicht setzen:', err);
+        console.warn('Konnte Sitzung nach Auth-Link nicht setzen:', err);
       }
     }
 
-    function handleConfirmationLink(url) {
+    function handleAuthLink(url) {
       if (!url) {
         return;
       }
 
       const queryParams = parseSupabaseParams(url);
       const type = queryParams?.type ?? queryParams?.event;
+      const callbackError = queryParams?.error_description ?? queryParams?.error;
 
-      if (type !== 'signup') {
+      if (callbackError) {
+        if (active) {
+          setMessage(
+            formatUserError(new Error(callbackError), {
+              supabaseUrl: SUPABASE_URL_HINT,
+              fallback: 'Link konnte nicht verarbeitet werden.',
+            })
+          );
+        }
         return;
       }
 
-      syncSessionFromLink(queryParams);
-
-      if (!active) {
+      if (type === 'signup') {
+        syncSessionFromLink(queryParams);
+        if (!active) {
+          return;
+        }
+        setMode('signIn');
+        setMessage(
+          'Deine E-Mail wurde bestaetigt. Du kannst dieses Fenster schliessen und dich jetzt anmelden.'
+        );
         return;
       }
 
-      setMode('signIn');
-      setMessage(
-        'Deine E-Mail wurde bestaetigt. Du kannst dieses Fenster schliessen und dich jetzt anmelden.'
-      );
+      if (type === 'recovery') {
+        const accessToken = queryParams?.access_token;
+        if (!accessToken) {
+          if (active) {
+            setMessage('Passwort-Reset-Link ungueltig. Bitte neu anfordern.');
+          }
+          return;
+        }
+
+        if (!active) {
+          return;
+        }
+
+        setRecoveryAccessToken(accessToken);
+        setResetPassword('');
+        setResetPasswordConfirm('');
+        setMode('recovery');
+        setMessage('Bitte neues Passwort setzen.');
+        return;
+      }
+
+      if (type === 'email_change') {
+        syncSessionFromLink(queryParams);
+        if (!active) {
+          return;
+        }
+        setMode('signIn');
+        setMessage('E-Mail aktualisiert. Bitte melde dich neu an.');
+      }
     }
 
     async function checkInitialUrl() {
       try {
         const initial = await Linking.getInitialURL();
         if (initial) {
-          handleConfirmationLink(initial);
+          handleAuthLink(initial);
         }
       } catch (err) {
         console.warn('Konnte Initial-URL nicht verarbeiten:', err);
@@ -125,7 +170,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
     const subscription = Linking.addEventListener('url', (event) => {
       if (event?.url) {
-        handleConfirmationLink(event.url);
+        handleAuthLink(event.url);
       }
     });
 
@@ -228,6 +273,9 @@ export default function AuthScreen({ route, navigation, onGuest }) {
   function toggleMode() {
     setMode(isSignUp ? 'signIn' : 'signUp');
     setMessage(null);
+    setRecoveryAccessToken(null);
+    setResetPassword('');
+    setResetPasswordConfirm('');
   }
 
   async function handleRememberToggle() {
@@ -236,51 +284,156 @@ export default function AuthScreen({ route, navigation, onGuest }) {
     await saveRememberMe(next);
   }
 
+  function handleBackToLogin() {
+    setMode('signIn');
+    setMessage(null);
+    setRecoveryAccessToken(null);
+    setResetPassword('');
+    setResetPasswordConfirm('');
+  }
+
+  async function handlePasswordUpdate() {
+    if (!recoveryAccessToken) {
+      setMessage('Passwort-Reset-Link fehlt. Bitte neu anfordern.');
+      return;
+    }
+
+    if (!resetPassword || !resetPasswordConfirm) {
+      setMessage('Bitte neues Passwort zweimal eingeben.');
+      return;
+    }
+
+    if (resetPassword !== resetPasswordConfirm) {
+      setMessage('Passwoerter stimmen nicht ueberein.');
+      return;
+    }
+
+    const passwordCheck = validatePasswordStrength(resetPassword);
+    if (!passwordCheck.ok) {
+      setMessage(passwordCheck.message);
+      return;
+    }
+
+    const validation = validateSupabaseConfig();
+    if (!validation.ok) {
+      setMessage(validation.message);
+      return;
+    }
+
+    if (!SUPABASE_URL_HINT || !SUPABASE_ANON_HINT) {
+      setMessage('Supabase nicht konfiguriert (.env).');
+      return;
+    }
+
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const baseUrl = SUPABASE_URL_HINT.replace(/\/$/, '');
+      const response = await withTimeout(
+        fetch(`${baseUrl}/auth/v1/user`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: SUPABASE_ANON_HINT,
+            Authorization: `Bearer ${recoveryAccessToken}`,
+          },
+          body: JSON.stringify({ password: resetPassword }),
+        }),
+        AUTH_TIMEOUT_MS,
+        'Supabase nicht erreichbar (Passwort-Reset).'
+      );
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const messageText =
+          payload?.msg ||
+          payload?.error_description ||
+          payload?.message ||
+          'Passwort konnte nicht aktualisiert werden.';
+        throw new Error(messageText);
+      }
+
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+      setMode('signIn');
+      setRecoveryAccessToken(null);
+      setResetPassword('');
+      setResetPasswordConfirm('');
+      setMessage('Passwort aktualisiert. Bitte melde dich neu an.');
+    } catch (err) {
+      const formatted = formatUserError(err, {
+        supabaseUrl: SUPABASE_URL_HINT,
+        fallback: 'Passwort-Reset fehlgeschlagen.',
+      });
+      setMessage(formatted);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.panel}>
         <Text style={styles.brand}>MedBattle</Text>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>E-Mail</Text>
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            style={styles.input}
-          />
-        </View>
+        {!isRecovery ? (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>E-Mail</Text>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              style={styles.input}
+            />
+          </View>
+        ) : null}
 
         <View style={[styles.inputGroup, styles.inputGroupLarge]}>
-          <Text style={styles.label}>Passwort</Text>
+          <Text style={styles.label}>
+            {isRecovery ? 'Neues Passwort' : 'Passwort'}
+          </Text>
           <TextInput
-            value={password}
-            onChangeText={setPassword}
+            value={isRecovery ? resetPassword : password}
+            onChangeText={isRecovery ? setResetPassword : setPassword}
             secureTextEntry
             style={styles.input}
           />
-          {isSignUp ? (
+          {isSignUp || isRecovery ? (
             <Text style={styles.passwordHint}>{PASSWORD_HINT}</Text>
           ) : null}
         </View>
 
-        <Pressable
-          onPress={handleRememberToggle}
-          accessibilityRole="checkbox"
-          accessibilityState={{ checked: rememberMe }}
-          style={styles.rememberRow}
-        >
-          <View style={[styles.rememberBox, rememberMe ? styles.rememberBoxChecked : null]}>
-            {rememberMe ? <FontAwesome5 name="check" size={12} color="#0F172A" /> : null}
+        {isRecovery ? (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Passwort bestaetigen</Text>
+            <TextInput
+              value={resetPasswordConfirm}
+              onChangeText={setResetPasswordConfirm}
+              secureTextEntry
+              style={styles.input}
+            />
           </View>
-          <Text style={styles.rememberLabel}>Angemeldet bleiben</Text>
-        </Pressable>
+        ) : null}
+
+        {!isRecovery ? (
+          <Pressable
+            onPress={handleRememberToggle}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: rememberMe }}
+            style={styles.rememberRow}
+          >
+            <View style={[styles.rememberBox, rememberMe ? styles.rememberBoxChecked : null]}>
+              {rememberMe ? <FontAwesome5 name="check" size={12} color="#0F172A" /> : null}
+            </View>
+            <Text style={styles.rememberLabel}>Angemeldet bleiben</Text>
+          </Pressable>
+        ) : null}
 
         {message ? <Text style={styles.message}>{message}</Text> : null}
 
         <Pressable
-          onPress={handleSubmit}
+          onPress={isRecovery ? handlePasswordUpdate : handleSubmit}
           disabled={loading}
           style={[styles.primaryButton, loading ? styles.primaryButtonDisabled : null]}
         >
@@ -288,48 +441,58 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.primaryButtonText}>
-              {isSignUp ? 'Account erstellen' : 'Einloggen'}
+              {isRecovery ? 'Passwort speichern' : isSignUp ? 'Account erstellen' : 'Einloggen'}
             </Text>
           )}
         </Pressable>
 
-        <Pressable onPress={toggleMode} disabled={loading}>
-          <Text style={styles.toggleText}>
-            {isSignUp
-              ? 'Schon einen Account? Hier einloggen.'
-              : 'Noch keinen Account? Jetzt erstellen.'}
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={handleGuest}
-          disabled={loading}
-          style={[styles.guestButton, loading ? styles.guestButtonDisabled : null]}
-        >
-          <Text style={styles.guestButtonText}>Als Gast fortfahren</Text>
-        </Pressable>
-
-        <View style={styles.socialGroup}>
-          <Pressable
-            onPress={() => loginOAuth('google', setMessage, setLoading)}
-            disabled={loading}
-            style={[styles.socialButton, styles.googleButton]}
-            accessibilityRole="button"
-            accessibilityLabel="Mit Google anmelden"
-          >
-            <FontAwesome5 name="google" size={22} color="#F8FAFC" brand />
+        {isRecovery ? (
+          <Pressable onPress={handleBackToLogin} disabled={loading}>
+            <Text style={styles.toggleText}>Zurueck zum Login.</Text>
           </Pressable>
-
-          <Pressable
-            onPress={() => loginOAuth('discord', setMessage, setLoading)}
-            disabled={loading}
-            style={[styles.socialButton, styles.discordButton]}
-            accessibilityRole="button"
-            accessibilityLabel="Mit Discord anmelden"
-          >
-            <FontAwesome5 name="discord" size={26} color="#F8FAFC" brand />
+        ) : (
+          <Pressable onPress={toggleMode} disabled={loading}>
+            <Text style={styles.toggleText}>
+              {isSignUp
+                ? 'Schon einen Account? Hier einloggen.'
+                : 'Registrieren'}
+            </Text>
           </Pressable>
-        </View>
+        )}
+
+        {!isRecovery ? (
+          <Pressable
+            onPress={handleGuest}
+            disabled={loading}
+            style={[styles.guestButton, loading ? styles.guestButtonDisabled : null]}
+          >
+            <Text style={styles.guestButtonText}>Als Gast fortfahren</Text>
+          </Pressable>
+        ) : null}
+
+        {!isRecovery ? (
+          <View style={styles.socialGroup}>
+            <Pressable
+              onPress={() => loginOAuth('google', setMessage, setLoading)}
+              disabled={loading}
+              style={[styles.socialButton, styles.googleButton]}
+              accessibilityRole="button"
+              accessibilityLabel="Mit Google anmelden"
+            >
+              <FontAwesome5 name="google" size={22} color="#F8FAFC" brand />
+            </Pressable>
+
+            <Pressable
+              onPress={() => loginOAuth('discord', setMessage, setLoading)}
+              disabled={loading}
+              style={[styles.socialButton, styles.discordButton]}
+              accessibilityRole="button"
+              accessibilityLabel="Mit Discord anmelden"
+            >
+              <FontAwesome5 name="discord" size={26} color="#F8FAFC" brand />
+            </Pressable>
+          </View>
+        ) : null}
       </View>
     </View>
   );

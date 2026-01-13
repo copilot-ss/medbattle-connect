@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { getFriendCodeForUser } from '../../../services/friendsService';
+import { getStoredGuestName } from '../../../utils/guestProfile';
 
 export default function useLobbyUser() {
   const [userId, setUserId] = useState(null);
@@ -27,10 +28,20 @@ export default function useLobbyUser() {
 
         const authUser = data?.user;
         const resolvedUserId = authUser?.id ?? null;
-        const resolvedUsername =
+        let resolvedUsername =
           authUser?.user_metadata?.username ??
           (authUser?.email ? authUser.email.split('@')[0] : null) ??
           null;
+
+        if (!resolvedUserId) {
+          const guestName = await getStoredGuestName();
+          if (!active) {
+            return;
+          }
+          if (guestName) {
+            resolvedUsername = guestName;
+          }
+        }
 
         setUserId(resolvedUserId);
         setUserCode(getFriendCodeForUser(resolvedUserId));

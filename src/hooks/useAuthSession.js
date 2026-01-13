@@ -6,8 +6,22 @@ import {
   loadRememberMe,
   loadRememberedSession,
 } from '../utils/authPersistence';
+import { assignGuestProfile } from '../utils/guestProfile';
 
 const GUEST_SESSION = { user: { id: 'guest', email: null } };
+
+function createGuestSession(guestName) {
+  if (!guestName) {
+    return GUEST_SESSION;
+  }
+  return {
+    user: {
+      id: 'guest',
+      email: null,
+      user_metadata: { username: guestName },
+    },
+  };
+}
 
 function coerceSession(next, previous) {
   if (next?.user?.id) {
@@ -37,6 +51,20 @@ export default function useAuthSession() {
 
   const setGuestSession = useCallback(() => {
     setSession(GUEST_SESSION);
+
+    assignGuestProfile()
+      .then((profile) => {
+        const guestName = profile?.name ?? null;
+        if (!guestName) {
+          return;
+        }
+        setSession((prev) =>
+          prev?.user?.id === 'guest' ? createGuestSession(guestName) : prev
+        );
+      })
+      .catch((err) => {
+        console.warn('Konnte Gast-Profil nicht setzen:', err);
+      });
   }, []);
 
   const clearSession = useCallback(() => {

@@ -214,6 +214,46 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     [joinPressValue]
   );
 
+  const pushHostSettings = useCallback(
+    async (nextDifficulty, nextQuestionLimit) => {
+      if (!isHostWaiting || !currentMatch || updatingSettings) {
+        return;
+      }
+
+      const requestVersion = hostSettingsVersionRef.current + 1;
+      hostSettingsVersionRef.current = requestVersion;
+      setUpdatingSettings(true);
+      setMatchesError(null);
+
+      try {
+        const result = await updateMatchSettings({
+          matchId: currentMatch.id,
+          userId,
+          difficulty: nextDifficulty,
+          questionLimit: nextQuestionLimit,
+        });
+
+        if (!result.ok) {
+          throw result.error ?? new Error('Einstellungen konnten nicht gespeichert werden.');
+        }
+
+        if (requestVersion === hostSettingsVersionRef.current) {
+          setCurrentMatch(result.match);
+          setQuestionLimit(result.match.question_limit ?? nextQuestionLimit);
+          setSelectedDifficulty(result.match.difficulty ?? nextDifficulty);
+        }
+      } catch (err) {
+        console.error('Fehler beim Aktualisieren der Lobby-Einstellungen:', err);
+        setMatchesError(err);
+      } finally {
+        if (requestVersion === hostSettingsVersionRef.current) {
+          setUpdatingSettings(false);
+        }
+      }
+    },
+    [currentMatch, isHostWaiting, updateMatchSettings, updatingSettings, userId]
+  );
+
   const adjustQuestionLimit = useCallback((delta) => {
     setQuestionLimit((prev) => {
       const next = prev + delta;
@@ -229,24 +269,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       return next;
     });
   }, [currentMatch, isHostWaiting, pushHostSettings, selectedDifficulty]);
-
-  useFocusEffect(
-    useCallback(() => {
-      const onBackPress = () => {
-        if (currentMatch) {
-          handleLeaveLobby();
-          return true;
-        }
-        return false;
-      };
-
-      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-
-      return () => {
-        subscription.remove();
-      };
-    }, [currentMatch, handleLeaveLobby])
-  );
 
   const handleCreateMatch = useCallback(async () => {
     if (!userId || creating) {
@@ -370,68 +392,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     [attachMatchSubscription, isCreateOnly, joining, refreshMatches, userId]
   );
 
-  const cancelLobbyAsHost = useCallback(async () => {
-    if (!isHostWaiting || !currentMatch) {
-      return null;
-    }
-
-    try {
-      const result = await abandonMatch({
-        match: currentMatch,
-        role: 'host',
-      });
-
-      if (result?.ok) {
-        setCurrentMatch(result.match);
-      }
-
-      return result;
-    } catch (err) {
-      console.error('Fehler beim Schliessen der Lobby:', err);
-      return null;
-    }
-  }, [abandonMatch, currentMatch, isHostWaiting]);
-
-  const pushHostSettings = useCallback(
-    async (nextDifficulty, nextQuestionLimit) => {
-      if (!isHostWaiting || !currentMatch || updatingSettings) {
-        return;
-      }
-
-      const requestVersion = hostSettingsVersionRef.current + 1;
-      hostSettingsVersionRef.current = requestVersion;
-      setUpdatingSettings(true);
-      setMatchesError(null);
-
-      try {
-        const result = await updateMatchSettings({
-          matchId: currentMatch.id,
-          userId,
-          difficulty: nextDifficulty,
-          questionLimit: nextQuestionLimit,
-        });
-
-        if (!result.ok) {
-          throw result.error ?? new Error('Einstellungen konnten nicht gespeichert werden.');
-        }
-
-        if (requestVersion === hostSettingsVersionRef.current) {
-          setCurrentMatch(result.match);
-          setQuestionLimit(result.match.question_limit ?? nextQuestionLimit);
-          setSelectedDifficulty(result.match.difficulty ?? nextDifficulty);
-        }
-      } catch (err) {
-        console.error('Fehler beim Aktualisieren der Lobby-Einstellungen:', err);
-        setMatchesError(err);
-      } finally {
-        if (requestVersion === hostSettingsVersionRef.current) {
-          setUpdatingSettings(false);
-        }
-      }
-    },
-    [currentMatch, isHostWaiting, updateMatchSettings, updatingSettings, userId]
-  );
-
   const handleLeaveLobby = useCallback(async () => {
     if (closingRef.current) {
       return;
@@ -470,6 +430,24 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   const handleCancelLeave = useCallback(() => {
     setShowLeaveConfirm(false);
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (currentMatch) {
+          handleLeaveLobby();
+          return true;
+        }
+        return false;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => {
+        subscription.remove();
+      };
+    }, [currentMatch, handleLeaveLobby])
+  );
 
   const renderMatch = useCallback(
     ({ item }) => (
@@ -542,6 +520,8 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
     return items;
   }, [activeAvatarSource, currentMatch, userId]);
+  const participantCount = participants.filter((item) => !item.isPlaceholder).length;
+  const hasEnoughPlayers = participantCount >= 2;
 
   const handleOpenSettings = useCallback(() => {
     if (!isHostWaiting) {
@@ -783,8 +763,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   }, [navigation]);
 
   const showCreateSetup = false;
-  const participantCount = participants.filter((item) => !item.isPlaceholder).length;
-  const hasEnoughPlayers = participantCount >= 2;
   const { onlineFriends } = useLobbyPresence({
     userId,
     userCode,

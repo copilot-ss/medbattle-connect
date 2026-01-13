@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabaseClient';
 import CAMPAIGN_QUESTIONS from '../data/campaignQuestions';
+import { runSupabaseRequest } from './supabaseRequest';
 
 const LEADERBOARD_CACHE_TTL = 30 * 1000;
 const leaderboardCache = {
@@ -9,6 +10,10 @@ const leaderboardCache = {
 };
 const QUESTIONS_CACHE_TTL = 20 * 1000;
 const questionsCache = new Map();
+const QUESTIONS_STORAGE_PREFIX = 'medbattle_questions_cache';
+const MAX_CACHED_QUESTIONS = 200;
+const QUESTION_CACHE_SYNC_TTL = 6 * 60 * 60 * 1000;
+let lastQuestionCacheSyncAt = 0;
 const BASE_MATCH_POINTS = 12;
 const PENDING_SCORES_KEY = 'medbattle_pending_scores';
 const MAX_PENDING_SCORES = 50;
@@ -62,6 +67,113 @@ function shuffleList(list) {
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
+}
+
+function normalizeQuestionList(rows, fallbackDifficulty) {
+  const source = Array.isArray(rows) ? rows : [];
+  return source
+    .map((question) => {
+      if (!question) {
+        return null;
+      }
+      return {
+        ...question,
+        difficulty: question.difficulty ?? fallbackDifficulty,
+        options: normalizeOptions(question.options, question.correct_answer),
+      };
+    })
+    .filter(
+      (question) =>
+        question &&
+        question.question &&
+        question.correct_answer &&
+        Array.isArray(question.options) &&
+        question.options.length >= 2
+    );
+}
+
+function buildQuestionsStorageKey({ difficulty, category }) {
+  return `${QUESTIONS_STORAGE_PREFIX}:${difficulty}:${category ?? 'all'}`;
+}
+
+async function loadCachedQuestions(storageKey) {
+  try {
+    const raw = await AsyncStorage.getItem(storageKey);
+    if (!raw) {
+      return [];
+    }
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+    if (Array.isArray(parsed?.questions)) {
+      return parsed.questions;
+    }
+    return [];
+  } catch (err) {
+    console.warn('Konnte lokale Fragen nicht lesen:', err);
+    return [];
+  }
+}
+
+async function saveCachedQuestions(storageKey, questions) {
+  try {
+    const trimmed = Array.isArray(questions)
+      ? questions.slice(-MAX_CACHED_QUESTIONS)
+      : [];
+    const payload = {
+      savedAt: new Date().toISOString(),
+      questions: trimmed,
+    };
+    await AsyncStorage.setItem(storageKey, JSON.stringify(payload));
+  } catch (err) {
+    console.warn('Konnte lokale Fragen nicht speichern:', err);
+  }
+}
+
+function mergeCachedQuestions(existing, incoming) {
+  const merged = new Map();
+  const order = [];
+
+  const pushQuestion = (question) => {
+    if (!question?.id) {
+      return;
+    }
+    if (!merged.has(question.id)) {
+      order.push(question.id);
+      merged.set(question.id, question);
+      return;
+    }
+
+    const previous = merged.get(question.id);
+    const previousUpdated = Date.parse(previous?.updated_at ?? '');
+    const nextUpdated = Date.parse(question?.updated_at ?? '');
+
+    if (
+      Number.isFinite(nextUpdated) &&
+      (!Number.isFinite(previousUpdated) || nextUpdated >= previousUpdated)
+    ) {
+      merged.set(question.id, { ...previous, ...question });
+    } else {
+      merged.set(question.id, { ...question, ...previous });
+    }
+  };
+
+  (Array.isArray(existing) ? existing : []).forEach(pushQuestion);
+  (Array.isArray(incoming) ? incoming : []).forEach(pushQuestion);
+
+  const list = order.map((id) => merged.get(id)).filter(Boolean);
+  if (list.length <= MAX_CACHED_QUESTIONS) {
+    return list;
+  }
+  return list.slice(-MAX_CACHED_QUESTIONS);
+}
+
+async function syncCachedQuestions(storageKey, incoming) {
+  const existing = await loadCachedQuestions(storageKey);
+  const merged = mergeCachedQuestions(existing, incoming);
+  await saveCachedQuestions(storageKey, merged);
+  return merged;
 }
 
 function buildOfflineQuestions(difficulty, limit) {
@@ -136,11 +248,15 @@ export async function flushQueuedScores(userId) {
     }
 
     try {
-      const { error } = await supabase.rpc('submit_score', {
-        p_user_id: userId,
-        p_points: sanitizePoints(entry?.points),
-        p_difficulty: normalizeDifficulty(entry?.difficulty),
-      });
+      const { error } = await runSupabaseRequest(
+        () =>
+          supabase.rpc('submit_score', {
+            p_user_id: userId,
+            p_points: sanitizePoints(entry?.points),
+            p_difficulty: normalizeDifficulty(entry?.difficulty),
+          }),
+        { label: 'quizService.submitScore.flush' }
+      );
       if (error) {
         throw error;
       }
@@ -184,6 +300,10 @@ export async function fetchQuestions(
     limit: normalizedLimit,
     category: normalizedCategory,
   });
+  const storageKey = buildQuestionsStorageKey({
+    difficulty: normalizedDifficulty,
+    category: normalizedCategory,
+  });
   const now = Date.now();
 
   if (!force && !offline) {
@@ -193,27 +313,46 @@ export async function fetchQuestions(
     }
   }
 
+  const resolveCachedQuestions = async () => {
+    const cached = await loadCachedQuestions(storageKey);
+    const normalized = normalizeQuestionList(cached, normalizedDifficulty);
+    if (!normalized.length) {
+      return [];
+    }
+    const shuffled = shuffleList(normalized).slice(0, normalizedLimit);
+    questionsCache.set(cacheKey, { data: shuffled, fetchedAt: Date.now() });
+    return cloneQuestions(shuffled);
+  };
+
   if (offline) {
-    const offlineQuestions = buildOfflineQuestions(
-      normalizedDifficulty,
-      normalizedLimit
-    ).map((question) => ({
-      ...question,
-      difficulty: question.difficulty ?? normalizedDifficulty,
-      options: normalizeOptions(question.options, question.correct_answer),
-    }));
+    const cached = await resolveCachedQuestions();
+    if (cached.length) {
+      return cached;
+    }
+    const offlineQuestions = normalizeQuestionList(
+      buildOfflineQuestions(normalizedDifficulty, normalizedLimit),
+      normalizedDifficulty
+    );
     return cloneQuestions(offlineQuestions);
   }
 
   try {
-    const { data, error } = await supabase.rpc('get_questions', {
-      p_difficulty: normalizedDifficulty,
-      p_limit: normalizedLimit,
-      p_category: normalizedCategory,
-    });
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('get_questions', {
+          p_difficulty: normalizedDifficulty,
+          p_limit: normalizedLimit,
+          p_category: normalizedCategory,
+        }),
+      { label: 'quizService.getQuestions' }
+    );
 
     if (error) {
       console.warn('Fehler beim Laden der Fragen:', error.message);
+      const cached = await resolveCachedQuestions();
+      if (cached.length) {
+        return cached;
+      }
       return [];
     }
 
@@ -221,36 +360,69 @@ export async function fetchQuestions(
 
     if (!rows.length) {
       console.warn('Keine Fragen in Supabase gefunden fuer Schwierigkeitsgrad:', normalizedDifficulty);
+      const cached = await resolveCachedQuestions();
+      if (cached.length) {
+        return cached;
+      }
       return [];
     }
 
-    const normalized = rows
-      .map((question) => {
-        return {
-          ...question,
-          difficulty: question.difficulty ?? normalizedDifficulty,
-          options: normalizeOptions(question.options, question.correct_answer),
-        };
-      })
-      .filter(
-        (question) =>
-          question.question &&
-          question.correct_answer &&
-          Array.isArray(question.options) &&
-          question.options.length >= 2
-      );
+    const normalized = normalizeQuestionList(rows, normalizedDifficulty);
 
     if (!normalized.length) {
       console.warn('Fragen ohne gueltige Antwortoptionen gefunden.');
+      const cached = await resolveCachedQuestions();
+      if (cached.length) {
+        return cached;
+      }
       return [];
     }
 
     questionsCache.set(cacheKey, { data: normalized, fetchedAt: now });
+    syncCachedQuestions(storageKey, normalized).catch((err) => {
+      console.warn('Konnte Fragen-Cache nicht synchronisieren:', err);
+    });
     return cloneQuestions(normalized);
   } catch (err) {
     console.error('Unerwarteter Fehler beim Laden der Fragen:', err);
+    const cached = await resolveCachedQuestions();
+    if (cached.length) {
+      return cached;
+    }
     return [];
   }
+}
+
+export async function syncQuestionCache({ force = false, limit = 16 } = {}) {
+  const now = Date.now();
+  if (
+    !force &&
+    lastQuestionCacheSyncAt &&
+    now - lastQuestionCacheSyncAt < QUESTION_CACHE_SYNC_TTL
+  ) {
+    return { ok: true, skipped: true };
+  }
+
+  const normalizedLimit =
+    Number.isFinite(limit) && limit > 0 ? Math.min(limit, 50) : 16;
+  const difficulties = ['leicht', 'mittel', 'schwer'];
+  const results = [];
+
+  for (const difficulty of difficulties) {
+    const questions = await fetchQuestions(difficulty, normalizedLimit, null, {
+      force: true,
+    });
+    results.push({
+      difficulty,
+      count: Array.isArray(questions) ? questions.length : 0,
+    });
+  }
+
+  if (results.some((result) => result.count > 0)) {
+    lastQuestionCacheSyncAt = now;
+  }
+
+  return { ok: true, results };
 }
 
 export function calculateMatchPoints({ correct = 0, total = 0, difficulty = 'mittel' } = {}) {
@@ -278,9 +450,13 @@ export async function fetchLeaderboard(limit = 20, { force = false } = {}) {
   }
 
   try {
-    const { data, error } = await supabase.rpc('get_leaderboard', {
-      p_limit: limit,
-    });
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('get_leaderboard', {
+          p_limit: limit,
+        }),
+      { label: 'quizService.getLeaderboard' }
+    );
 
     if (error) {
       console.warn('Fehler beim Laden der Rangliste:', error.message);
@@ -334,11 +510,15 @@ export async function submitScore(userId, points, difficulty = 'mittel', { offli
     return queueScore(safeUserId, sanitizedPoints, sanitizedDifficulty);
   }
   try {
-    const { data, error } = await supabase.rpc('submit_score', {
-      p_user_id: safeUserId,
-      p_points: sanitizedPoints,
-      p_difficulty: sanitizedDifficulty,
-    });
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('submit_score', {
+          p_user_id: safeUserId,
+          p_points: sanitizedPoints,
+          p_difficulty: sanitizedDifficulty,
+        }),
+      { label: 'quizService.submitScore' }
+    );
 
     if (error) {
       console.warn('Fehler beim Speichern des Scores:', error.message);

@@ -33,6 +33,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     userId,
     authUserId,
     authProvider,
+    authProviders,
     isGuest,
     friendCode,
     localGuestId,
@@ -96,7 +97,9 @@ export default function useSettingsController({ navigation, route, onClearSessio
     handleEmailUpdate,
     signingOut,
     handleSignOut,
-  } = useSettingsAuth({ navigation, onClearSession, authUserId });
+    linkingGoogle,
+    handleLinkGoogle,
+  } = useSettingsAuth({ navigation, onClearSession, authUserId, isGuest });
 
   const soundStatus = useMemo(
     () => (soundEnabled ? 'Sound aktiv' : 'Sound stumm'),
@@ -121,9 +124,22 @@ export default function useSettingsController({ navigation, route, onClearSessio
   const emailCtaHint = isGuest
     ? 'Lege einen Account mit E-Mail an.'
     : 'Neue E-Mail wird nach Bestaetigung aktiv.';
-  const isOAuthUser = authProvider && authProvider !== 'password';
+  const normalizedProviders = useMemo(
+    () => (authProviders || []).map((provider) => String(provider).toLowerCase()),
+    [authProviders]
+  );
+  const hasPasswordProvider = normalizedProviders.includes('password');
+  const isOAuthUser =
+    normalizedProviders.length > 0
+      ? !hasPasswordProvider
+      : authProvider && authProvider !== 'password';
   const showEmailActions = !isOAuthUser && !isGuest;
   const showResetActions = !isOAuthUser && !isGuest;
+  const googleLinked = normalizedProviders.includes('google');
+  const showLinkGoogle = !isGuest && Boolean(authUserId) && !googleLinked;
+  const linkGoogleLabel = 'Google verbinden';
+  const linkGoogleHint =
+    'Verknuepfe Google mit diesem Profil, damit der Google-Login denselben Account nutzt.';
 
   const showAudioSection = activeTab === 'settings';
   const showProfileSection = activeTab === 'profile';
@@ -258,6 +274,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     unlockedAchievements,
     leaderboardRank,
     loadingRank,
+    isGuest,
     newEmail,
     setNewEmail,
     emailCtaLabel,
@@ -265,6 +282,11 @@ export default function useSettingsController({ navigation, route, onClearSessio
     loadingEmail,
     handleEmailUpdate,
     showEmailActions,
+    showLinkGoogle,
+    linkGoogleLabel,
+    linkGoogleHint,
+    linkingGoogle,
+    handleLinkGoogle,
     // friends
     friendCode,
     copySuccess,

@@ -42,6 +42,7 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
     unlockedAchievements,
     leaderboardRank,
     loadingRank,
+    isGuest,
     newEmail,
     setNewEmail,
     emailCtaLabel,
@@ -49,6 +50,11 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
     loadingEmail,
     handleEmailUpdate,
     showEmailActions,
+    showLinkGoogle,
+    linkGoogleLabel,
+    linkGoogleHint,
+    linkingGoogle,
+    handleLinkGoogle,
     feedback,
     showResetForm,
     handleToggleResetForm,
@@ -113,6 +119,11 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
             loadingEmail={loadingEmail}
             onEmailUpdate={handleEmailUpdate}
             showEmailActions={showEmailActions}
+            showLinkGoogle={showLinkGoogle}
+            linkGoogleLabel={linkGoogleLabel}
+            linkGoogleHint={linkGoogleHint}
+            linkingGoogle={linkingGoogle}
+            onLinkGoogle={handleLinkGoogle}
           />
         ) : null}
 
@@ -135,6 +146,7 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
           signingOut={signingOut}
           onSignOut={handleSignOut}
           showResetActions={showResetActions}
+          isGuest={isGuest}
         />
       ) : null}
     </View>

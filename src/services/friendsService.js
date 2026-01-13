@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { supabase } from '../lib/supabaseClient';
+import { runSupabaseRequest } from './supabaseRequest';
 
 const STORAGE_PREFIX = 'medbattle_friends';
 const REQUESTS_STORAGE_PREFIX = 'medbattle_friend_requests';
@@ -171,7 +172,10 @@ export async function fetchFriends(userId) {
       return loadLocalFriends(resolvedUserId);
     }
 
-    const { data, error } = await supabase.rpc('fetch_friends');
+    const { data, error } = await runSupabaseRequest(
+      () => supabase.rpc('fetch_friends'),
+      { label: 'friendsService.fetchFriends' }
+    );
 
     if (error) {
       throw error;
@@ -195,7 +199,10 @@ export async function fetchFriendRequests(userId) {
   }
 
   try {
-    const { data, error } = await supabase.rpc('fetch_friend_requests');
+    const { data, error } = await runSupabaseRequest(
+      () => supabase.rpc('fetch_friend_requests'),
+      { label: 'friendsService.fetchFriendRequests' }
+    );
 
     if (error) {
       throw error;
@@ -240,9 +247,13 @@ export async function addFriend(userId, code) {
       return { ok: true, friend: localFriend, friends: updated };
     }
 
-    const { data, error } = await supabase.rpc('send_friend_request', {
-      p_code: normalizedCode,
-    });
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('send_friend_request', {
+          p_code: normalizedCode,
+        }),
+      { label: 'friendsService.sendFriendRequest' }
+    );
 
     if (error) {
       throw error;
@@ -295,9 +306,13 @@ export async function removeFriend(userId, friend) {
       return { ok: true, friends: updated };
     }
 
-    const { error } = await supabase.rpc('remove_friend', {
-      p_code: normalizedCode,
-    });
+    const { error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('remove_friend', {
+          p_code: normalizedCode,
+        }),
+      { label: 'friendsService.removeFriend' }
+    );
 
     if (error) {
       throw error;
@@ -330,10 +345,14 @@ export async function respondFriendRequest(userId, requestId, action) {
   const normalizedAction = action === 'accept' ? 'accept' : 'decline';
 
   try {
-    const { error } = await supabase.rpc('respond_friend_request', {
-      p_request_id: requestId,
-      p_action: normalizedAction,
-    });
+    const { error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('respond_friend_request', {
+          p_request_id: requestId,
+          p_action: normalizedAction,
+        }),
+      { label: 'friendsService.respondFriendRequest' }
+    );
 
     if (error) {
       throw error;
@@ -385,10 +404,14 @@ export async function migrateLocalFriends(fromUserId, toUserId) {
     const oldCode = deriveFriendCode(sourceId);
     const newCode = deriveFriendCode(toUserId);
     if (oldCode && newCode && oldCode !== newCode) {
-      await supabase
-        .from('friends')
-        .update({ friend_code: newCode })
-        .eq('friend_code', oldCode);
+      await runSupabaseRequest(
+        () =>
+          supabase
+            .from('friends')
+            .update({ friend_code: newCode })
+            .eq('friend_code', oldCode),
+        { label: 'friendsService.migrateFriendCode' }
+      );
     }
   } catch (err) {
     console.warn('Konnte Gast-Freunde nicht auf neuen Code umstellen:', err?.message);

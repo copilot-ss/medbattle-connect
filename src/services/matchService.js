@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
+import { runSupabaseRequest } from './supabaseRequest';
 import {
   LOBBY_IDLE_TIMEOUT_MINUTES,
   MATCH_CACHE_TTL,
@@ -19,9 +20,13 @@ let lastIdleCleanupAt = 0;
 
 async function closeWaitingMatches({ includeAllOpen = false } = {}) {
   try {
-    const { data, error } = await supabase.rpc('close_waiting_matches', {
-      p_include_all: includeAllOpen,
-    });
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('close_waiting_matches', {
+          p_include_all: includeAllOpen,
+        }),
+      { label: 'matchService.closeWaitingMatches' }
+    );
 
     if (error) {
       throw error;
@@ -115,10 +120,14 @@ export async function createMatch({
   try {
     await ensureLobbyCleanup({ force: true });
 
-    const { data, error } = await supabase.rpc('create_match', {
-      p_difficulty: normalizedDifficulty,
-      p_question_limit: limit,
-    });
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('create_match', {
+          p_difficulty: normalizedDifficulty,
+          p_question_limit: limit,
+        }),
+      { label: 'matchService.createMatch' }
+    );
 
     if (error) {
       console.error('Fehler beim Erstellen des Matches:', error.message);
@@ -150,9 +159,13 @@ export async function joinMatch({ code, userId } = {}) {
   try {
     await ensureLobbyCleanup({ force: true });
 
-    const { data, error } = await supabase.rpc('join_match', {
-      p_code: sanitizedCode,
-    });
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('join_match', {
+          p_code: sanitizedCode,
+        }),
+      { label: 'matchService.joinMatch' }
+    );
 
     if (error) {
       return { ok: false, error };
@@ -177,9 +190,13 @@ export async function startMatch({ matchId, userId } = {}) {
   }
 
   try {
-    const { data, error } = await supabase.rpc('start_match', {
-      p_match_id: matchId,
-    });
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('start_match', {
+          p_match_id: matchId,
+        }),
+      { label: 'matchService.startMatch' }
+    );
 
     if (error) {
       return { ok: false, error };
@@ -200,9 +217,13 @@ export async function getMatchById(matchId) {
   }
 
   try {
-    const { data, error } = await supabase.rpc('get_match_by_id', {
-      p_match_id: matchId,
-    });
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('get_match_by_id', {
+          p_match_id: matchId,
+        }),
+      { label: 'matchService.getMatchById' }
+    );
 
     if (error) {
       return { ok: false, error };
@@ -241,11 +262,15 @@ export async function updateMatchSettings({
     : 5;
 
   try {
-    const { data, error } = await supabase.rpc('update_match_settings', {
-      p_match_id: matchId,
-      p_difficulty: normalizedDifficulty,
-      p_question_limit: limit,
-    });
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('update_match_settings', {
+          p_match_id: matchId,
+          p_difficulty: normalizedDifficulty,
+          p_question_limit: limit,
+        }),
+      { label: 'matchService.updateMatchSettings' }
+    );
 
     if (error) {
       return { ok: false, error };
@@ -282,9 +307,13 @@ export async function fetchOpenMatches({
   }
 
   try {
-    const { data, error } = await supabase.rpc('get_open_matches', {
-      p_difficulty: normalizedDifficulty,
-    });
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('get_open_matches', {
+          p_difficulty: normalizedDifficulty,
+        }),
+      { label: 'matchService.getOpenMatches' }
+    );
 
     if (error) {
       console.warn('Konnte offene Matches nicht laden:', error.message);
@@ -385,14 +414,18 @@ export async function updateMatchProgress({
   const nextScoreValue = Number.isFinite(nextScore) ? Math.max(nextScore, 0) : null;
 
   try {
-    const { data, error } = await supabase.rpc('update_match_progress', {
-      p_match_id: match.id,
-      p_next_index: nextIndexValue,
-      p_next_score: nextScoreValue,
-      p_answer: nextAnswer,
-      p_finished: finished ? true : false,
-      p_expected_updated_at: match.updated_at ?? null,
-    });
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('update_match_progress', {
+          p_match_id: match.id,
+          p_next_index: nextIndexValue,
+          p_next_score: nextScoreValue,
+          p_answer: nextAnswer,
+          p_finished: finished ? true : false,
+          p_expected_updated_at: match.updated_at ?? null,
+        }),
+      { label: 'matchService.updateMatchProgress' }
+    );
 
     if (error) {
       return { ok: false, error };
@@ -427,9 +460,13 @@ export async function kickMatchGuest({ matchId, userId } = {}) {
   }
 
   try {
-    const { data, error } = await supabase.rpc('kick_match_guest', {
-      p_match_id: matchId,
-    });
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('kick_match_guest', {
+          p_match_id: matchId,
+        }),
+      { label: 'matchService.kickMatchGuest' }
+    );
 
     if (error) {
       return { ok: false, error };
@@ -456,10 +493,14 @@ export async function markPlayerFinished({ match, role } = {}) {
   }
 
   try {
-    const { data, error } = await supabase.rpc('mark_player_finished', {
-      p_match_id: match.id,
-      p_expected_updated_at: match.updated_at ?? null,
-    });
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('mark_player_finished', {
+          p_match_id: match.id,
+          p_expected_updated_at: match.updated_at ?? null,
+        }),
+      { label: 'matchService.markPlayerFinished' }
+    );
 
     if (error) {
       return { ok: false, error };
@@ -486,9 +527,13 @@ export async function abandonMatch({ match, role } = {}) {
   }
 
   try {
-    const { data, error } = await supabase.rpc('abandon_match', {
-      p_match_id: match.id,
-    });
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('abandon_match', {
+          p_match_id: match.id,
+        }),
+      { label: 'matchService.abandonMatch' }
+    );
 
     if (error) {
       return { ok: false, error };

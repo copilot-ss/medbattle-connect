@@ -34,6 +34,11 @@ export default function ProfileSection({
   loadingEmail,
   onEmailUpdate,
   showEmailActions = true,
+  showLinkGoogle = false,
+  linkGoogleLabel,
+  linkGoogleHint,
+  linkingGoogle,
+  onLinkGoogle,
 }) {
   return (
     <View style={[styles.card, styles.profileCard]}>
@@ -171,6 +176,31 @@ export default function ProfileSection({
               <ActivityIndicator color="#F8FAFC" />
             ) : (
               <Text style={styles.primaryButtonText}>{emailCtaLabel}</Text>
+            )}
+          </Pressable>
+        </View>
+      ) : null}
+
+      {showLinkGoogle ? (
+        <View style={styles.fieldGroup}>
+          <Text style={styles.helperText}>
+            {linkGoogleHint || 'Google mit diesem Profil verknuepfen.'}
+          </Text>
+          <Pressable
+            onPress={onLinkGoogle}
+            disabled={linkingGoogle}
+            style={[
+              styles.actionButton,
+              styles.primaryButton,
+              linkingGoogle ? styles.disabledButton : null,
+            ]}
+          >
+            {linkingGoogle ? (
+              <ActivityIndicator color="#F8FAFC" />
+            ) : (
+              <Text style={styles.primaryButtonText}>
+                {linkGoogleLabel || 'Google verbinden'}
+              </Text>
             )}
           </Pressable>
         </View>

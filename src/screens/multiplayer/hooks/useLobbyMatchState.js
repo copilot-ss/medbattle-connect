@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useConnectivity } from '../../../context/ConnectivityContext';
 import { clearActiveLobby, saveActiveLobby } from '../../../utils/activeLobbyStorage';
 import {
   deriveMatchRole,
@@ -18,6 +19,9 @@ export default function useLobbyMatchState({
 }) {
   const [currentMatch, setCurrentMatch] = useState(null);
   const subscriptionRef = useRef(null);
+  const { isOnline } = useConnectivity();
+  const isOffline = isOnline === false;
+  const lastOnlineRef = useRef(isOnline);
 
   const attachMatchSubscription = useCallback((matchId) => {
     if (subscriptionRef.current) {
@@ -60,7 +64,7 @@ export default function useLobbyMatchState({
   }, [currentMatch, difficulty, navigation, userId]);
 
   useEffect(() => {
-    if (!currentMatch || currentMatch.status !== 'waiting') {
+    if (!currentMatch || currentMatch.status !== 'waiting' || isOffline) {
       return undefined;
     }
 
@@ -76,7 +80,34 @@ export default function useLobbyMatchState({
     }, 4000);
 
     return () => clearInterval(intervalId);
-  }, [currentMatch]);
+  }, [currentMatch, isOffline]);
+
+  useEffect(() => {
+    const wasOffline = lastOnlineRef.current === false && isOnline === true;
+    lastOnlineRef.current = isOnline;
+
+    if (!wasOffline || !currentMatch?.id || !userId) {
+      return;
+    }
+
+    if (setMatchesError) {
+      setMatchesError(null);
+    }
+
+    attachMatchSubscription(currentMatch.id);
+    getMatchById(currentMatch.id)
+      .then((result) => {
+        if (result.ok && result.match) {
+          setCurrentMatch(result.match);
+        }
+      })
+      .catch((err) => {
+        console.warn('Konnte Lobby nach Reconnect nicht laden:', err);
+        if (setMatchesError) {
+          setMatchesError(err);
+        }
+      });
+  }, [attachMatchSubscription, currentMatch?.id, isOnline, setMatchesError, userId]);
 
   useEffect(() => {
     if (currentMatch || !existingMatch) {

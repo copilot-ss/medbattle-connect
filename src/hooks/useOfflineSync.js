@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { usePreferences } from '../context/PreferencesContext';
 import useSupabaseUserId from './useSupabaseUserId';
-import { flushQueuedScores } from '../services/quizService';
+import { flushQueuedScores, syncQuestionCache } from '../services/quizService';
 import { fetchUserProgress, flushQueuedProgress } from '../services/userProgressService';
 
 function sanitizeStatNumber(value) {
@@ -18,6 +18,7 @@ export default function useOfflineSync() {
   const { updateUserStats } = usePreferences();
   const userId = useSupabaseUserId();
   const syncingRef = useRef(false);
+  const questionSyncRef = useRef(false);
 
   useEffect(() => {
     if (!isOnline || !userId || userId === 'guest') {
@@ -59,4 +60,22 @@ export default function useOfflineSync() {
         syncingRef.current = false;
       });
   }, [isOnline, updateUserStats, userId]);
+
+  useEffect(() => {
+    if (!isOnline) {
+      return;
+    }
+    if (questionSyncRef.current) {
+      return;
+    }
+
+    questionSyncRef.current = true;
+    syncQuestionCache()
+      .catch((err) => {
+        console.warn('Konnte Fragen-Cache nicht synchronisieren:', err);
+      })
+      .finally(() => {
+        questionSyncRef.current = false;
+      });
+  }, [isOnline]);
 }

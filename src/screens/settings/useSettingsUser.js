@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { fetchUserProfile } from '../../services/userService';
 import { getFriendCodeForUser, getOrCreateGuestId } from '../../services/friendsService';
+import { getStoredGuestName } from '../../utils/guestProfile';
 
 export default function useSettingsUser() {
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState(null);
   const [authUserId, setAuthUserId] = useState(null);
   const [authProvider, setAuthProvider] = useState('password');
+  const [authProviders, setAuthProviders] = useState([]);
   const [localGuestId, setLocalGuestId] = useState(null);
 
   useEffect(() => {
@@ -27,6 +29,7 @@ export default function useSettingsUser() {
       const user = data?.user ?? null;
       const id = user?.id ?? null;
       const guestId = await getOrCreateGuestId();
+      const guestName = await getStoredGuestName();
       if (!active) {
         return;
       }
@@ -35,8 +38,18 @@ export default function useSettingsUser() {
         Array.isArray(user?.app_metadata?.providers) && user.app_metadata.providers.length
           ? user.app_metadata.providers[0]
           : user?.app_metadata?.provider ?? user?.user_metadata?.provider ?? 'password';
+      const providerList = Array.isArray(user?.app_metadata?.providers)
+        ? user.app_metadata.providers
+        : [];
+      const normalizedProvider = provider === 'email' ? 'password' : provider;
+      const normalizedProviders = providerList.length
+        ? providerList.map((entry) => (entry === 'email' ? 'password' : entry))
+        : normalizedProvider
+        ? [normalizedProvider]
+        : [];
 
-      setAuthProvider(provider || 'password');
+      setAuthProvider(normalizedProvider || 'password');
+      setAuthProviders(normalizedProviders);
 
       const metaName =
         user?.user_metadata?.full_name ?? user?.user_metadata?.display_name;
@@ -49,7 +62,7 @@ export default function useSettingsUser() {
         }
       }
 
-      setUserName(profileName || 'Gast');
+      setUserName(profileName || guestName || 'Gast');
       setAuthUserId(id);
       setLocalGuestId(guestId);
       setUserId(id || guestId);
@@ -57,8 +70,13 @@ export default function useSettingsUser() {
 
     resolveUser();
 
+    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+      resolveUser();
+    });
+
     return () => {
       active = false;
+      authListener?.subscription?.unsubscribe();
     };
   }, []);
 
@@ -70,6 +88,7 @@ export default function useSettingsUser() {
     userId,
     authUserId,
     authProvider,
+    authProviders,
     isGuest,
     friendCode,
     localGuestId,

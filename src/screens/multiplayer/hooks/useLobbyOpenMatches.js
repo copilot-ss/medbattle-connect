@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import { useConnectivity } from '../../../context/ConnectivityContext';
 import { fetchOpenMatches } from '../../../services/matchService';
 
 export default function useLobbyOpenMatches({
@@ -8,6 +9,8 @@ export default function useLobbyOpenMatches({
   userId,
   setMatchesError,
 }) {
+  const { isOnline } = useConnectivity();
+  const isOffline = isOnline === false;
   const [openMatches, setOpenMatches] = useState([]);
   const [matchesLoading, setMatchesLoading] = useState(!isCreateOnly);
 
@@ -15,6 +18,11 @@ export default function useLobbyOpenMatches({
     async ({ force = false } = {}) => {
       if (isCreateOnly) {
         setOpenMatches([]);
+        setMatchesLoading(false);
+        return;
+      }
+
+      if (isOffline) {
         setMatchesLoading(false);
         return;
       }
@@ -39,23 +47,23 @@ export default function useLobbyOpenMatches({
         setMatchesLoading(false);
       }
     },
-    [difficulty, isCreateOnly, setMatchesError]
+    [difficulty, isCreateOnly, isOffline, setMatchesError]
   );
 
   useFocusEffect(
     useCallback(() => {
-      if (!userId || isCreateOnly) {
+      if (!userId || isCreateOnly || isOffline) {
         return () => {};
       }
 
       refreshMatches();
 
       return () => {};
-    }, [isCreateOnly, refreshMatches, userId])
+    }, [isCreateOnly, isOffline, refreshMatches, userId])
   );
 
   useEffect(() => {
-    if (!userId || isCreateOnly) {
+    if (!userId || isCreateOnly || isOffline) {
       return () => {};
     }
 
@@ -66,7 +74,14 @@ export default function useLobbyOpenMatches({
     return () => {
       clearInterval(intervalId);
     };
-  }, [isCreateOnly, refreshMatches, userId]);
+  }, [isCreateOnly, isOffline, refreshMatches, userId]);
+
+  useEffect(() => {
+    if (!userId || isCreateOnly || isOffline) {
+      return;
+    }
+    refreshMatches({ force: true });
+  }, [isCreateOnly, isOffline, refreshMatches, userId]);
 
   return {
     openMatches,

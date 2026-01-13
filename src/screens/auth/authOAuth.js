@@ -12,27 +12,40 @@ import {
   withTimeout,
 } from './authUtils';
 
-export async function loginOAuth(provider, setMessage, setLoading) {
+async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
   try {
     setMessage(null);
 
     const validation = validateSupabaseConfig();
     if (!validation.ok) {
       setMessage(validation.message);
-      return;
+      return { ok: false };
     }
 
     setLoading(true);
 
-    await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+    if (mode === 'signIn') {
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+    }
+
+    if (mode === 'link' && typeof supabase.auth.linkIdentity !== 'function') {
+      throw new Error('OAuth-Verknuepfung nicht verfuegbar.');
+    }
 
     const { data, error } = await withTimeout(
-      supabase.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo: OAUTH_REDIRECT, skipBrowserRedirect: true },
-      }),
+      mode === 'link'
+        ? supabase.auth.linkIdentity({
+            provider,
+            options: { redirectTo: OAUTH_REDIRECT, skipBrowserRedirect: true },
+          })
+        : supabase.auth.signInWithOAuth({
+            provider,
+            options: { redirectTo: OAUTH_REDIRECT, skipBrowserRedirect: true },
+          }),
       AUTH_TIMEOUT_MS,
-      'Supabase nicht erreichbar (OAuth). Bitte Verbindung oder Supabase-URL pruefen.'
+      mode === 'link'
+        ? 'Supabase nicht erreichbar (OAuth-Verknuepfung). Bitte Verbindung oder Supabase-URL pruefen.'
+        : 'Supabase nicht erreichbar (OAuth). Bitte Verbindung oder Supabase-URL pruefen.'
     );
     if (error) throw error;
     if (!data?.url) throw new Error('Kein OAuth-URL erhalten.');
@@ -78,7 +91,7 @@ export async function loginOAuth(provider, setMessage, setLoading) {
         'Supabase nicht erreichbar (Code-Austausch).'
       );
       if (exchangeError) throw exchangeError;
-      return;
+      return { ok: true };
     }
 
     if (accessToken && refreshToken) {
@@ -91,7 +104,7 @@ export async function loginOAuth(provider, setMessage, setLoading) {
         'Supabase nicht erreichbar (Token setzen).'
       );
       if (sessionError) throw sessionError;
-      return;
+      return { ok: true };
     }
 
     throw new Error('Nach OAuth wurde kein Code oder Token geliefert.');
@@ -102,10 +115,23 @@ export async function loginOAuth(provider, setMessage, setLoading) {
         : '';
     const formatted = formatUserError(err, {
       supabaseUrl: SUPABASE_URL_HINT,
-      fallback: 'OAuth fehlgeschlagen.',
+      fallback:
+        mode === 'link'
+          ? 'OAuth-Verknuepfung fehlgeschlagen.'
+          : 'OAuth fehlgeschlagen.',
     });
     setMessage(formatted + hint);
+    return { ok: false, error: err };
   } finally {
     setLoading(false);
   }
+  return { ok: true };
+}
+
+export async function loginOAuth(provider, setMessage, setLoading) {
+  return runOAuthFlow({ provider, setMessage, setLoading, mode: 'signIn' });
+}
+
+export async function linkOAuth(provider, setMessage, setLoading) {
+  return runOAuthFlow({ provider, setMessage, setLoading, mode: 'link' });
 }
