@@ -38,9 +38,20 @@ export default function AuthScreen({ route, navigation, onGuest }) {
   const isSignUp = mode === 'signUp';
   const isRecovery = mode === 'recovery';
   const handleGuest = async () => {
+    if (loading) {
+      return;
+    }
     setMessage(null);
-    if (typeof onGuest === 'function') {
-      onGuest();
+    setLoading(true);
+    try {
+      if (typeof onGuest === 'function') {
+        const result = await onGuest();
+        if (result?.ok === false && result?.message) {
+          setMessage(result.message);
+        }
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -373,6 +384,8 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
   return (
     <View style={styles.container}>
+      <View style={styles.backgroundGlowTop} pointerEvents="none" />
+      <View style={styles.backgroundGlowBottom} pointerEvents="none" />
       <View style={styles.panel}>
         <Text style={styles.brand}>MedBattle</Text>
 

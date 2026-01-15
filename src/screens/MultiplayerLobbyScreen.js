@@ -833,6 +833,8 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
+      <View style={styles.backgroundGlowTop} pointerEvents="none" />
+      <View style={styles.backgroundGlowBottom} pointerEvents="none" />
       <LobbyHeader
         isCreateOnly={isCreateOnly}
         closingLobby={closingLobby}

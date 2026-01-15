@@ -1,17 +1,38 @@
 import { StyleSheet } from 'react-native';
+import { colors, fonts, radii } from '../../styles/theme';
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#030712',
+    backgroundColor: colors.background,
+  },
+  backgroundGlowTop: {
+    position: 'absolute',
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: colors.accent,
+    opacity: 0.14,
+    top: -140,
+    right: -100,
+  },
+  backgroundGlowBottom: {
+    position: 'absolute',
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: colors.accentWarm,
+    opacity: 0.1,
+    bottom: -120,
+    left: -80,
   },
   header: {
     paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 24,
-    backgroundColor: '#0F172A',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.3)',
+    borderColor: colors.border,
   },
   headerRow: {
     flexDirection: 'row',
@@ -21,8 +42,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 30,
-    fontWeight: '800',
-    color: '#F8FAFC',
+    fontFamily: fonts.bold,
+    color: colors.textPrimary,
   },
   headerTitleRow: {
     flexDirection: 'row',
@@ -34,50 +55,53 @@ const styles = StyleSheet.create({
   closeButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 12,
+    borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.35)',
-    backgroundColor: 'rgba(2, 6, 23, 0.6)',
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
   },
   closeButtonText: {
-    color: '#E0E7FF',
-    fontWeight: '800',
+    color: colors.textSecondary,
+    fontFamily: fonts.bold,
     fontSize: 16,
   },
   headerSubtitle: {
-    color: '#CBD5F5',
+    color: colors.textSecondary,
     marginTop: 6,
+    fontFamily: fonts.regular,
   },
   stateContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
-    backgroundColor: '#030712',
+    backgroundColor: colors.background,
   },
   stateMessage: {
     marginTop: 12,
-    color: '#94A3B8',
+    color: colors.textMuted,
+    fontFamily: fonts.regular,
   },
   errorMessage: {
     fontSize: 16,
-    color: '#FCA5A5',
+    color: '#FFB1B9',
     textAlign: 'center',
     marginBottom: 16,
+    fontFamily: fonts.medium,
   },
   retryButton: {
-    backgroundColor: '#2563EB',
+    backgroundColor: colors.accent,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 12,
+    borderRadius: radii.md,
   },
   retryButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: '#081019',
+    fontFamily: fonts.bold,
   },
   list: {
     flex: 1,
-    backgroundColor: '#030712',
+    backgroundColor: colors.background,
   },
   listContent: {
     paddingTop: 20,
@@ -87,15 +111,16 @@ const styles = StyleSheet.create({
   emptyState: {
     padding: 24,
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.85)',
-    borderRadius: 16,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radii.lg,
   },
   emptyText: {
     fontSize: 16,
-    color: '#CBD5F5',
+    color: colors.textSecondary,
+    fontFamily: fonts.regular,
   },
   entry: {
-    borderRadius: 20,
+    borderRadius: radii.lg,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -106,7 +131,7 @@ const styles = StyleSheet.create({
   entryRank: {
     width: 46,
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
   },
   entryMeta: {
     flex: 1,
@@ -114,26 +139,28 @@ const styles = StyleSheet.create({
   },
   entryName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#F8FAFC',
+    fontFamily: fonts.medium,
+    color: colors.textPrimary,
   },
   entryTitle: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: colors.textMuted,
     marginTop: 4,
+    fontFamily: fonts.regular,
   },
   entryScoreWrap: {
     alignItems: 'flex-end',
   },
   entryScore: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#FACC15',
+    fontFamily: fonts.bold,
+    color: colors.highlight,
   },
   entryScoreLabel: {
     fontSize: 11,
-    color: '#CBD5F5',
+    color: colors.textMuted,
     marginTop: 4,
+    fontFamily: fonts.regular,
   },
 });
 

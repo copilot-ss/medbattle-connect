@@ -122,22 +122,16 @@ export default function useSettingsAuth({
     setSigningOut(true);
 
     try {
-      if (isGuest || !authUserId) {
-        if (onClearSession) {
-          onClearSession();
-        }
-        navigation.navigate('Auth', { mode: 'signIn' });
-        return;
+      if (authUserId) {
+        // Logouts von OAuth-Providern (z.B. Google) schlagen seltener fehl, wenn nur lokale Session gelscht wird.
+        await supabase.auth.signOut({ scope: 'local' });
+        // Fallback: kompletter Logout, falls Remote-Session aktiv ist.
+        await supabase.auth.signOut().catch(() => {});
       }
-
-      // Logouts von OAuth-Providern (z.B. Google) schlagen seltener fehl, wenn nur lokale Session gelscht wird.
-      await supabase.auth.signOut({ scope: 'local' });
-      // Fallback: kompletter Logout, falls Remote-Session aktiv ist.
-      await supabase.auth.signOut().catch(() => {});
       if (onClearSession) {
         onClearSession();
       }
-      navigation.navigate('Auth');
+      navigation.navigate('Auth', isGuest ? { mode: 'signIn' } : undefined);
     } catch (err) {
       setFeedback(
         formatUserError(err, {

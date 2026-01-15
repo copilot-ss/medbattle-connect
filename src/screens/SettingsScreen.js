@@ -69,6 +69,8 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
 
   return (
     <View style={styles.container}>
+      <View style={styles.backgroundGlowTop} pointerEvents="none" />
+      <View style={styles.backgroundGlowBottom} pointerEvents="none" />
       <SettingsHeader onClose={() => navigation.goBack()} />
 
       <SettingsTabs activeTab={activeTab} onChange={setActiveTab} />

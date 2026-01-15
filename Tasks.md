@@ -23,8 +23,8 @@
 - [ ] Supabase Performance: Performance Advisor geprueft, notwendige Indexe vorhanden (doppelte Indexe entfernt, Advisor erneut pruefen).
 - [x] Supabase SQL: Indexe fuer Kern-Tabellen vorhanden (static check).
 - [ ] Supabase DB: SSL enforced, DB-Passwort rotiert, Backup-Status geprueft.
-- [ ] Offline: Login-Recall, Offline-Quick-Play, Online-Sync getestet.
-- [ ] Multiplayer: Create/Join/Resume/Abbruch getestet (schnelle Wiederverbindung).
+- [ ] Offline: Login-Recall, Offline-Quick-Play, Online-Sync getestet (teilweise via adb; Details in RELEASE_TESTS.md).
+- [ ] Multiplayer: Create/Join/Resume/Abbruch getestet (teilweise via adb; Details in RELEASE_TESTS.md).
 - [ ] Purchases/Ads: Energie-Flow, Rewarded Ad, Premium-Flow getestet.
 - [ ] Telemetry: Crash/Telemetry aktiv (Sentry/Expo) + Alerts konfiguriert (EXPO_PUBLIC_SENTRY_DSN fehlt in `.env`).
 - [x] App: Telemetry-Setup verdrahtet (initTelemetry + sentry-expo Plugin).

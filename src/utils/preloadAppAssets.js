@@ -1,4 +1,5 @@
 import { Asset } from 'expo-asset';
+import * as Font from 'expo-font';
 import avatars from '../screens/settings/avatars';
 
 const HOME_ANIMATION = require('../../assets/animations/doctor/doctor.json');
@@ -20,7 +21,14 @@ const APP_ASSETS = [
 
 export async function preloadAppAssets() {
   try {
-    await Asset.loadAsync(APP_ASSETS);
+    await Promise.all([
+      Asset.loadAsync(APP_ASSETS),
+      Font.loadAsync({
+        'Kanit-Regular': require('../../assets/fonts/Kanit-Regular.ttf'),
+        'Kanit-SemiBold': require('../../assets/fonts/Kanit-SemiBold.ttf'),
+        'Kanit-Bold': require('../../assets/fonts/Kanit-Bold.ttf'),
+      }),
+    ]);
   } catch (err) {
     console.warn('Konnte Assets nicht vorladen:', err);
   }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { fetchUserProfile } from '../../services/userService';
 import { getFriendCodeForUser, getOrCreateGuestId } from '../../services/friendsService';
-import { getStoredGuestName } from '../../utils/guestProfile';
+import { getStoredGuestName, loadGuestMode } from '../../utils/guestProfile';
 
 export default function useSettingsUser() {
   const [userName, setUserName] = useState('');
@@ -11,6 +11,7 @@ export default function useSettingsUser() {
   const [authProvider, setAuthProvider] = useState('password');
   const [authProviders, setAuthProviders] = useState([]);
   const [localGuestId, setLocalGuestId] = useState(null);
+  const [guestMode, setGuestMode] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -30,6 +31,7 @@ export default function useSettingsUser() {
       const id = user?.id ?? null;
       const guestId = await getOrCreateGuestId();
       const guestName = await getStoredGuestName();
+      const storedGuestMode = await loadGuestMode();
       if (!active) {
         return;
       }
@@ -66,6 +68,7 @@ export default function useSettingsUser() {
       setAuthUserId(id);
       setLocalGuestId(guestId);
       setUserId(id || guestId);
+      setGuestMode(Boolean(storedGuestMode));
     }
 
     resolveUser();
@@ -81,7 +84,7 @@ export default function useSettingsUser() {
   }, []);
 
   const friendCode = useMemo(() => getFriendCodeForUser(userId), [userId]);
-  const isGuest = !authUserId;
+  const isGuest = guestMode || !authUserId;
 
   return {
     userName,

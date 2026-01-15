@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { supabase } from '../lib/supabaseClient';
 import styles from './styles/LeaderboardScreen.styles';
+import { colors } from '../styles/theme';
 import { fetchLeaderboard } from '../services/quizService';
 import { getTitleProgress } from '../services/titleService';
 
@@ -100,11 +101,11 @@ export default function LeaderboardScreen({ navigation }) {
   }, [loadLeaderboard]);
 
   function renderItem({ item, index }) {
-    const highlightColors = ['#FACC15', '#C4B5FD', '#F472B6'];
-    const accent = highlightColors[index] ?? '#38BDF8';
+    const highlightColors = [colors.highlight, colors.accent, colors.accentPink];
+    const accent = highlightColors[index] ?? colors.accent;
     const isCurrent = currentUserId && item.userId === currentUserId;
     const containerBackground =
-      index < 3 ? 'rgba(59, 130, 246, 0.18)' : 'rgba(15, 23, 42, 0.85)';
+      index < 3 ? 'rgba(87, 199, 255, 0.16)' : 'rgba(18, 18, 28, 0.9)';
     const title = Number.isFinite(item.xp)
       ? getTitleProgress(item.xp).current.label
       : '-';
@@ -115,7 +116,7 @@ export default function LeaderboardScreen({ navigation }) {
           styles.entry,
           {
             backgroundColor: containerBackground,
-            borderColor: isCurrent ? '#FACC15' : 'rgba(71, 85, 105, 0.45)',
+            borderColor: isCurrent ? colors.highlight : 'rgba(117, 117, 138, 0.45)',
           },
         ]}
       >
@@ -141,6 +142,8 @@ export default function LeaderboardScreen({ navigation }) {
 
   return (
     <View style={styles.screen}>
+      <View style={styles.backgroundGlowTop} pointerEvents="none" />
+      <View style={styles.backgroundGlowBottom} pointerEvents="none" />
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <View style={styles.headerTitleRow}>
@@ -148,7 +151,7 @@ export default function LeaderboardScreen({ navigation }) {
             <Ionicons
               name="trophy"
               size={22}
-              color="#FACC15"
+              color={colors.highlight}
               style={styles.headerTitleIcon}
             />
           </View>
@@ -160,7 +163,7 @@ export default function LeaderboardScreen({ navigation }) {
 
       {loading ? (
         <View style={styles.stateContainer}>
-          <ActivityIndicator size="large" color="#60A5FA" />
+        <ActivityIndicator size="large" color={colors.accent} />
           <Text style={styles.stateMessage}>Daten werden geladen ...</Text>
         </View>
       ) : error ? (
@@ -179,9 +182,9 @@ export default function LeaderboardScreen({ navigation }) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={refresh}
-              tintColor="#60A5FA"
-              progressBackgroundColor="#0F172A"
-              colors={['#2563EB']}
+              tintColor={colors.accent}
+              progressBackgroundColor={colors.surface}
+              colors={[colors.accent]}
             />
           }
           ListEmptyComponent={

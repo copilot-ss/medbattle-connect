@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import {
   cacheRememberedSession,
@@ -6,9 +6,27 @@ import {
   loadRememberMe,
   loadRememberedSession,
 } from '../utils/authPersistence';
-import { assignGuestProfile } from '../utils/guestProfile';
+import { getOrCreateGuestId } from '../services/friendsService';
+import {
+  assignGuestProfile,
+  clearGuestMode,
+  loadGuestMode,
+  setGuestMode as persistGuestMode,
+} from '../utils/guestProfile';
 
 const GUEST_SESSION = { user: { id: 'guest', email: null } };
+
+function buildGuestUsername(guestId, guestName) {
+  const safeId = typeof guestId === 'string'
+    ? guestId.replace(/[^a-zA-Z0-9]/g, '').slice(-8)
+    : '';
+  const baseName = typeof guestName === 'string'
+    ? guestName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
+    : '';
+  const base = baseName || 'gast';
+  const suffix = safeId || Math.random().toString(36).slice(2, 10);
+  return `${base}_${suffix}`;
+}
 
 function createGuestSession(guestName) {
   if (!guestName) {
@@ -23,9 +41,13 @@ function createGuestSession(guestName) {
   };
 }
 
-function coerceSession(next, previous) {
+function coerceSession(next, previous, guestMode) {
   if (next?.user?.id) {
     return next;
+  }
+
+  if (guestMode) {
+    return previous?.user?.id === 'guest' ? previous : GUEST_SESSION;
   }
 
   if (previous?.user?.id === 'guest') {
@@ -38,36 +60,88 @@ function coerceSession(next, previous) {
 export default function useAuthSession() {
   const [session, setSession] = useState(null);
   const [initializing, setInitializing] = useState(true);
+  const [guestMode, setGuestModeState] = useState(false);
+  const guestModeRef = useRef(false);
 
-  const isGuestSession = session?.user?.id === 'guest';
+  const isGuestSession = guestMode || session?.user?.id === 'guest';
   const isAuthenticated = Boolean(session) || isGuestSession;
 
   const needsUsernameSetup = useMemo(() => {
-    if (!session?.user?.id || session.user.id === 'guest') {
+    if (!session?.user?.id || isGuestSession) {
       return false;
     }
     return !session.user?.user_metadata?.username;
-  }, [session?.user?.id, session?.user?.user_metadata?.username]);
+  }, [isGuestSession, session?.user?.id, session?.user?.user_metadata?.username]);
 
-  const setGuestSession = useCallback(() => {
+  useEffect(() => {
+    guestModeRef.current = guestMode;
+  }, [guestMode]);
+
+  const setGuestSession = useCallback(async () => {
     setSession(GUEST_SESSION);
+    setGuestModeState(true);
+    await persistGuestMode(true);
 
-    assignGuestProfile()
-      .then((profile) => {
-        const guestName = profile?.name ?? null;
-        if (!guestName) {
-          return;
-        }
-        setSession((prev) =>
-          prev?.user?.id === 'guest' ? createGuestSession(guestName) : prev
-        );
-      })
-      .catch((err) => {
-        console.warn('Konnte Gast-Profil nicht setzen:', err);
+    let guestName = null;
+    let guestId = null;
+
+    try {
+      const profile = await assignGuestProfile();
+      guestName = profile?.name ?? null;
+      guestId = await getOrCreateGuestId();
+    } catch (err) {
+      console.warn('Konnte Gast-Profil nicht setzen:', err);
+    }
+
+    const guestUsername = buildGuestUsername(guestId, guestName);
+
+    if (typeof supabase.auth.signInAnonymously === 'function') {
+      const { data, error } = await supabase.auth.signInAnonymously({
+        options: {
+          data: {
+            username: guestUsername,
+            display_name: guestName ?? undefined,
+            guest: true,
+          },
+        },
       });
+
+      if (!error) {
+        if (data?.session) {
+          setSession(data.session);
+        } else if (guestName) {
+          setSession(createGuestSession(guestName));
+        }
+        return { ok: true };
+      }
+
+      console.warn('Gast-Login fehlgeschlagen:', error.message);
+      if (guestName) {
+        setSession(createGuestSession(guestName));
+      }
+      return {
+        ok: false,
+        error,
+        message:
+          'Gastmodus ohne Supabase-Session aktiv. Multiplayer benoetigt anonymes Login (Supabase Auth: Anonymous Sign-ins aktivieren).',
+      };
+    }
+
+    if (guestName) {
+      setSession(createGuestSession(guestName));
+    }
+
+    return {
+      ok: false,
+      error: new Error('Anonymes Login nicht verfuegbar.'),
+      message:
+        'Gastmodus ohne Supabase-Session aktiv. Multiplayer benoetigt anonymes Login (Supabase Auth: Anonymous Sign-ins aktivieren).',
+    };
   }, []);
 
   const clearSession = useCallback(() => {
+    setGuestModeState(false);
+    clearGuestMode().catch(() => {});
     setSession(null);
   }, []);
 
@@ -77,12 +151,15 @@ export default function useAuthSession() {
     async function initializeSession() {
       try {
         const rememberMe = await loadRememberMe();
+        const storedGuestMode = await loadGuestMode();
         const { data, error } = await supabase.auth.getSession();
         let cachedSession = null;
 
         if (!mounted) {
           return;
         }
+
+        setGuestModeState(Boolean(storedGuestMode));
 
         if (error) {
           console.warn('Konnte Sitzung nicht abrufen:', error.message);
@@ -116,7 +193,7 @@ export default function useAuthSession() {
           }
         }
 
-        setSession((prev) => coerceSession(data?.session, prev));
+        setSession((prev) => coerceSession(data?.session, prev, storedGuestMode));
         if (rememberMe && data?.session) {
           await cacheRememberedSession(data.session);
         } else if (!rememberMe) {
@@ -148,8 +225,14 @@ export default function useAuthSession() {
     initializeSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, newSession) => {
-      setSession((prev) => coerceSession(newSession, prev));
+      setSession((prev) => coerceSession(newSession, prev, guestModeRef.current));
       setInitializing(false);
+
+      if (newSession?.user?.email && guestModeRef.current) {
+        guestModeRef.current = false;
+        setGuestModeState(false);
+        clearGuestMode().catch(() => {});
+      }
 
       (async () => {
         const rememberMe = await loadRememberMe();

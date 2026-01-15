@@ -28,8 +28,11 @@ export default function useLobbyUser() {
 
         const authUser = data?.user;
         const resolvedUserId = authUser?.id ?? null;
+        const metadata = authUser?.user_metadata ?? {};
         let resolvedUsername =
-          authUser?.user_metadata?.username ??
+          metadata.display_name ??
+          metadata.full_name ??
+          metadata.username ??
           (authUser?.email ? authUser.email.split('@')[0] : null) ??
           null;
 

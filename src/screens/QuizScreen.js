@@ -1,5 +1,6 @@
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import styles from './styles/QuizScreen.styles';
+import { colors } from '../styles/theme';
 import QuizHeader from './quiz/QuizHeader';
 import TimerBar from './quiz/TimerBar';
 import QuestionCard from './quiz/QuestionCard';
@@ -42,7 +43,7 @@ export default function QuizScreen({ navigation, route }) {
   if (showLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#60A5FA" />
+        <ActivityIndicator size="large" color={colors.accent} />
         <Text style={styles.loadingText}>Fragen werden geladen ...</Text>
       </View>
     );
@@ -70,6 +71,8 @@ export default function QuizScreen({ navigation, route }) {
 
   return (
     <View style={styles.screen}>
+      <View style={styles.backgroundGlowTop} pointerEvents="none" />
+      <View style={styles.backgroundGlowBottom} pointerEvents="none" />
       <QuizHeader
         difficultyLabel={difficultyLabel}
         totalQuestions={totalQuestions}

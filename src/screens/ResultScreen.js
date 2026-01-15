@@ -3,6 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePreferences } from '../context/PreferencesContext';
 import usePremiumStatus from '../hooks/usePremiumStatus';
+import { colors } from '../styles/theme';
 import AVATARS from './settings/avatars';
 import { findBadge } from './result/resultConstants';
 import ResultScoreboard from './result/ResultScoreboard';
@@ -161,9 +162,9 @@ export default function ResultScreen({ route, navigation }) {
       <View style={styles.backgroundGlowSmall} />
 
       <Sparkle size={36} top={120} left={36} opacity={0.35} rotate="25deg" color={badge.glow} />
-      <Sparkle size={24} top={80} left={280} opacity={0.28} rotate="-10deg" color="#60A5FA" />
-      <Sparkle size={32} top={380} left={300} opacity={0.3} rotate="45deg" color="#34D399" />
-      <Sparkle size={28} top={420} left={44} opacity={0.26} rotate="-30deg" color="#FCD34D" />
+      <Sparkle size={24} top={80} left={280} opacity={0.28} rotate="-10deg" color={colors.accent} />
+      <Sparkle size={32} top={380} left={300} opacity={0.3} rotate="45deg" color={colors.accentGreen} />
+      <Sparkle size={28} top={420} left={44} opacity={0.26} rotate="-30deg" color={colors.highlight} />
 
       <View style={styles.cardWrap}>
         <View style={styles.card}>
@@ -229,7 +230,7 @@ export default function ResultScreen({ route, navigation }) {
                 </Text>
                 {isQuickPlay ? (
                   <View style={styles.primaryButtonMetaRow}>
-                    <Ionicons name="flash" size={14} color="#0F172A" />
+                    <Ionicons name="flash" size={14} color="#0A0A12" />
                     <Text style={styles.primaryButtonMetaText}>
                       Energie {energyLabel}
                     </Text>
@@ -240,7 +241,7 @@ export default function ResultScreen({ route, navigation }) {
           ) : (
             <Pressable
               onPress={() => navigation.navigate('MultiplayerLobby', { mode: 'hub' })}
-              style={getPrimaryButtonStyle('#38BDF8')}
+              style={getPrimaryButtonStyle(colors.accent)}
             >
               <Text style={styles.primaryButtonText}>Zur\u00fcck zur Arena</Text>
             </Pressable>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View, Platform, InteractionManager } from 'react-native';
 import LottieView from 'lottie-react-native';
 import styles from './styles/HomeScreen.styles';
+import { colors } from '../styles/theme';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { getInAppPurchases } from '../lib/inAppPurchases';
@@ -390,6 +391,9 @@ export default function HomeScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
+      <View style={styles.backgroundGlowTop} pointerEvents="none" />
+      <View style={styles.backgroundGlowBottom} pointerEvents="none" />
+
       <HomeHeader
         isOffline={isOffline}
         onOpenLeaderboard={() => navigation.navigate('Leaderboard')}
@@ -428,19 +432,19 @@ export default function HomeScreen({ navigation, route }) {
       <View style={styles.modeSection}>
         <ModeCard
           title="Create Lobby"
-          accent="#38E4AE"
+          accent={colors.accentGreen}
           onPress={handleCreateLobby}
           disabled={hasActiveLobby || isOffline}
         />
         <ModeCard
           title="Join Lobby"
-          accent="#60A5FA"
+          accent={colors.accent}
           onPress={handleJoinLobby}
           disabled={hasActiveLobby || isOffline}
         />
         <ModeCard
           title="Quick Play"
-          accent="#FDE68A"
+          accent={colors.accentWarm}
           onPress={startQuickPlay}
           disabled={isBoostBusy || hasLobby}
           titleMeta={

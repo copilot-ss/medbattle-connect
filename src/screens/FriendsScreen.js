@@ -28,6 +28,8 @@ export default function FriendsScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
+      <View style={styles.backgroundGlowTop} pointerEvents="none" />
+      <View style={styles.backgroundGlowBottom} pointerEvents="none" />
       <SettingsHeader title="Freunde" onClose={() => navigation.goBack()} />
 
       <ScrollView
