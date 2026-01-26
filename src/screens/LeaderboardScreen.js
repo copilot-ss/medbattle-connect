@@ -27,7 +27,7 @@ function formatUserId(value) {
   return `${value.slice(0, 4)}...${value.slice(-4)}`;
 }
 
-export default function LeaderboardScreen({ navigation }) {
+export default function LeaderboardScreen({ navigation, showClose = true }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -155,9 +155,11 @@ export default function LeaderboardScreen({ navigation }) {
               style={styles.headerTitleIcon}
             />
           </View>
-          <Pressable onPress={() => navigation.goBack()} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>X</Text>
-          </Pressable>
+          {showClose ? (
+            <Pressable onPress={() => navigation.goBack()} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>X</Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
 

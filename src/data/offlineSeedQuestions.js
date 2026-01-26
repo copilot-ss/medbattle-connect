@@ -1,0 +1,88 @@
+const OFFLINE_SEED_QUESTIONS = [
+  {
+    id: 'seed-leicht-001',
+    difficulty: 'leicht',
+    question: 'Welches Organ produziert Insulin?',
+    options: ['Pankreas', 'Leber', 'Niere', 'Milz'],
+    correct_answer: 'Pankreas',
+  },
+  {
+    id: 'seed-leicht-002',
+    difficulty: 'leicht',
+    question: 'Was bewertet die Glasgow Coma Scale?',
+    options: ['Bewusstseinslage', 'Lungenfunktion', 'Nierenperfusion', 'Herzzeitvolumen'],
+    correct_answer: 'Bewusstseinslage',
+  },
+  {
+    id: 'seed-leicht-003',
+    difficulty: 'leicht',
+    question: 'Welcher Nerv steuert die Mimik?',
+    options: ['N. facialis (VII)', 'N. trigeminus (V)', 'N. oculomotorius (III)', 'N. vagus (X)'],
+    correct_answer: 'N. facialis (VII)',
+  },
+  {
+    id: 'seed-leicht-004',
+    difficulty: 'leicht',
+    question: 'Welcher periphere Puls wird am Fussruecken getastet?',
+    options: ['A. dorsalis pedis', 'A. poplitea', 'A. femoralis', 'A. tibialis posterior'],
+    correct_answer: 'A. dorsalis pedis',
+  },
+  {
+    id: 'seed-mittel-001',
+    difficulty: 'mittel',
+    question: 'Haeufigster Erreger der ambulant erworbenen Pneumonie?',
+    options: ['Streptococcus pneumoniae', 'Klebsiella pneumoniae', 'Legionella pneumophila', 'Mycoplasma genitalium'],
+    correct_answer: 'Streptococcus pneumoniae',
+  },
+  {
+    id: 'seed-mittel-002',
+    difficulty: 'mittel',
+    question: 'Welche Klappe ist bei Mitralinsuffizienz betroffen?',
+    options: ['Mitralklappe', 'Aortenklappe', 'Pulmonalklappe', 'Trikuspidalklappe'],
+    correct_answer: 'Mitralklappe',
+  },
+  {
+    id: 'seed-mittel-003',
+    difficulty: 'mittel',
+    question: 'Erstmassnahme bei Anaphylaxie?',
+    options: ['i.m. Adrenalin', 'Orale Antihistaminika', 'IV Corticosteroide', 'Sauerstoff allein'],
+    correct_answer: 'i.m. Adrenalin',
+  },
+  {
+    id: 'seed-mittel-004',
+    difficulty: 'mittel',
+    question: 'Erstbildgebung bei Verdacht auf Appendizitis (Erwachsene)?',
+    options: ['CT Abdomen mit Kontrast', 'Ultraschall', 'MRI Becken', 'Roentgen Abdomen'],
+    correct_answer: 'CT Abdomen mit Kontrast',
+  },
+  {
+    id: 'seed-schwer-001',
+    difficulty: 'schwer',
+    question: 'Welches Hormon loest den Eisprung aus?',
+    options: ['LH', 'Prolaktin', 'TSH', 'GH'],
+    correct_answer: 'LH',
+  },
+  {
+    id: 'seed-schwer-002',
+    difficulty: 'schwer',
+    question: 'Haeufigster Erreger unkomplizierter Harnwegsinfekte?',
+    options: ['Escherichia coli', 'Staphylococcus aureus', 'Pseudomonas aeruginosa', 'Enterococcus faecalis'],
+    correct_answer: 'Escherichia coli',
+  },
+  {
+    id: 'seed-schwer-003',
+    difficulty: 'schwer',
+    question: 'Bildgebung 1. Wahl bei Verdacht auf Ovarialtorsion?',
+    options: ['Transvaginaler Ultraschall', 'CT Abdomen', 'Roentgen Becken', 'PET-CT'],
+    correct_answer: 'Transvaginaler Ultraschall',
+  },
+  {
+    id: 'seed-schwer-004',
+    difficulty: 'schwer',
+    question: 'Erstmassnahme bei offener Fraktur einer langen Roehre?',
+    options: ['Sterile Abdeckung und i.v. Antibiotika', 'Gips sofort', 'Lokale Salbe', 'Nur kuehlen'],
+    correct_answer: 'Sterile Abdeckung und i.v. Antibiotika',
+  },
+];
+
+export default OFFLINE_SEED_QUESTIONS;

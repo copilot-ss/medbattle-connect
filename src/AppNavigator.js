@@ -8,13 +8,11 @@ import useAuthSession from './hooks/useAuthSession';
 import useOfflineSync from './hooks/useOfflineSync';
 import AuthScreen from './screens/AuthScreen';
 import FriendsScreen from './screens/FriendsScreen';
-import HomeScreen from './screens/HomeScreen';
-import LeaderboardScreen from './screens/LeaderboardScreen';
 import MultiplayerLobbyScreen from './screens/MultiplayerLobbyScreen';
 import QuizScreen from './screens/QuizScreen';
 import ResultScreen from './screens/ResultScreen';
-import SettingsScreen from './screens/SettingsScreen';
 import UsernameSetupScreen from './screens/UsernameSetupScreen';
+import MainTabs from './navigation/MainTabs';
 import styles from './styles/AppNavigator.styles';
 
 const Stack = createNativeStackNavigator();
@@ -48,7 +46,7 @@ function AppNavigatorInner() {
           isAuthenticated
             ? needsUsernameSetup
               ? 'UsernameSetup'
-              : 'Home'
+              : 'MainTabs'
             : 'Auth'
         }
         screenOptions={{ headerShown: false }}
@@ -58,20 +56,18 @@ function AppNavigatorInner() {
             {needsUsernameSetup ? (
               <Stack.Screen name="UsernameSetup" component={UsernameSetupScreen} />
             ) : null}
-            <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="Friends" component={FriendsScreen} />
-            <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
-            <Stack.Screen name="MultiplayerLobby" component={MultiplayerLobbyScreen} />
-            <Stack.Screen name="Quiz" component={QuizScreen} />
-            <Stack.Screen name="Result" component={ResultScreen} />
-            <Stack.Screen name="Settings">
+            <Stack.Screen name="MainTabs">
               {(props) => (
-                <SettingsScreen
+                <MainTabs
                   {...props}
                   onClearSession={clearSession}
                 />
               )}
             </Stack.Screen>
+            <Stack.Screen name="Friends" component={FriendsScreen} />
+            <Stack.Screen name="MultiplayerLobby" component={MultiplayerLobbyScreen} />
+            <Stack.Screen name="Quiz" component={QuizScreen} />
+            <Stack.Screen name="Result" component={ResultScreen} />
             <Stack.Screen name="Auth">
               {(props) => (
                 <AuthScreen

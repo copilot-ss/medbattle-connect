@@ -247,7 +247,10 @@ export default function ResultScreen({ route, navigation }) {
             </Pressable>
           )}
 
-          <Pressable onPress={() => navigation.navigate('Home')} style={styles.tertiaryButton}>
+          <Pressable
+            onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
+            style={styles.tertiaryButton}
+          >
             <Text style={styles.tertiaryButtonText}>Zur\u00fcck zur Basis</Text>
           </Pressable>
         </View>

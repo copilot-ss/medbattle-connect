@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     paddingHorizontal: 20,
     paddingTop: 60,
-    paddingBottom: 40,
+    paddingBottom: 120,
   },
   backgroundGlowTop: {
     position: 'absolute',
@@ -51,47 +51,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
+  headerTitle: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'flex-start',
+    marginRight: 16,
+  },
+  welcomeText: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontFamily: fonts.medium,
+    letterSpacing: 0.8,
+  },
   title: {
     color: colors.textPrimary,
     fontSize: 32,
     fontFamily: fonts.bold,
     letterSpacing: 1.2,
+    flexShrink: 1,
   },
   quickActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    transform: [{ translateX: 2 }],
-  },
-  leaderboardButton: {
-    ...quickActionButtonBase,
-  },
-  leaderboardIcon: {
-    width: 22,
-    height: 22,
   },
   friendsButton: {
     ...quickActionButtonBase,
-    marginLeft: 8,
     borderColor: 'rgba(255, 127, 168, 0.55)',
     shadowColor: colors.accentPink,
   },
   friendsEmoji: {
     fontSize: 18,
   },
-  menuButton: {
-    ...quickActionButtonBase,
-    marginLeft: 8,
-  },
-  menuIcon: {
-    width: 22,
-    height: 22,
-  },
   quickActionDisabled: {
     opacity: 0.45,
   },
   animationWrapper: {
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 0,
   },
   animationView: {
     width: '100%',
@@ -195,7 +191,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'center',
     rowGap: 18,
-    marginTop: 52,
+    marginTop: 36,
   },
   modeCard: {
     width: '100%',

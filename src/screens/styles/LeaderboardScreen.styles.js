@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingTop: 20,
     paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingBottom: 120,
   },
   emptyState: {
     padding: 24,

@@ -24,12 +24,12 @@ index 5d6f6ff..0a6f4d1 100644
 +      false
 +    }
 +  }
-}
+ }
 diff --git a/node_modules/expo-modules-core/android/src/main/java/com/facebook/react/uimanager/ReactStylesDiffMapHelper.kt b/node_modules/expo-modules-core/android/src/main/java/com/facebook/react/uimanager/ReactStylesDiffMapHelper.kt
 index b297638..41efbad 100644
 --- a/node_modules/expo-modules-core/android/src/main/java/com/facebook/react/uimanager/ReactStylesDiffMapHelper.kt
 +++ b/node_modules/expo-modules-core/android/src/main/java/com/facebook/react/uimanager/ReactStylesDiffMapHelper.kt
-@@ -6,9 +6,18 @@ import java.lang.reflect.Field
+@@ -6,7 +6,16 @@ import java.lang.reflect.Field
  
  @get:DoNotStrip
  private val backingMapField: Field by lazy {

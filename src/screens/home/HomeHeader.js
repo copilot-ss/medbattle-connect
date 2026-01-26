@@ -1,41 +1,33 @@
 import { Pressable, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import styles from '../styles/HomeScreen.styles';
-import { colors } from '../../styles/theme';
 
 export default function HomeHeader({
   isOffline,
-  onOpenLeaderboard,
   onOpenFriends,
-  onOpenSettings,
+  userName,
+  isGuest,
 }) {
+  const resolvedName = typeof userName === 'string' ? userName.trim() : '';
+  const displayName = isGuest ? 'Guest' : resolvedName;
+
   return (
     <View style={styles.header}>
-      <Text style={styles.title}>MedBattle</Text>
+      <View style={styles.headerTitle}>
+        <Text style={styles.welcomeText} numberOfLines={1}>
+          Welcome back
+        </Text>
+        <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+          {displayName}
+        </Text>
+      </View>
 
       <View style={styles.quickActions}>
-        <Pressable
-          onPress={onOpenLeaderboard}
-          style={[styles.leaderboardButton, isOffline ? styles.quickActionDisabled : null]}
-          disabled={isOffline}
-        >
-          <Ionicons name="trophy" size={22} color={colors.highlight} style={styles.leaderboardIcon} />
-        </Pressable>
-
         <Pressable
           onPress={onOpenFriends}
           style={[styles.friendsButton, isOffline ? styles.quickActionDisabled : null]}
           disabled={isOffline}
         >
           <Text style={styles.friendsEmoji}>{'\u{1F9C2}'}</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={onOpenSettings}
-          style={[styles.menuButton, isOffline ? styles.quickActionDisabled : null]}
-          disabled={isOffline}
-        >
-          <Ionicons name="settings" size={22} color={colors.textSecondary} style={styles.menuIcon} />
         </Pressable>
       </View>
     </View>

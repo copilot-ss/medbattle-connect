@@ -8,13 +8,18 @@ import SettingsTabs from './settings/SettingsTabs';
 import AVATARS from './settings/avatars';
 import useSettingsController from './settings/useSettingsController';
 
-export default function SettingsScreen({ navigation, route, onClearSession }) {
+export default function SettingsScreen({
+  navigation,
+  route,
+  onClearSession,
+  lockedTab = null,
+  showTabs = true,
+  showClose = true,
+  title,
+}) {
   const {
     activeTab,
     setActiveTab,
-    showAudioSection,
-    showProfileSection,
-    showSignOutSection,
     scrollRef,
     soundEnabled,
     vibrationEnabled,
@@ -67,13 +72,26 @@ export default function SettingsScreen({ navigation, route, onClearSession }) {
     showResetActions,
   } = useSettingsController({ navigation, route, onClearSession });
 
+  const resolvedTab = lockedTab || activeTab;
+  const showTabRow = showTabs && !lockedTab;
+  const showAudioSection = resolvedTab === 'settings';
+  const showProfileSection = resolvedTab === 'profile';
+  const showSignOutSection = resolvedTab === 'settings';
+  const headerTitle = title || (resolvedTab === 'profile' ? 'Profil' : 'Einstellungen');
+
   return (
     <View style={styles.container}>
       <View style={styles.backgroundGlowTop} pointerEvents="none" />
       <View style={styles.backgroundGlowBottom} pointerEvents="none" />
-      <SettingsHeader onClose={() => navigation.goBack()} />
+      <SettingsHeader
+        onClose={showClose ? () => navigation.goBack() : null}
+        showClose={showClose}
+        title={headerTitle}
+      />
 
-      <SettingsTabs activeTab={activeTab} onChange={setActiveTab} />
+      {showTabRow ? (
+        <SettingsTabs activeTab={activeTab} onChange={setActiveTab} />
+      ) : null}
 
       <ScrollView
         ref={scrollRef}

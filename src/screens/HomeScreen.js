@@ -17,6 +17,7 @@ import EnergyBoostModal from './home/EnergyBoostModal';
 import HomeHeader from './home/HomeHeader';
 import ModeCard from './home/ModeCard';
 import OfflineBanner from './home/OfflineBanner';
+import useHomeUser from './home/useHomeUser';
 
 const DEFAULT_DIFFICULTY = 'mittel';
 const doctorAnimation = require('../../assets/animations/doctor/doctor.json');
@@ -33,6 +34,7 @@ export default function HomeScreen({ navigation, route }) {
   const hasLobby = Boolean(activeLobby?.code);
   const hasActiveLobby = hasLobby && !isOffline;
   const userId = useSupabaseUserId();
+  const { userName, isGuest } = useHomeUser();
   const {
     energy,
     energyMax,
@@ -396,9 +398,9 @@ export default function HomeScreen({ navigation, route }) {
 
       <HomeHeader
         isOffline={isOffline}
-        onOpenLeaderboard={() => navigation.navigate('Leaderboard')}
         onOpenFriends={handleOpenFriends}
-        onOpenSettings={() => navigation.navigate('Settings')}
+        userName={userName}
+        isGuest={isGuest}
       />
 
       <OfflineBanner

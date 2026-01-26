@@ -13,3 +13,11 @@ android/.gradle/
 android/.cxx/
 *.keystore
 dist/
+emulator_screen.jpg
+emulator_screen.png
+emulator_ui.xml
+medbattle_screen.jpg
+expo-dev-server*.log
+tmp_screen.png
+tmp_ui.xml
+tmp-uizard-preview.*

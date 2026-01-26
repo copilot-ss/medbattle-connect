@@ -149,7 +149,7 @@ export default function useQuizController({ navigation, route }) {
       if (!result.ok) {
         navigation.reset({
           index: 0,
-          routes: [{ name: 'Home' }],
+          routes: [{ name: 'MainTabs', params: { screen: 'Home' } }],
         });
       }
     });

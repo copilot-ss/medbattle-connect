@@ -50,7 +50,7 @@ export default function useQuizInteractionHandlers({
   const resetToHome = useCallback(() => {
     navigation.reset({
       index: 0,
-      routes: [{ name: 'Home' }],
+      routes: [{ name: 'MainTabs', params: { screen: 'Home' } }],
     });
   }, [navigation]);
 

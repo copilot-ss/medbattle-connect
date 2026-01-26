@@ -56,7 +56,7 @@ export default function QuizScreen({ navigation, route }) {
           {resolvedError ?? 'Keine Fragen verf\u00fcgbar. Bitte versuche es sp\u00e4ter erneut.'}
         </Text>
         <Pressable
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
           style={styles.errorButton}
         >
           <Text style={styles.errorButtonText}>Zur\u00fcck zur Basis</Text>

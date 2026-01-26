@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabaseClient';
-import CAMPAIGN_QUESTIONS from '../data/campaignQuestions';
+import OFFLINE_SEED_QUESTIONS from '../data/offlineSeedQuestions';
 import { runSupabaseRequest } from './supabaseRequest';
 
 const LEADERBOARD_CACHE_TTL = 30 * 1000;
@@ -176,11 +176,11 @@ async function syncCachedQuestions(storageKey, incoming) {
   return merged;
 }
 
-function buildOfflineQuestions(difficulty, limit) {
-  const pool = CAMPAIGN_QUESTIONS.filter(
+function buildOfflineSeedQuestions(difficulty, limit) {
+  const pool = OFFLINE_SEED_QUESTIONS.filter(
     (question) => question?.difficulty === difficulty
   );
-  const source = pool.length ? pool : CAMPAIGN_QUESTIONS;
+  const source = pool.length ? pool : OFFLINE_SEED_QUESTIONS;
   const shuffled = shuffleList(source);
   return shuffled.slice(0, limit);
 }
@@ -330,7 +330,7 @@ export async function fetchQuestions(
       return cached;
     }
     const offlineQuestions = normalizeQuestionList(
-      buildOfflineQuestions(normalizedDifficulty, normalizedLimit),
+      buildOfflineSeedQuestions(normalizedDifficulty, normalizedLimit),
       normalizedDifficulty
     );
     return cloneQuestions(offlineQuestions);

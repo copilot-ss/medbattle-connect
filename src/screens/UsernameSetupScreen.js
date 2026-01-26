@@ -34,7 +34,10 @@ export default function UsernameSetupScreen({ navigation }) {
         const authUser = data.user;
 
         if (authUser.user_metadata?.username) {
-          navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainTabs', params: { screen: 'Home' } }],
+          });
           return;
         }
 
@@ -91,7 +94,10 @@ export default function UsernameSetupScreen({ navigation }) {
         })
       );
     } else {
-      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MainTabs', params: { screen: 'Home' } }],
+      });
     }
 
     setSaving(false);

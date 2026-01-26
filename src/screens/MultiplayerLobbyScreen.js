@@ -424,7 +424,10 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     clearActiveLobby();
     skipAutoCloseRef.current = true;
     closingRef.current = false;
-    navigation.navigate('Home', { activeLobby: null, lobbyClosed: true });
+    navigation.navigate('MainTabs', {
+      screen: 'Home',
+      params: { activeLobby: null, lobbyClosed: true },
+    });
   }, [abandonMatch, currentMatch, navigation, userId]);
 
   const handleCancelLeave = useCallback(() => {
@@ -725,7 +728,10 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       : null;
 
     skipAutoCloseRef.current = true;
-    navigation.navigate('Home', { activeLobby });
+    navigation.navigate('MainTabs', {
+      screen: 'Home',
+      params: { activeLobby },
+    });
     setClosingLobby(false);
   }, [closingLobby, currentMatch, navigation]);
 
