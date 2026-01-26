@@ -25,7 +25,7 @@ export function validateSupabaseConfig() {
     return {
       ok: false,
       message:
-        'Supabase-URL zeigt auf localhost. Auf echtem Geraet nicht erreichbar. Bitte die gehostete Supabase-URL nutzen.',
+        'Supabase-URL zeigt auf localhost. Auf echtem Gerät nicht erreichbar. Bitte die gehostete Supabase-URL nutzen.',
     };
   }
 
@@ -70,7 +70,7 @@ export function validatePasswordStrength(value) {
     issues.push('1 Kleinbuchstabe');
   }
   if (PASSWORD_POLICY.requireUpper && !/[A-Z]/.test(value)) {
-    issues.push('1 Grossbuchstabe');
+    issues.push('1 Großbuchstabe');
   }
   if (PASSWORD_POLICY.requireNumber && !/\d/.test(value)) {
     issues.push('1 Zahl');

@@ -40,7 +40,7 @@ async function closeWaitingMatches({ includeAllOpen = false } = {}) {
 
     return count;
   } catch (err) {
-    console.warn('Konnte inaktive Lobbys nicht schliessen:', err?.message ?? err);
+    console.warn('Konnte inaktive Lobbys nicht schließen:', err?.message ?? err);
     return 0;
   }
 }
@@ -104,6 +104,7 @@ export function deriveMatchRole(match, userId) {
 export async function createMatch({
   difficulty = 'mittel',
   questionLimit = 5,
+  category = null,
   userId,
 } = {}) {
   const hostId = typeof userId === 'string' ? userId : null;
@@ -113,6 +114,8 @@ export async function createMatch({
   }
 
   const normalizedDifficulty = normalizeDifficulty(difficulty);
+  const normalizedCategory =
+    typeof category === 'string' && category.trim() ? category.trim() : null;
   const limit = Number.isFinite(questionLimit)
     ? Math.max(1, Math.min(questionLimit, 50))
     : 5;
@@ -125,6 +128,7 @@ export async function createMatch({
         supabase.rpc('create_match', {
           p_difficulty: normalizedDifficulty,
           p_question_limit: limit,
+          p_category: normalizedCategory,
         }),
       { label: 'matchService.createMatch' }
     );
@@ -406,7 +410,7 @@ export async function updateMatchProgress({
   const playerRole = role === 'host' || role === 'guest' ? role : null;
 
   if (!playerRole) {
-    return { ok: false, error: new Error('Ungueltige Spielerrolle.') };
+    return { ok: false, error: new Error('Ungültige Spielerrolle.') };
   }
 
   const nextAnswer = sanitizeAnswer(answer);
@@ -489,7 +493,7 @@ export async function markPlayerFinished({ match, role } = {}) {
   const playerRole = role === 'host' || role === 'guest' ? role : null;
 
   if (!playerRole) {
-    return { ok: false, error: new Error('Ungueltige Spielerrolle.') };
+    return { ok: false, error: new Error('Ungültige Spielerrolle.') };
   }
 
   try {
@@ -510,7 +514,7 @@ export async function markPlayerFinished({ match, role } = {}) {
     maybeInvalidateOpenMatchesCache(match, updatedMatch);
     return { ok: true, match: updatedMatch };
   } catch (err) {
-    console.error('Unerwarteter Fehler beim Abschliessen des Matches:', err);
+    console.error('Unerwarteter Fehler beim Abschließen des Matches:', err);
     return { ok: false, error: err };
   }
 }
@@ -523,7 +527,7 @@ export async function abandonMatch({ match, role } = {}) {
   const playerRole = role === 'host' || role === 'guest' ? role : null;
 
   if (!playerRole) {
-    return { ok: false, error: new Error('Ungueltige Spielerrolle.') };
+    return { ok: false, error: new Error('Ungültige Spielerrolle.') };
   }
 
   try {

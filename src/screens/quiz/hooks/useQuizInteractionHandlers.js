@@ -19,6 +19,7 @@ export default function useQuizInteractionHandlers({
   timedOut,
   setTimedOut,
   recordMatchAnswer,
+  onRecordAnswer,
   finalizeQuiz,
   surrenderMatch,
 }) {
@@ -102,6 +103,21 @@ export default function useQuizInteractionHandlers({
       const nextSoloScore = isCorrect ? soloBaseScore + 1 : soloBaseScore;
       const nextMatchScore = isCorrect ? matchBaseScore + 1 : matchBaseScore;
 
+      if (typeof onRecordAnswer === 'function') {
+        onRecordAnswer({
+          index: currentQuestionIndex,
+          questionId: questionSnapshot.id ?? `${currentQuestionIndex}`,
+          question: questionSnapshot.question ?? '',
+          options: Array.isArray(questionSnapshot.options) ? questionSnapshot.options : [],
+          correctAnswer: questionSnapshot.correct_answer ?? null,
+          selectedOption: timedOutTrigger ? null : option,
+          isCorrect,
+          timedOut: timedOutTrigger,
+          durationMs: timedOutTrigger ? TIMER_DURATION : elapsedMs,
+          explanation: questionSnapshot.explanation ?? null,
+        });
+      }
+
       setSelectedOption(timedOutTrigger ? null : option);
       setIsAnswerLocked(true);
 
@@ -128,13 +144,13 @@ export default function useQuizInteractionHandlers({
 
               if (!result.ok) {
                 console.warn(
-                  'Antwort konnte nicht an den Server uebermittelt werden:',
+                  'Antwort konnte nicht an den Server übermittelt werden:',
                   result.error?.message ?? result.error ?? 'Unbekannter Fehler'
                 );
               }
             } else {
               console.warn(
-                'Match-Frage ohne gueltige ID, Antwort wurde nicht synchronisiert.'
+                'Match-Frage ohne gültige ID, Antwort wurde nicht synchronisiert.'
               );
             }
           }
@@ -172,6 +188,7 @@ export default function useQuizInteractionHandlers({
       stopTimer,
       timeLeftRef,
       totalQuestions,
+      onRecordAnswer,
     ]
   );
 

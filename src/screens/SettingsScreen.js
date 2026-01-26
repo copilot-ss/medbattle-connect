@@ -43,6 +43,7 @@ export default function SettingsScreen({
     quizzesCompleted,
     accuracyPercent,
     xp,
+    coins,
     titleProgress,
     unlockedAchievements,
     leaderboardRank,
@@ -128,6 +129,7 @@ export default function SettingsScreen({
             quizzesCompleted={quizzesCompleted}
             accuracyPercent={accuracyPercent}
             xp={xp}
+            coins={coins}
             titleProgress={titleProgress}
             unlockedAchievements={unlockedAchievements}
             leaderboardRank={leaderboardRank}

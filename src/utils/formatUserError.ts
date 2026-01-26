@@ -46,7 +46,7 @@ export function formatUserError(error: unknown, options: FormatUserErrorOptions 
   }
 
   if (NETWORK_ERROR_PATTERNS.some((pattern) => pattern.test(rawMessage))) {
-    return 'Server nicht erreichbar. Bitte Verbindung pruefen.';
+    return 'Server nicht erreichbar. Bitte Verbindung prüfen.';
   }
 
   let cleaned = String(rawMessage);

@@ -37,7 +37,7 @@ export const PASSWORD_POLICY = {
   requireSymbol: true,
 };
 export const PASSWORD_HINT =
-  'Mindestens 12 Zeichen, Gross- und Kleinbuchstaben, Zahl und Sonderzeichen.';
+  'Mindestens 12 Zeichen, Groß- und Kleinbuchstaben, Zahl und Sonderzeichen.';
 export const SUPABASE_URL_HINT = process.env.EXPO_PUBLIC_SUPABASE_URL;
 export const SUPABASE_ANON_HINT = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 

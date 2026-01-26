@@ -43,7 +43,7 @@ export async function loadPreferencesFromStorage() {
         const value = raw ? sanitizeStreakValue(raw) : 0;
         nextStreaks[difficulty] = value;
       } catch (err) {
-        console.warn(`Konnte Streak fuer ${difficulty} nicht laden:`, err);
+        console.warn(`Konnte Streak für ${difficulty} nicht laden:`, err);
       }
     }),
     (async () => {
@@ -56,6 +56,7 @@ export async function loadPreferencesFromStorage() {
             correct: sanitizeStatNumber(parsed?.correct),
             questions: sanitizeStatNumber(parsed?.questions),
             xp: sanitizeStatNumber(parsed?.xp),
+            coins: sanitizeStatNumber(parsed?.coins),
           };
         }
       } catch (err) {
@@ -141,6 +142,6 @@ export async function persistStreakValue(key, value) {
   try {
     await AsyncStorage.setItem(key, String(value));
   } catch (err) {
-    console.warn(`Konnte Streak fuer ${key} nicht speichern:`, err);
+    console.warn(`Konnte Streak für ${key} nicht speichern:`, err);
   }
 }

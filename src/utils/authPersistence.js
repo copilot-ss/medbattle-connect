@@ -63,6 +63,6 @@ export async function clearRememberedSession() {
   try {
     await AsyncStorage.removeItem(REMEMBERED_SESSION_KEY);
   } catch (err) {
-    console.warn('Konnte gemerkte Session nicht loeschen:', err);
+    console.warn('Konnte gemerkte Session nicht löschen:', err);
   }
 }

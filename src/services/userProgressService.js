@@ -20,12 +20,21 @@ function sanitizeStatNumber(value) {
   return 0;
 }
 
+function sanitizeCoinDelta(value) {
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isFinite(parsed)) {
+    return parsed;
+  }
+  return 0;
+}
+
 function normalizeDelta(delta) {
   return {
     quizzes: sanitizeStatNumber(delta?.quizzes),
     correct: sanitizeStatNumber(delta?.correct),
     questions: sanitizeStatNumber(delta?.questions),
     xp: sanitizeStatNumber(delta?.xp),
+    coins: sanitizeCoinDelta(delta?.coins),
   };
 }
 
@@ -34,7 +43,8 @@ function hasDelta(delta) {
     delta.quizzes > 0 ||
     delta.correct > 0 ||
     delta.questions > 0 ||
-    delta.xp > 0
+    delta.xp > 0 ||
+    delta.coins !== 0
   );
 }
 
@@ -83,7 +93,7 @@ export async function fetchUserProgress(userId, { force = false } = {}) {
       () =>
         supabase
           .from('users')
-          .select('xp, quizzes, correct, questions')
+          .select('xp, quizzes, correct, questions, coins')
           .eq('id', userId)
           .maybeSingle(),
       { label: 'userProgressService.fetchUserProgress' }
@@ -98,6 +108,7 @@ export async function fetchUserProgress(userId, { force = false } = {}) {
       quizzes: sanitizeStatNumber(data?.quizzes),
       correct: sanitizeStatNumber(data?.correct),
       questions: sanitizeStatNumber(data?.questions),
+      coins: sanitizeStatNumber(data?.coins),
     };
 
     progressCache.userId = userId;
@@ -129,6 +140,7 @@ export async function incrementUserProgress(userId, delta) {
           p_correct: normalized.correct,
           p_questions: normalized.questions,
           p_xp: normalized.xp,
+          p_coins: normalized.coins,
         }),
       { label: 'userProgressService.incrementUserProgress' }
     );
@@ -145,6 +157,7 @@ export async function incrementUserProgress(userId, delta) {
         quizzes: sanitizeStatNumber(progressCache.data.quizzes) + normalized.quizzes,
         correct: sanitizeStatNumber(progressCache.data.correct) + normalized.correct,
         questions: sanitizeStatNumber(progressCache.data.questions) + normalized.questions,
+        coins: sanitizeStatNumber(progressCache.data.coins) + normalized.coins,
       };
     }
 
@@ -207,6 +220,7 @@ export async function flushQueuedProgress(userId) {
     correct: 0,
     questions: 0,
     xp: 0,
+    coins: 0,
   };
   let matched = 0;
 
@@ -221,6 +235,7 @@ export async function flushQueuedProgress(userId) {
     aggregate.correct += delta.correct;
     aggregate.questions += delta.questions;
     aggregate.xp += delta.xp;
+    aggregate.coins += delta.coins;
   });
 
   if (!matched) {

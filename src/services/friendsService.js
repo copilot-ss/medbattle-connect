@@ -185,7 +185,7 @@ export async function fetchFriends(userId) {
     await persistLocalFriends(resolvedUserId, friends);
     return friends;
   } catch (err) {
-    console.warn('Konnte Freunde nicht ueber Supabase laden:', err?.message);
+    console.warn('Konnte Freunde nicht über Supabase laden:', err?.message);
     return loadLocalFriends(resolvedUserId);
   }
 }
@@ -224,7 +224,7 @@ export async function addFriend(userId, code) {
   const normalizedCode = normalizeCode(code ?? '');
 
   if (!normalizedCode) {
-    return { ok: false, error: new Error('Bitte gueltigen Code angeben.') };
+    return { ok: false, error: new Error('Bitte gültigen Code angeben.') };
   }
 
   try {
@@ -291,7 +291,7 @@ export async function removeFriend(userId, friend) {
   const guestMode = isGuestId(resolvedUserId);
 
   if (!friend?.code) {
-    return { ok: false, error: new Error('Ungueltiger Freund.') };
+    return { ok: false, error: new Error('Ungültiger Freund.') };
   }
 
   const normalizedCode = normalizeCode(friend.code);
@@ -318,7 +318,7 @@ export async function removeFriend(userId, friend) {
       throw error;
     }
   } catch (err) {
-    console.warn('Konnte Freund nicht ueber Supabase entfernen:', err?.message);
+    console.warn('Konnte Freund nicht über Supabase entfernen:', err?.message);
   }
 
   const current = await loadLocalFriends(resolvedUserId);
@@ -335,11 +335,11 @@ export async function respondFriendRequest(userId, requestId, action) {
   const guestMode = isGuestId(resolvedUserId);
 
   if (guestMode) {
-    return { ok: false, error: new Error('Gastmodus unterstuetzt keine Anfragen.') };
+    return { ok: false, error: new Error('Gastmodus unterstützt keine Anfragen.') };
   }
 
   if (!requestId) {
-    return { ok: false, error: new Error('Ungueltige Anfrage.') };
+    return { ok: false, error: new Error('Ungültige Anfrage.') };
   }
 
   const normalizedAction = action === 'accept' ? 'accept' : 'decline';
@@ -371,7 +371,7 @@ export async function respondFriendRequest(userId, requestId, action) {
 
 export async function migrateLocalFriends(fromUserId, toUserId) {
   if (!toUserId) {
-    return { ok: false, error: new Error('Kein Zielnutzer uebergeben.') };
+    return { ok: false, error: new Error('Kein Zielnutzer übergeben.') };
   }
 
   const sourceId = fromUserId || (await getOrCreateGuestId());

@@ -45,7 +45,7 @@ const Auth = () => {
           options: { emailRedirectTo: `${window.location.origin}/` },
         });
         if (error) throw error;
-        setMessage({ type: 'success', text: 'Check deine E-Mails fuer den Bestaetigungslink!' });
+        setMessage({ type: 'success', text: 'Check deine E-Mails für den Bestätigungslink!' });
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/auth`,

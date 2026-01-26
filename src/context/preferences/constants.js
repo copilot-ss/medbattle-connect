@@ -26,4 +26,5 @@ export const DEFAULT_USER_STATS = {
   correct: 0,
   questions: 0,
   xp: 0,
+  coins: 0,
 };

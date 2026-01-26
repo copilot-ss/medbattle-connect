@@ -59,7 +59,7 @@ export function PreferencesProvider({ children }) {
         setNextEnergyAt(loaded.nextEnergyAt);
       } catch (err) {
         if (active) {
-          console.warn('Konnte Nutzer-Praeferenzen nicht laden:', err);
+          console.warn('Konnte Nutzer-Präferenzen nicht laden:', err);
         }
       } finally {
         if (active) {
@@ -113,6 +113,7 @@ export function PreferencesProvider({ children }) {
         correct: sanitizeStatNumber(next.correct),
         questions: sanitizeStatNumber(next.questions),
         xp: sanitizeStatNumber(next.xp),
+        coins: sanitizeStatNumber(next.coins),
       };
       persistUserStats(sanitized);
       return sanitized;

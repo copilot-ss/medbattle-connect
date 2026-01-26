@@ -8,6 +8,13 @@ const leaderboardCache = {
   data: null,
   fetchedAt: 0,
 };
+const CATEGORY_CACHE_TTL = 5 * 60 * 1000;
+const CATEGORY_STORAGE_TTL = 7 * 24 * 60 * 60 * 1000;
+const CATEGORIES_STORAGE_KEY = 'medbattle_categories_cache';
+const categoriesCache = {
+  data: null,
+  fetchedAt: 0,
+};
 const QUESTIONS_CACHE_TTL = 20 * 1000;
 const questionsCache = new Map();
 const QUESTIONS_STORAGE_PREFIX = 'medbattle_questions_cache';
@@ -15,6 +22,9 @@ const MAX_CACHED_QUESTIONS = 200;
 const QUESTION_CACHE_SYNC_TTL = 6 * 60 * 60 * 1000;
 let lastQuestionCacheSyncAt = 0;
 const BASE_MATCH_POINTS = 12;
+const COIN_COMPLETION_BONUS = 1;
+const COIN_PERFECT_BONUS = 2;
+const COIN_MULTIPLAYER_BONUS = 1;
 const PENDING_SCORES_KEY = 'medbattle_pending_scores';
 const MAX_PENDING_SCORES = 50;
 const DIFFICULTY_MULTIPLIERS = {
@@ -22,6 +32,70 @@ const DIFFICULTY_MULTIPLIERS = {
   mittel: 1,
   schwer: 1.25,
 };
+
+function normalizeCategoryList(source) {
+  const entries = Array.isArray(source) ? source : [];
+  const deduped = new Map();
+
+  entries.forEach((entry) => {
+    const raw =
+      typeof entry === 'string'
+        ? entry
+        : typeof entry?.category === 'string'
+        ? entry.category
+        : typeof entry?.name === 'string'
+        ? entry.name
+        : null;
+    const value = typeof raw === 'string' ? raw.trim() : '';
+    if (!value) {
+      return;
+    }
+    const key = value.toLowerCase();
+    if (!deduped.has(key)) {
+      deduped.set(key, value);
+    }
+  });
+
+  return Array.from(deduped.values()).sort((a, b) => a.localeCompare(b));
+}
+
+async function loadCachedCategories() {
+  try {
+    const raw = await AsyncStorage.getItem(CATEGORIES_STORAGE_KEY);
+    if (!raw) {
+      return [];
+    }
+    const parsed = JSON.parse(raw);
+    const categories = Array.isArray(parsed)
+      ? parsed
+      : Array.isArray(parsed?.categories)
+      ? parsed.categories
+      : [];
+    const savedAt = Date.parse(parsed?.savedAt ?? '');
+    if (
+      Number.isFinite(savedAt) &&
+      Date.now() - savedAt > CATEGORY_STORAGE_TTL
+    ) {
+      return [];
+    }
+    return normalizeCategoryList(categories);
+  } catch (err) {
+    console.warn('Konnte Kategorien-Cache nicht lesen:', err);
+    return [];
+  }
+}
+
+async function saveCachedCategories(categories) {
+  try {
+    const payload = {
+      savedAt: new Date().toISOString(),
+      categories: normalizeCategoryList(categories),
+    };
+    await AsyncStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(payload));
+  } catch (err) {
+    console.warn('Konnte Kategorien-Cache nicht speichern:', err);
+  }
+}
 
 function normalizeDifficulty(value) {
   return ['leicht', 'mittel', 'schwer'].includes(value)
@@ -176,10 +250,29 @@ async function syncCachedQuestions(storageKey, incoming) {
   return merged;
 }
 
-function buildOfflineSeedQuestions(difficulty, limit) {
+function buildOfflineSeedQuestions(difficulty, limit, category) {
   const pool = OFFLINE_SEED_QUESTIONS.filter(
-    (question) => question?.difficulty === difficulty
+    (question) =>
+      question?.difficulty === difficulty &&
+      (!category || question?.category === category)
   );
+  const fallbackByCategory =
+    category
+      ? OFFLINE_SEED_QUESTIONS.filter(
+          (question) => question?.category === category
+        )
+      : [];
+  if (category) {
+    if (pool.length) {
+      const shuffled = shuffleList(pool);
+      return shuffled.slice(0, limit);
+    }
+    if (fallbackByCategory.length) {
+      const shuffled = shuffleList(fallbackByCategory);
+      return shuffled.slice(0, limit);
+    }
+    return [];
+  }
   const source = pool.length ? pool : OFFLINE_SEED_QUESTIONS;
   const shuffled = shuffleList(source);
   return shuffled.slice(0, limit);
@@ -330,7 +423,7 @@ export async function fetchQuestions(
       return cached;
     }
     const offlineQuestions = normalizeQuestionList(
-      buildOfflineSeedQuestions(normalizedDifficulty, normalizedLimit),
+      buildOfflineSeedQuestions(normalizedDifficulty, normalizedLimit, normalizedCategory),
       normalizedDifficulty
     );
     return cloneQuestions(offlineQuestions);
@@ -359,7 +452,7 @@ export async function fetchQuestions(
     const rows = Array.isArray(data) ? data : [];
 
     if (!rows.length) {
-      console.warn('Keine Fragen in Supabase gefunden fuer Schwierigkeitsgrad:', normalizedDifficulty);
+      console.warn('Keine Fragen in Supabase gefunden für Schwierigkeitsgrad:', normalizedDifficulty);
       const cached = await resolveCachedQuestions();
       if (cached.length) {
         return cached;
@@ -370,7 +463,7 @@ export async function fetchQuestions(
     const normalized = normalizeQuestionList(rows, normalizedDifficulty);
 
     if (!normalized.length) {
-      console.warn('Fragen ohne gueltige Antwortoptionen gefunden.');
+      console.warn('Fragen ohne gültige Antwortoptionen gefunden.');
       const cached = await resolveCachedQuestions();
       if (cached.length) {
         return cached;
@@ -390,6 +483,98 @@ export async function fetchQuestions(
       return cached;
     }
     return [];
+  }
+}
+
+export async function fetchCategories({
+  force = false,
+  offline = false,
+  limit = 40,
+} = {}) {
+  const now = Date.now();
+  const normalizedLimit =
+    Number.isFinite(limit) && limit > 0 ? Math.min(limit, 200) : 40;
+
+  if (!force && categoriesCache.data && now - categoriesCache.fetchedAt < CATEGORY_CACHE_TTL) {
+    return { ok: true, categories: [...categoriesCache.data] };
+  }
+
+  const cachedCategories = await loadCachedCategories();
+  if (offline) {
+    return cachedCategories.length
+      ? { ok: true, categories: cachedCategories, cached: true }
+      : { ok: false, categories: [], error: new Error('Offline') };
+  }
+
+  const loadFallback = async () => {
+    try {
+      const { data, error } = await runSupabaseRequest(
+        () =>
+          supabase
+            .from('questions')
+            .select('category')
+            .not('category', 'is', null)
+            .order('category', { ascending: true })
+            .limit(normalizedLimit),
+        { label: 'quizService.getCategories.fallback' }
+      );
+      if (error) {
+        throw error;
+      }
+      return normalizeCategoryList(data);
+    } catch (err) {
+      console.warn('Konnte Kategorien-Fallback nicht laden:', err?.message ?? err);
+      return [];
+    }
+  };
+
+  try {
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('get_categories', {
+          p_limit: normalizedLimit,
+        }),
+      { label: 'quizService.getCategories' }
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    const normalized = normalizeCategoryList(data);
+    if (!normalized.length) {
+      const fallback = await loadFallback();
+      if (fallback.length) {
+        categoriesCache.data = fallback;
+        categoriesCache.fetchedAt = now;
+        saveCachedCategories(fallback).catch(() => {});
+        return { ok: true, categories: [...fallback], fallback: true };
+      }
+
+      if (cachedCategories.length) {
+        return { ok: true, categories: cachedCategories, cached: true };
+      }
+
+      return { ok: false, categories: [], error: new Error('Keine Kategorien gefunden.') };
+    }
+
+    categoriesCache.data = normalized;
+    categoriesCache.fetchedAt = now;
+    saveCachedCategories(normalized).catch(() => {});
+    return { ok: true, categories: [...normalized] };
+  } catch (err) {
+    console.warn('Fehler beim Laden der Kategorien:', err?.message ?? err);
+    const fallback = await loadFallback();
+    if (fallback.length) {
+      categoriesCache.data = fallback;
+      categoriesCache.fetchedAt = now;
+      saveCachedCategories(fallback).catch(() => {});
+      return { ok: true, categories: [...fallback], fallback: true };
+    }
+    if (cachedCategories.length) {
+      return { ok: true, categories: cachedCategories, cached: true };
+    }
+    return { ok: false, categories: [], error: err };
   }
 }
 
@@ -436,6 +621,30 @@ export function calculateMatchPoints({ correct = 0, total = 0, difficulty = 'mit
   const rawPoints = BASE_MATCH_POINTS * multiplier * accuracy;
 
   return Math.max(0, Math.round(rawPoints));
+}
+
+export function calculateCoinReward({
+  correct = 0,
+  total = 0,
+  difficulty = 'mittel',
+  isMultiplayer = false,
+} = {}) {
+  const safeTotal = Math.max(0, Number.isFinite(total) ? total : 0);
+  const safeCorrect = Math.max(0, Number.isFinite(correct) ? correct : 0);
+  const normalizedDifficulty = normalizeDifficulty(difficulty);
+  const multiplier = DIFFICULTY_MULTIPLIERS[normalizedDifficulty] ?? 1;
+  const completionBonus = safeTotal > 0 ? COIN_COMPLETION_BONUS : 0;
+  const perfectBonus =
+    safeTotal > 0 && safeCorrect >= safeTotal ? COIN_PERFECT_BONUS : 0;
+  const multiplayerBonus = isMultiplayer ? COIN_MULTIPLAYER_BONUS : 0;
+  const rawCoins =
+    (Math.min(safeCorrect, safeTotal) +
+      completionBonus +
+      perfectBonus +
+      multiplayerBonus) *
+    multiplier;
+
+  return Math.max(1, Math.round(rawCoins));
 }
 
 export async function fetchLeaderboard(limit = 20, { force = false } = {}) {
@@ -492,12 +701,12 @@ export async function submitScore(userId, points, difficulty = 'mittel', { offli
     typeof userId === 'string' ? userId.trim() : userId ? String(userId) : '';
 
   if (!safeUserId) {
-    console.warn('Kein angemeldeter Nutzer fuer Score-Speicherung vorhanden.');
+    console.warn('Kein angemeldeter Nutzer für Score-Speicherung vorhanden.');
     return { ok: false, error: new Error('Kein Nutzer angemeldet.') };
   }
 
   if (safeUserId === 'guest') {
-    return { ok: false, error: new Error('Gaeste koennen keine Scores speichern.') };
+    return { ok: false, error: new Error('Gäste können keine Scores speichern.') };
   }
 
   const sanitizedPoints = sanitizePoints(points);

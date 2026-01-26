@@ -40,7 +40,7 @@ function resolveLocalhostToLan(urlString) {
 
     const rewritten = parsed.toString();
     console.warn(
-      `Supabase-URL wurde fuer echtes Geraet von ${urlString} auf ${rewritten} angepasst.`
+      `Supabase-URL wurde für echtes Gerät von ${urlString} auf ${rewritten} angepasst.`
     );
     return rewritten;
   } catch {
@@ -147,7 +147,7 @@ const safeAsyncStorage = {
   },
   async removeItem(key) {
     try { await AsyncStorage.removeItem(key); }
-    catch (err) { console.warn('Konnte Supabase-Sitzung nicht loeschen:', err); }
+    catch (err) { console.warn('Konnte Supabase-Sitzung nicht löschen:', err); }
   },
 };
 

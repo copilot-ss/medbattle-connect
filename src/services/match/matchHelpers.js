@@ -46,6 +46,7 @@ function sanitizeQuestionsForMatch(questions) {
         id: question.id ?? null,
         question: question.question ?? '',
         correct_answer: question.correct_answer ?? null,
+        explanation: question.explanation ?? null,
         options: uniqueOptions,
       };
     })

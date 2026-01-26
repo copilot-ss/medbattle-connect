@@ -61,6 +61,6 @@ export async function clearActiveLobby() {
   try {
     await AsyncStorage.removeItem(ACTIVE_LOBBY_KEY);
   } catch (err) {
-    console.warn('Konnte aktive Lobby nicht loeschen:', err);
+    console.warn('Konnte aktive Lobby nicht löschen:', err);
   }
 }

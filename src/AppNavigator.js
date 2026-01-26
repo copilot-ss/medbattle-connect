@@ -7,6 +7,7 @@ import { PreferencesProvider } from './context/PreferencesContext';
 import useAuthSession from './hooks/useAuthSession';
 import useOfflineSync from './hooks/useOfflineSync';
 import AuthScreen from './screens/AuthScreen';
+import CategoryDetailScreen from './screens/CategoryDetailScreen';
 import FriendsScreen from './screens/FriendsScreen';
 import MultiplayerLobbyScreen from './screens/MultiplayerLobbyScreen';
 import QuizScreen from './screens/QuizScreen';
@@ -64,6 +65,7 @@ function AppNavigatorInner() {
                 />
               )}
             </Stack.Screen>
+            <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
             <Stack.Screen name="Friends" component={FriendsScreen} />
             <Stack.Screen name="MultiplayerLobby" component={MultiplayerLobbyScreen} />
             <Stack.Screen name="Quiz" component={QuizScreen} />

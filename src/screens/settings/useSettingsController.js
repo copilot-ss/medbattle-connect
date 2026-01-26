@@ -49,6 +49,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     quizzesCompleted,
     accuracyPercent,
     xp,
+    coins,
     titleProgress,
     unlockedAchievements,
   } = useSettingsStats({
@@ -120,10 +121,10 @@ export default function useSettingsController({ navigation, route, onClearSessio
         : 'Freundesanfragen blockiert',
     [friendRequestsEnabled]
   );
-  const emailCtaLabel = isGuest ? 'E-Mail-Account erstellen' : 'E-Mail aendern';
+  const emailCtaLabel = isGuest ? 'E-Mail-Account erstellen' : 'E-Mail ändern';
   const emailCtaHint = isGuest
     ? 'Lege einen Account mit E-Mail an.'
-    : 'Neue E-Mail wird nach Bestaetigung aktiv.';
+    : 'Neue E-Mail wird nach Bestätigung aktiv.';
   const normalizedProviders = useMemo(
     () => (authProviders || []).map((provider) => String(provider).toLowerCase()),
     [authProviders]
@@ -139,7 +140,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
   const showLinkGoogle = !isGuest && Boolean(authUserId) && !googleLinked;
   const linkGoogleLabel = 'Google verbinden';
   const linkGoogleHint =
-    'Verknuepfe Google mit diesem Profil, damit der Google-Login denselben Account nutzt.';
+    'Verknüpfe Google mit diesem Profil, damit der Google-Login denselben Account nutzt.';
 
   const showAudioSection = activeTab === 'settings';
   const showProfileSection = activeTab === 'profile';
@@ -270,6 +271,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     quizzesCompleted,
     accuracyPercent,
     xp,
+    coins,
     titleProgress,
     unlockedAchievements,
     leaderboardRank,

@@ -7,6 +7,12 @@ export default function EnergyBoostModal({
   isBoostBusy,
   boosting,
   rewarding,
+  coinPurchasing,
+  coinsAvailable = 0,
+  coinsCost = 0,
+  coinsEnergy = 0,
+  isEnergyFull = false,
+  onBuyWithCoins,
   onPurchase,
   onWatchAd,
   onClose,
@@ -15,15 +21,39 @@ export default function EnergyBoostModal({
     return null;
   }
 
+  const canBuyWithCoins =
+    typeof onBuyWithCoins === 'function' &&
+    coinsCost > 0 &&
+    coinsEnergy > 0 &&
+    coinsAvailable >= coinsCost &&
+    !isEnergyFull;
+  const coinLabel = coinPurchasing
+    ? 'Coins werden eingel\u00f6st...'
+    : isEnergyFull
+    ? 'Energie ist bereits voll'
+    : coinsAvailable >= coinsCost
+    ? `${coinsCost} Coins f\u00fcr +${coinsEnergy} Energie`
+    : 'Nicht genug Coins';
+
   return (
     <View style={styles.boostOverlay}>
       <View style={styles.boostCard}>
-        <Text style={styles.boostTitle}>Energie leer</Text>
+        <Text style={styles.boostTitle}>Energie auff\u00fcllen</Text>
         <Text style={styles.boostText}>
-          Du brauchst Energie f\u00fcr ein weiteres Spiel. W\u00e4hle Kauf oder Werbung f\u00fcr 5 Energie.
+          Du brauchst Energie f\u00fcr ein weiteres Spiel. W\u00e4hle Coins, Kauf oder Werbung f\u00fcr Energie.
         </Text>
         {energyMessage ? <Text style={styles.boostMessage}>{energyMessage}</Text> : null}
         <View style={styles.boostActions}>
+          <Pressable
+            onPress={onBuyWithCoins}
+            style={[
+              styles.boostButtonCoin,
+              isBoostBusy || !canBuyWithCoins ? styles.boostButtonDisabled : null,
+            ]}
+            disabled={isBoostBusy || !canBuyWithCoins}
+          >
+            <Text style={styles.boostButtonCoinText}>{coinLabel}</Text>
+          </Pressable>
           <Pressable
             onPress={onPurchase}
             style={[styles.boostButton, isBoostBusy ? styles.boostButtonDisabled : null]}

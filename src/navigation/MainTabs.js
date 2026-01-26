@@ -33,6 +33,26 @@ export default function MainTabs({ onClearSession }) {
         }}
       />
       <Tab.Screen
+        name="Profile"
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person" size={size} color={color} />
+          ),
+        }}
+      >
+        {(props) => (
+          <SettingsScreen
+            {...props}
+            onClearSession={onClearSession}
+            lockedTab="profile"
+            showTabs={false}
+            showClose={false}
+            title="Profile"
+          />
+        )}
+      </Tab.Screen>
+      <Tab.Screen
         name="Leaderboard"
         options={{
           tabBarLabel: 'Leaderboard',
@@ -60,26 +80,6 @@ export default function MainTabs({ onClearSession }) {
             showTabs={false}
             showClose={false}
             title="Settings"
-          />
-        )}
-      </Tab.Screen>
-      <Tab.Screen
-        name="Profile"
-        options={{
-          tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
-          ),
-        }}
-      >
-        {(props) => (
-          <SettingsScreen
-            {...props}
-            onClearSession={onClearSession}
-            lockedTab="profile"
-            showTabs={false}
-            showClose={false}
-            title="Profile"
           />
         )}
       </Tab.Screen>

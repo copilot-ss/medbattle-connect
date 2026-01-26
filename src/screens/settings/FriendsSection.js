@@ -195,7 +195,7 @@ export default function FriendsSection({
       <View style={styles.friendHeroRow}>
         <Text style={styles.friendHeroEmoji}></Text>
         <View style={styles.friendHeroTextGroup}>
-          <Text style={styles.friendHeroTitle}>Freunde hinzufuegen</Text>
+          <Text style={styles.friendHeroTitle}>Freunde hinzufügen</Text>
           <Text style={styles.friendHeroSubtitle}>
             Teile deinen Code und hol deine Crew ins Battle.
           </Text>
@@ -249,7 +249,7 @@ export default function FriendsSection({
           {addingFriend ? (
             <ActivityIndicator color="#F8FAFC" />
           ) : (
-            <Text style={styles.successButtonText}>Freund hinzufuegen</Text>
+            <Text style={styles.successButtonText}>Freund hinzufügen</Text>
           )}
         </Pressable>
       </View>

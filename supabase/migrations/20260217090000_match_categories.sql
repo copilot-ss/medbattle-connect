@@ -1,10 +1,13 @@
 alter table public.matches
-  alter column question_ids type uuid[]
-  using question_ids::uuid[];
+  add column if not exists category text;
 
+create index if not exists idx_matches_category on public.matches (category);
+
+drop function if exists public.create_match(text, integer);
 create or replace function public.create_match(
   p_difficulty text default 'mittel',
-  p_question_limit integer default 5
+  p_question_limit integer default 5,
+  p_category text default null
 )
 returns public.matches
 language plpgsql
@@ -15,9 +18,10 @@ declare
   host_id uuid := auth.uid();
   normalized_difficulty text := public.normalize_difficulty(p_difficulty);
   limit_count integer := greatest(1, least(coalesce(p_question_limit, 5), 50));
+  normalized_category text := nullif(trim(p_category), '');
   host_username text;
   questions_json jsonb;
-  next_question_ids uuid[];
+  question_ids uuid[];
   next_state jsonb;
   new_match public.matches;
   join_code text;
@@ -29,7 +33,7 @@ begin
 
   with selected as (
     select id, question, correct_answer, options
-    from public.get_questions(normalized_difficulty, limit_count, null)
+    from public.get_questions(normalized_difficulty, limit_count, normalized_category)
   ),
   normalized as (
     select
@@ -52,12 +56,12 @@ begin
       ),
       '[]'::jsonb
     ),
-    coalesce(array_agg(id::uuid), array[]::uuid[])
-  into questions_json, next_question_ids
+    coalesce(array_agg(id), array[]::uuid[])
+  into questions_json, question_ids
   from normalized;
 
   if jsonb_array_length(questions_json) = 0 then
-    raise exception 'Keine Fragen für Multiplayer verfügbar.';
+    raise exception 'Keine Fragen fuer Multiplayer verfuegbar.';
   end if;
 
   select username into host_username
@@ -96,6 +100,7 @@ begin
         host_id,
         guest_id,
         difficulty,
+        category,
         question_limit,
         question_ids,
         questions,
@@ -110,8 +115,9 @@ begin
         host_id,
         null,
         normalized_difficulty,
+        normalized_category,
         jsonb_array_length(questions_json),
-        next_question_ids,
+        question_ids,
         questions_json,
         'waiting',
         next_state,
@@ -150,8 +156,9 @@ declare
   match_row public.matches;
   host_username text;
   questions_json jsonb;
-  next_question_ids uuid[];
+  question_ids uuid[];
   next_state jsonb;
+  resolved_category text;
 begin
   if user_id is null then
     raise exception 'not authenticated';
@@ -175,9 +182,11 @@ begin
     raise exception 'Die Lobby laeuft bereits.';
   end if;
 
+  resolved_category := nullif(trim(match_row.category), '');
+
   with selected as (
     select id, question, correct_answer, options
-    from public.get_questions(normalized_difficulty, limit_count, null)
+    from public.get_questions(normalized_difficulty, limit_count, resolved_category)
   ),
   normalized as (
     select
@@ -200,12 +209,12 @@ begin
       ),
       '[]'::jsonb
     ),
-    coalesce(array_agg(id::uuid), array[]::uuid[])
-  into questions_json, next_question_ids
+    coalesce(array_agg(id), array[]::uuid[])
+  into questions_json, question_ids
   from normalized;
 
   if jsonb_array_length(questions_json) = 0 then
-    raise exception 'Keine Fragen für die gewählte Einstellung verfügbar.';
+    raise exception 'Keine Fragen fuer die gewaehlte Einstellung verfuegbar.';
   end if;
 
   select username into host_username
@@ -236,8 +245,9 @@ begin
 
   update public.matches
   set difficulty = normalized_difficulty,
+      category = resolved_category,
       question_limit = jsonb_array_length(questions_json),
-      question_ids = next_question_ids,
+      question_ids = question_ids,
       questions = questions_json,
       state = next_state,
       status = 'waiting',
@@ -249,3 +259,23 @@ begin
   return match_row;
 end;
 $$;
+
+create or replace function public.get_categories(
+  p_limit integer default 40
+)
+returns table (
+  category text
+)
+language sql
+stable
+set search_path = public
+as $$
+  select distinct category
+  from public.questions
+  where category is not null and length(trim(category)) > 0
+  order by category asc
+  limit greatest(1, least(coalesce(p_limit, 40), 200));
+$$;
+
+grant execute on function public.create_match(text, integer, text) to authenticated;
+grant execute on function public.get_categories(integer) to anon, authenticated;

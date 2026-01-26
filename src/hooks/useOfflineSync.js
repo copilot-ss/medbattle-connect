@@ -50,11 +50,12 @@ export default function useOfflineSync() {
               sanitizeStatNumber(current?.xp),
               sanitizeStatNumber(progress.progress.xp)
             ),
+            coins: sanitizeStatNumber(progress.progress.coins),
           }));
         }
       })
       .catch((err) => {
-        console.warn('Konnte Offline-Sync nicht abschliessen:', err);
+        console.warn('Konnte Offline-Sync nicht abschließen:', err);
       })
       .finally(() => {
         syncingRef.current = false;

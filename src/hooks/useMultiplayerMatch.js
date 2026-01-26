@@ -104,7 +104,7 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
           ...prev,
           loading: false,
           match: null,
-          error: new Error('Dieses Match gehoert dir nicht oder ist nicht mehr verfuegbar.'),
+          error: new Error('Dieses Match gehört dir nicht oder ist nicht mehr verfügbar.'),
         }));
         return;
       }

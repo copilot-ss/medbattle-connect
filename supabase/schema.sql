@@ -21,6 +21,7 @@ create table if not exists public.questions (
   correct_answer text not null,
   options jsonb not null default '[]'::jsonb,
   category text not null,
+  explanation text,
   difficulty text not null default 'mittel',
   slug text,
   created_at timestamptz not null default now(),
@@ -43,6 +44,7 @@ create table if not exists public.matches (
   host_id uuid references public.users(id) on delete set null,
   guest_id uuid references public.users(id) on delete set null,
   difficulty text not null default 'mittel',
+  category text,
   question_limit integer not null default 5,
   question_ids uuid[] not null default '{}'::uuid[],
   questions jsonb not null default '[]'::jsonb,
@@ -65,6 +67,7 @@ create table if not exists public.friends (
 -- Indexes
 create index if not exists idx_friends_friend_code on public.friends (friend_code);
 create index if not exists idx_matches_status on public.matches (status);
+create index if not exists idx_matches_category on public.matches (category);
 create index if not exists idx_scores_user_id_created_at on public.scores (user_id, created_at desc);
 create index if not exists idx_questions_difficulty_category on public.questions (difficulty, category);
 create index if not exists idx_scores_user_points_created_at on public.scores (user_id, points desc, created_at asc);

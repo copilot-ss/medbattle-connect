@@ -132,7 +132,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
         }
         setMode('signIn');
         setMessage(
-          'Deine E-Mail wurde bestaetigt. Du kannst dieses Fenster schliessen und dich jetzt anmelden.'
+          'Deine E-Mail wurde bestätigt. Du kannst dieses Fenster schließen und dich jetzt anmelden.'
         );
         return;
       }
@@ -141,7 +141,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
         const accessToken = queryParams?.access_token;
         if (!accessToken) {
           if (active) {
-            setMessage('Passwort-Reset-Link ungueltig. Bitte neu anfordern.');
+            setMessage('Passwort-Reset-Link ungültig. Bitte neu anfordern.');
           }
           return;
         }
@@ -229,7 +229,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             },
           }),
           AUTH_TIMEOUT_MS,
-          'Supabase nicht erreichbar. Bitte Verbindung oder Supabase-URL pruefen.'
+          'Supabase nicht erreichbar. Bitte Verbindung oder Supabase-URL prüfen.'
         );
 
         if (error) {
@@ -238,7 +238,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
         if (!data.session) {
           setMessage(
-            'Account erstellt. Bitte bestaetige deine E-Mail, bevor du dich einloggst.'
+            'Account erstellt. Bitte bestätige deine E-Mail, bevor du dich einloggst.'
           );
         }
       } else {
@@ -248,7 +248,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             password,
           }),
           AUTH_TIMEOUT_MS,
-          'Supabase nicht erreichbar. Bitte Verbindung oder Supabase-URL pruefen.'
+          'Supabase nicht erreichbar. Bitte Verbindung oder Supabase-URL prüfen.'
         );
 
         if (error) {
@@ -268,7 +268,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
       } else {
         const hint =
           SUPABASE_URL_HINT && SUPABASE_URL_HINT.includes('127.0.0.1')
-            ? ' (Hinweis: Supabase-URL zeigt auf localhost und ist vom Geraet nicht erreichbar)'
+            ? ' (Hinweis: Supabase-URL zeigt auf localhost und ist vom Gerät nicht erreichbar)'
             : '';
         const formatted = formatUserError(err, {
           supabaseUrl: SUPABASE_URL_HINT,
@@ -315,7 +315,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
     }
 
     if (resetPassword !== resetPasswordConfirm) {
-      setMessage('Passwoerter stimmen nicht ueberein.');
+      setMessage('Passwörter stimmen nicht überein.');
       return;
     }
 
@@ -419,7 +419,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
         {isRecovery ? (
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Passwort bestaetigen</Text>
+            <Text style={styles.label}>Passwort bestätigen</Text>
             <TextInput
               value={resetPasswordConfirm}
               onChangeText={setResetPasswordConfirm}
@@ -461,7 +461,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
         {isRecovery ? (
           <Pressable onPress={handleBackToLogin} disabled={loading}>
-            <Text style={styles.toggleText}>Zurueck zum Login.</Text>
+            <Text style={styles.toggleText}>Zurück zum Login.</Text>
           </Pressable>
         ) : (
           <Pressable onPress={toggleMode} disabled={loading}>

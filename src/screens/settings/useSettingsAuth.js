@@ -98,7 +98,7 @@ export default function useSettingsAuth({
       }
 
       setFeedback(
-        'E-Mail-Update angefordert. Bitte bestaetige die neue Adresse ueber den zugesandten Link.'
+        'E-Mail-Update angefordert. Bitte bestätige die neue Adresse über den zugesandten Link.'
       );
       setNewEmail('');
     } catch (err) {
@@ -150,7 +150,7 @@ export default function useSettingsAuth({
     }
 
     if (!authUserId) {
-      setFeedback('Bitte melde dich an, um Google zu verknuepfen.');
+      setFeedback('Bitte melde dich an, um Google zu verknüpfen.');
       navigation.navigate('Auth', { mode: 'signIn' });
       return;
     }

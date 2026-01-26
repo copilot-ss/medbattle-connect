@@ -8,7 +8,7 @@ const AVATARS = [
   },
   {
     id: 'arztin',
-    label: 'Aerztin',
+    label: 'Ärztin',
     level: 1,
     source: require('../../../assets/icons_profile/arztin.png'),
     color: '#6366F1',

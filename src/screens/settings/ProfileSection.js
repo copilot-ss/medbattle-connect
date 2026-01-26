@@ -23,6 +23,7 @@ export default function ProfileSection({
   quizzesCompleted = 0,
   accuracyPercent = 0,
   xp = 0,
+  coins = 0,
   titleProgress = null,
   unlockedAchievements = [],
   leaderboardRank = null,
@@ -84,9 +85,7 @@ export default function ProfileSection({
               {titleProgress?.current?.label ?? 'Med Rookie'}
             </Text>
           </View>
-          <Text style={styles.profileXpText}>
-            {`XP ${xp}`}
-          </Text>
+          <Text style={styles.profileXpText}>{`XP ${xp} | Coins ${coins}`}</Text>
         </View>
       </View>
 
@@ -184,7 +183,7 @@ export default function ProfileSection({
       {showLinkGoogle ? (
         <View style={styles.fieldGroup}>
           <Text style={styles.helperText}>
-            {linkGoogleHint || 'Google mit diesem Profil verknuepfen.'}
+            {linkGoogleHint || 'Google mit diesem Profil verknüpfen.'}
           </Text>
           <Pressable
             onPress={onLinkGoogle}

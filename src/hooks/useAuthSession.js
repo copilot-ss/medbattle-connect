@@ -123,7 +123,7 @@ export default function useAuthSession() {
         ok: false,
         error,
         message:
-          'Gastmodus ohne Supabase-Session aktiv. Multiplayer benoetigt anonymes Login (Supabase Auth: Anonymous Sign-ins aktivieren).',
+          'Gastmodus ohne Supabase-Session aktiv. Multiplayer benötigt anonymes Login (Supabase Auth: Anonymous Sign-ins aktivieren).',
       };
     }
 
@@ -133,9 +133,9 @@ export default function useAuthSession() {
 
     return {
       ok: false,
-      error: new Error('Anonymes Login nicht verfuegbar.'),
+      error: new Error('Anonymes Login nicht verfügbar.'),
       message:
-        'Gastmodus ohne Supabase-Session aktiv. Multiplayer benoetigt anonymes Login (Supabase Auth: Anonymous Sign-ins aktivieren).',
+        'Gastmodus ohne Supabase-Session aktiv. Multiplayer benötigt anonymes Login (Supabase Auth: Anonymous Sign-ins aktivieren).',
     };
   }, []);
 

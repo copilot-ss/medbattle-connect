@@ -54,6 +54,10 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     typeof route?.params?.difficulty === 'string'
       ? route.params.difficulty
       : 'mittel';
+  const initialCategory =
+    typeof route?.params?.category === 'string'
+      ? route.params.category
+      : existingMatch?.category ?? null;
   const initialMode =
     typeof route?.params?.mode === 'string' ? route.params.mode.toLowerCase() : 'hub';
   const normalizedMode =
@@ -63,6 +67,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
   const difficulty = initialDifficulty;
   const [selectedDifficulty, setSelectedDifficulty] = useState(initialDifficulty);
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [questionLimit, setQuestionLimit] = useState(DEFAULT_QUESTION_LIMIT);
   const [matchesError, setMatchesError] = useState(null);
   const [joinCode, setJoinCode] = useState('');
@@ -117,6 +122,12 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     setMatchesError,
     closingRef,
   });
+
+  useEffect(() => {
+    if (currentMatch?.category && currentMatch.category !== selectedCategory) {
+      setSelectedCategory(currentMatch.category);
+    }
+  }, [currentMatch?.category, selectedCategory]);
 
   const isHostWaiting = useMemo(() => {
     if (!currentMatch || !userId) {
@@ -241,6 +252,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
           setCurrentMatch(result.match);
           setQuestionLimit(result.match.question_limit ?? nextQuestionLimit);
           setSelectedDifficulty(result.match.difficulty ?? nextDifficulty);
+          setSelectedCategory(result.match.category ?? selectedCategory);
         }
       } catch (err) {
         console.error('Fehler beim Aktualisieren der Lobby-Einstellungen:', err);
@@ -251,7 +263,14 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         }
       }
     },
-    [currentMatch, isHostWaiting, updateMatchSettings, updatingSettings, userId]
+    [
+      currentMatch,
+      isHostWaiting,
+      selectedCategory,
+      updateMatchSettings,
+      updatingSettings,
+      userId,
+    ]
   );
 
   const adjustQuestionLimit = useCallback((delta) => {
@@ -282,6 +301,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       const result = await createMatch({
         difficulty: selectedDifficulty,
         questionLimit,
+        category: selectedCategory,
         userId,
       });
 
@@ -292,6 +312,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       setCurrentMatch(result.match);
       setQuestionLimit(result.match.question_limit ?? questionLimit);
       setSelectedDifficulty(result.match.difficulty ?? selectedDifficulty);
+      setSelectedCategory(result.match.category ?? selectedCategory);
       attachMatchSubscription(result.match.id);
     } catch (err) {
       console.error('Fehler beim Erstellen eines Matches:', err);
@@ -308,6 +329,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     isCreateOnly,
     questionLimit,
     refreshMatches,
+    selectedCategory,
     selectedDifficulty,
     userId,
   ]);
@@ -878,6 +900,13 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         {showConfigCard ? (
           <View style={styles.configCard}>
             <Text style={styles.configTitle}>Lobby konfigurieren</Text>
+
+            <View style={styles.configSection}>
+              <Text style={styles.configLabel}>Kategorie</Text>
+              <Text style={styles.configValue}>
+                {selectedCategory ?? 'Alle Themen'}
+              </Text>
+            </View>
 
             <View style={styles.configSection}>
               <Text style={styles.configLabel}>Schwierigkeit</Text>

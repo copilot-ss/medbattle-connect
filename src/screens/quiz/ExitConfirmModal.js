@@ -17,8 +17,8 @@ export default function ExitConfirmModal({
         <Text style={styles.modalTitle}>Quiz beenden?</Text>
         <Text style={styles.modalMessage}>
           {isMultiplayer
-            ? 'Das laufende Duell gilt als aufgegeben. Moechtest du wirklich abbrechen?'
-            : 'Nicht beantwortete Fragen zaehlen nicht. Moechtest du wirklich abbrechen?'}
+            ? 'Das laufende Duell gilt als aufgegeben. Möchtest du wirklich abbrechen?'
+            : 'Nicht beantwortete Fragen zählen nicht. Möchtest du wirklich abbrechen?'}
         </Text>
         <View style={styles.modalActions}>
           <Pressable

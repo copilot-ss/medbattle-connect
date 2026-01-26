@@ -35,9 +35,12 @@ export default function useSoloQuestionLoader({
   isEnabled,
   normalizedDifficulty,
   questionLimit,
+  category,
   isOffline = false,
 }) {
   const safeDifficulty = normalizeDifficulty(normalizedDifficulty);
+  const safeCategory =
+    typeof category === 'string' && category.trim() ? category.trim() : null;
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -63,14 +66,18 @@ export default function useSoloQuestionLoader({
       setQuestions([]);
 
       try {
-        const data = await fetchQuestions(safeDifficulty, questionLimit, null, {
+        const data = await fetchQuestions(safeDifficulty, questionLimit, safeCategory, {
           offline: isOffline,
         });
         const prepared = prepareQuestions(data);
 
         if (!cancelled) {
           if (!prepared.length) {
-            setError('Keine Fragen verfuegbar. Bitte versuche es gleich nochmal.');
+            setError(
+              safeCategory
+                ? `Keine Fragen für ${safeCategory} verfügbar. Bitte versuche es gleich nochmal.`
+                : 'Keine Fragen verfügbar. Bitte versuche es gleich nochmal.'
+            );
             setQuestions([]);
             setLoading(false);
             return;
@@ -83,7 +90,7 @@ export default function useSoloQuestionLoader({
       } catch (err) {
         console.error('Fehler beim Laden der Fragen', err);
         if (!cancelled) {
-          setError('Die Fragen konnten nicht geladen werden. Bitte versuche es spaeter erneut.');
+          setError('Die Fragen konnten nicht geladen werden. Bitte versuche es später erneut.');
           setQuestions([]);
           setLoading(false);
         }
@@ -95,7 +102,7 @@ export default function useSoloQuestionLoader({
     return () => {
       cancelled = true;
     };
-  }, [isEnabled, isOffline, questionLimit, safeDifficulty]);
+  }, [isEnabled, isOffline, questionLimit, safeCategory, safeDifficulty]);
 
   return {
     questions,

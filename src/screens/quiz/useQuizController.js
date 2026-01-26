@@ -7,7 +7,7 @@ import usePremiumStatus from '../../hooks/usePremiumStatus';
 import useCountdownTimer from '../../hooks/useCountdownTimer';
 import useSupabaseUserId from '../../hooks/useSupabaseUserId';
 import useMultiplayerMatch from '../../hooks/useMultiplayerMatch';
-import { calculateMatchPoints, submitScore } from '../../services/quizService';
+import { calculateCoinReward, calculateMatchPoints, submitScore } from '../../services/quizService';
 import { calculateXpGain } from '../../services/titleService';
 import { syncUserProgressDelta } from '../../services/userProgressService';
 import useQuizConfig, { TIMER_DURATION } from './hooks/useQuizConfig';
@@ -27,8 +27,10 @@ export default function useQuizController({ navigation, route }) {
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [timedOut, setTimedOut] = useState(false);
+  const [answerHistory, setAnswerHistory] = useState([]);
   const answerRef = useRef(null);
   const timeLeftRef = useRef(TIMER_DURATION);
+  const answerHistoryRef = useRef([]);
   const { setStreakValue, updateUserStats, consumeEnergy } = usePreferences();
   const { premium } = usePremiumStatus();
   const energyChargedRef = useRef(false);
@@ -44,6 +46,7 @@ export default function useQuizController({ navigation, route }) {
     normalizedDifficulty,
     difficultyLabel,
     requestedQuestionLimit,
+    category,
   } = useQuizConfig(route);
 
 
@@ -86,6 +89,7 @@ export default function useQuizController({ navigation, route }) {
     isEnabled: !isMultiplayer,
     normalizedDifficulty,
     questionLimit,
+    category,
     isOffline,
   });
 
@@ -179,6 +183,14 @@ export default function useQuizController({ navigation, route }) {
         difficulty: normalizedDifficulty,
         isMultiplayer,
       });
+      const coinsEarned = submit
+        ? calculateCoinReward({
+            correct: resolvedScore,
+            total: effectiveTotal,
+            difficulty: normalizedDifficulty,
+            isMultiplayer,
+          })
+        : 0;
 
       const shouldSubmitScore =
         submit && userId && (!isMultiplayer || !wasSurrender);
@@ -230,6 +242,7 @@ export default function useQuizController({ navigation, route }) {
           correct: resolvedScore,
           questions: effectiveTotal,
           xp: xpEarned,
+          coins: coinsEarned,
         };
 
         try {
@@ -238,6 +251,7 @@ export default function useQuizController({ navigation, route }) {
             correct: sanitizeStatNumber((current?.correct ?? 0) + resolvedScore),
             questions: sanitizeStatNumber((current?.questions ?? 0) + effectiveTotal),
             xp: sanitizeStatNumber((current?.xp ?? 0) + xpEarned),
+            coins: sanitizeStatNumber((current?.coins ?? 0) + coinsEarned),
           }));
         } catch (err) {
           console.warn('Konnte lokale Quiz-Statistik nicht aktualisieren:', err);
@@ -275,10 +289,14 @@ export default function useQuizController({ navigation, route }) {
         score: resolvedScore,
         total: effectiveTotal,
         points: earnedPoints,
+        coins: coinsEarned,
+        xp: xpEarned,
         userId,
         difficulty: difficultyLabel,
         difficultyKey: normalizedDifficulty,
         questionLimit,
+        category,
+        answerHistory: answerHistoryRef.current,
         mode,
         isMultiplayer,
         offline: isOffline,
@@ -295,6 +313,7 @@ export default function useQuizController({ navigation, route }) {
     },
     [
       activeScore,
+      category,
       difficultyLabel,
       initialJoinCode,
       isMultiplayer,
@@ -323,6 +342,20 @@ export default function useQuizController({ navigation, route }) {
     ]
   );
 
+  const recordAnswerHistory = useCallback((entry) => {
+    if (!entry) {
+      return;
+    }
+    const next = Array.isArray(answerHistoryRef.current)
+      ? [...answerHistoryRef.current]
+      : [];
+    const indexKey = Number.isFinite(entry.index) ? entry.index : next.length;
+    next[indexKey] = entry;
+    const filtered = next.filter(Boolean);
+    answerHistoryRef.current = filtered;
+    setAnswerHistory(filtered);
+  }, []);
+
   const {
     answer,
     handleExitCancel,
@@ -350,6 +383,7 @@ export default function useQuizController({ navigation, route }) {
     timedOut,
     setTimedOut,
     recordMatchAnswer,
+    onRecordAnswer: recordAnswerHistory,
     finalizeQuiz,
     surrenderMatch,
   });
@@ -358,6 +392,8 @@ export default function useQuizController({ navigation, route }) {
     setIndex(0);
     setScore(0);
     setTimedOut(false);
+    answerHistoryRef.current = [];
+    setAnswerHistory([]);
     resetQuestionState();
   }, [
     isMultiplayer,
@@ -435,5 +471,6 @@ export default function useQuizController({ navigation, route }) {
     timedOut,
     totalQuestions,
     answer,
+    answerHistory,
   };
 }

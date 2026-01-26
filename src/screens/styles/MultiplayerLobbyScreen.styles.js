@@ -230,6 +230,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     marginBottom: 10,
   },
+  configValue: {
+    color: colors.textPrimary,
+    fontFamily: fonts.medium,
+    fontSize: 14,
+  },
   difficultyChips: {
     flexDirection: 'row',
     columnGap: 10,

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePreferences } from '../context/PreferencesContext';
 import usePremiumStatus from '../hooks/usePremiumStatus';
@@ -7,6 +7,7 @@ import { colors } from '../styles/theme';
 import AVATARS from './settings/avatars';
 import { findBadge } from './result/resultConstants';
 import ResultScoreboard from './result/ResultScoreboard';
+import ResultReviewList from './result/ResultReviewList';
 import { Sparkle, StatPill } from './result/ResultWidgets';
 import { getInitials } from './result/resultUtils';
 import styles, {
@@ -20,10 +21,13 @@ export default function ResultScreen({ route, navigation }) {
     score = 0,
     total = 0,
     points = 0,
+    coins = 0,
+    xp = 0,
     userId = null,
     difficulty = 'Mittel',
     difficultyKey = 'mittel',
     questionLimit = total,
+    category = null,
     isMultiplayer = false,
     matchId = null,
     matchStatus = null,
@@ -36,6 +40,7 @@ export default function ResultScreen({ route, navigation }) {
     mode = 'standard',
     offline = false,
     scoreQueued = false,
+    answerHistory = [],
   } = route.params ?? {};
   const { energy, energyMax, avatarId } = usePreferences();
   const { premium } = usePremiumStatus();
@@ -53,6 +58,16 @@ export default function ResultScreen({ route, navigation }) {
     }
     return Math.round((score / totalQuestions) * 100);
   }, [score, totalQuestions]);
+  const coinsEarned = Number.isFinite(coins) ? coins : 0;
+  const xpEarned = Number.isFinite(xp) ? xp : 0;
+  const reviewItems = useMemo(() => {
+    const source = Array.isArray(answerHistory) ? answerHistory : [];
+    return source.slice().sort((a, b) => {
+      const indexA = Number.isFinite(a?.index) ? a.index : 0;
+      const indexB = Number.isFinite(b?.index) ? b.index : 0;
+      return indexA - indexB;
+    });
+  }, [answerHistory]);
 
   const badge = useMemo(() => findBadge(percentage), [percentage]);
   const hasOpponent = Boolean(opponentState?.userId);
@@ -166,8 +181,9 @@ export default function ResultScreen({ route, navigation }) {
       <Sparkle size={32} top={380} left={300} opacity={0.3} rotate="45deg" color={colors.accentGreen} />
       <Sparkle size={28} top={420} left={44} opacity={0.26} rotate="-30deg" color={colors.highlight} />
 
-      <View style={styles.cardWrap}>
-        <View style={styles.card}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.cardWrap}>
+          <View style={styles.card}>
           {!isMultiplayer ? (
             <View style={getBadgePillStyle(badge.color)}>
               <Text style={styles.badgePillText}>{badge.title}</Text>
@@ -191,13 +207,29 @@ export default function ResultScreen({ route, navigation }) {
                 <StatPill label="Score" value={`${score}/${totalQuestions}`} />
                 <StatPill label="Leaderboard" value={`${points} Punkte`} />
               </View>
+              {coinsEarned > 0 ? (
+                <View style={[styles.statsRow, styles.statsRowSecondary]}>
+                  <StatPill label="Coins" value={`+${coinsEarned}`} />
+                  <StatPill label="XP" value={`+${xpEarned}`} />
+                </View>
+              ) : (
+                <View style={[styles.statsRow, styles.statsRowSecondary]}>
+                  <StatPill label="XP" value={`+${xpEarned}`} />
+                </View>
+              )}
             </View>
           ) : (
-            <ResultScoreboard
-              entries={multiplayerEntries}
-              matchStatusLabel={matchStatusLabel}
-              matchJoinCode={matchJoinCode}
-            />
+            <>
+              <ResultScoreboard
+                entries={multiplayerEntries}
+                matchStatusLabel={matchStatusLabel}
+                matchJoinCode={matchJoinCode}
+              />
+              <View style={styles.multiplayerRewards}>
+                <StatPill label="Coins" value={`+${coinsEarned}`} />
+                <StatPill label="XP" value={`+${xpEarned}`} />
+              </View>
+            </>
           )}
 
           {showOfflineNote ? (
@@ -216,6 +248,7 @@ export default function ResultScreen({ route, navigation }) {
                   difficulty: difficultyKey,
                   mode,
                   questionLimit,
+                  category,
                 });
               }}
               style={[
@@ -254,7 +287,10 @@ export default function ResultScreen({ route, navigation }) {
             <Text style={styles.tertiaryButtonText}>Zur\u00fcck zur Basis</Text>
           </Pressable>
         </View>
-      </View>
+        </View>
+
+        <ResultReviewList items={reviewItems} />
+      </ScrollView>
 
       {badge.spotlight ? <View style={styles.spotlight} /> : null}
     </View>

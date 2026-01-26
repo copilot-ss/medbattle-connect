@@ -108,7 +108,7 @@ export default function useSettingsFriends({
 
   const handleAddFriend = useCallback(async () => {
     if (!userId) {
-      setFriendsFeedback('Bitte melde dich erneut an, um Freunde hinzuzufuegen.');
+      setFriendsFeedback('Bitte melde dich erneut an, um Freunde hinzuzufügen.');
       return;
     }
 
@@ -119,7 +119,7 @@ export default function useSettingsFriends({
     const normalizedCode = friendCodeInput.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
     if (!normalizedCode) {
-      setFriendsFeedback('Bitte einen gueltigen Code eingeben.');
+      setFriendsFeedback('Bitte einen gültigen Code eingeben.');
       return;
     }
 
@@ -140,7 +140,7 @@ export default function useSettingsFriends({
       const result = await addFriend(userId, normalizedCode);
 
       if (!result.ok) {
-        throw result.error ?? new Error('Freund konnte nicht hinzugefuegt werden.');
+        throw result.error ?? new Error('Freund konnte nicht hinzugefügt werden.');
       }
 
       if (Array.isArray(result.friends)) {
@@ -150,12 +150,12 @@ export default function useSettingsFriends({
       }
 
       setFriendCodeInput('');
-      setFriendsFeedback('Freund wurde hinzugefuegt.');
+      setFriendsFeedback('Freund wurde hinzugefügt.');
     } catch (err) {
       setFriendsFeedback(
         formatUserError(err, {
           supabaseUrl: SUPABASE_URL_HINT,
-          fallback: 'Freund konnte nicht hinzugefuegt werden.',
+          fallback: 'Freund konnte nicht hinzugefügt werden.',
         })
       );
     } finally {

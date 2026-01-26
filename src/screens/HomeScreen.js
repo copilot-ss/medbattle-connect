@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Text, View, Platform, InteractionManager } from 'react-native';
-import LottieView from 'lottie-react-native';
+import { Text, View, Platform, InteractionManager, ScrollView } from 'react-native';
 import styles from './styles/HomeScreen.styles';
-import { colors } from '../styles/theme';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { getInAppPurchases } from '../lib/inAppPurchases';
@@ -10,20 +8,34 @@ import useSupabaseUserId from '../hooks/useSupabaseUserId';
 import usePremiumStatus from '../hooks/usePremiumStatus';
 import { getAdsModule, getRewardedAdUnitId, initializeAds } from '../services/adsService';
 import { deriveMatchRole, getMatchById } from '../services/matchService';
+import { calculateCoinReward } from '../services/quizService';
+import { syncUserProgressDelta } from '../services/userProgressService';
 import { clearActiveLobby, loadActiveLobby } from '../utils/activeLobbyStorage';
+import { CATEGORY_META } from '../data/categoryMeta';
 import ActiveLobbyBanner from './home/ActiveLobbyBanner';
-import EnergyBadge from './home/EnergyBadge';
+import CategoryTile from './home/CategoryTile';
 import EnergyBoostModal from './home/EnergyBoostModal';
+import FeaturedQuizCard from './home/FeaturedQuizCard';
 import HomeHeader from './home/HomeHeader';
-import ModeCard from './home/ModeCard';
 import OfflineBanner from './home/OfflineBanner';
+import StreakCard from './home/StreakCard';
 import useHomeUser from './home/useHomeUser';
 
 const DEFAULT_DIFFICULTY = 'mittel';
+const QUICK_PLAY_QUESTIONS = 6;
+const COIN_ENERGY_COST = 10;
+const COIN_ENERGY_AMOUNT = 5;
 const doctorAnimation = require('../../assets/animations/doctor/doctor.json');
 const BOOST_PRODUCT_ID = 'energy_boost_20';
 const REWARDED_ENERGY = 5;
 const LOBBY_CAPACITY = 10;
+const sanitizeStatNumber = (value) => {
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isFinite(parsed) && parsed >= 0) {
+    return parsed;
+  }
+  return 0;
+};
 
 export default function HomeScreen({ navigation, route }) {
   const routeLobby = route?.params?.activeLobby;
@@ -42,11 +54,15 @@ export default function HomeScreen({ navigation, route }) {
     boostEnergy,
     addEnergy,
     refreshEnergy,
+    streaks,
+    userStats,
+    updateUserStats,
   } = usePreferences();
   const { premium } = usePremiumStatus();
   const [energyMessage, setEnergyMessage] = useState(null);
   const [boosting, setBoosting] = useState(false);
   const [rewarding, setRewarding] = useState(false);
+  const [coinPurchasing, setCoinPurchasing] = useState(false);
   const [showBoostModal, setShowBoostModal] = useState(false);
   const [showAnimation, setShowAnimation] = useState(false);
   const iapModule = useMemo(() => getInAppPurchases(), []);
@@ -54,12 +70,6 @@ export default function HomeScreen({ navigation, route }) {
   const iapAvailable = Boolean(iapModule && typeof iapModule.connectAsync === 'function');
   const [iapReady, setIapReady] = useState(iapAvailable && Platform.OS !== 'android');
   const restoreAttemptedRef = useRef(false);
-
-  useEffect(() => {
-    if (isOffline && showBoostModal) {
-      setShowBoostModal(false);
-    }
-  }, [isOffline, showBoostModal]);
 
   useEffect(() => {
     let cancelled = false;
@@ -228,37 +238,56 @@ export default function HomeScreen({ navigation, route }) {
   const RewardedAd = adsModule?.RewardedAd;
   const RewardedAdEventType = adsModule?.RewardedAdEventType;
   const AdEventType = adsModule?.AdEventType;
-  const isBoostBusy = boosting || rewarding;
+  const isBoostBusy = boosting || rewarding || coinPurchasing;
+  const coinsAvailable = sanitizeStatNumber(userStats?.coins);
   const quickPlayLocked = !premium && energy <= 0;
+  const isEnergyFull = energy >= energyMax;
+  const canBuyWithCoins = coinsAvailable >= COIN_ENERGY_COST && !isEnergyFull;
+  const streakSummary = useMemo(() => {
+    const values = Object.values(streaks || {}).map((value) => {
+      const parsed = Number.parseInt(value, 10);
+      return Number.isFinite(parsed) ? parsed : 0;
+    });
+    const total = values.reduce((sum, value) => sum + value, 0);
+    return { total };
+  }, [streaks]);
+  const quickPlayCoinReward = calculateCoinReward({
+    correct: QUICK_PLAY_QUESTIONS,
+    total: QUICK_PLAY_QUESTIONS,
+    difficulty: DEFAULT_DIFFICULTY,
+  });
+  const quickPlaySubtitle = `+${quickPlayCoinReward} Coins`;
+  const categoryTiles = useMemo(
+    () =>
+      CATEGORY_META.map((category) => {
+        const style = category ?? {};
+        return {
+          key: style.key ?? style.label,
+          label: style.label,
+          value: style.label,
+          icon: style.icon,
+          accent: style.accent,
+        };
+      }),
+    []
+  );
 
   async function handleGoOnline() {
     await checkOnline({ force: true });
   }
 
-  function handleCreateLobby() {
-    if (hasActiveLobby) {
-      navigation.navigate('MultiplayerLobby');
-      return;
-    }
-    navigation.navigate('MultiplayerLobby', {
-      difficulty: DEFAULT_DIFFICULTY,
-      mode: 'create',
-    });
-  }
-
-  function handleJoinLobby() {
-    if (hasActiveLobby) {
-      navigation.navigate('MultiplayerLobby');
-      return;
-    }
-    navigation.navigate('MultiplayerLobby', {
-      difficulty: DEFAULT_DIFFICULTY,
-      mode: 'join',
-    });
-  }
-
   function handleOpenFriends() {
     navigation.navigate('Friends');
+  }
+
+  function handleSelectCategory(category) {
+    if (!category) {
+      return;
+    }
+    navigation.navigate('CategoryDetail', {
+      category,
+      activeLobby: activeLobby ?? null,
+    });
   }
 
   async function startQuickPlay() {
@@ -267,7 +296,7 @@ export default function HomeScreen({ navigation, route }) {
     }
     setEnergyMessage(null);
     if (!premium && energy <= 0) {
-      if (isOffline) {
+      if (isOffline && !canBuyWithCoins) {
         setEnergyMessage('Offline: Keine Energie. Geh online, um aufzuladen.');
         return;
       }
@@ -277,7 +306,7 @@ export default function HomeScreen({ navigation, route }) {
     navigation.navigate('Quiz', {
       difficulty: DEFAULT_DIFFICULTY,
       mode: 'quick',
-      questionLimit: 6,
+      questionLimit: QUICK_PLAY_QUESTIONS,
     });
   }
 
@@ -288,12 +317,12 @@ export default function HomeScreen({ navigation, route }) {
     setEnergyMessage(null);
 
     if (isOffline) {
-      setEnergyMessage('Offline: Werbung ist gerade nicht verf\u00fcgbar.');
+      setEnergyMessage('Offline: Werbung ist gerade nicht verfügbar.');
       return;
     }
 
     if (!rewardedAdUnitId || !RewardedAd || !RewardedAdEventType || !AdEventType) {
-      setEnergyMessage('Werbung im Moment nicht verf\u00fcgbar.');
+      setEnergyMessage('Werbung im Moment nicht verfügbar.');
       return;
     }
 
@@ -301,7 +330,7 @@ export default function HomeScreen({ navigation, route }) {
     const initResult = await initializeAds();
     if (!initResult.ok) {
       setRewarding(false);
-      setEnergyMessage('Werbung im Moment nicht verf\u00fcgbar.');
+      setEnergyMessage('Werbung im Moment nicht verfügbar.');
       return;
     }
 
@@ -348,10 +377,10 @@ export default function HomeScreen({ navigation, route }) {
         if (result.ok) {
           finalize(`${REWARDED_ENERGY} Energie erhalten!`, true);
         } else {
-          finalize('Energie konnte nicht aufgef\u00fcllt werden.', false);
+          finalize('Energie konnte nicht aufgefüllt werden.', false);
         }
       } catch (err) {
-        finalize('Energie konnte nicht aufgef\u00fcllt werden.', false);
+        finalize('Energie konnte nicht aufgefüllt werden.', false);
       }
     };
 
@@ -378,16 +407,70 @@ export default function HomeScreen({ navigation, route }) {
     if (isBoostBusy) {
       return;
     }
+    if (isOffline) {
+      setEnergyMessage('Offline: Kauf ist gerade nicht verfügbar.');
+      return;
+    }
     if (!iapReady || !iapAvailable || !iapModule) {
-      setEnergyMessage('Boost im Moment nicht verf\u00fcgbar.');
+      setEnergyMessage('Boost im Moment nicht verfügbar.');
       return;
     }
     setBoosting(true);
     try {
       await iapModule.requestPurchaseAsync({ sku: BOOST_PRODUCT_ID });
     } catch (err) {
-      setEnergyMessage('Boost fehlgeschlagen. Bitte sp\u00e4ter erneut versuchen.');
+      setEnergyMessage('Boost fehlgeschlagen. Bitte später erneut versuchen.');
       setBoosting(false);
+    }
+  }
+
+  async function handleBuyEnergyWithCoins() {
+    if (isBoostBusy) {
+      return;
+    }
+    if (isEnergyFull) {
+      setEnergyMessage('Energie ist bereits voll.');
+      return;
+    }
+    if (coinsAvailable < COIN_ENERGY_COST) {
+      setEnergyMessage('Nicht genug Coins.');
+      return;
+    }
+
+    setEnergyMessage(null);
+    setCoinPurchasing(true);
+
+    try {
+      await updateUserStats((current) => {
+        const currentCoins = sanitizeStatNumber(current?.coins);
+        return {
+          ...current,
+          coins: Math.max(0, currentCoins - COIN_ENERGY_COST),
+        };
+      });
+      const result = await addEnergy(COIN_ENERGY_AMOUNT);
+      if (result.ok) {
+        setEnergyMessage(`+${COIN_ENERGY_AMOUNT} Energie erhalten!`);
+        setShowBoostModal(false);
+      } else {
+        setEnergyMessage('Energie konnte nicht aufgefüllt werden.');
+      }
+    } catch (err) {
+      setEnergyMessage('Energie konnte nicht aufgefüllt werden.');
+    } finally {
+      setCoinPurchasing(false);
+    }
+
+    if (userId) {
+      try {
+        await syncUserProgressDelta(
+          userId,
+          { coins: -COIN_ENERGY_COST },
+          { offline: isOffline }
+        );
+      } catch (err) {
+        console.warn('Konnte Coins nicht synchronisieren:', err);
+      }
     }
   }
 
@@ -399,74 +482,72 @@ export default function HomeScreen({ navigation, route }) {
       <HomeHeader
         isOffline={isOffline}
         onOpenFriends={handleOpenFriends}
+        coins={coinsAvailable}
         userName={userName}
         isGuest={isGuest}
       />
 
-      <OfflineBanner
-        isVisible={isOffline}
-        isChecking={isChecking}
-        onGoOnline={handleGoOnline}
-      />
-
-      <ActiveLobbyBanner
-        activeLobby={activeLobby}
-        hasActiveLobby={hasActiveLobby}
-        onOpenLobby={() =>
-          navigation.navigate('MultiplayerLobby', {
-            existingMatch: activeLobby?.existingMatch ?? null,
-            mode: 'create',
-          })
-        }
-      />
-
-      <View style={styles.animationWrapper} pointerEvents="none">
-        {showAnimation ? (
-          <LottieView
-            source={doctorAnimation}
-            style={styles.animationView}
-            autoPlay
-            loop
-          />
-        ) : null}
-      </View>
-
-      <View style={styles.modeSection}>
-        <ModeCard
-          title="Create Lobby"
-          accent={colors.accentGreen}
-          onPress={handleCreateLobby}
-          disabled={hasActiveLobby || isOffline}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <OfflineBanner
+          isVisible={isOffline}
+          isChecking={isChecking}
+          onGoOnline={handleGoOnline}
         />
-        <ModeCard
-          title="Join Lobby"
-          accent={colors.accent}
-          onPress={handleJoinLobby}
-          disabled={hasActiveLobby || isOffline}
-        />
-        <ModeCard
-          title="Quick Play"
-          accent={colors.accentWarm}
-          onPress={startQuickPlay}
-          disabled={isBoostBusy || hasLobby}
-          titleMeta={
-            <EnergyBadge
-              energy={energy}
-              energyMax={energyMax}
-              nextEnergyAt={nextEnergyAt}
-              isPremium={premium}
-              isLocked={quickPlayLocked}
-              onRefreshEnergy={refreshEnergy}
-            />
+
+        <ActiveLobbyBanner
+          activeLobby={activeLobby}
+          hasActiveLobby={hasActiveLobby}
+          onOpenLobby={() =>
+            navigation.navigate('MultiplayerLobby', {
+              existingMatch: activeLobby?.existingMatch ?? null,
+              mode: 'create',
+            })
           }
         />
-      </View>
 
-      {energyMessage && !showBoostModal ? (
-        <Text style={styles.energyMessage}>{energyMessage}</Text>
-      ) : null}
+        <StreakCard streakValue={streakSummary.total} />
 
-      <View style={styles.flexSpacer} />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quiz of the week</Text>
+          <FeaturedQuizCard
+            title="Quick Play"
+            subtitle={quickPlaySubtitle}
+            buttonLabel="Play now"
+            onPress={startQuickPlay}
+            disabled={isBoostBusy || hasLobby}
+            energy={energy}
+            energyMax={energyMax}
+            nextEnergyAt={nextEnergyAt}
+            isPremium={premium}
+            isLocked={quickPlayLocked}
+            onRefreshEnergy={refreshEnergy}
+            showAnimation={showAnimation}
+            animationSource={doctorAnimation}
+          />
+          {energyMessage && !showBoostModal ? (
+            <Text style={styles.energyMessage}>{energyMessage}</Text>
+          ) : null}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Categories</Text>
+          <View style={styles.categoryGrid}>
+            {categoryTiles.map((tile) => (
+              <CategoryTile
+                key={tile.key}
+                label={tile.label}
+                icon={tile.icon}
+                accent={tile.accent}
+                onPress={() => handleSelectCategory(tile.value)}
+                disabled={false}
+              />
+            ))}
+          </View>
+        </View>
+      </ScrollView>
 
       <EnergyBoostModal
         visible={!premium && showBoostModal}
@@ -474,6 +555,12 @@ export default function HomeScreen({ navigation, route }) {
         isBoostBusy={isBoostBusy}
         boosting={boosting}
         rewarding={rewarding}
+        coinPurchasing={coinPurchasing}
+        coinsAvailable={coinsAvailable}
+        coinsCost={COIN_ENERGY_COST}
+        coinsEnergy={COIN_ENERGY_AMOUNT}
+        isEnergyFull={isEnergyFull}
+        onBuyWithCoins={handleBuyEnergyWithCoins}
         onPurchase={handlePurchaseBoost}
         onWatchAd={watchAdForEnergy}
         onClose={() => setShowBoostModal(false)}

@@ -21,7 +21,7 @@ export function getAdsModule() {
   try {
     adsModuleCache = require('react-native-google-mobile-ads');
   } catch (err) {
-    console.warn('AdMob-Modul ist nicht verfuegbar:', err);
+    console.warn('AdMob-Modul ist nicht verfügbar:', err);
     adsModuleCache = null;
   }
 

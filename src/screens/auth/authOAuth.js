@@ -29,7 +29,7 @@ async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
     }
 
     if (mode === 'link' && typeof supabase.auth.linkIdentity !== 'function') {
-      throw new Error('OAuth-Verknuepfung nicht verfuegbar.');
+      throw new Error('OAuth-Verknüpfung nicht verfügbar.');
     }
 
     const { data, error } = await withTimeout(
@@ -44,8 +44,8 @@ async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
           }),
       AUTH_TIMEOUT_MS,
       mode === 'link'
-        ? 'Supabase nicht erreichbar (OAuth-Verknuepfung). Bitte Verbindung oder Supabase-URL pruefen.'
-        : 'Supabase nicht erreichbar (OAuth). Bitte Verbindung oder Supabase-URL pruefen.'
+        ? 'Supabase nicht erreichbar (OAuth-Verknüpfung). Bitte Verbindung oder Supabase-URL prüfen.'
+        : 'Supabase nicht erreichbar (OAuth). Bitte Verbindung oder Supabase-URL prüfen.'
     );
     if (error) throw error;
     if (!data?.url) throw new Error('Kein OAuth-URL erhalten.');
@@ -111,13 +111,13 @@ async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
   } catch (err) {
     const hint =
       SUPABASE_URL_HINT && SUPABASE_URL_HINT.includes('127.0.0.1')
-        ? ' (Hinweis: Supabase-URL zeigt auf localhost und ist vom Geraet nicht erreichbar)'
+        ? ' (Hinweis: Supabase-URL zeigt auf localhost und ist vom Gerät nicht erreichbar)'
         : '';
     const formatted = formatUserError(err, {
       supabaseUrl: SUPABASE_URL_HINT,
       fallback:
         mode === 'link'
-          ? 'OAuth-Verknuepfung fehlgeschlagen.'
+          ? 'OAuth-Verknüpfung fehlgeschlagen.'
           : 'OAuth fehlgeschlagen.',
     });
     setMessage(formatted + hint);

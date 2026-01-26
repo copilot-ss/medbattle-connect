@@ -6,9 +6,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.backgroundAlt,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 32,
+  },
+  scrollContent: {
+    width: '100%',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 32,
+    paddingBottom: 120,
+    rowGap: 22,
   },
   backgroundGlowLarge: {
     position: 'absolute',
@@ -51,7 +56,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: radii.xl,
     paddingVertical: 28,
-    paddingHorizontal: 24,
+    paddingHorizontal: 18,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -119,6 +124,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginBottom: 0,
+    flexWrap: 'wrap',
+    rowGap: 8,
+  },
+  statsRowSecondary: {
+    marginTop: 10,
   },
   statPill: {
     paddingVertical: 8,
@@ -147,6 +157,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceAlt,
     paddingVertical: 18,
     paddingHorizontal: 20,
+  },
+  multiplayerRewards: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 12,
+    flexWrap: 'wrap',
+    rowGap: 8,
   },
   multiplayerTitle: {
     color: '#CBEAFF',
@@ -286,6 +303,87 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 14,
     fontFamily: fonts.regular,
+  },
+  reviewSection: {
+    width: '100%',
+    maxWidth: 420,
+    rowGap: 14,
+  },
+  reviewTitle: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontFamily: fonts.bold,
+    textAlign: 'left',
+  },
+  reviewCard: {
+    width: '100%',
+    borderRadius: radii.lg,
+    padding: 14,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    rowGap: 10,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  reviewIndex: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontFamily: fonts.medium,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  reviewStatus: {
+    fontSize: 12,
+    fontFamily: fonts.bold,
+    letterSpacing: 0.4,
+  },
+  reviewStatusCorrect: {
+    color: colors.success,
+  },
+  reviewStatusWrong: {
+    color: colors.danger,
+  },
+  reviewStatusTimedOut: {
+    color: colors.accentWarm,
+  },
+  reviewQuestion: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontFamily: fonts.bold,
+    lineHeight: 22,
+  },
+  reviewAnswers: {
+    rowGap: 4,
+  },
+  reviewLabel: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontFamily: fonts.medium,
+  },
+  reviewAnswer: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    lineHeight: 20,
+  },
+  reviewAnswerCorrect: {
+    color: colors.success,
+    fontFamily: fonts.medium,
+  },
+  reviewExplanationLabel: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontFamily: fonts.medium,
+  },
+  reviewExplanationText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    lineHeight: 20,
   },
   spotlight: {
     position: 'absolute',

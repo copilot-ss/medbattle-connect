@@ -51,7 +51,7 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
       } catch (err) {
         console.error('Konnte Rangliste nicht laden:', err);
         setError(
-          'Rangliste konnte nicht geladen werden. Bitte versuche es spaeter erneut.'
+          'Rangliste konnte nicht geladen werden. Bitte versuche es später erneut.'
         );
       } finally {
         setLoading(false);
@@ -191,7 +191,7 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
           }
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>Noch keine Eintraege vorhanden.</Text>
+              <Text style={styles.emptyText}>Noch keine Einträge vorhanden.</Text>
             </View>
           }
           contentContainerStyle={styles.listContent}

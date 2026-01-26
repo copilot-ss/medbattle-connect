@@ -38,12 +38,12 @@ export default function SettingsFooter({
     try {
       const supported = await Linking.canOpenURL(url);
       if (!supported) {
-        console.warn('Link konnte nicht geoeffnet werden.');
+        console.warn('Link konnte nicht geöffnet werden.');
         return;
       }
       await Linking.openURL(url);
     } catch (err) {
-      console.warn('Fehler beim Oeffnen des Links:', err);
+      console.warn('Fehler beim Öffnen des Links:', err);
     }
   };
 

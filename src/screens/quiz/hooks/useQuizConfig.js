@@ -5,7 +5,7 @@ export const DIFFICULTY_LABELS = {
 };
 
 export const ALLOWED_DIFFICULTIES = ['leicht', 'mittel', 'schwer'];
-export const TIMER_DURATION = 10000;
+export const TIMER_DURATION = 15000;
 
 export default function useQuizConfig(route) {
   const matchId =
@@ -27,6 +27,12 @@ export default function useQuizConfig(route) {
     typeof route?.params?.questionLimit === 'number' && Number.isFinite(route.params.questionLimit)
       ? Math.max(1, Math.floor(route.params.questionLimit))
       : null;
+  const categoryParam =
+    typeof route?.params?.category === 'string' ? route.params.category : null;
+  const normalizedCategory =
+    typeof categoryParam === 'string' && categoryParam.trim()
+      ? categoryParam.trim()
+      : null;
 
   return {
     matchId,
@@ -37,5 +43,6 @@ export default function useQuizConfig(route) {
     normalizedDifficulty,
     difficultyLabel,
     requestedQuestionLimit,
+    category: normalizedCategory,
   };
 }

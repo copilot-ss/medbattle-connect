@@ -49,6 +49,10 @@ export default function useSettingsStats({
     () => sanitizeStatNumber(userStats?.xp),
     [userStats?.xp]
   );
+  const coins = useMemo(
+    () => sanitizeStatNumber(userStats?.coins),
+    [userStats?.coins]
+  );
 
   const accuracyPercent = useMemo(() => {
     if (!totalQuestions) {
@@ -114,6 +118,7 @@ export default function useSettingsStats({
     quizzesCompleted,
     accuracyPercent,
     xp,
+    coins,
     titleProgress,
     unlockedAchievements,
     levelBadgeHeat,
