@@ -20,6 +20,7 @@ import HomeHeader from './home/HomeHeader';
 import OfflineBanner from './home/OfflineBanner';
 import StreakCard from './home/StreakCard';
 import useHomeUser from './home/useHomeUser';
+import { useTranslation } from '../i18n/useTranslation';
 
 const DEFAULT_DIFFICULTY = 'mittel';
 const QUICK_PLAY_QUESTIONS = 6;
@@ -38,6 +39,7 @@ const sanitizeStatNumber = (value) => {
 };
 
 export default function HomeScreen({ navigation, route }) {
+  const { t } = useTranslation();
   const routeLobby = route?.params?.activeLobby;
   const [activeLobbyState, setActiveLobbyState] = useState(null);
   const activeLobby = routeLobby === undefined ? activeLobbyState : routeLobby;
@@ -196,17 +198,17 @@ export default function HomeScreen({ navigation, route }) {
             try {
               await iapModule.finishTransactionAsync(purchase, false);
               await boostEnergy();
-              setEnergyMessage('Energie aufgef\u00fcllt!');
+              setEnergyMessage(t('Energie aufgefüllt!'));
               setShowBoostModal(false);
             } catch (err) {
-              setEnergyMessage('Boost konnte nicht abgeschlossen werden.');
+              setEnergyMessage(t('Boost konnte nicht abgeschlossen werden.'));
             }
           }
         }
       } else if (responseCode === iapModule.IAPResponseCode.USER_CANCELED) {
-        setEnergyMessage('Boost abgebrochen.');
+        setEnergyMessage(t('Boost abgebrochen.'));
       } else if (errorCode) {
-        setEnergyMessage('Boost fehlgeschlagen. Bitte sp\u00e4ter erneut.');
+        setEnergyMessage(t('Boost fehlgeschlagen. Bitte später erneut.'));
       }
       setBoosting(false);
     });
@@ -219,9 +221,9 @@ export default function HomeScreen({ navigation, route }) {
           setIapReady(true);
         }
       } catch (err) {
-        console.warn('IAP nicht verf\u00fcgbar:', err);
+        console.warn('IAP nicht verfügbar:', err);
         if (!cancelled) {
-          setEnergyMessage('Boost im Moment nicht verf\u00fcgbar.');
+          setEnergyMessage(t('Boost im Moment nicht verfügbar.'));
         }
       }
     }
@@ -256,7 +258,7 @@ export default function HomeScreen({ navigation, route }) {
     total: QUICK_PLAY_QUESTIONS,
     difficulty: DEFAULT_DIFFICULTY,
   });
-  const quickPlaySubtitle = `+${quickPlayCoinReward} Coins`;
+  const quickPlaySubtitle = t('+{coins} Coins', { coins: quickPlayCoinReward });
   const categoryTiles = useMemo(
     () =>
       CATEGORY_META.map((category) => {
@@ -297,7 +299,7 @@ export default function HomeScreen({ navigation, route }) {
     setEnergyMessage(null);
     if (!premium && energy <= 0) {
       if (isOffline && !canBuyWithCoins) {
-        setEnergyMessage('Offline: Keine Energie. Geh online, um aufzuladen.');
+        setEnergyMessage(t('Offline: Keine Energie. Geh online, um aufzuladen.'));
         return;
       }
       setShowBoostModal(true);
@@ -317,12 +319,12 @@ export default function HomeScreen({ navigation, route }) {
     setEnergyMessage(null);
 
     if (isOffline) {
-      setEnergyMessage('Offline: Werbung ist gerade nicht verfügbar.');
+      setEnergyMessage(t('Offline: Werbung ist gerade nicht verfügbar.'));
       return;
     }
 
     if (!rewardedAdUnitId || !RewardedAd || !RewardedAdEventType || !AdEventType) {
-      setEnergyMessage('Werbung im Moment nicht verfügbar.');
+      setEnergyMessage(t('Werbung im Moment nicht verfügbar.'));
       return;
     }
 
@@ -330,7 +332,7 @@ export default function HomeScreen({ navigation, route }) {
     const initResult = await initializeAds();
     if (!initResult.ok) {
       setRewarding(false);
-      setEnergyMessage('Werbung im Moment nicht verfügbar.');
+      setEnergyMessage(t('Werbung im Moment nicht verfügbar.'));
       return;
     }
 
@@ -367,7 +369,7 @@ export default function HomeScreen({ navigation, route }) {
 
     const handleLoaded = () => {
       rewardedAd.show().catch(() => {
-        finalize('Werbung konnte nicht gestartet werden.');
+        finalize(t('Werbung konnte nicht gestartet werden.'));
       });
     };
 
@@ -375,21 +377,21 @@ export default function HomeScreen({ navigation, route }) {
       try {
         const result = await addEnergy(REWARDED_ENERGY);
         if (result.ok) {
-          finalize(`${REWARDED_ENERGY} Energie erhalten!`, true);
+          finalize(t('{energy} Energie erhalten!', { energy: REWARDED_ENERGY }), true);
         } else {
-          finalize('Energie konnte nicht aufgefüllt werden.', false);
+          finalize(t('Energie konnte nicht aufgefüllt werden.'), false);
         }
       } catch (err) {
-        finalize('Energie konnte nicht aufgefüllt werden.', false);
+        finalize(t('Energie konnte nicht aufgefüllt werden.'), false);
       }
     };
 
     const handleClosed = () => {
-      finalize('Werbung beendet.');
+      finalize(t('Werbung beendet.'));
     };
 
     const handleError = () => {
-      finalize('Werbung konnte nicht geladen werden.');
+      finalize(t('Werbung konnte nicht geladen werden.'));
     };
 
     unsubscribeLoaded = rewardedAd.addAdEventListener(AdEventType.LOADED, handleLoaded);
@@ -408,18 +410,18 @@ export default function HomeScreen({ navigation, route }) {
       return;
     }
     if (isOffline) {
-      setEnergyMessage('Offline: Kauf ist gerade nicht verfügbar.');
+      setEnergyMessage(t('Offline: Kauf ist gerade nicht verfügbar.'));
       return;
     }
     if (!iapReady || !iapAvailable || !iapModule) {
-      setEnergyMessage('Boost im Moment nicht verfügbar.');
+      setEnergyMessage(t('Boost im Moment nicht verfügbar.'));
       return;
     }
     setBoosting(true);
     try {
       await iapModule.requestPurchaseAsync({ sku: BOOST_PRODUCT_ID });
     } catch (err) {
-      setEnergyMessage('Boost fehlgeschlagen. Bitte später erneut versuchen.');
+      setEnergyMessage(t('Boost fehlgeschlagen. Bitte später erneut versuchen.'));
       setBoosting(false);
     }
   }
@@ -429,11 +431,11 @@ export default function HomeScreen({ navigation, route }) {
       return;
     }
     if (isEnergyFull) {
-      setEnergyMessage('Energie ist bereits voll.');
+      setEnergyMessage(t('Energie ist bereits voll.'));
       return;
     }
     if (coinsAvailable < COIN_ENERGY_COST) {
-      setEnergyMessage('Nicht genug Coins.');
+      setEnergyMessage(t('Nicht genug Coins.'));
       return;
     }
 
@@ -450,13 +452,13 @@ export default function HomeScreen({ navigation, route }) {
       });
       const result = await addEnergy(COIN_ENERGY_AMOUNT);
       if (result.ok) {
-        setEnergyMessage(`+${COIN_ENERGY_AMOUNT} Energie erhalten!`);
+        setEnergyMessage(t('+{energy} Energie erhalten!', { energy: COIN_ENERGY_AMOUNT }));
         setShowBoostModal(false);
       } else {
-        setEnergyMessage('Energie konnte nicht aufgefüllt werden.');
+        setEnergyMessage(t('Energie konnte nicht aufgefüllt werden.'));
       }
     } catch (err) {
-      setEnergyMessage('Energie konnte nicht aufgefüllt werden.');
+      setEnergyMessage(t('Energie konnte nicht aufgefüllt werden.'));
     } finally {
       setCoinPurchasing(false);
     }
@@ -511,11 +513,11 @@ export default function HomeScreen({ navigation, route }) {
         <StreakCard streakValue={streakSummary.total} />
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quiz of the week</Text>
+          <Text style={styles.sectionTitle}>{t('Quiz der Woche')}</Text>
           <FeaturedQuizCard
-            title="Quick Play"
+            title={t('Schnelles Spiel')}
             subtitle={quickPlaySubtitle}
-            buttonLabel="Play now"
+            buttonLabel={t('Jetzt spielen')}
             onPress={startQuickPlay}
             disabled={isBoostBusy || hasLobby}
             energy={energy}
@@ -533,7 +535,7 @@ export default function HomeScreen({ navigation, route }) {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Categories</Text>
+          <Text style={styles.sectionTitle}>{t('Kategorien')}</Text>
           <View style={styles.categoryGrid}>
             {categoryTiles.map((tile) => (
               <CategoryTile

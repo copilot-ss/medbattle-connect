@@ -254,7 +254,7 @@ begin
   from normalized;
 
   if jsonb_array_length(questions_json) = 0 then
-    raise exception 'Keine Fragen fuer Multiplayer verfuegbar.';
+    raise exception 'Keine Fragen für Multiplayer verfügbar.';
   end if;
 
   select username into host_username
@@ -366,7 +366,7 @@ begin
   end if;
 
   if match_row.status <> 'waiting' then
-    raise exception 'Dieses Match laeuft bereits oder ist beendet.';
+    raise exception 'Dieses Match läuft bereits oder ist beendet.';
   end if;
 
   if match_row.guest_id is not null then
@@ -433,7 +433,7 @@ begin
   end if;
 
   if match_row.status <> 'waiting' then
-    raise exception 'Match laeuft bereits oder ist beendet.';
+    raise exception 'Match läuft bereits oder ist beendet.';
   end if;
 
   next_state := coalesce(match_row.state, '{}'::jsonb);
@@ -491,7 +491,7 @@ begin
   end if;
 
   if match_row.status <> 'waiting' then
-    raise exception 'Die Lobby laeuft bereits.';
+    raise exception 'Die Lobby läuft bereits.';
   end if;
 
   with selected as (
@@ -524,7 +524,7 @@ begin
   from normalized;
 
   if jsonb_array_length(questions_json) = 0 then
-    raise exception 'Keine Fragen fuer die gewaehlte Einstellung verfuegbar.';
+    raise exception 'Keine Fragen für die gewählte Einstellung verfügbar.';
   end if;
 
   select username into host_username
@@ -617,7 +617,7 @@ begin
     role_key := 'guest';
     other_role := 'host';
   else
-    raise exception 'Ungueltige Spielerrolle.';
+    raise exception 'Ungültige Spielerrolle.';
   end if;
 
   next_state := coalesce(match_row.state, '{}'::jsonb);
@@ -746,7 +746,7 @@ begin
     role_key := 'guest';
     other_role := 'host';
   else
-    raise exception 'Ungueltige Spielerrolle.';
+    raise exception 'Ungültige Spielerrolle.';
   end if;
 
   next_state := coalesce(match_row.state, '{}'::jsonb);
@@ -808,7 +808,7 @@ begin
   elsif match_row.guest_id = user_id then
     role_key := 'guest';
   else
-    raise exception 'Ungueltige Spielerrolle.';
+    raise exception 'Ungültige Spielerrolle.';
   end if;
 
   next_state := coalesce(match_row.state, '{}'::jsonb);
@@ -971,7 +971,7 @@ begin
   end if;
 
   if normalized_code is null or length(normalized_code) = 0 then
-    raise exception 'Bitte gueltigen Code angeben.';
+    raise exception 'Bitte gültigen Code angeben.';
   end if;
 
   insert into public.friends (owner_id, friend_code)
@@ -1002,7 +1002,7 @@ begin
   end if;
 
   if normalized_code is null or length(normalized_code) = 0 then
-    raise exception 'Ungueltiger Freund.';
+    raise exception 'Ungültiger Freund.';
   end if;
 
   delete from public.friends

@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/SettingsScreen.styles';
 
 const TABS = [
@@ -7,6 +8,8 @@ const TABS = [
 ];
 
 export default function SettingsTabs({ activeTab, onChange }) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.tabRow}>
       {TABS.map((tab) => {
@@ -26,7 +29,7 @@ export default function SettingsTabs({ activeTab, onChange }) {
                 isActive ? styles.tabButtonTextActive : null,
               ]}
             >
-              {tab.label}
+              {t(tab.label)}
             </Text>
           </Pressable>
         );

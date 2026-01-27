@@ -99,6 +99,9 @@ const styles = StyleSheet.create({
   audioCard: {
     borderColor: 'rgba(87, 199, 255, 0.35)',
   },
+  languageCard: {
+    borderColor: colors.border,
+  },
   squadCard: {
     borderColor: 'rgba(87, 199, 255, 0.35)',
   },
@@ -122,6 +125,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  languageRow: {
+    flexDirection: 'row',
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radii.md,
+    padding: 4,
+    marginTop: 12,
+  },
+  languageButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: radii.sm,
+    alignItems: 'center',
+  },
+  languageButtonActive: {
+    backgroundColor: 'rgba(87, 199, 255, 0.16)',
+    borderColor: 'rgba(87, 199, 255, 0.5)',
+    borderWidth: 1,
+  },
+  languageButtonText: {
+    color: colors.textMuted,
+    fontFamily: fonts.medium,
+  },
+  languageButtonTextActive: {
+    color: colors.textPrimary,
   },
   fieldGroup: {
     marginBottom: 16,

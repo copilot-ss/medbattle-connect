@@ -1,14 +1,14 @@
 ﻿# AGENTS.md - MedBattle Quiz App
 
 ## Ziel
-Zentrale Agent-Anleitung fuer MedBattle.
+Zentrale Agent-Anleitung für MedBattle.
 Codex soll effizient arbeiten, Token sparen und nur relevante Dateien laden.
 
 ## Regeln
 - Immer zuerst `PLANNING.md` lesen
-- Vor Aenderungen `TASKS.md` pruefen
-- Nie grosse Ordner wie node_modules, .expo, .git laden
-- Nur gezielte Dateien oeffnen (z. B. `src/screens/QuizScreen.js`)
+- Vor Änderungen `TASKS.md` prüfen
+- Nie große Ordner wie node_modules, .expo, .git laden
+- Nur gezielte Dateien öffnen (z. B. `src/screens/QuizScreen.js`)
 
 ## Relevante Dateien
 src/AppNavigator.js
@@ -32,13 +32,13 @@ patches/expo-modules-core+3.0.28.patch
 - Max 300 Zeilen pro Chunk laden
 - Nur betroffene Funktionen analysieren
 - Supabase-Abfragen cachen
-- UTF-8 fuer alle Dateien
-- Keine doppelten Codebloecke senden
+- UTF-8 für alle Dateien
+- Keine doppelten Codeblöcke senden
 - Immer nur Patch-Diffs posten
 - Supabase-URL in `.env` nicht auf localhost setzen (Expo Go erreicht das nicht)
 
 ## Coding Guidelines
-- 2 Spaces Einrueckung
+- 2 Spaces Einrückung
 - Komponenten PascalCase
 - Async + Error-Handling bei API-Calls
 - Keine Hardcoded Keys

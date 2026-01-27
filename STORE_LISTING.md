@@ -15,7 +15,7 @@ Short description (<= 80 chars):
 MedBattle - Medizinwissen im Quiz, Solo oder Multiplayer.
 
 Full description:
-MedBattle ist ein Medizin-Quiz fuer Studium und Praxis. Spiele Solo oder im
+MedBattle ist ein Medizin-Quiz für Studium und Praxis. Spiele Solo oder im
 Multiplayer, sammle Punkte und verbessere dein Wissen mit kurzen, fokussierten
 Runden.
 
@@ -25,7 +25,7 @@ Highlights:
 - Ranglisten und Fortschritt.
 - Offline-Quick-Play mit lokalem Fragenpool.
 
-Content rating (Vorschlag, bitte im Play Console pruefen):
+Content rating (Vorschlag, bitte im Play Console prüfen):
 - Violence: None
 - Sexual content: None
 - Profanity: None

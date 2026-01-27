@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/HomeScreen.styles';
 
 export default function HomeHeader({
@@ -8,9 +9,12 @@ export default function HomeHeader({
   userName,
   isGuest,
 }) {
+  const { t } = useTranslation();
   const resolvedName = typeof userName === 'string' ? userName.trim() : '';
-  const displayName = isGuest ? 'Guest' : resolvedName;
-  const welcomeLine = displayName ? `Welcome back, ${displayName}` : 'Welcome back';
+  const displayName = isGuest ? t('Gast') : resolvedName;
+  const welcomeLine = displayName
+    ? t('Willkommen zurück, {name}', { name: displayName })
+    : t('Willkommen zurück');
 
   return (
     <View style={styles.header}>
@@ -19,7 +23,7 @@ export default function HomeHeader({
           {welcomeLine}
         </Text>
         <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-          Let's play!
+          {t("Los geht's!")}
         </Text>
       </View>
 

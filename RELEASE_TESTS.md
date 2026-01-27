@@ -1,18 +1,18 @@
 # RELEASE_TESTS.md - MedBattle Release Checks
 
-Kurze manuelle Checkliste fuer die offenen Release-Tasks.
+Kurze manuelle Checkliste für die offenen Release-Tasks.
 
 ## Supabase Auth + Deep Links
-- Allowed Redirect URLs im Supabase Dashboard pruefen/ergaenzen:
+- Allowed Redirect URLs im Supabase Dashboard prüfen/ergänzen:
   - medbattle://auth/callback (Standalone/Store Build)
   - exp+medbattle://auth/callback (Dev Client)
   - https://auth.expo.dev/@sjigalin/medbattle (Expo Go)
   - https://<web-host>/ (nur falls Web Login genutzt wird)
-- Google OAuth: Login, Rueckkehr in App, Session gesetzt.
-- Discord OAuth: Login, Rueckkehr in App, Session gesetzt.
-- E-Mail Sign-Up: Bestaetigungs-Mail, Link oeffnet App (Deep Link), danach Login ok.
-- Passwort-Reset: Link oeffnet App (Deep Link), Passwort aendern, Login ok.
-- E-Mail-Update (Settings): Bestaetigungs-Link oeffnet App, neue Mail aktiv.
+- Google OAuth: Login, Rückkehr in App, Session gesetzt.
+- Discord OAuth: Login, Rückkehr in App, Session gesetzt.
+- E-Mail Sign-Up: Bestätigungs-Mail, Link öffnet App (Deep Link), danach Login ok.
+- Passwort-Reset: Link öffnet App (Deep Link), Passwort ändern, Login ok.
+- E-Mail-Update (Settings): Bestätigungs-Link öffnet App, neue Mail aktiv.
 
 ### Android Deep-Link Smoke (adb)
 - `adb shell am start -W -a android.intent.action.VIEW -d "medbattle://auth/callback?code=TEST"`
@@ -39,7 +39,7 @@ Note: Offline Quick-Play/Sync and Multiplayer flows still need manual in-app che
 
 ## Offline
 - [x] Online Quick-Play gestartet, Fragen geladen (c2ccd135).
-- [x] Netzwerk aus (wifi+data): Quick-Play laeuft weiter; Banner/Toast "Network request failed" sichtbar.
+- [x] Netzwerk aus (wifi+data): Quick-Play läuft weiter; Banner/Toast "Network request failed" sichtbar.
 - [x] Offline Modus Hinweis im Quiz sichtbar ("Offline Modus").
 - [x] Quiz im Offline-Modus bis Ergebnis durchgeklickt.
 - [ ] App kalt starten im Offline-Modus (Session-Recall) - DevLauncher blockiert Offline-Start.
@@ -48,8 +48,8 @@ Note: Offline Quick-Play/Sync and Multiplayer flows still need manual in-app che
 ## Multiplayer
 - [x] Lobby erstellt (c2ccd135), Code sichtbar.
 - [ ] Emulator Join versucht (Gast) -> Supabase Auth: Anonymous sign-ins deaktiviert (Login/Join blockiert).
-- [ ] Join per Code mit zweitem Geraet/Account.
-- [ ] Starten und Synchronisation der Fragen/Antworten pruefen.
+- [ ] Join per Code mit zweitem Gerät/Account.
+- [ ] Starten und Synchronisation der Fragen/Antworten prüfen.
 - [ ] App pausieren/foreground -> Lobby bleibt erhalten.
 - [ ] Disconnect/Reconnect -> Status korrekt.
 
@@ -65,4 +65,4 @@ Note: Offline Quick-Play/Sync and Multiplayer flows still need manual in-app che
 
 ## Release Build
 - EAS/Store Build erstellen.
-- Smoke-Test auf Geraet: Start, Login, Spiel, Werbung/Purchase, Multiplayer, Logout.
+- Smoke-Test auf Gerät: Start, Login, Spiel, Werbung/Purchase, Multiplayer, Logout.

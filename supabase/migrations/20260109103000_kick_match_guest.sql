@@ -30,7 +30,7 @@ begin
   end if;
 
   if match_row.status <> 'waiting' then
-    raise exception 'Die Lobby laeuft bereits.';
+    raise exception 'Die Lobby läuft bereits.';
   end if;
 
   if match_row.guest_id is null then

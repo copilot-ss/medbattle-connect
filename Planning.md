@@ -5,7 +5,7 @@ Kostenlose kompetitive Medizin-Quiz-App mit Supabase-Backend, Werbung und Premiu
 
 ## Architektur
 - React Native (Expo)
-- Supabase fuer Auth, Scores und Fragen
+- Supabase für Auth, Scores und Fragen
 - State: Zustand / AsyncStorage
 - Screens: Home, Quiz, Result
 
@@ -22,8 +22,8 @@ Kostenlose kompetitive Medizin-Quiz-App mit Supabase-Backend, Werbung und Premiu
 
 ## Status-Notizen
 - Android Start-Crash behoben: SoLoader initialisiert mit `OpenSourceMergedSoMapping` und `expo-modules-core` patcht `ReactStylesDiffMapHelper`.
-- Patch in `patches/expo-modules-core+3.0.28.patch` enthaelt FeatureFlags-Fallback + backingMap-Feld-Fallback.
-- Lokaler Debug Build laeuft auf Geraet ohne Crash (logcat crash buffer leer).
+- Patch in `patches/expo-modules-core+3.0.28.patch` enthält FeatureFlags-Fallback + backingMap-Feld-Fallback.
+- Lokaler Debug Build läuft auf Gerät ohne Crash (logcat crash buffer leer).
 - Dev-Client Bundle-Fehler (`Unexpected token '?'`) behoben: Hermes wieder aktiviert (Bundle passt zur Engine).
 - EAS Dev Build aktuell blockiert (Free-Plan Build-Limit) -> lokal bauen, bis Limit frei ist.
 - Expo Go: `.env` darf kein localhost/127.0.0.1 als Supabase-URL nutzen, sonst Auth/Fragen scheitern. HTTPS-Projekt-URL setzen.
@@ -33,7 +33,7 @@ Kostenlose kompetitive Medizin-Quiz-App mit Supabase-Backend, Werbung und Premiu
 
 ## Tools & Setup
 - Supabase CLI v2.65.5, eingeloggt
-- Projekt-Ref: `uxlwbzgohgxbnhcjiimh` (verknuepft via `supabase link`)
+- Projekt-Ref: `uxlwbzgohgxbnhcjiimh` (verknüpft via `supabase link`)
 - Expo SDK 54 / React Native 0.77
 - Supabase Free Tier
 - GitHub Versionierung

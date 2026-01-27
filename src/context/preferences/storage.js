@@ -3,9 +3,11 @@ import {
   AVATAR_STORAGE_KEY,
   DEFAULT_STREAKS,
   DEFAULT_USER_STATS,
+  DEFAULT_LANGUAGE,
   ENERGY_TIMESTAMP_KEY,
   ENERGY_VALUE_KEY,
   FRIEND_REQUESTS_STORAGE_KEY,
+  LANGUAGE_STORAGE_KEY,
   MAX_ENERGY,
   PUSH_STORAGE_KEY,
   SOUND_STORAGE_KEY,
@@ -28,12 +30,14 @@ export async function loadPreferencesFromStorage() {
     storedPush,
     storedRequests,
     storedAvatar,
+    storedLanguage,
   ] = await Promise.all([
     AsyncStorage.getItem(SOUND_STORAGE_KEY),
     AsyncStorage.getItem(VIBRATION_STORAGE_KEY),
     AsyncStorage.getItem(PUSH_STORAGE_KEY),
     AsyncStorage.getItem(FRIEND_REQUESTS_STORAGE_KEY),
     AsyncStorage.getItem(AVATAR_STORAGE_KEY),
+    AsyncStorage.getItem(LANGUAGE_STORAGE_KEY),
   ]);
 
   await Promise.all([
@@ -84,6 +88,9 @@ export async function loadPreferencesFromStorage() {
 
   const recalc = recalcEnergy(loadedEnergy, loadedEnergyTs);
 
+  const normalizedLanguage =
+    storedLanguage && storedLanguage.toLowerCase() === 'en' ? 'en' : DEFAULT_LANGUAGE;
+
   return {
     soundEnabled: storedSound === null ? true : storedSound === 'true',
     vibrationEnabled: storedVibration === null ? true : storedVibration === 'true',
@@ -91,6 +98,7 @@ export async function loadPreferencesFromStorage() {
     friendRequestsEnabled:
       storedRequests === null ? true : storedRequests === 'true',
     avatarId: storedAvatar || null,
+    language: normalizedLanguage,
     streaks: nextStreaks,
     userStats: nextUserStats,
     energy: recalc.energy,
@@ -135,6 +143,15 @@ export async function persistEnergy(energyValue, timestamp) {
     ]);
   } catch (err) {
     console.warn('Konnte Energie nicht speichern:', err);
+  }
+}
+
+export async function persistLanguage(language) {
+  try {
+    const normalized = language && language.toLowerCase() === 'en' ? 'en' : DEFAULT_LANGUAGE;
+    await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, normalized);
+  } catch (err) {
+    console.warn('Konnte Sprache nicht speichern:', err);
   }
 }
 

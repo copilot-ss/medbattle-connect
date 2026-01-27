@@ -1,12 +1,14 @@
 import { ScrollView, Text, View } from 'react-native';
 import styles from './styles/SettingsScreen.styles';
 import AudioSettingsCard from './settings/AudioSettingsCard';
+import LanguageSettingsCard from './settings/LanguageSettingsCard';
 import ProfileSection from './settings/ProfileSection';
 import SettingsFooter from './settings/SettingsFooter';
 import SettingsHeader from './settings/SettingsHeader';
 import SettingsTabs from './settings/SettingsTabs';
 import AVATARS from './settings/avatars';
 import useSettingsController from './settings/useSettingsController';
+import { useTranslation } from '../i18n/useTranslation';
 
 export default function SettingsScreen({
   navigation,
@@ -24,12 +26,14 @@ export default function SettingsScreen({
     soundEnabled,
     vibrationEnabled,
     pushEnabled,
+    language,
     soundStatus,
     vibrationStatus,
     pushStatus,
     handleSoundToggle,
     handleVibrationToggle,
     handlePushToggle,
+    handleLanguageChange,
     userName,
     userLevel,
     totalStreak,
@@ -72,13 +76,14 @@ export default function SettingsScreen({
     handleSignOut,
     showResetActions,
   } = useSettingsController({ navigation, route, onClearSession });
+  const { t } = useTranslation();
 
   const resolvedTab = lockedTab || activeTab;
   const showTabRow = showTabs && !lockedTab;
   const showAudioSection = resolvedTab === 'settings';
   const showProfileSection = resolvedTab === 'profile';
   const showSignOutSection = resolvedTab === 'settings';
-  const headerTitle = title || (resolvedTab === 'profile' ? 'Profil' : 'Einstellungen');
+  const headerTitle = title || (resolvedTab === 'profile' ? t('Profil') : t('Einstellungen'));
 
   return (
     <View style={styles.container}>
@@ -110,6 +115,12 @@ export default function SettingsScreen({
             soundStatus={soundStatus}
             vibrationStatus={vibrationStatus}
             pushStatus={pushStatus}
+          />
+        ) : null}
+        {showAudioSection ? (
+          <LanguageSettingsCard
+            language={language}
+            onSelectLanguage={handleLanguageChange}
           />
         ) : null}
 

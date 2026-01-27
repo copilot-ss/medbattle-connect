@@ -1,4 +1,5 @@
 import { Switch, Text, View } from 'react-native';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/SettingsScreen.styles';
 
 export default function AudioSettingsCard({
@@ -12,10 +13,12 @@ export default function AudioSettingsCard({
   vibrationStatus,
   pushStatus,
 }) {
+  const { t } = useTranslation();
+
   return (
     <View style={[styles.card, styles.audioCard]}>
       <View style={styles.rowBetween}>
-        <Text style={styles.cardLabel}>Audio</Text>
+        <Text style={styles.cardLabel}>{t('Audio')}</Text>
         <Switch
           value={soundEnabled}
           onValueChange={onSoundToggle}
@@ -25,7 +28,7 @@ export default function AudioSettingsCard({
         />
       </View>
       <View style={[styles.rowBetween, { marginTop: 14 }]}>
-        <Text style={styles.cardLabel}>Vibration</Text>
+        <Text style={styles.cardLabel}>{t('Vibration')}</Text>
         <Switch
           value={vibrationEnabled}
           onValueChange={onVibrationToggle}
@@ -35,7 +38,7 @@ export default function AudioSettingsCard({
         />
       </View>
       <View style={[styles.rowBetween, { marginTop: 14 }]}>
-        <Text style={styles.cardLabel}>Push-Benachrichtigungen</Text>
+        <Text style={styles.cardLabel}>{t('Push-Benachrichtigungen')}</Text>
         <Switch
           value={pushEnabled}
           onValueChange={onPushToggle}

@@ -6,6 +6,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/SettingsScreen.styles';
 
 export default function ProfileSection({
@@ -41,9 +42,17 @@ export default function ProfileSection({
   linkingGoogle,
   onLinkGoogle,
 }) {
+  const { t } = useTranslation();
+  const levelLabel = t('Level {level}', { level: userLevel });
+  const streakSuffix = totalStreak > 0 ? ` x${totalStreak}` : '';
+  const xpCoinsLabel = t('XP {xp} | Coins {coins}', { xp, coins });
+  const fallbackTitle = t('Med Rookie');
+  const googleHintFallback = t('Google mit diesem Profil verknüpfen.');
+  const googleLabelFallback = t('Google verbinden');
+
   return (
     <View style={[styles.card, styles.profileCard]}>
-      <Text style={styles.cardTitle}>Profil</Text>
+      <Text style={styles.cardTitle}>{t('Profil')}</Text>
 
       <View style={styles.profileRow}>
         <Pressable
@@ -76,32 +85,32 @@ export default function ProfileSection({
           <Text style={styles.profileName}>{userName}</Text>
           <View style={[styles.levelBadge, levelBadgeHeat]}>
             <Text style={styles.levelBadgeText}>
-              {`Level ${userLevel}${totalStreak > 0 ? ` x${totalStreak}` : ''}`}
+              {`${levelLabel}${streakSuffix}`}
             </Text>
           </View>
           <View style={styles.profileTitleRow}>
-            <Text style={styles.profileTitleLabel}>Titel</Text>
+            <Text style={styles.profileTitleLabel}>{t('Titel')}</Text>
             <Text style={styles.profileTitleValue}>
-              {titleProgress?.current?.label ?? 'Med Rookie'}
+              {titleProgress?.current?.label ?? fallbackTitle}
             </Text>
           </View>
-          <Text style={styles.profileXpText}>{`XP ${xp} | Coins ${coins}`}</Text>
+          <Text style={styles.profileXpText}>{xpCoinsLabel}</Text>
         </View>
       </View>
 
       <View style={styles.profileStatsRow}>
         <View style={styles.profileStatCard}>
-          <Text style={styles.profileStatLabel}>Leaderboard</Text>
+          <Text style={styles.profileStatLabel}>{t('Bestenliste')}</Text>
           <Text style={styles.profileStatValue}>
             {loadingRank ? '...' : leaderboardRank ? `#${leaderboardRank}` : '-'}
           </Text>
         </View>
         <View style={styles.profileStatCard}>
-          <Text style={styles.profileStatLabel}>Quizzes</Text>
+          <Text style={styles.profileStatLabel}>{t('Quizzes')}</Text>
           <Text style={styles.profileStatValue}>{quizzesCompleted}</Text>
         </View>
         <View style={styles.profileStatCard}>
-          <Text style={styles.profileStatLabel}>Trefferquote</Text>
+          <Text style={styles.profileStatLabel}>{t('Trefferquote')}</Text>
           <Text style={styles.profileStatValue}>{accuracyPercent}%</Text>
         </View>
       </View>
@@ -141,7 +150,9 @@ export default function ProfileSection({
                 />
                 {locked ? (
                   <View style={styles.avatarTileLockBanner}>
-                    <Text style={styles.avatarTileLevel}>Level {item.level}</Text>
+                    <Text style={styles.avatarTileLevel}>
+                      {t('Level {level}', { level: item.level })}
+                    </Text>
                   </View>
                 ) : null}
               </Pressable>
@@ -155,7 +166,7 @@ export default function ProfileSection({
           <TextInput
             value={newEmail}
             onChangeText={setNewEmail}
-            placeholder="name@example.com"
+            placeholder={t('name@example.com')}
             placeholderTextColor="#64748B"
             autoCapitalize="none"
             keyboardType="email-address"
@@ -183,7 +194,7 @@ export default function ProfileSection({
       {showLinkGoogle ? (
         <View style={styles.fieldGroup}>
           <Text style={styles.helperText}>
-            {linkGoogleHint || 'Google mit diesem Profil verknüpfen.'}
+            {linkGoogleHint || googleHintFallback}
           </Text>
           <Pressable
             onPress={onLinkGoogle}
@@ -198,7 +209,7 @@ export default function ProfileSection({
               <ActivityIndicator color="#F8FAFC" />
             ) : (
               <Text style={styles.primaryButtonText}>
-                {linkGoogleLabel || 'Google verbinden'}
+                {linkGoogleLabel || googleLabelFallback}
               </Text>
             )}
           </Pressable>

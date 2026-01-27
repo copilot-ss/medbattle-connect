@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/SettingsScreen.styles';
 
 export default function FriendsSection({
@@ -27,6 +28,7 @@ export default function FriendsSection({
   loadingOnline,
   onRemoveFriend,
 }) {
+  const { t } = useTranslation();
   const onlineByCode = new Map(
     (onlineFriends ?? []).map((friend) => [
       friend.code,
@@ -85,10 +87,12 @@ export default function FriendsSection({
   const lobbyCount = entries.filter((entry) => entry.lobby).length;
   const statusSummaryParts = [];
   if (totalCount) {
-    statusSummaryParts.push(`${onlineCount}/${totalCount} online`);
+    statusSummaryParts.push(
+      t('{onlineCount}/{totalCount} online', { onlineCount, totalCount })
+    );
   }
   if (lobbyCount) {
-    statusSummaryParts.push(`${lobbyCount} in Lobby`);
+    statusSummaryParts.push(t('{lobbyCount} in Lobby', { lobbyCount }));
   }
   const statusSummary = statusSummaryParts.join(' | ');
   const isLoading = loadingFriends || loadingOnline;
@@ -98,11 +102,11 @@ export default function FriendsSection({
       const players = entry.lobbyPlayers;
       const capacity = entry.lobbyCapacity;
       if (Number.isFinite(players) && Number.isFinite(capacity)) {
-        return `Lobby ${players}/${capacity}`;
+        return t('Lobby {players}/{capacity}', { players, capacity });
       }
-      return 'Lobby';
+      return t('Lobby');
     }
-    return entry.isOnline ? 'Online' : 'Offline';
+    return entry.isOnline ? t('Online') : t('Offline');
   };
 
   const resolveDotStyle = (entry) => {
@@ -122,7 +126,7 @@ export default function FriendsSection({
   return (
     <View style={[styles.card, styles.squadCard]}>
       <View style={[styles.rowBetween, styles.friendToggleRow]}>
-        <Text style={styles.cardLabel}>Freundesanfragen</Text>
+        <Text style={styles.cardLabel}>{t('Freundesanfragen')}</Text>
         <Switch
           value={friendRequestsEnabled}
           onValueChange={onToggleFriendRequests}
@@ -134,7 +138,7 @@ export default function FriendsSection({
 
       <View style={styles.friendList}>
         <View style={styles.friendListHeader}>
-          <Text style={styles.friendListTitle}>Freunde</Text>
+          <Text style={styles.friendListTitle}>{t('Freunde')}</Text>
           <Text style={styles.friendListCount}>
             {statusSummary}
           </Text>
@@ -144,7 +148,7 @@ export default function FriendsSection({
           <View style={styles.friendLoading}>
             <ActivityIndicator color="#60A5FA" />
             <Text style={styles.friendLoadingText}>
-              Online-Status wird geladen ...
+              {t('Online-Status wird geladen ...')}
             </Text>
           </View>
         ) : entries.length ? (
@@ -158,7 +162,7 @@ export default function FriendsSection({
             >
               <View>
                 <Text style={styles.friendCodeText}>
-                  {friend.name || 'Freund'}
+                  {friend.name || t('Freund')}
                 </Text>
                 {friend.title ? (
                   <Text style={styles.friendTitleText}>{friend.title}</Text>
@@ -179,13 +183,13 @@ export default function FriendsSection({
                 onPress={() => onRemoveFriend({ code: friend.code })}
                 style={styles.friendRemoveButton}
               >
-                <Text style={styles.friendRemoveText}>Entfernen</Text>
+                <Text style={styles.friendRemoveText}>{t('Entfernen')}</Text>
               </Pressable>
             </View>
           ))
         ) : (
           <Text style={styles.friendEmptyText}>
-            Noch keine Freunde gespeichert. Teile deinen Code und starte!
+            {t('Noch keine Freunde gespeichert. Teile deinen Code und starte!')}
           </Text>
         )}
       </View>
@@ -195,25 +199,25 @@ export default function FriendsSection({
       <View style={styles.friendHeroRow}>
         <Text style={styles.friendHeroEmoji}></Text>
         <View style={styles.friendHeroTextGroup}>
-          <Text style={styles.friendHeroTitle}>Freunde hinzufügen</Text>
+          <Text style={styles.friendHeroTitle}>{t('Freunde hinzufügen')}</Text>
           <Text style={styles.friendHeroSubtitle}>
-            Teile deinen Code und hol deine Crew ins Battle.
+            {t('Teile deinen Code und hol deine Crew ins Battle.')}
           </Text>
         </View>
       </View>
 
       <View style={styles.friendCodeCard}>
-        <Text style={styles.friendCodeLabel}>Dein Battle-Code</Text>
+        <Text style={styles.friendCodeLabel}>{t('Dein Battle-Code')}</Text>
         <Pressable
           onPress={onCopyFriendCode}
           style={styles.friendCodeValueWrapper}
-          accessibilityLabel="Code kopieren"
+          accessibilityLabel={t('Code kopieren')}
         >
           <Text style={styles.friendCodeValue}>
             {friendCode || '------'}
           </Text>
           {copySuccess ? (
-            <Text style={styles.friendCodeCopy}>Kopiert!</Text>
+            <Text style={styles.friendCodeCopy}>{t('Kopiert!')}</Text>
           ) : (
             <Ionicons
               name="copy-outline"
@@ -225,7 +229,7 @@ export default function FriendsSection({
         </Pressable>
       </View>
 
-      <Text style={styles.friendInputLabel}>Code von Freund eingeben</Text>
+      <Text style={styles.friendInputLabel}>{t('Code von Freund eingeben')}</Text>
       <View style={styles.fieldGroup}>
         <TextInput
           ref={friendInputRef}
@@ -249,7 +253,7 @@ export default function FriendsSection({
           {addingFriend ? (
             <ActivityIndicator color="#F8FAFC" />
           ) : (
-            <Text style={styles.successButtonText}>Freund hinzufügen</Text>
+            <Text style={styles.successButtonText}>{t('Freund hinzufügen')}</Text>
           )}
         </Pressable>
       </View>

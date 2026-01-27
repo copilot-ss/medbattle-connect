@@ -8,6 +8,7 @@ import {
   removeFriend,
 } from '../../services/friendsService';
 import { formatUserError } from '../../utils/formatUserError';
+import { useTranslation } from '../../i18n/useTranslation';
 import useFriendsPresence from './useFriendsPresence';
 
 const SUPABASE_URL_HINT = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -20,6 +21,7 @@ export default function useSettingsFriends({
   userName,
   userTitle,
 }) {
+  const { t } = useTranslation();
   const [friendCodeInput, setFriendCodeInput] = useState('');
   const [friends, setFriends] = useState([]);
   const [loadingFriends, setLoadingFriends] = useState(true);
@@ -46,7 +48,7 @@ export default function useSettingsFriends({
         setFriendsFeedback(
           formatUserError(err, {
             supabaseUrl: SUPABASE_URL_HINT,
-            fallback: 'Freunde konnten nicht geladen werden.',
+            fallback: t('Freunde konnten nicht geladen werden.'),
           })
         );
       } finally {
@@ -108,7 +110,7 @@ export default function useSettingsFriends({
 
   const handleAddFriend = useCallback(async () => {
     if (!userId) {
-      setFriendsFeedback('Bitte melde dich erneut an, um Freunde hinzuzufügen.');
+      setFriendsFeedback(t('Bitte melde dich erneut an, um Freunde hinzuzufügen.'));
       return;
     }
 
@@ -119,17 +121,17 @@ export default function useSettingsFriends({
     const normalizedCode = friendCodeInput.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
     if (!normalizedCode) {
-      setFriendsFeedback('Bitte einen gültigen Code eingeben.');
+      setFriendsFeedback(t('Bitte einen gültigen Code eingeben.'));
       return;
     }
 
     if (friendCode && normalizedCode === friendCode) {
-      setFriendsFeedback('Das ist dein eigener Code.');
+      setFriendsFeedback(t('Das ist dein eigener Code.'));
       return;
     }
 
     if (friends.some((friend) => friend.code === normalizedCode)) {
-      setFriendsFeedback('Dieser Code ist bereits in deiner Liste.');
+      setFriendsFeedback(t('Dieser Code ist bereits in deiner Liste.'));
       return;
     }
 
@@ -140,7 +142,7 @@ export default function useSettingsFriends({
       const result = await addFriend(userId, normalizedCode);
 
       if (!result.ok) {
-        throw result.error ?? new Error('Freund konnte nicht hinzugefügt werden.');
+        throw result.error ?? new Error(t('Freund konnte nicht hinzugefügt werden.'));
       }
 
       if (Array.isArray(result.friends)) {
@@ -150,12 +152,12 @@ export default function useSettingsFriends({
       }
 
       setFriendCodeInput('');
-      setFriendsFeedback('Freund wurde hinzugefügt.');
+      setFriendsFeedback(t('Freund wurde hinzugefügt.'));
     } catch (err) {
       setFriendsFeedback(
         formatUserError(err, {
           supabaseUrl: SUPABASE_URL_HINT,
-          fallback: 'Freund konnte nicht hinzugefügt werden.',
+          fallback: t('Freund konnte nicht hinzugefügt werden.'),
         })
       );
     } finally {
@@ -172,7 +174,7 @@ export default function useSettingsFriends({
       const result = await removeFriend(userId, friend);
 
       if (!result.ok) {
-        throw result.error ?? new Error('Freund konnte nicht entfernt werden.');
+        throw result.error ?? new Error(t('Freund konnte nicht entfernt werden.'));
       }
 
       if (Array.isArray(result.friends)) {
@@ -186,7 +188,7 @@ export default function useSettingsFriends({
       setFriendsFeedback(
         formatUserError(err, {
           supabaseUrl: SUPABASE_URL_HINT,
-          fallback: 'Freund konnte nicht entfernt werden.',
+          fallback: t('Freund konnte nicht entfernt werden.'),
         })
       );
     }

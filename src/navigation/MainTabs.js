@@ -6,10 +6,13 @@ import LeaderboardScreen from '../screens/LeaderboardScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import styles from '../styles/AppNavigator.styles';
 import { colors } from '../styles/theme';
+import { useTranslation } from '../i18n/useTranslation';
 
 const Tab = createBottomTabNavigator();
 
 export default function MainTabs({ onClearSession }) {
+  const { t } = useTranslation();
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -26,7 +29,7 @@ export default function MainTabs({ onClearSession }) {
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: t('Start'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
@@ -35,7 +38,7 @@ export default function MainTabs({ onClearSession }) {
       <Tab.Screen
         name="Profile"
         options={{
-          tabBarLabel: 'Profile',
+          tabBarLabel: t('Profil'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),
@@ -48,14 +51,14 @@ export default function MainTabs({ onClearSession }) {
             lockedTab="profile"
             showTabs={false}
             showClose={false}
-            title="Profile"
+            title={t('Profil')}
           />
         )}
       </Tab.Screen>
       <Tab.Screen
         name="Leaderboard"
         options={{
-          tabBarLabel: 'Leaderboard',
+          tabBarLabel: t('Bestenliste'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="trophy" size={size} color={color} />
           ),
@@ -66,7 +69,7 @@ export default function MainTabs({ onClearSession }) {
       <Tab.Screen
         name="Settings"
         options={{
-          tabBarLabel: 'Settings',
+          tabBarLabel: t('Einstellungen'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings" size={size} color={color} />
           ),
@@ -79,7 +82,7 @@ export default function MainTabs({ onClearSession }) {
             lockedTab="settings"
             showTabs={false}
             showClose={false}
-            title="Settings"
+            title={t('Einstellungen')}
           />
         )}
       </Tab.Screen>

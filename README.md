@@ -9,8 +9,8 @@ Kurzsetup, damit du im Lovable-Repo sofort mit Expo und Codex starten kannst.
 
 ## OAuth (Google, Discord)
 - Im Supabase Dashboard unter Authentication -> Providers Google/Discord aktivieren und App-ID/Secret hinterlegen.
-- Redirect-URL erlauben: deine Web-URL (z.B. `http://localhost:5173/` fuer Vite oder Expo Web).
-- Danach funktionieren die Social Buttons im Auth-Screen sofort ueber Supabase OAuth.
+- Redirect-URL erlauben: deine Web-URL (z.B. `http://localhost:5173/` für Vite oder Expo Web).
+- Danach funktionieren die Social Buttons im Auth-Screen sofort über Supabase OAuth.
 
 ## Wichtige Dateien
 - `AGENTS.md`, `PLANNING.md`, `TASKS.md` beachten.
@@ -19,4 +19,4 @@ Kurzsetup, damit du im Lovable-Repo sofort mit Expo und Codex starten kannst.
 ## Hinweise
 - Keine Secrets committen (`.env` ist ignoriert).
 - Expo SDK ~54, React Native 0.77.0, Supabase JS v2.
-- Expo Go: Supabase-URL darf nicht auf localhost/127.0.0.1 stehen, sonst schlagen Logins/Queries auf echten Geraeten fehl. Immer die gehostete Supabase-URL nutzen.
+- Expo Go: Supabase-URL darf nicht auf localhost/127.0.0.1 stehen, sonst schlagen Logins/Queries auf echten Geräten fehl. Immer die gehostete Supabase-URL nutzen.

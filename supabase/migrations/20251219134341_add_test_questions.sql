@@ -32,7 +32,7 @@ values
     'pharmakologie-vitamin-k-antagonist'
   ),
   (
-    'Welcher Erreger verursacht typischerweise Pfeiffersches Druesenfieber?',
+    'Welcher Erreger verursacht typischerweise Pfeiffersches Drüsenfieber?',
     'Epstein-Barr-Virus',
     '["Epstein-Barr-Virus","Cytomegalievirus","Influenza-A","Adenovirus"]'::jsonb,
     'Mikrobiologie',
@@ -40,9 +40,9 @@ values
     'mikrobiologie-epstein-barr'
   ),
   (
-    'Welche Zelle ist charakteristisch fuer das Hodgkin-Lymphom?',
+    'Welche Zelle ist charakteristisch für das Hodgkin-Lymphom?',
     'Reed-Sternberg-Zelle',
-    '["Reed-Sternberg-Zelle","Touton-Riesenzelle","Langhans-Riesenzelle","Aschoff-Knoetchen"]'::jsonb,
+    '["Reed-Sternberg-Zelle","Touton-Riesenzelle","Langhans-Riesenzelle","Aschoff-Knötchen"]'::jsonb,
     'Pathologie',
     'mittel',
     'pathologie-reed-sternberg'

@@ -1,4 +1,5 @@
 import { ActivityIndicator, Linking, Pressable, Text, TextInput, View } from 'react-native';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/SettingsScreen.styles';
 
 export default function SettingsFooter({
@@ -13,10 +14,11 @@ export default function SettingsFooter({
   showResetActions = true,
   isGuest = false,
 }) {
+  const { t } = useTranslation();
   const privacyUrl = process.env.EXPO_PUBLIC_PRIVACY_URL;
   const termsUrl = process.env.EXPO_PUBLIC_TERMS_URL;
   const supportUrl = process.env.EXPO_PUBLIC_SUPPORT_URL;
-  const signOutLabel = isGuest ? 'Anmelden' : 'Abmelden';
+  const signOutLabel = isGuest ? t('Anmelden') : t('Abmelden');
   const signOutButtonStyles = isGuest
     ? [
         styles.actionButton,
@@ -54,9 +56,9 @@ export default function SettingsFooter({
           onPress={onToggleResetForm}
           style={styles.inlineLink}
           accessibilityRole="button"
-          accessibilityLabel="Passwort vergessen"
+          accessibilityLabel={t('Passwort vergessen')}
         >
-          <Text style={styles.inlineLinkText}>Passwort vergessen?</Text>
+          <Text style={styles.inlineLinkText}>{t('Passwort vergessen?')}</Text>
         </Pressable>
       ) : null}
 
@@ -65,7 +67,7 @@ export default function SettingsFooter({
           <TextInput
             value={resetEmail}
             onChangeText={setResetEmail}
-            placeholder="deine@email.com"
+            placeholder={t('deine@email.com')}
             placeholderTextColor="#64748B"
             autoCapitalize="none"
             keyboardType="email-address"
@@ -83,7 +85,7 @@ export default function SettingsFooter({
             {loadingReset ? (
               <ActivityIndicator color="#0F172A" />
             ) : (
-              <Text style={styles.warningButtonText}>Link senden</Text>
+              <Text style={styles.warningButtonText}>{t('Link senden')}</Text>
             )}
           </Pressable>
         </View>
@@ -110,9 +112,9 @@ export default function SettingsFooter({
             !privacyUrl ? styles.legalLinkDisabled : null,
           ]}
           accessibilityRole="link"
-          accessibilityLabel="Datenschutz"
+          accessibilityLabel={t('Datenschutz')}
         >
-          <Text style={styles.legalLinkText}>Datenschutz</Text>
+          <Text style={styles.legalLinkText}>{t('Datenschutz')}</Text>
         </Pressable>
         <Text style={styles.legalDivider}>|</Text>
         <Pressable
@@ -123,9 +125,9 @@ export default function SettingsFooter({
             !termsUrl ? styles.legalLinkDisabled : null,
           ]}
           accessibilityRole="link"
-          accessibilityLabel="AGB"
+          accessibilityLabel={t('AGB')}
         >
-          <Text style={styles.legalLinkText}>AGB</Text>
+          <Text style={styles.legalLinkText}>{t('AGB')}</Text>
         </Pressable>
         <Text style={styles.legalDivider}>|</Text>
         <Pressable
@@ -136,9 +138,9 @@ export default function SettingsFooter({
             !supportUrl ? styles.legalLinkDisabled : null,
           ]}
           accessibilityRole="link"
-          accessibilityLabel="Support"
+          accessibilityLabel={t('Support')}
         >
-          <Text style={styles.legalLinkText}>Support</Text>
+          <Text style={styles.legalLinkText}>{t('Support')}</Text>
         </Pressable>
       </View>
     </View>

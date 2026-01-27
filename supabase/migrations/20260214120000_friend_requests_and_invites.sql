@@ -236,7 +236,7 @@ begin
   end if;
 
   if normalized_code is null or length(normalized_code) = 0 then
-    raise exception 'Bitte gueltigen Code angeben.';
+    raise exception 'Bitte gültigen Code angeben.';
   end if;
 
   select u.id
@@ -307,7 +307,7 @@ begin
   end if;
 
   if normalized_code is null or length(normalized_code) = 0 then
-    raise exception 'Ungueltiger Freund.';
+    raise exception 'Ungültiger Freund.';
   end if;
 
   select u.id
@@ -432,7 +432,7 @@ begin
   end if;
 
   if normalized_code is null or length(normalized_code) = 0 then
-    raise exception 'Bitte gueltigen Code angeben.';
+    raise exception 'Bitte gültigen Code angeben.';
   end if;
 
   select u.id
@@ -442,7 +442,7 @@ begin
   limit 1;
 
   if recipient_id is null then
-    raise exception 'Empfaenger nicht gefunden.';
+    raise exception 'Empfänger nicht gefunden.';
   end if;
   if recipient_id = user_id then
     raise exception 'cannot invite yourself';

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { formatUserError } from '../../utils/formatUserError';
+import { useTranslation } from '../../i18n/useTranslation';
 import { linkOAuth } from '../auth/authOAuth';
 import { normalizeEmail } from './utils';
 
@@ -21,6 +22,7 @@ export default function useSettingsAuth({
   authUserId,
   isGuest,
 }) {
+  const { t } = useTranslation();
   const [newEmail, setNewEmail] = useState('');
   const [feedback, setFeedback] = useState(null);
   const [loadingReset, setLoadingReset] = useState(false);
@@ -52,14 +54,14 @@ export default function useSettingsAuth({
         throw resetError;
       }
 
-      setFeedback('Link zum Zur\u00fccksetzen wurde gesendet.');
+      setFeedback(t('Link zum Zurücksetzen wurde gesendet.'));
       setResetEmail('');
       setShowResetForm(false);
     } catch (err) {
       setFeedback(
         formatUserError(err, {
           supabaseUrl: SUPABASE_URL_HINT,
-          fallback: 'Passwort konnte nicht zur\u00fcckgesetzt werden.',
+          fallback: t('Passwort konnte nicht zurückgesetzt werden.'),
         })
       );
     } finally {
@@ -75,12 +77,12 @@ export default function useSettingsAuth({
     const trimmed = normalizeEmail(newEmail);
 
     if (!trimmed) {
-      setFeedback('Bitte neue E-Mail-Adresse eingeben.');
+      setFeedback(t('Bitte neue E-Mail-Adresse eingeben.'));
       return;
     }
 
     if (!authUserId) {
-      setFeedback('Bitte registriere dich, um eine E-Mail zu hinterlegen.');
+      setFeedback(t('Bitte registriere dich, um eine E-Mail zu hinterlegen.'));
       navigation.navigate('Auth', { mode: 'signUp', emailPreset: trimmed });
       return;
     }
@@ -98,14 +100,14 @@ export default function useSettingsAuth({
       }
 
       setFeedback(
-        'E-Mail-Update angefordert. Bitte bestätige die neue Adresse über den zugesandten Link.'
+        t('E-Mail-Update angefordert. Bitte bestätige die neue Adresse über den zugesandten Link.')
       );
       setNewEmail('');
     } catch (err) {
       setFeedback(
         formatUserError(err, {
           supabaseUrl: SUPABASE_URL_HINT,
-          fallback: 'E-Mail konnte nicht aktualisiert werden. Bitte versuche es erneut.',
+          fallback: t('E-Mail konnte nicht aktualisiert werden. Bitte versuche es erneut.'),
         })
       );
     } finally {
@@ -123,7 +125,7 @@ export default function useSettingsAuth({
 
     try {
       if (authUserId) {
-        // Logouts von OAuth-Providern (z.B. Google) schlagen seltener fehl, wenn nur lokale Session gelscht wird.
+        // Logouts von OAuth-Providern (z.B. Google) schlagen seltener fehl, wenn nur lokale Session gelöscht wird.
         await supabase.auth.signOut({ scope: 'local' });
         // Fallback: kompletter Logout, falls Remote-Session aktiv ist.
         await supabase.auth.signOut().catch(() => {});
@@ -136,7 +138,7 @@ export default function useSettingsAuth({
       setFeedback(
         formatUserError(err, {
           supabaseUrl: SUPABASE_URL_HINT,
-          fallback: 'Abmelden fehlgeschlagen.',
+          fallback: t('Abmelden fehlgeschlagen.'),
         })
       );
     } finally {
@@ -150,14 +152,14 @@ export default function useSettingsAuth({
     }
 
     if (!authUserId) {
-      setFeedback('Bitte melde dich an, um Google zu verknüpfen.');
+      setFeedback(t('Bitte melde dich an, um Google zu verknüpfen.'));
       navigation.navigate('Auth', { mode: 'signIn' });
       return;
     }
 
     const result = await linkOAuth('google', setFeedback, setLinkingGoogle);
     if (result?.ok) {
-      setFeedback('Google verbunden. Du kannst dich jetzt mit Google anmelden.');
+      setFeedback(t('Google verbunden. Du kannst dich jetzt mit Google anmelden.'));
     }
   }, [authUserId, linkingGoogle, navigation]);
 

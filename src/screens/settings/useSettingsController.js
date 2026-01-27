@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePreferences } from '../../context/PreferencesContext';
+import { useTranslation } from '../../i18n/useTranslation';
 import useLeaderboardRank from './useLeaderboardRank';
 import useSettingsAuth from './useSettingsAuth';
 import useSettingsFriends from './useSettingsFriends';
@@ -16,11 +17,14 @@ export default function useSettingsController({ navigation, route, onClearSessio
     setPushEnabled,
     friendRequestsEnabled,
     setFriendRequestsEnabled,
+    language,
+    setLanguage,
     avatarId,
     setAvatarId,
     streaks,
     userStats,
   } = usePreferences();
+  const { t } = useTranslation();
 
   const [focusTarget, setFocusTarget] = useState(route?.params?.focus ?? null);
   const [activeTab, setActiveTab] = useState('profile');
@@ -103,28 +107,28 @@ export default function useSettingsController({ navigation, route, onClearSessio
   } = useSettingsAuth({ navigation, onClearSession, authUserId, isGuest });
 
   const soundStatus = useMemo(
-    () => (soundEnabled ? 'Sound aktiv' : 'Sound stumm'),
-    [soundEnabled]
+    () => (soundEnabled ? t('Sound aktiv') : t('Sound stumm')),
+    [soundEnabled, t]
   );
   const vibrationStatus = useMemo(
-    () => (vibrationEnabled ? 'Vibration aktiv' : 'Vibration aus'),
-    [vibrationEnabled]
+    () => (vibrationEnabled ? t('Vibration aktiv') : t('Vibration aus')),
+    [vibrationEnabled, t]
   );
   const pushStatus = useMemo(
-    () => (pushEnabled ? 'Push an' : 'Push aus'),
-    [pushEnabled]
+    () => (pushEnabled ? t('Push an') : t('Push aus')),
+    [pushEnabled, t]
   );
   const friendRequestsStatus = useMemo(
     () =>
       friendRequestsEnabled
-        ? 'Freundesanfragen erlaubt'
-        : 'Freundesanfragen blockiert',
-    [friendRequestsEnabled]
+        ? t('Freundesanfragen erlaubt')
+        : t('Freundesanfragen blockiert'),
+    [friendRequestsEnabled, t]
   );
-  const emailCtaLabel = isGuest ? 'E-Mail-Account erstellen' : 'E-Mail ändern';
+  const emailCtaLabel = isGuest ? t('E-Mail-Account erstellen') : t('E-Mail ändern');
   const emailCtaHint = isGuest
-    ? 'Lege einen Account mit E-Mail an.'
-    : 'Neue E-Mail wird nach Bestätigung aktiv.';
+    ? t('Lege einen Account mit E-Mail an.')
+    : t('Neue E-Mail wird nach Bestätigung aktiv.');
   const normalizedProviders = useMemo(
     () => (authProviders || []).map((provider) => String(provider).toLowerCase()),
     [authProviders]
@@ -138,9 +142,9 @@ export default function useSettingsController({ navigation, route, onClearSessio
   const showResetActions = !isOAuthUser && !isGuest;
   const googleLinked = normalizedProviders.includes('google');
   const showLinkGoogle = !isGuest && Boolean(authUserId) && !googleLinked;
-  const linkGoogleLabel = 'Google verbinden';
+  const linkGoogleLabel = t('Google verbinden');
   const linkGoogleHint =
-    'Verknüpfe Google mit diesem Profil, damit der Google-Login denselben Account nutzt.';
+    t('Verknüpfe Google mit diesem Profil, damit der Google-Login denselben Account nutzt.');
 
   const showAudioSection = activeTab === 'settings';
   const showProfileSection = activeTab === 'profile';
@@ -178,6 +182,12 @@ export default function useSettingsController({ navigation, route, onClearSessio
       console.warn('Konnte Freundesanfragen-Einstellung nicht speichern:', err);
     });
   }, [setFriendRequestsEnabled]);
+
+  const handleLanguageChange = useCallback((value) => {
+    setLanguage(value).catch((err) => {
+      console.warn('Konnte Sprache nicht speichern:', err);
+    });
+  }, [setLanguage]);
 
   const handleSelectAvatar = useCallback((item) => {
     if (!item) {
@@ -248,6 +258,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     vibrationEnabled,
     pushEnabled,
     friendRequestsEnabled,
+    language,
     soundStatus,
     vibrationStatus,
     pushStatus,
@@ -256,6 +267,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     handleVibrationToggle,
     handlePushToggle,
     handleFriendRequestsToggle,
+    handleLanguageChange,
     // user/profile
     userName,
     userLevel,

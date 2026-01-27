@@ -17,9 +17,11 @@ import {
   persistAvatarId,
   persistBooleanValue,
   persistEnergy,
+  persistLanguage,
   persistStreakValue,
   persistUserStats,
 } from './preferences/storage';
+import { DEFAULT_LOCALE, setLocale } from '../i18n';
 
 const PreferencesContext = createContext(null);
 
@@ -29,6 +31,7 @@ export function PreferencesProvider({ children }) {
   const [pushEnabled, setPushEnabledState] = useState(true);
   const [friendRequestsEnabled, setFriendRequestsEnabledState] = useState(true);
   const [avatarId, setAvatarIdState] = useState(null);
+  const [language, setLanguageState] = useState(DEFAULT_LOCALE);
   const [streaks, setStreaksState] = useState(DEFAULT_STREAKS);
   const [userStats, setUserStatsState] = useState(DEFAULT_USER_STATS);
   const [energy, setEnergyState] = useState(MAX_ENERGY);
@@ -52,6 +55,8 @@ export function PreferencesProvider({ children }) {
         setPushEnabledState(loaded.pushEnabled);
         setFriendRequestsEnabledState(loaded.friendRequestsEnabled);
         setAvatarIdState(loaded.avatarId);
+        setLanguageState(loaded.language);
+        setLocale(loaded.language);
         setStreaksState(loaded.streaks);
         setUserStatsState(loaded.userStats);
         energyTimestampRef.current = loaded.energyTimestamp;
@@ -103,6 +108,13 @@ export function PreferencesProvider({ children }) {
     const normalized = value || null;
     setAvatarIdState(normalized);
     await persistAvatarId(normalized);
+  }, []);
+
+  const setLanguage = useCallback(async (value) => {
+    const normalized = typeof value === 'string' && value.toLowerCase() === 'en' ? 'en' : DEFAULT_LOCALE;
+    setLanguageState(normalized);
+    setLocale(normalized);
+    await persistLanguage(normalized);
   }, []);
 
   const updateUserStats = useCallback(async (updater) => {
@@ -235,6 +247,8 @@ export function PreferencesProvider({ children }) {
       setFriendRequestsEnabled,
       avatarId,
       setAvatarId,
+      language,
+      setLanguage,
       streaks,
       setStreakValue,
       userStats,
@@ -262,6 +276,7 @@ export function PreferencesProvider({ children }) {
       pushEnabled,
       friendRequestsEnabled,
       avatarId,
+      language,
       streaks,
     ]
   );

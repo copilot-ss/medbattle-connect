@@ -60,7 +60,7 @@ begin
   from normalized;
 
   if jsonb_array_length(questions_json) = 0 then
-    raise exception 'Keine Fragen fuer Multiplayer verfuegbar.';
+    raise exception 'Keine Fragen für Multiplayer verfügbar.';
   end if;
 
   select username into host_username
@@ -178,7 +178,7 @@ begin
   end if;
 
   if match_row.status <> 'waiting' then
-    raise exception 'Die Lobby laeuft bereits.';
+    raise exception 'Die Lobby läuft bereits.';
   end if;
 
   resolved_category := nullif(trim(match_row.category), '');
@@ -215,7 +215,7 @@ begin
   from normalized;
 
   if jsonb_array_length(questions_json) = 0 then
-    raise exception 'Keine Fragen fuer die gewaehlte Einstellung verfuegbar.';
+    raise exception 'Keine Fragen für die gewählte Einstellung verfügbar.';
   end if;
 
   select username into host_username
