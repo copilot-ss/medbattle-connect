@@ -1,4 +1,5 @@
 import { Text, View } from 'react-native';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/QuizScreen.styles';
 
 export default function MatchStatusCard({
@@ -10,13 +11,15 @@ export default function MatchStatusCard({
   initialJoinCode,
   resolvedMatchStatus,
 }) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.matchStatusCard}>
       <View style={styles.matchPlayersRow}>
         <View style={styles.playerPanel}>
-          <Text style={styles.playerPanelLabel}>Du</Text>
+          <Text style={styles.playerPanelLabel}>{t('Du')}</Text>
           <Text style={styles.playerPanelName}>
-            {matchPlayerState?.username ?? 'Du'}
+            {matchPlayerState?.username ?? t('Du')}
           </Text>
           <Text style={styles.playerPanelScore}>
             {matchPlayerState?.score ?? 0}
@@ -26,9 +29,9 @@ export default function MatchStatusCard({
           <Text style={styles.vsDividerText}>VS</Text>
         </View>
         <View style={styles.playerPanel}>
-          <Text style={styles.playerPanelLabel}>Gegner</Text>
+          <Text style={styles.playerPanelLabel}>{t('Gegner')}</Text>
           <Text style={styles.playerPanelName}>
-            {matchOpponentState?.username ?? 'Unbekannt'}
+            {matchOpponentState?.username ?? t('Unbekannt')}
           </Text>
           <Text style={styles.playerPanelScore}>
             {matchOpponentState?.score ?? 0}
@@ -37,15 +40,15 @@ export default function MatchStatusCard({
       </View>
       <View style={styles.matchMetaRow}>
         <Text style={styles.matchMetaLeft}>
-          Runde {Math.min(activeIndex + 1, totalQuestions)}/{totalQuestions}
+          {t('Runde')} {Math.min(activeIndex + 1, totalQuestions)}/{totalQuestions}
         </Text>
         <Text style={styles.matchMetaRight}>
-          Code {matchJoinCode ?? initialJoinCode ?? '-'}
+          {t('Code')} {matchJoinCode ?? initialJoinCode ?? '-'}
         </Text>
       </View>
       {resolvedMatchStatus === 'waiting' ? (
         <Text style={styles.matchWaitingHint}>
-          Warte auf Gegner - Fragen starten sobald beide bereit sind.
+          {t('Warte auf Gegner - Fragen starten sobald beide bereit sind.')}
         </Text>
       ) : null}
     </View>

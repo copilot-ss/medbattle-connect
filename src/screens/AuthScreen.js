@@ -21,8 +21,10 @@ import {
   withTimeout,
 } from './auth/authUtils';
 import styles from './styles/AuthScreen.styles';
+import { useTranslation } from '../i18n/useTranslation';
 
 export default function AuthScreen({ route, navigation, onGuest }) {
+  const { t } = useTranslation();
   const initialMode = route?.params?.mode ?? 'signIn';
   const initialEmail = route?.params?.emailPreset ?? '';
   const [mode, setMode] = useState(initialMode);
@@ -116,10 +118,12 @@ export default function AuthScreen({ route, navigation, onGuest }) {
       if (callbackError) {
         if (active) {
           setMessage(
-            formatUserError(new Error(callbackError), {
-              supabaseUrl: SUPABASE_URL_HINT,
-              fallback: 'Link konnte nicht verarbeitet werden.',
-            })
+            t(
+              formatUserError(new Error(callbackError), {
+                supabaseUrl: SUPABASE_URL_HINT,
+                fallback: 'Link konnte nicht verarbeitet werden.',
+              })
+            )
           );
         }
         return;
@@ -132,7 +136,9 @@ export default function AuthScreen({ route, navigation, onGuest }) {
         }
         setMode('signIn');
         setMessage(
-          'Deine E-Mail wurde bestätigt. Du kannst dieses Fenster schließen und dich jetzt anmelden.'
+          t(
+            'Deine E-Mail wurde bestätigt. Du kannst dieses Fenster schließen und dich jetzt anmelden.'
+          )
         );
         return;
       }
@@ -141,7 +147,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
         const accessToken = queryParams?.access_token;
         if (!accessToken) {
           if (active) {
-            setMessage('Passwort-Reset-Link ungültig. Bitte neu anfordern.');
+            setMessage(t('Passwort-Reset-Link ungültig. Bitte neu anfordern.'));
           }
           return;
         }
@@ -154,7 +160,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
         setResetPassword('');
         setResetPasswordConfirm('');
         setMode('recovery');
-        setMessage('Bitte neues Passwort setzen.');
+        setMessage(t('Bitte neues Passwort setzen.'));
         return;
       }
 
@@ -164,7 +170,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
           return;
         }
         setMode('signIn');
-        setMessage('E-Mail aktualisiert. Bitte melde dich neu an.');
+        setMessage(t('E-Mail aktualisiert. Bitte melde dich neu an.'));
       }
     }
 
@@ -195,21 +201,21 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
   async function handleSubmit() {
     if (!email || !password) {
-      setMessage('Bitte E-Mail und Passwort eingeben.');
+      setMessage(t('Bitte E-Mail und Passwort eingeben.'));
       return;
     }
 
     if (isSignUp) {
       const passwordCheck = validatePasswordStrength(password);
       if (!passwordCheck.ok) {
-        setMessage(passwordCheck.message);
+        setMessage(t(passwordCheck.message));
         return;
       }
     }
 
     const validation = validateSupabaseConfig();
     if (!validation.ok) {
-      setMessage(validation.message);
+      setMessage(t(validation.message));
       return;
     }
 
@@ -229,7 +235,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             },
           }),
           AUTH_TIMEOUT_MS,
-          'Supabase nicht erreichbar. Bitte Verbindung oder Supabase-URL prüfen.'
+          t('Supabase nicht erreichbar. Bitte Verbindung oder Supabase-URL prüfen.')
         );
 
         if (error) {
@@ -238,7 +244,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
         if (!data.session) {
           setMessage(
-            'Account erstellt. Bitte bestätige deine E-Mail, bevor du dich einloggst.'
+            t('Account erstellt. Bitte bestätige deine E-Mail, bevor du dich einloggst.')
           );
         }
       } else {
@@ -248,7 +254,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             password,
           }),
           AUTH_TIMEOUT_MS,
-          'Supabase nicht erreichbar. Bitte Verbindung oder Supabase-URL prüfen.'
+          t('Supabase nicht erreichbar. Bitte Verbindung oder Supabase-URL prüfen.')
         );
 
         if (error) {
@@ -264,17 +270,17 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
       if (alreadyRegistered && isSignUp) {
         setMode('signIn');
-        setMessage('Diese E-Mail existiert bereits. Bitte melde dich an.');
+        setMessage(t('Diese E-Mail existiert bereits. Bitte melde dich an.'));
       } else {
         const hint =
           SUPABASE_URL_HINT && SUPABASE_URL_HINT.includes('127.0.0.1')
-            ? ' (Hinweis: Supabase-URL zeigt auf localhost und ist vom Gerät nicht erreichbar)'
+            ? ` ${t('(Hinweis: Supabase-URL zeigt auf localhost und ist vom Gerät nicht erreichbar)')}`
             : '';
         const formatted = formatUserError(err, {
           supabaseUrl: SUPABASE_URL_HINT,
           fallback: 'Unbekannter Fehler.',
         });
-        setMessage(formatted + hint);
+        setMessage(t(formatted) + hint);
       }
     } finally {
       setLoading(false);
@@ -305,34 +311,34 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
   async function handlePasswordUpdate() {
     if (!recoveryAccessToken) {
-      setMessage('Passwort-Reset-Link fehlt. Bitte neu anfordern.');
+      setMessage(t('Passwort-Reset-Link fehlt. Bitte neu anfordern.'));
       return;
     }
 
     if (!resetPassword || !resetPasswordConfirm) {
-      setMessage('Bitte neues Passwort zweimal eingeben.');
+      setMessage(t('Bitte neues Passwort zweimal eingeben.'));
       return;
     }
 
     if (resetPassword !== resetPasswordConfirm) {
-      setMessage('Passwörter stimmen nicht überein.');
+      setMessage(t('Passwörter stimmen nicht überein.'));
       return;
     }
 
     const passwordCheck = validatePasswordStrength(resetPassword);
     if (!passwordCheck.ok) {
-      setMessage(passwordCheck.message);
+      setMessage(t(passwordCheck.message));
       return;
     }
 
     const validation = validateSupabaseConfig();
     if (!validation.ok) {
-      setMessage(validation.message);
+      setMessage(t(validation.message));
       return;
     }
 
     if (!SUPABASE_URL_HINT || !SUPABASE_ANON_HINT) {
-      setMessage('Supabase nicht konfiguriert (.env).');
+      setMessage(t('Supabase nicht konfiguriert (.env).'));
       return;
     }
 
@@ -352,7 +358,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
           body: JSON.stringify({ password: resetPassword }),
         }),
         AUTH_TIMEOUT_MS,
-        'Supabase nicht erreichbar (Passwort-Reset).'
+        t('Supabase nicht erreichbar (Passwort-Reset).')
       );
       const payload = await response.json().catch(() => ({}));
 
@@ -361,7 +367,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
           payload?.msg ||
           payload?.error_description ||
           payload?.message ||
-          'Passwort konnte nicht aktualisiert werden.';
+          t('Passwort konnte nicht aktualisiert werden.');
         throw new Error(messageText);
       }
 
@@ -370,13 +376,13 @@ export default function AuthScreen({ route, navigation, onGuest }) {
       setRecoveryAccessToken(null);
       setResetPassword('');
       setResetPasswordConfirm('');
-      setMessage('Passwort aktualisiert. Bitte melde dich neu an.');
+      setMessage(t('Passwort aktualisiert. Bitte melde dich neu an.'));
     } catch (err) {
       const formatted = formatUserError(err, {
         supabaseUrl: SUPABASE_URL_HINT,
         fallback: 'Passwort-Reset fehlgeschlagen.',
       });
-      setMessage(formatted);
+      setMessage(t(formatted));
     } finally {
       setLoading(false);
     }
@@ -391,7 +397,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
         {!isRecovery ? (
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>E-Mail</Text>
+            <Text style={styles.label}>{t('E-Mail')}</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
@@ -404,7 +410,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
         <View style={[styles.inputGroup, styles.inputGroupLarge]}>
           <Text style={styles.label}>
-            {isRecovery ? 'Neues Passwort' : 'Passwort'}
+            {isRecovery ? t('Neues Passwort') : t('Passwort')}
           </Text>
           <TextInput
             value={isRecovery ? resetPassword : password}
@@ -413,13 +419,13 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             style={styles.input}
           />
           {isSignUp || isRecovery ? (
-            <Text style={styles.passwordHint}>{PASSWORD_HINT}</Text>
+            <Text style={styles.passwordHint}>{t(PASSWORD_HINT)}</Text>
           ) : null}
         </View>
 
         {isRecovery ? (
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Passwort bestätigen</Text>
+            <Text style={styles.label}>{t('Passwort bestätigen')}</Text>
             <TextInput
               value={resetPasswordConfirm}
               onChangeText={setResetPasswordConfirm}
@@ -439,7 +445,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             <View style={[styles.rememberBox, rememberMe ? styles.rememberBoxChecked : null]}>
               {rememberMe ? <FontAwesome5 name="check" size={12} color="#0F172A" /> : null}
             </View>
-            <Text style={styles.rememberLabel}>Angemeldet bleiben</Text>
+            <Text style={styles.rememberLabel}>{t('Angemeldet bleiben')}</Text>
           </Pressable>
         ) : null}
 
@@ -454,21 +460,25 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.primaryButtonText}>
-              {isRecovery ? 'Passwort speichern' : isSignUp ? 'Account erstellen' : 'Einloggen'}
+              {isRecovery
+                ? t('Passwort speichern')
+                : isSignUp
+                ? t('Account erstellen')
+                : t('Einloggen')}
             </Text>
           )}
         </Pressable>
 
         {isRecovery ? (
           <Pressable onPress={handleBackToLogin} disabled={loading}>
-            <Text style={styles.toggleText}>Zurück zum Login.</Text>
+            <Text style={styles.toggleText}>{t('Zurück zum Login.')}</Text>
           </Pressable>
         ) : (
           <Pressable onPress={toggleMode} disabled={loading}>
             <Text style={styles.toggleText}>
               {isSignUp
-                ? 'Schon einen Account? Hier einloggen.'
-                : 'Registrieren'}
+                ? t('Schon einen Account? Hier einloggen.')
+                : t('Registrieren')}
             </Text>
           </Pressable>
         )}
@@ -479,7 +489,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             disabled={loading}
             style={[styles.guestButton, loading ? styles.guestButtonDisabled : null]}
           >
-            <Text style={styles.guestButtonText}>Als Gast fortfahren</Text>
+            <Text style={styles.guestButtonText}>{t('Als Gast fortfahren')}</Text>
           </Pressable>
         ) : null}
 
@@ -490,7 +500,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
               disabled={loading}
               style={[styles.socialButton, styles.googleButton]}
               accessibilityRole="button"
-              accessibilityLabel="Mit Google anmelden"
+              accessibilityLabel={t('Mit Google anmelden')}
             >
               <FontAwesome5 name="google" size={22} color="#F8FAFC" brand />
             </Pressable>
@@ -500,7 +510,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
               disabled={loading}
               style={[styles.socialButton, styles.discordButton]}
               accessibilityRole="button"
-              accessibilityLabel="Mit Discord anmelden"
+              accessibilityLabel={t('Mit Discord anmelden')}
             >
               <FontAwesome5 name="discord" size={26} color="#F8FAFC" brand />
             </Pressable>

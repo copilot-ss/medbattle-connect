@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/QuizScreen.styles';
 
 export default function QuizHeader({
@@ -7,18 +8,25 @@ export default function QuizHeader({
   questionLimit,
   activeIndex = 0,
   onExit,
+  showMeta = true,
   showProgress = true,
 }) {
+  const { t } = useTranslation();
   const total = totalQuestions || questionLimit || 0;
   const current = Math.min(activeIndex + 1, total || activeIndex + 1);
   const isQuickPlay = difficultyLabel === 'Quick Play';
+  const resolvedDifficulty = difficultyLabel ? t(difficultyLabel) : '';
 
   return (
     <View style={styles.header}>
       <View>
-        <Text style={isQuickPlay ? styles.headerQuick : styles.headerMeta}>
-          {isQuickPlay ? 'Quick Play' : `${difficultyLabel} - ${total} Fragen`}
-        </Text>
+        {showMeta ? (
+          <Text style={isQuickPlay ? styles.headerQuick : styles.headerMeta}>
+            {isQuickPlay
+              ? t('Quick Play')
+              : `${resolvedDifficulty} - ${total} ${t('Fragen')}`}
+          </Text>
+        ) : null}
         {!isQuickPlay && showProgress ? (
           <View style={styles.headerProgressPill}>
             <Text style={styles.headerProgressText}>

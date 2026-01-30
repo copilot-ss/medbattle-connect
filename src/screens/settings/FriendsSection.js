@@ -165,7 +165,7 @@ export default function FriendsSection({
                   {friend.name || t('Freund')}
                 </Text>
                 {friend.title ? (
-                  <Text style={styles.friendTitleText}>{friend.title}</Text>
+                  <Text style={styles.friendTitleText}>{t(friend.title)}</Text>
                 ) : null}
                 <View style={styles.friendStatusRow}>
                   <View style={[styles.friendStatusDot, resolveDotStyle(friend)]} />
@@ -207,7 +207,6 @@ export default function FriendsSection({
       </View>
 
       <View style={styles.friendCodeCard}>
-        <Text style={styles.friendCodeLabel}>{t('Dein Battle-Code')}</Text>
         <Pressable
           onPress={onCopyFriendCode}
           style={styles.friendCodeValueWrapper}

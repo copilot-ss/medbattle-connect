@@ -123,15 +123,40 @@ export async function createMatch({
   try {
     await ensureLobbyCleanup({ force: true });
 
-    const { data, error } = await runSupabaseRequest(
-      () =>
-        supabase.rpc('create_match', {
-          p_difficulty: normalizedDifficulty,
-          p_question_limit: limit,
-          p_category: normalizedCategory,
-        }),
+    const payload = {
+      p_difficulty: normalizedDifficulty,
+      p_question_limit: limit,
+    };
+    if (normalizedCategory) {
+      payload.p_category = normalizedCategory;
+    }
+
+    let { data, error } = await runSupabaseRequest(
+      () => supabase.rpc('create_match', payload),
       { label: 'matchService.createMatch' }
     );
+
+    if (
+      error &&
+      (error.code === 'PGRST202' ||
+        String(error.message).includes('schema cache')) &&
+      payload.p_category
+    ) {
+      const fallback = await runSupabaseRequest(
+        () =>
+          supabase.rpc('create_match', {
+            p_difficulty: normalizedDifficulty,
+            p_question_limit: limit,
+          }),
+        { label: 'matchService.createMatch.legacy' }
+      );
+      if (!fallback.error) {
+        data = fallback.data;
+        error = null;
+      } else {
+        error = fallback.error;
+      }
+    }
 
     if (error) {
       console.error('Fehler beim Erstellen des Matches:', error.message);

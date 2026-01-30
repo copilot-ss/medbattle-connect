@@ -3,6 +3,7 @@ export const VIBRATION_STORAGE_KEY = 'medbattle_vibration_enabled';
 export const PUSH_STORAGE_KEY = 'medbattle_push_enabled';
 export const FRIEND_REQUESTS_STORAGE_KEY = 'medbattle_friend_requests_enabled';
 export const AVATAR_STORAGE_KEY = 'medbattle_avatar_id';
+export const AVATAR_URI_KEY = 'medbattle_avatar_uri';
 export const USER_STATS_STORAGE_KEY = 'medbattle_user_stats';
 export const ENERGY_VALUE_KEY = 'medbattle_energy_value';
 export const ENERGY_TIMESTAMP_KEY = 'medbattle_energy_timestamp';

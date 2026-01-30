@@ -1,5 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/MultiplayerLobbyScreen.styles';
 
 export default function LobbyHeader({
@@ -8,10 +9,12 @@ export default function LobbyHeader({
   onNavigateHome,
   onLeaveLobby,
 }) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.header}>
       <View>
-        <Text style={styles.title}>Multiplayer Arena</Text>
+        <Text style={styles.title}>{t('Multiplayer Arena')}</Text>
       </View>
       <View style={styles.headerActions}>
         <Pressable

@@ -1,5 +1,6 @@
 import { Asset } from 'expo-asset';
 import * as Font from 'expo-font';
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import avatars from '../screens/settings/avatars';
 
 const HOME_ANIMATION = require('../../assets/animations/doctor/doctor.json');
@@ -19,14 +20,18 @@ const APP_ASSETS = [
   ...AVATAR_SOURCES,
 ];
 
+const PRELOAD_ASSETS = APP_ASSETS.filter((asset) => typeof asset === 'number');
+
 export async function preloadAppAssets() {
   try {
     await Promise.all([
-      Asset.loadAsync(APP_ASSETS),
+      Asset.loadAsync(PRELOAD_ASSETS),
       Font.loadAsync({
         'Kanit-Regular': require('../../assets/fonts/Kanit-Regular.ttf'),
         'Kanit-SemiBold': require('../../assets/fonts/Kanit-SemiBold.ttf'),
         'Kanit-Bold': require('../../assets/fonts/Kanit-Bold.ttf'),
+        ...Ionicons.font,
+        ...FontAwesome5.font,
       }),
     ]);
   } catch (err) {

@@ -10,11 +10,16 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     backgroundColor: colors.surface,
-    borderTopColor: colors.border,
-    borderTopWidth: 1,
-    height: 72,
-    paddingTop: 6,
-    paddingBottom: 12,
+    borderTopColor: colors.accent,
+    borderTopWidth: 2,
+    height: 64,
+    paddingTop: 4,
+    paddingBottom: 8,
+    shadowColor: colors.accent,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 10,
   },
   tabBarLabel: {
     fontFamily: fonts.medium,
@@ -22,7 +27,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   tabBarItem: {
-    paddingVertical: 2,
+    paddingVertical: 0,
   },
 });
 

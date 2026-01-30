@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useTranslation } from '../../i18n/useTranslation';
 
 import styles from '../styles/MultiplayerLobbyScreen.styles';
 
@@ -9,6 +10,7 @@ export default function DifficultyChips({
   selectedKey,
   onSelect,
 } = {}) {
+  const { t } = useTranslation();
   const entries = labels ? Object.keys(labels) : [];
 
   if (!entries.length) {
@@ -45,7 +47,7 @@ export default function DifficultyChips({
                   : { color: '#E2E8F0' },
               ]}
             >
-              {labels[key]}
+              {t(labels[key])}
             </Text>
           </Pressable>
         );

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import HomeScreen from '../screens/HomeScreen';
+import FriendsScreen from '../screens/FriendsScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import styles from '../styles/AppNavigator.styles';
@@ -17,6 +18,7 @@ export default function MainTabs({ onClearSession }) {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
+        tabBarShowLabel: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: styles.tabBar,
@@ -35,6 +37,17 @@ export default function MainTabs({ onClearSession }) {
           ),
         }}
       />
+      <Tab.Screen
+        name="Friends"
+        options={{
+          tabBarLabel: t('Freunde'),
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people" size={size} color={color} />
+          ),
+        }}
+      >
+        {(props) => <FriendsScreen {...props} showClose={false} />}
+      </Tab.Screen>
       <Tab.Screen
         name="Profile"
         options={{

@@ -3,4 +3,10 @@
   "mcp.rules": [
     "Always use context7 when code generation, setup/config, or API documentation is needed."
   ]
+  ,
+  "mcp.inputValues": {
+    "CONTEXT7_API_KEY": "PASTE_YOUR_CONTEXT7_API_KEY_HERE",
+    "SUPABASE_URL": "https://uxlwbzgohgxbnhcjiimh.supabase.co",
+    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4bHdiemdvaGd4Ym5oY2ppaW1oIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTU5NTM1MCwiZXhwIjoyMDc3MTcxMzUwfQ.gWqxAHJrVvfT49JTbzlg62VTZ_CNcClDnRxRqbqubj0"
+  }
 }

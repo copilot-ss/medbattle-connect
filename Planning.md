@@ -37,3 +37,4 @@ Kostenlose kompetitive Medizin-Quiz-App mit Supabase-Backend, Werbung und Premiu
 - Expo SDK 54 / React Native 0.77
 - Supabase Free Tier
 - GitHub Versionierung
+- Dev Client ist der Standard zum Starten/Debuggen

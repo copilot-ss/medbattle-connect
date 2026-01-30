@@ -1,4 +1,5 @@
 import { Text, View } from 'react-native';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/QuizScreen.styles';
 
 export default function QuestionCard({
@@ -7,6 +8,7 @@ export default function QuestionCard({
   question,
   showProgress = true,
 }) {
+  const { t } = useTranslation();
   const current = Math.min(activeIndex + 1, totalQuestions || activeIndex + 1);
   const total = Math.max(totalQuestions, current);
 
@@ -14,7 +16,7 @@ export default function QuestionCard({
     <View style={styles.questionCard}>
       {showProgress ? (
         <Text style={styles.questionMeta}>
-          Frage {current}/{total}
+          {t('Frage {current}/{total}', { current, total })}
         </Text>
       ) : null}
       <Text style={styles.questionText}>{question}</Text>

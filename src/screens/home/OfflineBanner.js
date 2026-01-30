@@ -1,7 +1,10 @@
 import { Pressable, Text, View } from 'react-native';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/HomeScreen.styles';
 
 export default function OfflineBanner({ isVisible, isChecking, onGoOnline }) {
+  const { t } = useTranslation();
+
   if (!isVisible) {
     return null;
   }
@@ -10,10 +13,12 @@ export default function OfflineBanner({ isVisible, isChecking, onGoOnline }) {
     <View style={styles.offlineBanner}>
       <View style={styles.offlineHeader}>
         <View style={styles.offlineDot} />
-        <Text style={styles.offlineTitle}>Offline Modus</Text>
+        <Text style={styles.offlineTitle}>{t('Offline Modus')}</Text>
       </View>
       <Text style={styles.offlineText}>
-        Quick Play bleibt verf\u00fcgbar. Multiplayer, Freunde, Rangliste und Einstellungen sind offline gesperrt.
+        {t(
+          'Quick Play bleibt verfügbar. Multiplayer, Freunde, Rangliste und Einstellungen sind offline gesperrt.'
+        )}
       </Text>
       <Pressable
         onPress={onGoOnline}
@@ -21,7 +26,7 @@ export default function OfflineBanner({ isVisible, isChecking, onGoOnline }) {
         disabled={isChecking}
       >
         <Text style={styles.offlineButtonText}>
-          {isChecking ? 'Verbindung pr\u00fcfen...' : 'Online gehen'}
+          {isChecking ? `${t('Verbindung prüfen')}...` : t('Online gehen')}
         </Text>
       </Pressable>
     </View>

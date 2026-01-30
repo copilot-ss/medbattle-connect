@@ -2,11 +2,14 @@ import { memo, useMemo } from 'react';
 import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../styles/theme';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/HomeScreen.styles';
 
 const STREAK_MILESTONES = [7, 30];
 
 function StreakCard({ streakValue = 0 }) {
+  const { t } = useTranslation();
+
   const streakSummary = useMemo(() => {
     const safeValue = Number.isFinite(streakValue) ? Math.max(0, streakValue) : 0;
     const nextTarget =
@@ -17,14 +20,17 @@ function StreakCard({ streakValue = 0 }) {
     return {
       safeValue,
       progressPercent,
-      title: safeValue > 0 ? `Streak ${safeValue}` : 'Start your streak',
+      title: safeValue > 0 ? t('Streak {count}', { count: safeValue }) : t('Streak starten'),
       subtitle:
-        safeValue > 0 ? 'Keep it going.' : 'Win quizzes to build it.',
+        safeValue > 0 ? t('Weiter so!') : t('Gewinne Quizze, um sie aufzubauen.'),
       progressLabel: nextTarget
-        ? `${safeValue}/${nextTarget} to next badge`
-        : 'Legend status unlocked',
+        ? t('{current}/{target} bis zum nächsten Badge', {
+            current: safeValue,
+            target: nextTarget,
+          })
+        : t('Legend-Status freigeschaltet'),
     };
-  }, [streakValue]);
+  }, [streakValue, t]);
 
   return (
     <View style={styles.streakCard}>

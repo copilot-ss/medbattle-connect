@@ -6,12 +6,13 @@ import {
   SUPABASE_ANON_HINT,
   SUPABASE_URL_HINT,
 } from './authConfig';
+import { t } from '../../i18n';
 
 export function validateSupabaseConfig() {
   if (!SUPABASE_URL_HINT || !SUPABASE_ANON_HINT) {
     return {
       ok: false,
-      message: 'Supabase nicht konfiguriert (.env). Bitte URL + Anon Key setzen.',
+      message: t('Supabase nicht konfiguriert (.env). Bitte URL + Anon Key setzen.'),
     };
   }
 
@@ -25,7 +26,9 @@ export function validateSupabaseConfig() {
     return {
       ok: false,
       message:
-        'Supabase-URL zeigt auf localhost. Auf echtem Gerät nicht erreichbar. Bitte die gehostete Supabase-URL nutzen.',
+        t(
+          'Supabase-URL zeigt auf localhost. Auf echtem Gerät nicht erreichbar. Bitte die gehostete Supabase-URL nutzen.'
+        ),
     };
   }
 
@@ -33,7 +36,9 @@ export function validateSupabaseConfig() {
     return {
       ok: false,
       message:
-        'Supabase-URL nutzt HTTP. Android blockiert ggf. Cleartext. Bitte https:// Projekt-URL aus Supabase verwenden.',
+        t(
+          'Supabase-URL nutzt HTTP. Android blockiert ggf. Cleartext. Bitte https:// Projekt-URL aus Supabase verwenden.'
+        ),
     };
   }
 
@@ -43,7 +48,7 @@ export function validateSupabaseConfig() {
 export function withTimeout(
   promise,
   ms = AUTH_TIMEOUT_MS,
-  message = 'Netzwerk-Timeout beim Auth-Request.'
+  message = t('Netzwerk-Timeout beim Auth-Request.')
 ) {
   let timer;
   const timeout = new Promise((_, reject) => {
@@ -64,19 +69,21 @@ export function validatePasswordStrength(value) {
   const issues = [];
 
   if (!value || value.length < PASSWORD_POLICY.minLength) {
-    issues.push(`mindestens ${PASSWORD_POLICY.minLength} Zeichen`);
+    issues.push(
+      t('mindestens {count} Zeichen', { count: PASSWORD_POLICY.minLength })
+    );
   }
   if (PASSWORD_POLICY.requireLower && !/[a-z]/.test(value)) {
-    issues.push('1 Kleinbuchstabe');
+    issues.push(t('1 Kleinbuchstabe'));
   }
   if (PASSWORD_POLICY.requireUpper && !/[A-Z]/.test(value)) {
-    issues.push('1 Großbuchstabe');
+    issues.push(t('1 Großbuchstabe'));
   }
   if (PASSWORD_POLICY.requireNumber && !/\d/.test(value)) {
-    issues.push('1 Zahl');
+    issues.push(t('1 Zahl'));
   }
   if (PASSWORD_POLICY.requireSymbol && !/[^A-Za-z0-9]/.test(value)) {
-    issues.push('1 Sonderzeichen');
+    issues.push(t('1 Sonderzeichen'));
   }
 
   if (!issues.length) {
@@ -85,7 +92,9 @@ export function validatePasswordStrength(value) {
 
   return {
     ok: false,
-    message: `Passwort zu schwach. Bitte nutze ${issues.join(', ')}.`,
+    message: t('Passwort zu schwach. Bitte nutze {issues}.', {
+      issues: issues.join(', '),
+    }),
   };
 }
 

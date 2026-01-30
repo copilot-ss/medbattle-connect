@@ -1,3 +1,5 @@
+import { t } from '../i18n';
+
 type FormatUserErrorOptions = {
   fallback?: string;
   supabaseUrl?: string | null;
@@ -33,7 +35,7 @@ function extractHost(value?: string | null) {
 }
 
 export function formatUserError(error: unknown, options: FormatUserErrorOptions = {}) {
-  const fallback = options.fallback ?? 'Unbekannter Fehler.';
+  const fallback = t(options.fallback ?? 'Unbekannter Fehler.');
   const rawMessage =
     typeof error === 'string'
       ? error
@@ -46,7 +48,7 @@ export function formatUserError(error: unknown, options: FormatUserErrorOptions 
   }
 
   if (NETWORK_ERROR_PATTERNS.some((pattern) => pattern.test(rawMessage))) {
-    return 'Server nicht erreichbar. Bitte Verbindung prüfen.';
+    return t('Server nicht erreichbar. Bitte Verbindung prüfen.');
   }
 
   let cleaned = String(rawMessage);
@@ -63,5 +65,5 @@ export function formatUserError(error: unknown, options: FormatUserErrorOptions 
 
   cleaned = scrubUrls(cleaned);
 
-  return cleaned;
+  return t(cleaned);
 }

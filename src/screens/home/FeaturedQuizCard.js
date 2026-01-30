@@ -2,7 +2,6 @@ import { memo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import LottieView from 'lottie-react-native';
 import styles from '../styles/HomeScreen.styles';
-import EnergyBadge from './EnergyBadge';
 
 function FeaturedQuizCard({
   title,
@@ -10,12 +9,6 @@ function FeaturedQuizCard({
   buttonLabel,
   onPress,
   disabled,
-  energy,
-  energyMax,
-  nextEnergyAt,
-  isPremium,
-  isLocked,
-  onRefreshEnergy,
   showAnimation,
   animationSource,
 }) {
@@ -32,17 +25,12 @@ function FeaturedQuizCard({
       <View style={styles.featuredCardTop}>
         <View style={styles.featuredCardCopy}>
           <Text style={styles.featuredCardTitle}>{title}</Text>
-          <Text style={styles.featuredCardSubtitle}>{subtitle}</Text>
-        </View>
-        <View style={styles.featuredCardBadge}>
-          <EnergyBadge
-            energy={energy}
-            energyMax={energyMax}
-            nextEnergyAt={nextEnergyAt}
-            isPremium={isPremium}
-            isLocked={isLocked}
-            onRefreshEnergy={onRefreshEnergy}
-          />
+          {subtitle ? (
+            <View style={styles.featuredCardRewardRow}>
+              <Text style={styles.featuredCardRewardText}>{subtitle}</Text>
+              <Text style={styles.featuredCardRewardIcon}>{'\u{1FA99}'}</Text>
+            </View>
+          ) : null}
         </View>
       </View>
       <View style={styles.featuredCardBottom}>

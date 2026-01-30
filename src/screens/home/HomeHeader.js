@@ -1,16 +1,22 @@
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/HomeScreen.styles';
 
 export default function HomeHeader({
-  isOffline,
-  onOpenFriends,
   coins = 0,
+  energy = 0,
+  energyMax = null,
   userName,
   isGuest,
 }) {
   const { t } = useTranslation();
   const resolvedName = typeof userName === 'string' ? userName.trim() : '';
+  const resolvedEnergy = Number.isFinite(energy) ? energy : 0;
+  const resolvedEnergyMax =
+    Number.isFinite(energyMax) && energyMax > 0 ? energyMax : null;
+  const energyLabel = resolvedEnergyMax
+    ? `${resolvedEnergy}/${resolvedEnergyMax}`
+    : `${resolvedEnergy}`;
   const displayName = isGuest ? t('Gast') : resolvedName;
   const welcomeLine = displayName
     ? t('Willkommen zurück, {name}', { name: displayName })
@@ -32,13 +38,10 @@ export default function HomeHeader({
           <Text style={styles.coinEmoji}>{'\u{1FA99}'}</Text>
           <Text style={styles.coinBadgeText}>{coins}</Text>
         </View>
-        <Pressable
-          onPress={onOpenFriends}
-          style={[styles.friendsButton, isOffline ? styles.quickActionDisabled : null]}
-          disabled={isOffline}
-        >
-          <Text style={styles.friendsEmoji}>{'\u{1F9C2}'}</Text>
-        </Pressable>
+        <View style={styles.energyTopBadge}>
+          <Text style={styles.energyTopEmoji}>{'\u26A1'}</Text>
+          <Text style={styles.energyTopBadgeText}>{energyLabel}</Text>
+        </View>
       </View>
     </View>
   );

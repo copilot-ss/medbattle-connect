@@ -41,9 +41,11 @@ export default function SettingsScreen({
     avatarInitials,
     currentAvatar,
     avatarId,
+    avatarUri,
     showAvatarPicker,
     handleToggleAvatarPicker,
     handleSelectAvatar,
+    handlePickAvatarPhoto,
     quizzesCompleted,
     accuracyPercent,
     xp,
@@ -53,6 +55,7 @@ export default function SettingsScreen({
     leaderboardRank,
     loadingRank,
     isGuest,
+    authResolved,
     newEmail,
     setNewEmail,
     emailCtaLabel,
@@ -133,10 +136,12 @@ export default function SettingsScreen({
             avatarInitials={avatarInitials}
             currentAvatar={currentAvatar}
             avatarId={avatarId}
+            avatarUri={avatarUri}
             avatars={AVATARS}
             showAvatarPicker={showAvatarPicker}
             onToggleAvatarPicker={handleToggleAvatarPicker}
             onSelectAvatar={handleSelectAvatar}
+            onPickAvatarPhoto={handlePickAvatarPhoto}
             quizzesCompleted={quizzesCompleted}
             accuracyPercent={accuracyPercent}
             xp={xp}
@@ -180,6 +185,7 @@ export default function SettingsScreen({
           onSignOut={handleSignOut}
           showResetActions={showResetActions}
           isGuest={isGuest}
+          authResolved={authResolved}
         />
       ) : null}
     </View>

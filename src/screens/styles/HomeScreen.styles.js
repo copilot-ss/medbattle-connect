@@ -1,22 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { colors, fonts, radii } from '../../styles/theme';
 
-const quickActionButtonBase = {
-  width: 44,
-  height: 44,
-  borderRadius: radii.md,
-  backgroundColor: colors.surfaceAlt,
-  borderWidth: 1,
-  borderColor: colors.borderStrong,
-  alignItems: 'center',
-  justifyContent: 'center',
-  shadowColor: colors.accent,
-  shadowOpacity: 0.35,
-  shadowRadius: 14,
-  shadowOffset: { width: 0, height: 10 },
-  elevation: 8,
-};
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -79,11 +63,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
     height: 44,
-    borderRadius: radii.md,
+    borderRadius: radii.pill,
     backgroundColor: 'rgba(255, 214, 117, 0.16)',
     borderWidth: 1,
     borderColor: 'rgba(255, 214, 117, 0.45)',
-    marginRight: 10,
   },
   coinBadgeText: {
     color: colors.highlight,
@@ -94,16 +77,25 @@ const styles = StyleSheet.create({
   coinEmoji: {
     fontSize: 16,
   },
-  friendsButton: {
-    ...quickActionButtonBase,
-    borderColor: 'rgba(255, 127, 168, 0.55)',
-    shadowColor: colors.accentPink,
+  energyTopBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    height: 44,
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(165, 107, 255, 0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(165, 107, 255, 0.55)',
+    marginLeft: 10,
   },
-  friendsEmoji: {
-    fontSize: 18,
+  energyTopBadgeText: {
+    color: '#C9A8FF',
+    fontFamily: fonts.bold,
+    fontSize: 13,
+    marginLeft: 6,
   },
-  quickActionDisabled: {
-    opacity: 0.45,
+  energyTopEmoji: {
+    fontSize: 16,
   },
   scrollContent: {
     paddingBottom: 8,
@@ -297,6 +289,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: fonts.regular,
     marginTop: 4,
+  },
+  featuredCardSubtitleInline: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontFamily: fonts.regular,
+  },
+  featuredCardRewardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  featuredCardRewardText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontFamily: fonts.medium,
+  },
+  featuredCardRewardIcon: {
+    fontSize: 14,
+    marginLeft: 6,
   },
   featuredCardBadge: {
     alignSelf: 'flex-start',

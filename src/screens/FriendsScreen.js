@@ -3,8 +3,10 @@ import FriendsSection from './settings/FriendsSection';
 import SettingsHeader from './settings/SettingsHeader';
 import useSettingsController from './settings/useSettingsController';
 import styles from './styles/SettingsScreen.styles';
+import { useTranslation } from '../i18n/useTranslation';
 
-export default function FriendsScreen({ navigation, route }) {
+export default function FriendsScreen({ navigation, route, showClose = true }) {
+  const { t } = useTranslation();
   const {
     scrollRef,
     friendRequestsEnabled,
@@ -30,7 +32,11 @@ export default function FriendsScreen({ navigation, route }) {
     <View style={styles.container}>
       <View style={styles.backgroundGlowTop} pointerEvents="none" />
       <View style={styles.backgroundGlowBottom} pointerEvents="none" />
-      <SettingsHeader title="Freunde" onClose={() => navigation.goBack()} />
+      <SettingsHeader
+        title={t('Freunde')}
+        onClose={() => navigation.goBack()}
+        showClose={showClose}
+      />
 
       <ScrollView
         ref={scrollRef}

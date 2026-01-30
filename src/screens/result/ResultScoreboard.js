@@ -1,10 +1,13 @@
 import { Image, Text, View } from 'react-native';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/ResultScreen.styles';
 
 export default function ResultScoreboard({ entries, matchStatusLabel, matchJoinCode }) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.multiplayerCard}>
-      <Text style={styles.multiplayerTitle}>Ranking</Text>
+      <Text style={styles.multiplayerTitle}>{t('Ranking')}</Text>
       <View style={styles.scoreboardList}>
         {entries.map((entry) => (
           <View
@@ -30,21 +33,21 @@ export default function ResultScoreboard({ entries, matchStatusLabel, matchJoinC
                 {entry.name}
               </Text>
               {entry.isSelf ? (
-                <Text style={styles.scoreboardTag}>Du</Text>
+                <Text style={styles.scoreboardTag}>{t('Du')}</Text>
               ) : null}
             </View>
             <View style={styles.scoreboardScoreBox}>
               <Text style={styles.scoreboardScore}>
                 {Number.isFinite(entry.score) ? entry.score : '-'}
               </Text>
-              <Text style={styles.scoreboardScoreLabel}>Richtig</Text>
+              <Text style={styles.scoreboardScoreLabel}>{t('Richtig')}</Text>
             </View>
           </View>
         ))}
       </View>
       <Text style={styles.multiplayerMeta}>
         {matchStatusLabel}
-        {matchJoinCode ? ` - Code ${matchJoinCode}` : ''}
+        {matchJoinCode ? ` - ${t('Code')} ${matchJoinCode}` : ''}
       </Text>
     </View>
   );

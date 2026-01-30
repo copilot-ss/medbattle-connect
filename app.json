@@ -19,7 +19,7 @@
       "checkAutomatically": "ON_LOAD",
       "fallbackToCacheTimeout": 0
     },
-    "runtimeVersion": "54.0.0",
+    "runtimeVersion": "55.0.0",
     "plugins": [
       "expo-font",
       "sentry-expo"

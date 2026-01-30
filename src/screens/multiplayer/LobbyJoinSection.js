@@ -1,4 +1,5 @@
 import { ActivityIndicator, Animated, FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/MultiplayerLobbyScreen.styles';
 import LobbyEmptyState from './LobbyEmptyState';
 
@@ -19,6 +20,8 @@ export default function LobbyJoinSection({
   onRefreshMatches,
   renderMatch,
 }) {
+  const { t } = useTranslation();
+
   if (isCreateOnly) {
     return null;
   }
@@ -26,7 +29,7 @@ export default function LobbyJoinSection({
   return (
     <>
       <View style={styles.joinSection}>
-        <Text style={styles.joinLabel}>Match-Code eingeben</Text>
+        <Text style={styles.joinLabel}>{t('Match-Code eingeben')}</Text>
         <View style={styles.joinRow}>
           <TextInput
             value={joinCode}
@@ -53,23 +56,23 @@ export default function LobbyJoinSection({
             disabled={joining || !joinCode.trim()}
           >
             <Text style={styles.joinButtonText}>
-              {joining ? 'Beitreten...' : 'Go'}
+              {joining ? t('Beitreten...') : t('Go')}
             </Text>
           </AnimatedPressable>
         </View>
       </View>
 
       <View style={styles.listHeader}>
-        <Text style={styles.listTitle}>Offene Lobbys</Text>
+        <Text style={styles.listTitle}>{t('Offene Lobbys')}</Text>
         <Pressable onPress={onRefreshMatches}>
-          <Text style={styles.listRefresh}>Aktualisieren</Text>
+          <Text style={styles.listRefresh}>{t('Aktualisieren')}</Text>
         </Pressable>
       </View>
 
       {matchesLoading ? (
         <View style={styles.loadingList}>
           <ActivityIndicator size="small" color="#60A5FA" />
-          <Text style={styles.loadingListText}>Lade Lobbys ...</Text>
+          <Text style={styles.loadingListText}>{t('Lade Lobbys ...')}</Text>
         </View>
       ) : (
         <FlatList

@@ -4,11 +4,13 @@ import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-nativ
 import { supabase } from '../lib/supabaseClient';
 import { fetchUserProfile, sanitizeUsername, updateUsername } from '../services/userService';
 import { formatUserError } from '../utils/formatUserError';
+import { useTranslation } from '../i18n/useTranslation';
 import styles from './styles/UsernameSetupScreen.styles';
 
 const SUPABASE_URL_HINT = process.env.EXPO_PUBLIC_SUPABASE_URL;
 
 export default function UsernameSetupScreen({ navigation }) {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -70,14 +72,14 @@ export default function UsernameSetupScreen({ navigation }) {
 
   async function handleSave() {
     if (!userId) {
-      setMessage('Bitte erneut anmelden.');
+      setMessage(t('Bitte erneut anmelden.'));
       return;
     }
 
     const candidate = sanitizeUsername(username, '').trim();
 
     if (!candidate || candidate.length < 3) {
-      setMessage('Bitte mind. 3 Zeichen, nur Buchstaben/Zahlen/_ und Umlaute.');
+      setMessage(t('Bitte mind. 3 Zeichen, nur Buchstaben/Zahlen/_ und Umlaute.'));
       return;
     }
 
@@ -88,10 +90,10 @@ export default function UsernameSetupScreen({ navigation }) {
 
     if (!result.ok) {
       setMessage(
-        formatUserError(result.error, {
+        t(formatUserError(result.error, {
           supabaseUrl: SUPABASE_URL_HINT,
           fallback: 'Name konnte nicht gespeichert werden.',
-        })
+        }))
       );
     } else {
       navigation.reset({
@@ -113,9 +115,9 @@ export default function UsernameSetupScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>W\u00e4hle deinen Namen</Text>
+      <Text style={styles.title}>{t('Wähle deinen Namen')}</Text>
       <Text style={styles.subtitle}>
-        Dieser Name wird in Lobbys, Ranglisten und deinem Profil angezeigt.
+        {t('Dieser Name wird in Lobbys, Ranglisten und deinem Profil angezeigt.')}
       </Text>
 
       <TextInput
@@ -123,7 +125,7 @@ export default function UsernameSetupScreen({ navigation }) {
         onChangeText={setUsername}
         autoCapitalize="none"
         autoCorrect={false}
-        placeholder="dein_name"
+        placeholder={t('dein_name')}
         placeholderTextColor="#94A3B8"
         style={styles.input}
       />
@@ -135,7 +137,11 @@ export default function UsernameSetupScreen({ navigation }) {
         disabled={saving}
         style={[styles.button, saving ? styles.buttonDisabled : null]}
       >
-        {saving ? <ActivityIndicator color="#0F172A" /> : <Text style={styles.buttonText}>Weiter</Text>}
+        {saving ? (
+          <ActivityIndicator color="#0F172A" />
+        ) : (
+          <Text style={styles.buttonText}>{t('Weiter')}</Text>
+        )}
       </Pressable>
     </View>
   );

@@ -1,6 +1,7 @@
 import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '../../lib/supabaseClient';
 import { formatUserError } from '../../utils/formatUserError';
+import { t } from '../../i18n';
 import {
   AUTH_TIMEOUT_MS,
   OAUTH_REDIRECT,
@@ -29,7 +30,7 @@ async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
     }
 
     if (mode === 'link' && typeof supabase.auth.linkIdentity !== 'function') {
-      throw new Error('OAuth-Verknüpfung nicht verfügbar.');
+      throw new Error(t('OAuth-Verknüpfung nicht verfügbar.'));
     }
 
     const { data, error } = await withTimeout(
@@ -44,11 +45,11 @@ async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
           }),
       AUTH_TIMEOUT_MS,
       mode === 'link'
-        ? 'Supabase nicht erreichbar (OAuth-Verknüpfung). Bitte Verbindung oder Supabase-URL prüfen.'
-        : 'Supabase nicht erreichbar (OAuth). Bitte Verbindung oder Supabase-URL prüfen.'
+        ? t('Supabase nicht erreichbar (OAuth-Verknüpfung). Bitte Verbindung oder Supabase-URL prüfen.')
+        : t('Supabase nicht erreichbar (OAuth). Bitte Verbindung oder Supabase-URL prüfen.')
     );
     if (error) throw error;
-    if (!data?.url) throw new Error('Kein OAuth-URL erhalten.');
+    if (!data?.url) throw new Error(t('Kein OAuth-URL erhalten.'));
 
     let authUrl = data.url;
     try {
@@ -68,8 +69,8 @@ async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
         debugHost = null;
       }
 
-      const detail = debugHost ? ` (Weiterleitung auf ${debugHost})` : '';
-      throw new Error(`OAuth nicht abgeschlossen${detail}.`);
+      const detail = debugHost ? ` ${t('(Weiterleitung auf {host})', { host: debugHost })}` : '';
+      throw new Error(`${t('OAuth nicht abgeschlossen')}${detail}.`);
     }
 
     const params = parseSupabaseParams(result.url);
@@ -88,7 +89,7 @@ async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
           authCode: code,
         }),
         AUTH_TIMEOUT_MS,
-        'Supabase nicht erreichbar (Code-Austausch).'
+        t('Supabase nicht erreichbar (Code-Austausch).')
       );
       if (exchangeError) throw exchangeError;
       return { ok: true };
@@ -101,17 +102,17 @@ async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
           refresh_token: refreshToken,
         }),
         AUTH_TIMEOUT_MS,
-        'Supabase nicht erreichbar (Token setzen).'
+        t('Supabase nicht erreichbar (Token setzen).')
       );
       if (sessionError) throw sessionError;
       return { ok: true };
     }
 
-    throw new Error('Nach OAuth wurde kein Code oder Token geliefert.');
+    throw new Error(t('Nach OAuth wurde kein Code oder Token geliefert.'));
   } catch (err) {
     const hint =
       SUPABASE_URL_HINT && SUPABASE_URL_HINT.includes('127.0.0.1')
-        ? ' (Hinweis: Supabase-URL zeigt auf localhost und ist vom Gerät nicht erreichbar)'
+        ? ` ${t('(Hinweis: Supabase-URL zeigt auf localhost und ist vom Gerät nicht erreichbar)')}`
         : '';
     const formatted = formatUserError(err, {
       supabaseUrl: SUPABASE_URL_HINT,
@@ -120,7 +121,7 @@ async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
           ? 'OAuth-Verknüpfung fehlgeschlagen.'
           : 'OAuth fehlgeschlagen.',
     });
-    setMessage(formatted + hint);
+    setMessage(t(formatted) + hint);
     return { ok: false, error: err };
   } finally {
     setLoading(false);

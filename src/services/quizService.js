@@ -682,6 +682,7 @@ export async function fetchLeaderboard(limit = 20, { force = false } = {}) {
       username: item.username ?? null,
       xp: Number.isFinite(item.xp) ? item.xp : null,
       points: Number.isFinite(item.points) ? item.points : 0,
+      avatarUrl: item.avatar_url ?? item.avatarUrl ?? null,
       difficulty: item.difficulty ?? 'unbekannt',
       createdAt: item.created_at ?? null,
     }));

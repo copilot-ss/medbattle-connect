@@ -12,6 +12,7 @@ export default function useSettingsUser() {
   const [authProviders, setAuthProviders] = useState([]);
   const [localGuestId, setLocalGuestId] = useState(null);
   const [guestMode, setGuestMode] = useState(false);
+  const [authResolved, setAuthResolved] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -69,6 +70,7 @@ export default function useSettingsUser() {
       setLocalGuestId(guestId);
       setUserId(id || guestId);
       setGuestMode(Boolean(storedGuestMode));
+      setAuthResolved(true);
     }
 
     resolveUser();
@@ -93,6 +95,7 @@ export default function useSettingsUser() {
     authProvider,
     authProviders,
     isGuest,
+    authResolved,
     friendCode,
     localGuestId,
   };

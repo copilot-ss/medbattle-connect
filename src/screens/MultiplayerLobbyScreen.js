@@ -37,16 +37,21 @@ import useLobbyOpenMatches from './multiplayer/hooks/useLobbyOpenMatches';
 import useLobbyPresence from './multiplayer/hooks/useLobbyPresence';
 import useLobbyUser from './multiplayer/hooks/useLobbyUser';
 import { clearActiveLobby } from '../utils/activeLobbyStorage';
+import { useTranslation } from '../i18n/useTranslation';
 
 export default function MultiplayerLobbyScreen({ navigation, route }) {
-  const { avatarId, userStats } = usePreferences();
+  const { t } = useTranslation();
+  const { avatarId, avatarUri, userStats } = usePreferences();
   const activeAvatarSource = useMemo(() => {
+    if (avatarUri) {
+      return { uri: avatarUri };
+    }
     const entry = AVATARS.find((item) => item.id === avatarId);
     return entry?.source ?? null;
-  }, [avatarId]);
+  }, [avatarId, avatarUri]);
   const userTitle = useMemo(
-    () => getTitleProgress(userStats?.xp).current?.label ?? 'Med Rookie',
-    [userStats?.xp]
+    () => t(getTitleProgress(userStats?.xp).current?.label ?? 'Med Rookie'),
+    [userStats?.xp, t]
   );
   const existingMatch = route?.params?.existingMatch ?? null;
 
@@ -245,7 +250,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         });
 
         if (!result.ok) {
-          throw result.error ?? new Error('Einstellungen konnten nicht gespeichert werden.');
+          throw result.error ?? new Error(t('Einstellungen konnten nicht gespeichert werden.'));
         }
 
         if (requestVersion === hostSettingsVersionRef.current) {
@@ -306,7 +311,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       });
 
       if (!result.ok) {
-        throw result.error ?? new Error('Match konnte nicht erstellt werden.');
+        throw result.error ?? new Error(t('Match konnte nicht erstellt werden.'));
       }
 
       setCurrentMatch(result.match);
@@ -342,7 +347,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     const normalized = joinCode.trim().toUpperCase();
 
     if (!normalized) {
-      setMatchesError(new Error('Bitte gib einen Match-Code ein.'));
+      setMatchesError(new Error(t('Bitte gib einen Match-Code ein.')));
       return;
     }
 
@@ -356,7 +361,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       });
 
       if (!result.ok) {
-        throw result.error ?? new Error('Match konnte nicht beigetreten werden.');
+        throw result.error ?? new Error(t('Match konnte nicht beigetreten werden.'));
       }
 
       setCurrentMatch(result.match);
@@ -396,7 +401,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         });
 
         if (!result.ok) {
-          throw result.error ?? new Error('Match konnte nicht beigetreten werden.');
+          throw result.error ?? new Error(t('Match konnte nicht beigetreten werden.'));
         }
 
         setCurrentMatch(result.match);
@@ -484,21 +489,21 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
           <Text style={styles.matchCode}>{item.code}</Text>
           <Text style={styles.matchMeta}>
             <Text style={{ color: DIFFICULTY_ACCENTS[item.difficulty] ?? '#94A3B8' }}>
-              {DIFFICULTY_LABELS[item.difficulty] ?? difficultyLabel}
+              {t(DIFFICULTY_LABELS[item.difficulty] ?? difficultyLabel)}
             </Text>
             {' - '}
-            {item.questionLimit} Fragen
+            {item.questionLimit} {t('Fragen')}
           </Text>
           {item.hostUsername ? (
-            <Text style={styles.matchHost}>Host: {item.hostUsername}</Text>
+            <Text style={styles.matchHost}>{t('Host')}: {item.hostUsername}</Text>
           ) : null}
         </View>
         <View style={styles.matchAction}>
-          <Text style={styles.matchActionText}>Beitreten</Text>
+          <Text style={styles.matchActionText}>{t('Beitreten')}</Text>
         </View>
       </Pressable>
     ),
-    [difficultyLabel, handleJoinQuick]
+    [difficultyLabel, handleJoinQuick, t]
   );
 
   const currentJoinCode = currentMatch?.code ?? null;
@@ -518,8 +523,8 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     const items = [
       {
         key: 'host',
-        role: 'Host',
-        name: hostState.username ?? 'Host',
+        role: t('Host'),
+        name: hostState.username ?? t('Host'),
         avatarUrl: hostState.avatar_url ?? hostState.avatarUrl ?? null,
         avatarSource: hostState.avatar_source
           ?? hostState.avatarSource
@@ -532,8 +537,8 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     if (guestState?.username || currentMatch.guest_id) {
       items.push({
         key: 'guest',
-        role: 'Gast',
-        name: guestState.username ?? 'Gast',
+        role: t('Gast'),
+        name: guestState.username ?? t('Gast'),
         avatarUrl: guestState.avatar_url ?? guestState.avatarUrl ?? null,
         avatarSource: guestState.avatar_source
           ?? guestState.avatarSource
@@ -544,7 +549,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     }
 
     return items;
-  }, [activeAvatarSource, currentMatch, userId]);
+  }, [activeAvatarSource, currentMatch, t, userId]);
   const participantCount = participants.filter((item) => !item.isPlaceholder).length;
   const hasEnoughPlayers = participantCount >= 2;
 
@@ -622,7 +627,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       });
 
       if (!result.ok) {
-        throw result.error ?? new Error('Spieler konnte nicht entfernt werden.');
+        throw result.error ?? new Error(t('Spieler konnte nicht entfernt werden.'));
       }
 
       setCurrentMatch(result.match);
@@ -697,14 +702,17 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     } catch (err) {
       console.warn('Code konnte nicht kopiert werden:', err);
     }
-  }, [currentJoinCode]);
+  }, [currentJoinCode, t]);
 
   const handleShareCode = useCallback(async () => {
     if (!currentJoinCode) {
       return;
     }
     const deepLink = `medbattle://lobby/${currentJoinCode}`;
-    const message = `Join meine MedBattle-Lobby mit dem Code ${currentJoinCode}\n${deepLink}`;
+    const message = t('Join meine MedBattle-Lobby mit dem Code {code}\n{link}', {
+      code: currentJoinCode,
+      link: deepLink,
+    });
     try {
       await Share.share({ message });
     } catch (err) {
@@ -717,16 +725,20 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       if (!currentJoinCode) {
         return;
       }
-      const friendName = friend?.username ?? 'Freund:in';
+      const friendName = friend?.username ?? t('Freund:in');
       const deepLink = `medbattle://lobby/${currentJoinCode}`;
-      const message = `Hey ${friendName}, join meine MedBattle-Lobby mit dem Code ${currentJoinCode}\n${deepLink}`;
+      const message = t('Hey {name}, join meine MedBattle-Lobby mit dem Code {code}\n{link}', {
+        name: friendName,
+        code: currentJoinCode,
+        link: deepLink,
+      });
       try {
         await Share.share({ message });
       } catch (err) {
         console.warn('Freund konnte nicht eingeladen werden:', err);
       }
     },
-    [currentJoinCode]
+    [currentJoinCode, t]
   );
 
   const handleNavigateHome = useCallback(async () => {
@@ -772,7 +784,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       });
 
       if (!result.ok) {
-        throw result.error ?? new Error('Match konnte nicht gestartet werden.');
+        throw result.error ?? new Error(t('Match konnte nicht gestartet werden.'));
       }
 
       setCurrentMatch(result.match);
@@ -806,7 +818,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     return (
       <View style={styles.container}>
         <View style={styles.createHeader}>
-          <Text style={styles.createTitle}>Lobby erstellen</Text>
+          <Text style={styles.createTitle}>{t('Lobby erstellen')}</Text>
           <Pressable
             style={[
               styles.closeButton,
@@ -821,9 +833,9 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
         {matchesError ? (
           <View style={styles.errorBox}>
-            <Text style={styles.errorTitle}>Oops!</Text>
+            <Text style={styles.errorTitle}>{t('Oops!')}</Text>
             <Text style={styles.errorMessage}>
-              {matchesError.message ?? 'Es ist ein Fehler aufgetreten.'}
+              {t(matchesError.message ?? 'Es ist ein Fehler aufgetreten.')}
             </Text>
           </View>
         ) : null}
@@ -831,13 +843,13 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         {loadingUser ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="small" color="#60A5FA" />
-            <Text style={styles.loadingText}>Profil wird geladen ...</Text>
+            <Text style={styles.loadingText}>{t('Profil wird geladen ...')}</Text>
           </View>
         ) : null}
 
         <View style={styles.createContent}>
           <Text style={styles.createSubtitle}>
-            Einstellungen sp\u00e4ter im Lobby-Men\u00fc anpassen.
+            {t('Einstellungen später im Lobby-Menü anpassen.')}
           </Text>
 
           <View style={styles.createSeparator}>
@@ -850,7 +862,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
               ]}
             >
               <Text style={styles.createPlayButtonText}>
-                {creating ? 'Erstelle ...' : 'Los!'}
+                {creating ? t('Erstelle ...') : t('Los!')}
               </Text>
             </Pressable>
           </View>
@@ -875,15 +887,15 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         {loadingUser ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="small" color="#60A5FA" />
-            <Text style={styles.loadingText}>Profil wird geladen ...</Text>
+            <Text style={styles.loadingText}>{t('Profil wird geladen ...')}</Text>
           </View>
         ) : null}
 
         {matchesError ? (
           <View style={styles.errorBox}>
-            <Text style={styles.errorTitle}>Oops!</Text>
+            <Text style={styles.errorTitle}>{t('Oops!')}</Text>
             <Text style={styles.errorMessage}>
-              {matchesError.message ?? 'Es ist ein Fehler aufgetreten.'}
+              {t(matchesError.message ?? 'Es ist ein Fehler aufgetreten.')}
             </Text>
           </View>
         ) : null}
@@ -892,24 +904,24 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
           <View style={styles.loadingBox}>
             <ActivityIndicator size="small" color="#60A5FA" />
             <Text style={styles.loadingText}>
-              {creating ? 'Lobby wird erstellt ...' : 'Starte Lobby ...'}
+              {creating ? t('Lobby wird erstellt ...') : t('Starte Lobby ...')}
             </Text>
           </View>
         ) : null}
 
         {showConfigCard ? (
           <View style={styles.configCard}>
-            <Text style={styles.configTitle}>Lobby konfigurieren</Text>
+            <Text style={styles.configTitle}>{t('Lobby konfigurieren')}</Text>
 
             <View style={styles.configSection}>
-              <Text style={styles.configLabel}>Kategorie</Text>
+              <Text style={styles.configLabel}>{t('Kategorie')}</Text>
               <Text style={styles.configValue}>
-                {selectedCategory ?? 'Alle Themen'}
+                {t(selectedCategory ?? 'Alle Themen')}
               </Text>
             </View>
 
             <View style={styles.configSection}>
-              <Text style={styles.configLabel}>Schwierigkeit</Text>
+              <Text style={styles.configLabel}>{t('Schwierigkeit')}</Text>
               <DifficultyChips
                 labels={DIFFICULTY_LABELS}
                 accents={DIFFICULTY_ACCENTS}
@@ -919,7 +931,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
             </View>
 
             <View style={styles.configSection}>
-              <Text style={styles.configLabel}>Fragenanzahl</Text>
+              <Text style={styles.configLabel}>{t('Fragenanzahl')}</Text>
               <QuestionLimitStepper
                 value={questionLimit}
                 min={MIN_QUESTION_LIMIT}
@@ -938,7 +950,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
               ]}
             >
               <Text style={styles.startActionText}>
-                {creating ? 'Erstelle Lobby ...' : 'Lobby starten'}
+                {creating ? t('Erstelle Lobby ...') : t('Lobby starten')}
               </Text>
             </Pressable>
           </View>
@@ -955,7 +967,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
               disabled={creating || !userId}
             >
               <Text style={styles.primaryActionText}>
-                {creating ? 'Erstelle Lobby ...' : 'Start'}
+                {creating ? t('Erstelle Lobby ...') : t('Start')}
               </Text>
             </Pressable>
           </View>

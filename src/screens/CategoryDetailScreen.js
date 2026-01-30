@@ -1,5 +1,5 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { usePreferences } from '../context/PreferencesContext';
 import usePremiumStatus from '../hooks/usePremiumStatus';
@@ -7,6 +7,7 @@ import { calculateCoinReward } from '../services/quizService';
 import { calculateXpGain } from '../services/titleService';
 import { getCategoryMeta } from '../data/categoryMeta';
 import { colors } from '../styles/theme';
+import { useTranslation } from '../i18n/useTranslation';
 import ModeCard from './home/ModeCard';
 import styles from './styles/CategoryDetailScreen.styles';
 
@@ -14,11 +15,16 @@ const DEFAULT_DIFFICULTY = 'mittel';
 const CATEGORY_QUESTION_LIMIT = 6;
 
 export default function CategoryDetailScreen({ navigation, route }) {
+  const { t } = useTranslation();
   const categoryParam =
     typeof route?.params?.category === 'string' ? route.params.category : null;
   const activeLobby = route?.params?.activeLobby ?? null;
   const categoryMeta = getCategoryMeta(categoryParam);
   const categoryLabel = categoryParam || categoryMeta.label;
+  const categoryDisplay = categoryLabel ? t(categoryLabel) : '';
+  const categoryDescription = categoryMeta?.description
+    ? t(categoryMeta.description)
+    : '';
   const { isOnline } = useConnectivity();
   const { energy, energyMax } = usePreferences();
   const { premium } = usePremiumStatus();
@@ -66,6 +72,8 @@ export default function CategoryDetailScreen({ navigation, route }) {
 
   const energyLabel = premium ? `${energyMax}/${energyMax}` : `${energy}/${energyMax}`;
 
+  const CategoryIcon = categoryMeta.iconFamily === 'fa5' ? FontAwesome5 : Ionicons;
+
   return (
     <View style={styles.container}>
       <View style={styles.backgroundGlowTop} pointerEvents="none" />
@@ -76,7 +84,7 @@ export default function CategoryDetailScreen({ navigation, route }) {
           <Pressable
             onPress={() => navigation.goBack()}
             style={styles.backButton}
-            accessibilityLabel="Zurück"
+            accessibilityLabel={t('Zurück')}
           >
             <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
           </Pressable>
@@ -94,27 +102,32 @@ export default function CategoryDetailScreen({ navigation, route }) {
               categoryMeta.accent ? { borderColor: `${categoryMeta.accent}55` } : null,
             ]}
           >
-            <Ionicons
+            <CategoryIcon
               name={categoryMeta.icon}
               size={28}
               color={categoryMeta.accent}
             />
           </View>
-          <Text style={styles.categoryTitle}>{categoryLabel}</Text>
-          <Text style={styles.categoryDescription}>{categoryMeta.description}</Text>
-          <Text style={styles.categoryReward}>{`+${rewardXp} XP  ·  +${rewardCoins} Coins`}</Text>
+          <Text style={styles.categoryTitle}>{categoryDisplay}</Text>
+          <Text style={styles.categoryDescription}>{categoryDescription}</Text>
+          <Text style={styles.categoryReward}>
+            {t('+{xp} XP · +{coins} Coins', {
+              xp: rewardXp,
+              coins: rewardCoins,
+            })}
+          </Text>
         </View>
 
         <View>
           <View style={styles.modeSection}>
             <ModeCard
-              title="Solo"
+              title={t('Solo')}
               accent={colors.accentWarm}
               onPress={handleStartSolo}
               disabled={hasLobby}
             />
             <ModeCard
-              title="Mit Freunden spielen"
+              title={t('Mit Freunden spielen')}
               accent={colors.accentGreen}
               onPress={handlePlayWithFriends}
               disabled={isOffline}
@@ -122,12 +135,12 @@ export default function CategoryDetailScreen({ navigation, route }) {
           </View>
           {isOffline ? (
             <Text style={styles.categoryHint}>
-              Multiplayer benötigt eine Online-Verbindung.
+              {t('Multiplayer benötigt eine Online-Verbindung.')}
             </Text>
           ) : null}
           {hasLobby ? (
             <Text style={styles.categoryHint}>
-              Du hast bereits eine offene Lobby. Beende sie, bevor du neu startest.
+              {t('Du hast bereits eine offene Lobby. Beende sie, bevor du neu startest.')}
             </Text>
           ) : null}
         </View>

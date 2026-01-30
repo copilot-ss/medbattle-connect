@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   Pressable,
   RefreshControl,
   Text,
@@ -14,10 +15,14 @@ import styles from './styles/LeaderboardScreen.styles';
 import { colors } from '../styles/theme';
 import { fetchLeaderboard } from '../services/quizService';
 import { getTitleProgress } from '../services/titleService';
+import { usePreferences } from '../context/PreferencesContext';
+import AVATARS from './settings/avatars';
+import { getInitials } from './result/resultUtils';
+import { useTranslation } from '../i18n/useTranslation';
 
-function formatUserId(value) {
+function formatUserId(value, t) {
   if (!value) {
-    return 'Unbekannt';
+    return t('Unbekannt');
   }
 
   if (value.length <= 8) {
@@ -28,11 +33,20 @@ function formatUserId(value) {
 }
 
 export default function LeaderboardScreen({ navigation, showClose = true }) {
+  const { t } = useTranslation();
+  const { avatarId, avatarUri } = usePreferences();
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const currentAvatarSource = useMemo(() => {
+    if (avatarUri) {
+      return { uri: avatarUri };
+    }
+    const entry = AVATARS.find((item) => item.id === avatarId);
+    return entry?.source ?? null;
+  }, [avatarId, avatarUri]);
 
   const loadLeaderboard = useCallback(
     async (options = {}) => {
@@ -51,14 +65,14 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
       } catch (err) {
         console.error('Konnte Rangliste nicht laden:', err);
         setError(
-          'Rangliste konnte nicht geladen werden. Bitte versuche es später erneut.'
+          t('Rangliste konnte nicht geladen werden. Bitte versuche es später erneut.')
         );
       } finally {
         setLoading(false);
         setRefreshing(false);
       }
     },
-    []
+    [t]
   );
 
   useEffect(() => {
@@ -109,6 +123,16 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
     const title = Number.isFinite(item.xp)
       ? getTitleProgress(item.xp).current.label
       : '-';
+    const name = item.username?.trim()
+      ? item.username
+      : formatUserId(item.userId, t);
+    const displayName = isCurrent ? `${name} (${t('Du')})` : name;
+    const initials = getInitials(name);
+    const avatarSource = isCurrent
+      ? currentAvatarSource
+      : item.avatarUrl
+      ? { uri: item.avatarUrl }
+      : null;
 
     return (
       <View
@@ -121,20 +145,20 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
         ]}
       >
         <Text style={[styles.entryRank, { color: accent }]}>{index + 1}.</Text>
+        <View style={styles.entryAvatar}>
+          {avatarSource ? (
+            <Image source={avatarSource} style={styles.entryAvatarImage} resizeMode="cover" />
+          ) : (
+            <Text style={styles.entryAvatarText}>{initials}</Text>
+          )}
+        </View>
         <View style={styles.entryMeta}>
-          <Text style={styles.entryName}>
-            {(() => {
-              const name = item.username?.trim()
-                ? item.username
-                : formatUserId(item.userId);
-              return isCurrent ? `${name} (Du)` : name;
-            })()}
-          </Text>
-          <Text style={styles.entryTitle}>Titel: {title}</Text>
+          <Text style={styles.entryName}>{displayName}</Text>
+          <Text style={styles.entryTitle}>{t('Titel')}: {title}</Text>
         </View>
         <View style={styles.entryScoreWrap}>
           <Text style={styles.entryScore}>{item.points}</Text>
-          <Text style={styles.entryScoreLabel}>Punkte</Text>
+          <Text style={styles.entryScoreLabel}>{t('Punkte')}</Text>
         </View>
       </View>
     );
@@ -147,7 +171,7 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <View style={styles.headerTitleRow}>
-            <Text style={styles.headerTitle}>Rangliste</Text>
+            <Text style={styles.headerTitle}>{t('Rangliste')}</Text>
             <Ionicons
               name="trophy"
               size={22}
@@ -166,13 +190,13 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
       {loading ? (
         <View style={styles.stateContainer}>
         <ActivityIndicator size="large" color={colors.accent} />
-          <Text style={styles.stateMessage}>Daten werden geladen ...</Text>
+          <Text style={styles.stateMessage}>{t('Daten werden geladen ...')}</Text>
         </View>
       ) : error ? (
         <View style={styles.stateContainer}>
-          <Text style={styles.errorMessage}>{error}</Text>
+          <Text style={styles.errorMessage}>{t(error)}</Text>
           <Pressable onPress={() => loadLeaderboard({ force: true })} style={styles.retryButton}>
-            <Text style={styles.retryButtonText}>Erneut versuchen</Text>
+            <Text style={styles.retryButtonText}>{t('Erneut versuchen')}</Text>
           </Pressable>
         </View>
       ) : (
@@ -191,7 +215,7 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
           }
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>Noch keine Einträge vorhanden.</Text>
+              <Text style={styles.emptyText}>{t('Noch keine Einträge vorhanden.')}</Text>
             </View>
           }
           contentContainerStyle={styles.listContent}

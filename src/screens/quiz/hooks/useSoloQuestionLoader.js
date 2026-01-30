@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchQuestions } from '../../../services/quizService';
+import { t } from '../../../i18n';
 import { ALLOWED_DIFFICULTIES } from './useQuizConfig';
 
 function shuffleOptions(options) {
@@ -75,8 +76,10 @@ export default function useSoloQuestionLoader({
           if (!prepared.length) {
             setError(
               safeCategory
-                ? `Keine Fragen für ${safeCategory} verfügbar. Bitte versuche es gleich nochmal.`
-                : 'Keine Fragen verfügbar. Bitte versuche es gleich nochmal.'
+                ? t('Keine Fragen für {category} verfügbar. Bitte versuche es gleich nochmal.', {
+                    category: safeCategory,
+                  })
+                : t('Keine Fragen verfügbar. Bitte versuche es gleich nochmal.')
             );
             setQuestions([]);
             setLoading(false);
@@ -90,7 +93,7 @@ export default function useSoloQuestionLoader({
       } catch (err) {
         console.error('Fehler beim Laden der Fragen', err);
         if (!cancelled) {
-          setError('Die Fragen konnten nicht geladen werden. Bitte versuche es später erneut.');
+          setError(t('Die Fragen konnten nicht geladen werden. Bitte versuche es später erneut.'));
           setQuestions([]);
           setLoading(false);
         }

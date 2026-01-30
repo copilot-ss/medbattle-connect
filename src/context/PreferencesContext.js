@@ -15,6 +15,7 @@ import { sanitizeStatNumber, sanitizeStreakValue } from './preferences/sanitize'
 import {
   loadPreferencesFromStorage,
   persistAvatarId,
+  persistAvatarUri,
   persistBooleanValue,
   persistEnergy,
   persistLanguage,
@@ -31,6 +32,7 @@ export function PreferencesProvider({ children }) {
   const [pushEnabled, setPushEnabledState] = useState(true);
   const [friendRequestsEnabled, setFriendRequestsEnabledState] = useState(true);
   const [avatarId, setAvatarIdState] = useState(null);
+  const [avatarUri, setAvatarUriState] = useState(null);
   const [language, setLanguageState] = useState(DEFAULT_LOCALE);
   const [streaks, setStreaksState] = useState(DEFAULT_STREAKS);
   const [userStats, setUserStatsState] = useState(DEFAULT_USER_STATS);
@@ -55,6 +57,7 @@ export function PreferencesProvider({ children }) {
         setPushEnabledState(loaded.pushEnabled);
         setFriendRequestsEnabledState(loaded.friendRequestsEnabled);
         setAvatarIdState(loaded.avatarId);
+        setAvatarUriState(loaded.avatarUri);
         setLanguageState(loaded.language);
         setLocale(loaded.language);
         setStreaksState(loaded.streaks);
@@ -108,6 +111,12 @@ export function PreferencesProvider({ children }) {
     const normalized = value || null;
     setAvatarIdState(normalized);
     await persistAvatarId(normalized);
+  }, []);
+
+  const setAvatarUri = useCallback(async (value) => {
+    const normalized = value || null;
+    setAvatarUriState(normalized);
+    await persistAvatarUri(normalized);
   }, []);
 
   const setLanguage = useCallback(async (value) => {
@@ -247,6 +256,8 @@ export function PreferencesProvider({ children }) {
       setFriendRequestsEnabled,
       avatarId,
       setAvatarId,
+      avatarUri,
+      setAvatarUri,
       language,
       setLanguage,
       streaks,
@@ -271,11 +282,13 @@ export function PreferencesProvider({ children }) {
       setPushEnabled,
       setFriendRequestsEnabled,
       setAvatarId,
+      setAvatarUri,
       soundEnabled,
       vibrationEnabled,
       pushEnabled,
       friendRequestsEnabled,
       avatarId,
+      avatarUri,
       language,
       streaks,
     ]

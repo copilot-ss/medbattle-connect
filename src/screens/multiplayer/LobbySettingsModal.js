@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useTranslation } from '../../i18n/useTranslation';
 
 import DifficultyChips from './DifficultyChips';
 import QuestionLimitStepper from './QuestionLimitStepper';
@@ -19,6 +20,8 @@ export default function LobbySettingsModal({
   onApply,
   isLoading = false,
 } = {}) {
+  const { t } = useTranslation();
+
   if (!visible) {
     return null;
   }
@@ -48,10 +51,10 @@ export default function LobbySettingsModal({
         disabled={isLoading}
       />
       <View style={[styles.modalCard, styles.settingsModalCard]}>
-        <Text style={styles.settingsModalTitle}>Lobby Einstellungen</Text>
+        <Text style={styles.settingsModalTitle}>{t('Lobby Einstellungen')}</Text>
 
         <View style={styles.settingsModalSection}>
-          <Text style={styles.settingsModalLabel}>Schwierigkeit</Text>
+          <Text style={styles.settingsModalLabel}>{t('Schwierigkeit')}</Text>
           <DifficultyChips
             labels={safeLabels}
             accents={safeAccents}
@@ -61,7 +64,7 @@ export default function LobbySettingsModal({
         </View>
 
         <View style={styles.settingsModalSection}>
-          <Text style={styles.settingsModalLabel}>Fragenanzahl</Text>
+          <Text style={styles.settingsModalLabel}>{t('Fragenanzahl')}</Text>
           <QuestionLimitStepper
             value={safeLimit}
             min={min}
@@ -90,7 +93,7 @@ export default function LobbySettingsModal({
             ]}
           />
           <Text style={styles.settingsApplyText}>
-            {isLoading ? 'Speichern ...' : '\u00dcbernehmen'}
+            {isLoading ? t('Speichern ...') : t('Übernehmen')}
           </Text>
         </Pressable>
       </View>

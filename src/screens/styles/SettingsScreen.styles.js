@@ -137,6 +137,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     borderRadius: radii.sm,
+    position: 'relative',
     alignItems: 'center',
   },
   languageButtonActive: {
@@ -150,6 +151,35 @@ const styles = StyleSheet.create({
   },
   languageButtonTextActive: {
     color: colors.textPrimary,
+  },
+  languageButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  languageFlag: {
+    fontSize: 16,
+    marginRight: 8,
+    opacity: 0.7,
+  },
+  languageFlagActive: {
+    opacity: 1,
+  },
+  languageCheck: {
+    position: 'absolute',
+    top: 6,
+    right: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  languageCheckText: {
+    color: colors.background,
+    fontSize: 11,
+    fontFamily: fonts.bold,
   },
   fieldGroup: {
     marginBottom: 16,
@@ -649,6 +679,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  avatarTileCustom: {
+    borderStyle: 'dashed',
+    borderColor: 'rgba(147, 197, 253, 0.65)',
+    backgroundColor: 'rgba(30, 58, 138, 0.2)',
+  },
   avatarTileSelected: {
     borderColor: 'rgba(87, 199, 255, 0.8)',
     shadowColor: colors.accent,
@@ -662,6 +697,19 @@ const styles = StyleSheet.create({
   avatarTileImage: {
     width: '100%',
     height: 84,
+  },
+  avatarTilePlaceholder: {
+    height: 84,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  avatarTilePlaceholderText: {
+    fontSize: 12,
+    fontFamily: fonts.medium,
+    color: '#BFDBFE',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   avatarTileLockBanner: {
     position: 'absolute',

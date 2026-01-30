@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   AVATAR_STORAGE_KEY,
+  AVATAR_URI_KEY,
   DEFAULT_STREAKS,
   DEFAULT_USER_STATS,
   DEFAULT_LANGUAGE,
@@ -31,6 +32,7 @@ export async function loadPreferencesFromStorage() {
     storedRequests,
     storedAvatar,
     storedLanguage,
+    storedAvatarUri,
   ] = await Promise.all([
     AsyncStorage.getItem(SOUND_STORAGE_KEY),
     AsyncStorage.getItem(VIBRATION_STORAGE_KEY),
@@ -38,6 +40,7 @@ export async function loadPreferencesFromStorage() {
     AsyncStorage.getItem(FRIEND_REQUESTS_STORAGE_KEY),
     AsyncStorage.getItem(AVATAR_STORAGE_KEY),
     AsyncStorage.getItem(LANGUAGE_STORAGE_KEY),
+    AsyncStorage.getItem(AVATAR_URI_KEY),
   ]);
 
   await Promise.all([
@@ -98,6 +101,7 @@ export async function loadPreferencesFromStorage() {
     friendRequestsEnabled:
       storedRequests === null ? true : storedRequests === 'true',
     avatarId: storedAvatar || null,
+    avatarUri: storedAvatarUri || null,
     language: normalizedLanguage,
     streaks: nextStreaks,
     userStats: nextUserStats,
@@ -124,6 +128,18 @@ export async function persistAvatarId(value) {
     }
   } catch (err) {
     console.warn('Konnte Avatar nicht speichern:', err);
+  }
+}
+
+export async function persistAvatarUri(value) {
+  try {
+    if (value) {
+      await AsyncStorage.setItem(AVATAR_URI_KEY, value);
+    } else {
+      await AsyncStorage.removeItem(AVATAR_URI_KEY);
+    }
+  } catch (err) {
+    console.warn('Konnte Avatar-Foto nicht speichern:', err);
   }
 }
 

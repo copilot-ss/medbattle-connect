@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import { usePreferences } from '../../context/PreferencesContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import useLeaderboardRank from './useLeaderboardRank';
@@ -21,6 +22,8 @@ export default function useSettingsController({ navigation, route, onClearSessio
     setLanguage,
     avatarId,
     setAvatarId,
+    avatarUri,
+    setAvatarUri,
     streaks,
     userStats,
   } = usePreferences();
@@ -39,6 +42,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     authProvider,
     authProviders,
     isGuest,
+    authResolved,
     friendCode,
     localGuestId,
   } = useSettingsUser();
@@ -199,7 +203,39 @@ export default function useSettingsController({ navigation, route, onClearSessio
     setAvatarId(item.id).catch((err) => {
       console.warn('Konnte Avatar nicht speichern:', err);
     });
-  }, [setAvatarId, userLevel]);
+    if (avatarUri) {
+      setAvatarUri(null).catch((err) => {
+        console.warn('Konnte Avatar-Foto nicht löschen:', err);
+      });
+    }
+  }, [avatarUri, setAvatarId, setAvatarUri, userLevel]);
+
+  const handlePickAvatarPhoto = useCallback(async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaType.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const asset = Array.isArray(result.assets) ? result.assets[0] : null;
+      if (asset?.uri) {
+        await setAvatarUri(asset.uri);
+      }
+    } catch (err) {
+      console.warn('Konnte Avatar-Foto nicht auswählen:', err);
+    }
+  }, [setAvatarUri]);
 
   useEffect(() => {
     if (!focusTarget) {
@@ -277,9 +313,11 @@ export default function useSettingsController({ navigation, route, onClearSessio
     currentAvatar,
     avatarId,
     setAvatarId,
+    avatarUri,
     showAvatarPicker,
     handleToggleAvatarPicker,
     handleSelectAvatar,
+    handlePickAvatarPhoto,
     quizzesCompleted,
     accuracyPercent,
     xp,
@@ -289,6 +327,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     leaderboardRank,
     loadingRank,
     isGuest,
+    authResolved,
     newEmail,
     setNewEmail,
     emailCtaLabel,

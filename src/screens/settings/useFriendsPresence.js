@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import { useTranslation } from '../../i18n/useTranslation';
 
 export default function useFriendsPresence({
   userId,
@@ -8,6 +9,7 @@ export default function useFriendsPresence({
   userTitle,
   friends,
 }) {
+  const { t } = useTranslation();
   const [onlineFriends, setOnlineFriends] = useState([]);
   const [loadingOnline, setLoadingOnline] = useState(false);
   const presenceChannelRef = useRef(null);
@@ -65,7 +67,7 @@ export default function useFriendsPresence({
               : null;
             next.push({
               code,
-              username: meta.username ?? 'Freund:in',
+              username: meta.username ?? t('Freund:in'),
               title: meta.title ?? null,
               lobby,
               lobbyPlayers,
@@ -111,7 +113,7 @@ export default function useFriendsPresence({
         presenceChannelRef.current = null;
       }
     };
-  }, [friendCode, friends, userId, userName, userTitle]);
+  }, [friendCode, friends, userId, userName, userTitle, t]);
 
   return { onlineFriends, loadingOnline };
 }

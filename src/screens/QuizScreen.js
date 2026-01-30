@@ -9,8 +9,10 @@ import TimeoutBanner from './quiz/TimeoutBanner';
 import ExitConfirmModal from './quiz/ExitConfirmModal';
 import useQuizController from './quiz/useQuizController';
 import { useConnectivity } from '../context/ConnectivityContext';
+import { useTranslation } from '../i18n/useTranslation';
 
 export default function QuizScreen({ navigation, route }) {
+  const { t } = useTranslation();
   const { isOnline, isChecking, checkOnline } = useConnectivity();
   const isOffline = isOnline === false;
   const {
@@ -44,7 +46,7 @@ export default function QuizScreen({ navigation, route }) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.accent} />
-        <Text style={styles.loadingText}>Fragen werden geladen ...</Text>
+        <Text style={styles.loadingText}>{t('Fragen werden geladen ...')}</Text>
       </View>
     );
   }
@@ -53,13 +55,13 @@ export default function QuizScreen({ navigation, route }) {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>
-          {resolvedError ?? 'Keine Fragen verf\u00fcgbar. Bitte versuche es sp\u00e4ter erneut.'}
+          {resolvedError ? t(resolvedError) : t('Keine Fragen verfügbar. Bitte versuche es später erneut.')}
         </Text>
         <Pressable
           onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
           style={styles.errorButton}
         >
-          <Text style={styles.errorButtonText}>Zur\u00fcck zur Basis</Text>
+          <Text style={styles.errorButtonText}>{t('Zurück zur Basis')}</Text>
         </Pressable>
       </View>
     );
@@ -79,25 +81,26 @@ export default function QuizScreen({ navigation, route }) {
         questionLimit={questionLimit}
         activeIndex={activeIndex}
         onExit={handleExitRequest}
+        showMeta={isMultiplayer}
         showProgress={!isMultiplayer}
       />
 
       {isOffline ? (
         <View style={styles.offlineBanner}>
           <View style={styles.offlineBannerRow}>
-            <Text style={styles.offlineBannerTitle}>Offline Modus</Text>
+            <Text style={styles.offlineBannerTitle}>{t('Offline Modus')}</Text>
             <Pressable
               onPress={handleGoOnline}
               style={[styles.offlineButton, isChecking ? styles.offlineButtonDisabled : null]}
               disabled={isChecking}
             >
               <Text style={styles.offlineButtonText}>
-                {isChecking ? 'Verbindung pr\u00fcfen...' : 'Online gehen'}
+                {isChecking ? `${t('Verbindung prüfen')}...` : t('Online gehen')}
               </Text>
             </Pressable>
           </View>
           <Text style={styles.offlineBannerText}>
-            Du spielst offline. Dein Score wird synchronisiert, sobald du online bist.
+            {t('Du spielst offline. Dein Score wird synchronisiert, sobald du online bist.')}
           </Text>
         </View>
       ) : null}
@@ -130,7 +133,6 @@ export default function QuizScreen({ navigation, route }) {
 
       <ExitConfirmModal
         visible={showExitConfirm}
-        isMultiplayer={isMultiplayer}
         onCancel={handleExitCancel}
         onConfirm={handleExitConfirm}
       />

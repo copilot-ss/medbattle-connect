@@ -1,9 +1,17 @@
 import { memo } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import styles from '../styles/HomeScreen.styles';
 
-function CategoryTile({ label, icon, accent, onPress, disabled, selected = false }) {
+function CategoryTile({
+  label,
+  icon,
+  iconFamily = 'ion',
+  accent,
+  onPress,
+  disabled,
+  selected = false,
+}) {
   const accentBackground = accent ? `${accent}1A` : undefined;
   const accentBorder = accent ? `${accent}55` : undefined;
   const selectedBackground = selected && accent ? `${accent}22` : undefined;
@@ -28,7 +36,11 @@ function CategoryTile({ label, icon, accent, onPress, disabled, selected = false
           selected ? { backgroundColor: selectedBackground, borderColor: selectedBorder } : null,
         ]}
       >
-        <Ionicons name={icon} size={20} color={accent} />
+        {iconFamily === 'fa5' ? (
+          <FontAwesome5 name={icon} size={20} color={accent} />
+        ) : (
+          <Ionicons name={icon} size={20} color={accent} />
+        )}
       </View>
       <Text style={styles.categoryLabel}>{label}</Text>
     </Pressable>

@@ -52,7 +52,6 @@ export default function HomeScreen({ navigation, route }) {
   const {
     energy,
     energyMax,
-    nextEnergyAt,
     boostEnergy,
     addEnergy,
     refreshEnergy,
@@ -242,7 +241,6 @@ export default function HomeScreen({ navigation, route }) {
   const AdEventType = adsModule?.AdEventType;
   const isBoostBusy = boosting || rewarding || coinPurchasing;
   const coinsAvailable = sanitizeStatNumber(userStats?.coins);
-  const quickPlayLocked = !premium && energy <= 0;
   const isEnergyFull = energy >= energyMax;
   const canBuyWithCoins = coinsAvailable >= COIN_ENERGY_COST && !isEnergyFull;
   const streakSummary = useMemo(() => {
@@ -258,28 +256,25 @@ export default function HomeScreen({ navigation, route }) {
     total: QUICK_PLAY_QUESTIONS,
     difficulty: DEFAULT_DIFFICULTY,
   });
-  const quickPlaySubtitle = t('+{coins} Coins', { coins: quickPlayCoinReward });
+  const quickPlaySubtitle = `+${quickPlayCoinReward}`;
   const categoryTiles = useMemo(
     () =>
       CATEGORY_META.map((category) => {
         const style = category ?? {};
         return {
           key: style.key ?? style.label,
-          label: style.label,
+          label: style.label ? t(style.label) : '',
           value: style.label,
           icon: style.icon,
+          iconFamily: style.iconFamily,
           accent: style.accent,
         };
       }),
-    []
+    [t]
   );
 
   async function handleGoOnline() {
     await checkOnline({ force: true });
-  }
-
-  function handleOpenFriends() {
-    navigation.navigate('Friends');
   }
 
   function handleSelectCategory(category) {
@@ -482,9 +477,9 @@ export default function HomeScreen({ navigation, route }) {
       <View style={styles.backgroundGlowBottom} pointerEvents="none" />
 
       <HomeHeader
-        isOffline={isOffline}
-        onOpenFriends={handleOpenFriends}
         coins={coinsAvailable}
+        energy={energy}
+        energyMax={energyMax}
         userName={userName}
         isGuest={isGuest}
       />
@@ -520,12 +515,6 @@ export default function HomeScreen({ navigation, route }) {
             buttonLabel={t('Jetzt spielen')}
             onPress={startQuickPlay}
             disabled={isBoostBusy || hasLobby}
-            energy={energy}
-            energyMax={energyMax}
-            nextEnergyAt={nextEnergyAt}
-            isPremium={premium}
-            isLocked={quickPlayLocked}
-            onRefreshEnergy={refreshEnergy}
             showAnimation={showAnimation}
             animationSource={doctorAnimation}
           />
@@ -542,6 +531,7 @@ export default function HomeScreen({ navigation, route }) {
                 key={tile.key}
                 label={tile.label}
                 icon={tile.icon}
+                iconFamily={tile.iconFamily}
                 accent={tile.accent}
                 onPress={() => handleSelectCategory(tile.value)}
                 disabled={false}

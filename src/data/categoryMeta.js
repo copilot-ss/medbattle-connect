@@ -26,14 +26,16 @@ export const CATEGORY_META = [
     key: 'Pharmakologie',
     label: 'Pharmakologie',
     description: 'Wirkstoffe, Wirkmechanismen und Nebenwirkungen.',
-    icon: 'flask',
+    icon: 'tablets',
+    iconFamily: 'fa5',
     accent: colors.accentPink,
   },
   {
     key: 'Mikrobiologie',
     label: 'Mikrobiologie',
     description: 'Bakterien, Viren, Pilze und Diagnostik.',
-    icon: 'medkit',
+    icon: 'microscope',
+    iconFamily: 'fa5',
     accent: colors.accentGreen,
   },
   {
@@ -68,7 +70,7 @@ export const CATEGORY_META = [
     key: 'Chirurgie',
     label: 'Chirurgie',
     description: 'OP-Techniken, Indikationen und Anatomie im OP.',
-    icon: 'bandage',
+    icon: 'cut',
     accent: colors.accentPink,
   },
 ];

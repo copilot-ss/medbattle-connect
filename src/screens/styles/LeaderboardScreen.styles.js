@@ -133,6 +133,27 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: fonts.bold,
   },
+  entryAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.4)',
+    marginRight: 12,
+    overflow: 'hidden',
+  },
+  entryAvatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  entryAvatarText: {
+    fontSize: 14,
+    fontFamily: fonts.bold,
+    color: colors.textSecondary,
+  },
   entryMeta: {
     flex: 1,
     marginRight: 14,

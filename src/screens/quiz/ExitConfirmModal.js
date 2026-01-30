@@ -1,12 +1,14 @@
 import { Pressable, Text, View } from 'react-native';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/QuizScreen.styles';
 
 export default function ExitConfirmModal({
   visible,
-  isMultiplayer,
   onCancel,
   onConfirm,
 }) {
+  const { t } = useTranslation();
+
   if (!visible) {
     return null;
   }
@@ -14,24 +16,19 @@ export default function ExitConfirmModal({
   return (
     <View style={styles.modalOverlay}>
       <View style={styles.modalCard}>
-        <Text style={styles.modalTitle}>Quiz beenden?</Text>
-        <Text style={styles.modalMessage}>
-          {isMultiplayer
-            ? 'Das laufende Duell gilt als aufgegeben. Möchtest du wirklich abbrechen?'
-            : 'Nicht beantwortete Fragen zählen nicht. Möchtest du wirklich abbrechen?'}
-        </Text>
+        <Text style={styles.modalTitle}>{t('Quiz beenden?')}</Text>
         <View style={styles.modalActions}>
           <Pressable
             onPress={onCancel}
             style={[styles.modalButton, styles.modalButtonContinue]}
           >
-            <Text style={styles.modalButtonContinueText}>Weiter spielen</Text>
+            <Text style={styles.modalButtonContinueText}>{t('Weiter spielen')}</Text>
           </Pressable>
           <Pressable
             onPress={onConfirm}
             style={[styles.modalButton, styles.modalButtonExit]}
           >
-            <Text style={styles.modalButtonExitText}>Beenden</Text>
+            <Text style={styles.modalButtonExitText}>{t('Beenden')}</Text>
           </Pressable>
         </View>
       </View>

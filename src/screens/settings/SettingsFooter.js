@@ -13,13 +13,15 @@ export default function SettingsFooter({
   onSignOut,
   showResetActions = true,
   isGuest = false,
+  authResolved = false,
 }) {
   const { t } = useTranslation();
   const privacyUrl = process.env.EXPO_PUBLIC_PRIVACY_URL;
   const termsUrl = process.env.EXPO_PUBLIC_TERMS_URL;
   const supportUrl = process.env.EXPO_PUBLIC_SUPPORT_URL;
-  const signOutLabel = isGuest ? t('Anmelden') : t('Abmelden');
-  const signOutButtonStyles = isGuest
+  const resolvedGuest = authResolved ? isGuest : false;
+  const signOutLabel = resolvedGuest ? t('Anmelden') : t('Abmelden');
+  const signOutButtonStyles = resolvedGuest
     ? [
         styles.actionButton,
         styles.primaryButton,
@@ -30,7 +32,9 @@ export default function SettingsFooter({
         styles.dangerButton,
         signingOut ? styles.dangerButtonDisabled : null,
       ];
-  const signOutTextStyle = isGuest ? styles.primaryButtonText : styles.dangerButtonText;
+  const signOutTextStyle = resolvedGuest
+    ? styles.primaryButtonText
+    : styles.dangerButtonText;
 
   const handleOpenUrl = async (url) => {
     if (!url) {
@@ -97,7 +101,7 @@ export default function SettingsFooter({
         style={signOutButtonStyles}
       >
         {signingOut ? (
-          <ActivityIndicator color={isGuest ? '#F8FAFC' : '#0F172A'} />
+          <ActivityIndicator color={resolvedGuest ? '#F8FAFC' : '#0F172A'} />
         ) : (
           <Text style={signOutTextStyle}>{signOutLabel}</Text>
         )}

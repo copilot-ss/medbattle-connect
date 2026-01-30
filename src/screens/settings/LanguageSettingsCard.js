@@ -3,8 +3,8 @@ import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/SettingsScreen.styles';
 
 const LANGUAGE_OPTIONS = [
-  { value: 'de', label: 'Deutsch' },
-  { value: 'en', label: 'Englisch' },
+  { value: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { value: 'en', label: 'Englisch', flag: '🇺🇸' },
 ];
 
 export default function LanguageSettingsCard({ language, onSelectLanguage }) {
@@ -25,14 +25,24 @@ export default function LanguageSettingsCard({ language, onSelectLanguage }) {
                 isActive ? styles.languageButtonActive : null,
               ]}
             >
-              <Text
-                style={[
-                  styles.languageButtonText,
-                  isActive ? styles.languageButtonTextActive : null,
-                ]}
-              >
-                {t(option.label)}
-              </Text>
+              <View style={styles.languageButtonContent}>
+                <Text style={[styles.languageFlag, isActive ? styles.languageFlagActive : null]}>
+                  {option.flag}
+                </Text>
+                <Text
+                  style={[
+                    styles.languageButtonText,
+                    isActive ? styles.languageButtonTextActive : null,
+                  ]}
+                >
+                  {t(option.label)}
+                </Text>
+              </View>
+              {isActive ? (
+                <View style={styles.languageCheck}>
+                  <Text style={styles.languageCheckText}>✓</Text>
+                </View>
+              ) : null}
             </Pressable>
           );
         })}

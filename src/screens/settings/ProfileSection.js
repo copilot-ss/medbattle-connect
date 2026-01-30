@@ -6,6 +6,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/SettingsScreen.styles';
 
@@ -17,10 +18,12 @@ export default function ProfileSection({
   avatarInitials,
   currentAvatar,
   avatarId,
+  avatarUri,
   avatars,
   showAvatarPicker,
   onToggleAvatarPicker,
   onSelectAvatar,
+  onPickAvatarPhoto,
   quizzesCompleted = 0,
   accuracyPercent = 0,
   xp = 0,
@@ -49,6 +52,11 @@ export default function ProfileSection({
   const fallbackTitle = t('Med Rookie');
   const googleHintFallback = t('Google mit diesem Profil verknüpfen.');
   const googleLabelFallback = t('Google verbinden');
+  const resolvedTitle = titleProgress?.current?.label
+    ? t(titleProgress.current.label)
+    : fallbackTitle;
+  const avatarImageSource = avatarUri ? { uri: avatarUri } : currentAvatar?.source;
+  const isCustomSelected = Boolean(avatarUri);
 
   return (
     <View style={[styles.card, styles.profileCard]}>
@@ -70,9 +78,9 @@ export default function ProfileSection({
               currentAvatar?.color ? { backgroundColor: `${currentAvatar.color}30` } : null,
             ]}
           >
-            {currentAvatar?.source ? (
+            {avatarImageSource ? (
               <Image
-                source={currentAvatar.source}
+                source={avatarImageSource}
                 style={styles.avatarImage}
                 resizeMode="cover"
               />
@@ -91,7 +99,7 @@ export default function ProfileSection({
           <View style={styles.profileTitleRow}>
             <Text style={styles.profileTitleLabel}>{t('Titel')}</Text>
             <Text style={styles.profileTitleValue}>
-              {titleProgress?.current?.label ?? fallbackTitle}
+              {resolvedTitle}
             </Text>
           </View>
           <Text style={styles.profileXpText}>{xpCoinsLabel}</Text>
@@ -119,7 +127,7 @@ export default function ProfileSection({
         <View style={styles.achievementRow}>
           {unlockedAchievements.map((achievement) => (
             <View key={achievement.key} style={styles.achievementPill}>
-              <Text style={styles.achievementText}>{achievement.label}</Text>
+              <Text style={styles.achievementText}>{t(achievement.label)}</Text>
             </View>
           ))}
         </View>
@@ -127,10 +135,32 @@ export default function ProfileSection({
 
       {showAvatarPicker ? (
         <View style={styles.avatarGrid}>
+          <Pressable
+            onPress={onPickAvatarPhoto}
+            style={[
+              styles.avatarTile,
+              styles.avatarTileCustom,
+              isCustomSelected ? styles.avatarTileSelected : null,
+            ]}
+            accessibilityLabel={t('Foto aus Galerie')}
+          >
+            {avatarUri ? (
+              <Image
+                source={{ uri: avatarUri }}
+                style={styles.avatarTileImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.avatarTilePlaceholder}>
+                <Ionicons name="image" size={22} color="#93C5FD" />
+                <Text style={styles.avatarTilePlaceholderText}>{t('Foto')}</Text>
+              </View>
+            )}
+          </Pressable>
           {avatars.map((item) => {
             const locked = userLevel < item.level;
             const selected =
-              avatarId === item.id || (!avatarId && item.id === currentAvatar?.id);
+              !avatarUri && (avatarId === item.id || (!avatarId && item.id === currentAvatar?.id));
             return (
               <Pressable
                 key={item.id}

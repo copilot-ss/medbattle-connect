@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, Platform } from 'react-native';
+import { t } from '../i18n';
 import { logClientError } from '../services/loggingService';
 import { formatUserError } from '../utils/formatUserError';
 import { captureException } from '../utils/telemetry';
@@ -39,14 +40,16 @@ export default class GlobalErrorBoundary extends React.Component {
 
     const displayMessage = formatUserError(error, {
       supabaseUrl: SUPABASE_URL_HINT,
-      fallback: 'Unerwarteter Fehler.',
+      fallback: t('Unerwarteter Fehler.'),
     });
     const detailText = __DEV__ ? String(error) : displayMessage;
 
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Oops, etwas ist schiefgelaufen.</Text>
-        <Text style={styles.subtitle}>Bitte Screenshot teilen, damit wir den Crash beheben.</Text>
+        <Text style={styles.title}>{t('Oops, etwas ist schiefgelaufen.')}</Text>
+        <Text style={styles.subtitle}>
+          {t('Bitte Screenshot teilen, damit wir den Crash beheben.')}
+        </Text>
         <ScrollView style={styles.box}>
           <Text style={styles.errorText}>{detailText}</Text>
         </ScrollView>

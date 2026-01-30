@@ -10,6 +10,7 @@ import ResultScoreboard from './result/ResultScoreboard';
 import ResultReviewList from './result/ResultReviewList';
 import { Sparkle, StatPill } from './result/ResultWidgets';
 import { getInitials } from './result/resultUtils';
+import { useTranslation } from '../i18n/useTranslation';
 import styles, {
   getBadgePillStyle,
   getLargeGlowStyle,
@@ -17,6 +18,7 @@ import styles, {
 } from './styles/ResultScreen.styles';
 
 export default function ResultScreen({ route, navigation }) {
+  const { t } = useTranslation();
   const {
     score = 0,
     total = 0,
@@ -42,11 +44,15 @@ export default function ResultScreen({ route, navigation }) {
     scoreQueued = false,
     answerHistory = [],
   } = route.params ?? {};
-  const { energy, energyMax, avatarId } = usePreferences();
+  const { energy, energyMax, avatarId, avatarUri } = usePreferences();
   const { premium } = usePremiumStatus();
   const currentAvatar = useMemo(
     () => AVATARS.find((item) => item.id === avatarId) ?? AVATARS[0],
     [avatarId]
+  );
+  const avatarSource = useMemo(
+    () => (avatarUri ? { uri: avatarUri } : currentAvatar?.source ?? null),
+    [avatarUri, currentAvatar?.source]
   );
   const totalQuestions = total || questionLimit || 0;
   const isQuickPlay = mode === 'quick';
@@ -73,11 +79,11 @@ export default function ResultScreen({ route, navigation }) {
   const hasOpponent = Boolean(opponentState?.userId);
   const selfBaseName = useMemo(() => {
     const name = typeof playerState?.username === 'string' ? playerState.username.trim() : '';
-    return name || 'Du';
-  }, [playerState?.username]);
+    return name || t('Du');
+  }, [playerState?.username, t]);
   const selfDisplayName =
-    playerState?.userId && userId && playerState.userId === userId && selfBaseName !== 'Du'
-      ? `${selfBaseName} (Du)`
+    playerState?.userId && userId && playerState.userId === userId && selfBaseName !== t('Du')
+      ? `${selfBaseName} (${t('Du')})`
       : selfBaseName;
   const opponentDisplayName = useMemo(() => {
     if (typeof opponentState?.username === 'string' && opponentState.username.trim()) {
@@ -86,8 +92,8 @@ export default function ResultScreen({ route, navigation }) {
     if (opponentName && typeof opponentName === 'string') {
       return opponentName;
     }
-    return 'Gegner';
-  }, [opponentName, opponentState?.username]);
+    return t('Gegner');
+  }, [opponentName, opponentState?.username, t]);
   const opponentScoreValue = Number.isFinite(opponentState?.score)
     ? opponentState.score
     : Number.isFinite(opponentScore)
@@ -99,21 +105,21 @@ export default function ResultScreen({ route, navigation }) {
       return null;
     }
     if (!hasOpponent) {
-      return 'Kein Gegner beigetreten';
+      return t('Kein Gegner beigetreten');
     }
     switch (matchStatus) {
       case 'completed':
-        return 'Match abgeschlossen';
+        return t('Match abgeschlossen');
       case 'cancelled':
-        return 'Match abgebrochen';
+        return t('Match abgebrochen');
       case 'waiting':
-        return 'Warte auf Gegner';
+        return t('Warte auf Gegner');
       case 'active':
-        return opponentState?.finished ? 'Ergebnis verf\u00fcgbar' : 'Warte auf Gegner';
+        return opponentState?.finished ? t('Ergebnis verfügbar') : t('Warte auf Gegner');
       default:
-        return 'Ergebnis verf\u00fcgbar';
+        return t('Ergebnis verfügbar');
     }
-  }, [hasOpponent, isMultiplayer, matchStatus, opponentState?.finished]);
+  }, [hasOpponent, isMultiplayer, matchStatus, opponentState?.finished, t]);
   const showOfflineNote = Boolean(offline || scoreQueued);
   const multiplayerEntries = useMemo(() => {
     if (!isMultiplayer) {
@@ -125,7 +131,7 @@ export default function ResultScreen({ route, navigation }) {
         name: selfDisplayName,
         score: Number.isFinite(selfScoreValue) ? selfScoreValue : 0,
         isSelf: true,
-        avatarSource: currentAvatar?.source ?? null,
+        avatarSource,
         initials: getInitials(selfDisplayName),
       },
     ];
@@ -161,7 +167,7 @@ export default function ResultScreen({ route, navigation }) {
         rank: index + 1,
       }));
   }, [
-    currentAvatar?.source,
+    avatarSource,
     hasOpponent,
     isMultiplayer,
     opponentDisplayName,
@@ -186,35 +192,35 @@ export default function ResultScreen({ route, navigation }) {
           <View style={styles.card}>
           {!isMultiplayer ? (
             <View style={getBadgePillStyle(badge.color)}>
-              <Text style={styles.badgePillText}>{badge.title}</Text>
+              <Text style={styles.badgePillText}>{t(badge.title)}</Text>
             </View>
           ) : null}
 
           <Text style={styles.heading}>
             {isMultiplayer
-              ? 'Lobby Ergebnis'
+              ? t('Lobby Ergebnis')
               : percentage >= 95
-              ? 'Legendary Win!'
-              : 'MedBattle abgeschlossen'}
+              ? t('Legendary Win!')
+              : t('MedBattle abgeschlossen')}
           </Text>
           <Text style={styles.subtitle}>
-            {isMultiplayer ? 'Ranking nach richtigen Antworten' : badge.subtitle}
+            {isMultiplayer ? t('Ranking nach richtigen Antworten') : t(badge.subtitle)}
           </Text>
 
           {!isMultiplayer ? (
             <View style={styles.statsSection}>
               <View style={styles.statsRow}>
-                <StatPill label="Score" value={`${score}/${totalQuestions}`} />
-                <StatPill label="Leaderboard" value={`${points} Punkte`} />
+                <StatPill label={t('Score')} value={`${score}/${totalQuestions}`} />
+                <StatPill label={t('Leaderboard')} value={`${points} ${t('Punkte')}`} />
               </View>
               {coinsEarned > 0 ? (
                 <View style={[styles.statsRow, styles.statsRowSecondary]}>
-                  <StatPill label="Coins" value={`+${coinsEarned}`} />
-                  <StatPill label="XP" value={`+${xpEarned}`} />
+                  <StatPill label={t('Coins')} value={`+${coinsEarned}`} />
+                  <StatPill label={t('XP')} value={`+${xpEarned}`} />
                 </View>
               ) : (
                 <View style={[styles.statsRow, styles.statsRowSecondary]}>
-                  <StatPill label="XP" value={`+${xpEarned}`} />
+                  <StatPill label={t('XP')} value={`+${xpEarned}`} />
                 </View>
               )}
             </View>
@@ -226,17 +232,17 @@ export default function ResultScreen({ route, navigation }) {
                 matchJoinCode={matchJoinCode}
               />
               <View style={styles.multiplayerRewards}>
-                <StatPill label="Coins" value={`+${coinsEarned}`} />
-                <StatPill label="XP" value={`+${xpEarned}`} />
+                <StatPill label={t('Coins')} value={`+${coinsEarned}`} />
+                <StatPill label={t('XP')} value={`+${xpEarned}`} />
               </View>
             </>
           )}
 
           {showOfflineNote ? (
             <View style={styles.offlineBanner}>
-              <Text style={styles.offlineBannerTitle}>Offline Modus</Text>
+              <Text style={styles.offlineBannerTitle}>{t('Offline Modus')}</Text>
               <Text style={styles.offlineBannerText}>
-                Dein Score wird synchronisiert, sobald du wieder online bist.
+                {t('Dein Score wird synchronisiert, sobald du wieder online bist.')}
               </Text>
             </View>
           ) : null}
@@ -259,13 +265,13 @@ export default function ResultScreen({ route, navigation }) {
             >
               <View style={styles.primaryButtonContent}>
                 <Text style={styles.primaryButtonText}>
-                  {mode === 'quick' ? 'Nochmal Quick Play' : 'N\u00e4chste Challenge'}
+                  {mode === 'quick' ? t('Nochmal Quick Play') : t('Nächste Challenge')}
                 </Text>
                 {isQuickPlay ? (
                   <View style={styles.primaryButtonMetaRow}>
                     <Ionicons name="flash" size={14} color="#0A0A12" />
                     <Text style={styles.primaryButtonMetaText}>
-                      Energie {energyLabel}
+                      {t('Energie')} {energyLabel}
                     </Text>
                   </View>
                 ) : null}
@@ -276,16 +282,16 @@ export default function ResultScreen({ route, navigation }) {
               onPress={() => navigation.navigate('MultiplayerLobby', { mode: 'hub' })}
               style={getPrimaryButtonStyle(colors.accent)}
             >
-              <Text style={styles.primaryButtonText}>Zur\u00fcck zur Arena</Text>
+              <Text style={styles.primaryButtonText}>{t('Zurück zur Arena')}</Text>
             </Pressable>
           )}
 
-          <Pressable
-            onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
-            style={styles.tertiaryButton}
-          >
-            <Text style={styles.tertiaryButtonText}>Zur\u00fcck zur Basis</Text>
-          </Pressable>
+        <Pressable
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
+          style={styles.tertiaryButton}
+        >
+          <Text style={styles.tertiaryButtonText}>{t('Zurück zur Basis')}</Text>
+        </Pressable>
         </View>
         </View>
 

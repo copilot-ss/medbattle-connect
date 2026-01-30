@@ -1,5 +1,6 @@
 import { ActivityIndicator, Animated, Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/MultiplayerLobbyScreen.styles';
 import { getInitials } from './lobbyUtils';
 
@@ -29,12 +30,14 @@ export default function LobbyParticipantsCard({
   onlineFriends,
   onInviteFriend,
 }) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.lobbyCard}>
-      <Text style={styles.lobbyTitle}>Lobby</Text>
+      <Text style={styles.lobbyTitle}>{t('Lobby')}</Text>
 
       <View style={styles.participantsHeader}>
-        <Text style={styles.participantsTitle}>Spieler</Text>
+        <Text style={styles.participantsTitle}>{t('Spieler')}</Text>
         <Text style={styles.participantsCount}>
           {participantCount}/{maxPlayers}
         </Text>
@@ -94,7 +97,7 @@ export default function LobbyParticipantsCard({
                   ]}
                 >
                   <Ionicons name="close" size={14} color="#FCA5A5" />
-                  <Text style={styles.kickButtonText}>Entfernen</Text>
+                  <Text style={styles.kickButtonText}>{t('Entfernen')}</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -115,13 +118,13 @@ export default function LobbyParticipantsCard({
             disabled={!hasEnoughPlayers || startingMatch}
           >
             <Text style={[styles.primaryActionText, styles.startButtonText]}>
-              {startingMatch ? 'Starte ...' : 'Start'}
+              {startingMatch ? t('Starte ...') : t('Start')}
             </Text>
           </AnimatedPressable>
           <Pressable
             onPress={onOpenSettings}
             style={styles.lobbySettingsButton}
-            accessibilityLabel="Lobby Einstellungen"
+            accessibilityLabel={t('Lobby Einstellungen')}
           >
             <Ionicons name="settings-outline" size={18} color="#93C5FD" />
           </Pressable>
@@ -137,7 +140,7 @@ export default function LobbyParticipantsCard({
         >
           <Text style={styles.codeBadgeText}>{currentJoinCode}</Text>
           <Text style={copied ? styles.codeHintSuccess : styles.codeHint}>
-            {copied ? 'Kopiert!' : 'Tippen zum Kopieren'}
+            {copied ? t('Kopiert!') : t('Tippen zum Kopieren')}
           </Text>
         </Pressable>
         <Pressable onPress={onShareCode} style={styles.shareButton}>
@@ -146,12 +149,12 @@ export default function LobbyParticipantsCard({
       </View>
 
       <View style={styles.onlineFriendsSection}>
-        <Text style={styles.onlineFriendsTitle}>Freunde online</Text>
+        <Text style={styles.onlineFriendsTitle}>{t('Freunde online')}</Text>
 
         {friendsLoading ? (
           <View style={styles.loadingInline}>
             <ActivityIndicator size="small" color="#60A5FA" />
-            <Text style={styles.loadingInlineText}>Suche Freunde ...</Text>
+            <Text style={styles.loadingInlineText}>{t('Suche Freunde ...')}</Text>
           </View>
         ) : null}
 
@@ -164,13 +167,13 @@ export default function LobbyParticipantsCard({
                 style={styles.onlineFriendCard}
               >
                 <Text style={styles.onlineFriendName}>
-                  {friend.username ?? 'Freund:in'}
+                  {friend.username ?? t('Freund:in')}
                 </Text>
                 {friend.title ? (
                   <Text style={styles.onlineFriendTitle}>{friend.title}</Text>
                 ) : null}
                 <Text style={styles.onlineFriendCode}>{friend.code}</Text>
-                <Text style={styles.onlineFriendHint}>Einladen</Text>
+                <Text style={styles.onlineFriendHint}>{t('Einladen')}</Text>
               </Pressable>
             ))}
           </View>
@@ -178,7 +181,7 @@ export default function LobbyParticipantsCard({
 
         {!friendsLoading && !onlineFriends.length ? (
           <Text style={styles.onlineFriendEmpty}>
-            Keine Freunde online.
+            {t('Keine Freunde online.')}
           </Text>
         ) : null}
       </View>

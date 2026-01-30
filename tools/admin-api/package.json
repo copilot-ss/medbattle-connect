@@ -1,0 +1,22 @@
+{
+  "name": "medbattle-admin-api",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "sync:mcp": "node import-mcp.js",
+    "start": "node index.js",
+    "start:sync": "npm run sync:mcp && npm start",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.26.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-rate-limit": "^6.7.0",
+    "helmet": "^6.0.1",
+    "jsonwebtoken": "^9.0.3",
+    "node-fetch": "^2.7.0"
+  }
+}

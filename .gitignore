@@ -1,6 +1,7 @@
 node_modules
 .expo/
 .env
+/.vscode/settings.json
 supabase/.temp/
 supabase/.branches/
 _eas/
