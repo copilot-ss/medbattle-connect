@@ -20,7 +20,8 @@ const questionsCache = new Map();
 const QUESTIONS_STORAGE_PREFIX = 'medbattle_questions_cache';
 const MAX_CACHED_QUESTIONS = 200;
 const QUESTION_CACHE_SYNC_TTL = 6 * 60 * 60 * 1000;
-let lastQuestionCacheSyncAt = 0;
+const DEFAULT_LANGUAGE = 'de';
+const questionCacheSyncTimes = new Map();
 const BASE_MATCH_POINTS = 12;
 const COIN_COMPLETION_BONUS = 1;
 const COIN_PERFECT_BONUS = 2;
@@ -103,6 +104,36 @@ function normalizeDifficulty(value) {
     : 'mittel';
 }
 
+function normalizeLanguage(value) {
+  if (typeof value !== 'string') {
+    return DEFAULT_LANGUAGE;
+  }
+  const normalized = value.trim().toLowerCase();
+  return normalized === 'en' ? 'en' : DEFAULT_LANGUAGE;
+}
+
+function normalizeLanguageOrNull(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const normalized = value.trim().toLowerCase();
+  return normalized ? normalized : null;
+}
+
+function shouldFallbackToLegacyGetQuestions(error) {
+  if (!error) {
+    return false;
+  }
+  const message = String(error.message || '').toLowerCase();
+  if (!message.includes('get_questions')) {
+    return false;
+  }
+  return message.includes('schema cache') || message.includes('does not exist');
+}
+
 function sanitizePoints(value) {
   return Number.isFinite(value) ? Math.max(value, 0) : 0;
 }
@@ -166,8 +197,9 @@ function normalizeQuestionList(rows, fallbackDifficulty) {
     );
 }
 
-function buildQuestionsStorageKey({ difficulty, category }) {
-  return `${QUESTIONS_STORAGE_PREFIX}:${difficulty}:${category ?? 'all'}`;
+function buildQuestionsStorageKey({ difficulty, category, language }) {
+  const normalizedLanguage = normalizeLanguage(language);
+  return `${QUESTIONS_STORAGE_PREFIX}:${normalizedLanguage}:${difficulty}:${category ?? 'all'}`;
 }
 
 async function loadCachedQuestions(storageKey) {
@@ -250,16 +282,20 @@ async function syncCachedQuestions(storageKey, incoming) {
   return merged;
 }
 
-function buildOfflineSeedQuestions(difficulty, limit, category) {
+function buildOfflineSeedQuestions(difficulty, limit, category, language) {
+  const normalizedLanguage = normalizeLanguage(language);
   const pool = OFFLINE_SEED_QUESTIONS.filter(
     (question) =>
       question?.difficulty === difficulty &&
-      (!category || question?.category === category)
+      (!category || question?.category === category) &&
+      normalizeLanguage(question?.language ?? DEFAULT_LANGUAGE) === normalizedLanguage
   );
   const fallbackByCategory =
     category
       ? OFFLINE_SEED_QUESTIONS.filter(
-          (question) => question?.category === category
+          (question) =>
+            question?.category === category &&
+            normalizeLanguage(question?.language ?? DEFAULT_LANGUAGE) === normalizedLanguage
         )
       : [];
   if (category) {
@@ -273,7 +309,11 @@ function buildOfflineSeedQuestions(difficulty, limit, category) {
     }
     return [];
   }
-  const source = pool.length ? pool : OFFLINE_SEED_QUESTIONS;
+  const languagePool = OFFLINE_SEED_QUESTIONS.filter(
+    (question) =>
+      normalizeLanguage(question?.language ?? DEFAULT_LANGUAGE) === normalizedLanguage
+  );
+  const source = pool.length ? pool : languagePool;
   const shuffled = shuffleList(source);
   return shuffled.slice(0, limit);
 }
@@ -363,8 +403,9 @@ export async function flushQueuedScores(userId) {
   return { ok: true, flushed, remaining: remaining.length };
 }
 
-function buildQuestionsCacheKey({ difficulty, limit, category }) {
-  return `${difficulty}:${limit}:${category ?? 'all'}`;
+function buildQuestionsCacheKey({ difficulty, limit, category, language }) {
+  const normalizedLanguage = normalizeLanguage(language);
+  return `${normalizedLanguage}:${difficulty}:${limit}:${category ?? 'all'}`;
 }
 
 function cloneQuestions(list) {
@@ -381,9 +422,16 @@ export async function fetchQuestions(
   difficulty = 'mittel',
   limit = 6,
   category = null,
-  { force = false, offline = false } = {}
+  { force = false, offline = false, language, fallbackLanguage } = {}
 ) {
   const normalizedDifficulty = normalizeDifficulty(difficulty);
+  const normalizedLanguage = normalizeLanguage(language);
+  const normalizedFallbackLanguage =
+    fallbackLanguage === undefined
+      ? normalizedLanguage === DEFAULT_LANGUAGE
+        ? DEFAULT_LANGUAGE
+        : null
+      : normalizeLanguageOrNull(fallbackLanguage);
   const normalizedLimit =
     Number.isFinite(limit) && limit > 0 ? Math.min(limit, 50) : 6;
   const normalizedCategory =
@@ -392,10 +440,12 @@ export async function fetchQuestions(
     difficulty: normalizedDifficulty,
     limit: normalizedLimit,
     category: normalizedCategory,
+    language: normalizedLanguage,
   });
   const storageKey = buildQuestionsStorageKey({
     difficulty: normalizedDifficulty,
     category: normalizedCategory,
+    language: normalizedLanguage,
   });
   const now = Date.now();
 
@@ -423,22 +473,46 @@ export async function fetchQuestions(
       return cached;
     }
     const offlineQuestions = normalizeQuestionList(
-      buildOfflineSeedQuestions(normalizedDifficulty, normalizedLimit, normalizedCategory),
+      buildOfflineSeedQuestions(
+        normalizedDifficulty,
+        normalizedLimit,
+        normalizedCategory,
+        normalizedLanguage
+      ),
       normalizedDifficulty
     );
     return cloneQuestions(offlineQuestions);
   }
 
   try {
-    const { data, error } = await runSupabaseRequest(
+    const rpcPayload = {
+      p_difficulty: normalizedDifficulty,
+      p_limit: normalizedLimit,
+      p_category: normalizedCategory,
+      p_language: normalizedLanguage,
+      p_fallback_language: normalizedFallbackLanguage,
+    };
+    let { data, error } = await runSupabaseRequest(
       () =>
-        supabase.rpc('get_questions', {
-          p_difficulty: normalizedDifficulty,
-          p_limit: normalizedLimit,
-          p_category: normalizedCategory,
-        }),
+        supabase.rpc('get_questions', rpcPayload),
       { label: 'quizService.getQuestions' }
     );
+
+    if (error && shouldFallbackToLegacyGetQuestions(error)) {
+      const legacyPayload = {
+        p_difficulty: normalizedDifficulty,
+        p_limit: normalizedLimit,
+        p_category: normalizedCategory,
+      };
+      const legacyResponse = await runSupabaseRequest(
+        () => supabase.rpc('get_questions', legacyPayload),
+        { label: 'quizService.getQuestions.legacy' }
+      );
+      if (!legacyResponse.error) {
+        data = legacyResponse.data;
+        error = null;
+      }
+    }
 
     if (error) {
       console.warn('Fehler beim Laden der Fragen:', error.message);
@@ -578,13 +652,11 @@ export async function fetchCategories({
   }
 }
 
-export async function syncQuestionCache({ force = false, limit = 16 } = {}) {
+export async function syncQuestionCache({ force = false, limit = 16, language } = {}) {
+  const normalizedLanguage = normalizeLanguage(language);
   const now = Date.now();
-  if (
-    !force &&
-    lastQuestionCacheSyncAt &&
-    now - lastQuestionCacheSyncAt < QUESTION_CACHE_SYNC_TTL
-  ) {
+  const lastSyncAt = questionCacheSyncTimes.get(normalizedLanguage) ?? 0;
+  if (!force && lastSyncAt && now - lastSyncAt < QUESTION_CACHE_SYNC_TTL) {
     return { ok: true, skipped: true };
   }
 
@@ -596,6 +668,7 @@ export async function syncQuestionCache({ force = false, limit = 16 } = {}) {
   for (const difficulty of difficulties) {
     const questions = await fetchQuestions(difficulty, normalizedLimit, null, {
       force: true,
+      language: normalizedLanguage,
     });
     results.push({
       difficulty,
@@ -604,10 +677,10 @@ export async function syncQuestionCache({ force = false, limit = 16 } = {}) {
   }
 
   if (results.some((result) => result.count > 0)) {
-    lastQuestionCacheSyncAt = now;
+    questionCacheSyncTimes.set(normalizedLanguage, now);
   }
 
-  return { ok: true, results };
+  return { ok: true, results, language: normalizedLanguage };
 }
 
 export function calculateMatchPoints({ correct = 0, total = 0, difficulty = 'mittel' } = {}) {

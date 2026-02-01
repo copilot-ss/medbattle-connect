@@ -126,6 +126,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  rowBetweenSpaced: {
+    marginTop: 14,
+  },
   languageRow: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceAlt,
@@ -262,10 +265,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: colors.border,
   },
-  friendHeroEmoji: {
-    fontSize: 36,
-    marginRight: 14,
-  },
   friendHeroTextGroup: {
     flex: 1,
   },
@@ -289,14 +288,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(87, 199, 255, 0.45)',
   },
-  friendCodeLabel: {
-    color: '#9EDCFF',
-    fontSize: 11,
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-    fontFamily: fonts.medium,
-  },
   friendCodeValue: {
     color: colors.textPrimary,
     fontSize: 22,
@@ -316,13 +307,6 @@ const styles = StyleSheet.create({
   },
   friendCodeCopyIcon: {
     marginTop: 4,
-  },
-  friendCodeCaption: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    marginTop: 6,
-    opacity: 0.85,
-    fontFamily: fonts.regular,
   },
   friendInputLabel: {
     color: colors.textSecondary,

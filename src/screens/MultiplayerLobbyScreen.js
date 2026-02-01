@@ -41,7 +41,7 @@ import { useTranslation } from '../i18n/useTranslation';
 
 export default function MultiplayerLobbyScreen({ navigation, route }) {
   const { t } = useTranslation();
-  const { avatarId, avatarUri, userStats } = usePreferences();
+  const { avatarId, avatarUri, userStats, language } = usePreferences();
   const activeAvatarSource = useMemo(() => {
     if (avatarUri) {
       return { uri: avatarUri };
@@ -247,6 +247,8 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
           userId,
           difficulty: nextDifficulty,
           questionLimit: nextQuestionLimit,
+          language,
+          fallbackLanguage: language === 'de' ? 'de' : null,
         });
 
         if (!result.ok) {
@@ -271,6 +273,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     [
       currentMatch,
       isHostWaiting,
+      language,
       selectedCategory,
       updateMatchSettings,
       updatingSettings,
@@ -307,6 +310,8 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         difficulty: selectedDifficulty,
         questionLimit,
         category: selectedCategory,
+        language,
+        fallbackLanguage: language === 'de' ? 'de' : null,
         userId,
       });
 
@@ -332,6 +337,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     attachMatchSubscription,
     creating,
     isCreateOnly,
+    language,
     questionLimit,
     refreshMatches,
     selectedCategory,

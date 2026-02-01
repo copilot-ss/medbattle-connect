@@ -27,7 +27,7 @@ export default function AudioSettingsCard({
           accessibilityHint={soundStatus}
         />
       </View>
-      <View style={[styles.rowBetween, { marginTop: 14 }]}>
+      <View style={[styles.rowBetween, styles.rowBetweenSpaced]}>
         <Text style={styles.cardLabel}>{t('Vibration')}</Text>
         <Switch
           value={vibrationEnabled}
@@ -37,7 +37,7 @@ export default function AudioSettingsCard({
           accessibilityHint={vibrationStatus}
         />
       </View>
-      <View style={[styles.rowBetween, { marginTop: 14 }]}>
+      <View style={[styles.rowBetween, styles.rowBetweenSpaced]}>
         <Text style={styles.cardLabel}>{t('Push-Benachrichtigungen')}</Text>
         <Switch
           value={pushEnabled}

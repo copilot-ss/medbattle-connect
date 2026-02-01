@@ -15,7 +15,7 @@ function sanitizeStatNumber(value) {
 
 export default function useOfflineSync() {
   const { isOnline } = useConnectivity();
-  const { updateUserStats } = usePreferences();
+  const { updateUserStats, language } = usePreferences();
   const userId = useSupabaseUserId();
   const syncingRef = useRef(false);
   const questionSyncRef = useRef(false);
@@ -71,12 +71,12 @@ export default function useOfflineSync() {
     }
 
     questionSyncRef.current = true;
-    syncQuestionCache()
+    syncQuestionCache({ language })
       .catch((err) => {
         console.warn('Konnte Fragen-Cache nicht synchronisieren:', err);
       })
       .finally(() => {
         questionSyncRef.current = false;
       });
-  }, [isOnline]);
+  }, [isOnline, language]);
 }

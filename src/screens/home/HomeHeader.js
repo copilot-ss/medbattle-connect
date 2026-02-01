@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/HomeScreen.styles';
 
@@ -6,32 +6,75 @@ export default function HomeHeader({
   coins = 0,
   energy = 0,
   energyMax = null,
-  userName,
-  isGuest,
+  avatarInitials = '?',
+  avatarUri = null,
+  avatarSource = null,
+  avatarColor = null,
+  level = 1,
+  progress = 0,
+  onProfilePress,
 }) {
   const { t } = useTranslation();
-  const resolvedName = typeof userName === 'string' ? userName.trim() : '';
   const resolvedEnergy = Number.isFinite(energy) ? energy : 0;
   const resolvedEnergyMax =
     Number.isFinite(energyMax) && energyMax > 0 ? energyMax : null;
   const energyLabel = resolvedEnergyMax
     ? `${resolvedEnergy}/${resolvedEnergyMax}`
     : `${resolvedEnergy}`;
-  const displayName = isGuest ? t('Gast') : resolvedName;
-  const welcomeLine = displayName
-    ? t('Willkommen zurück, {name}', { name: displayName })
-    : t('Willkommen zurück');
+  const safeProgress = Number.isFinite(progress) ? Math.min(Math.max(progress, 0), 1) : 0;
+  const progressWidth = `${Math.round(safeProgress * 100)}%`;
+  const avatarImageSource = avatarUri ? { uri: avatarUri } : avatarSource;
 
   return (
     <View style={styles.header}>
-      <View style={styles.headerTitle}>
-        <Text style={styles.welcomeText} numberOfLines={1}>
-          {welcomeLine}
-        </Text>
-        <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-          {t("Los geht's!")}
-        </Text>
-      </View>
+      <Pressable
+        onPress={onProfilePress}
+        disabled={!onProfilePress}
+        style={({ pressed }) => [
+          styles.profileQuickAccess,
+          pressed ? styles.profileQuickAccessPressed : null,
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={t('Profil')}
+      >
+        <View
+          style={[
+            styles.profileAvatarFrame,
+            avatarColor ? { borderColor: avatarColor } : null,
+          ]}
+        >
+          <View
+            style={[
+              styles.profileAvatarCircle,
+              avatarColor ? { backgroundColor: `${avatarColor}33` } : null,
+            ]}
+          >
+            {avatarImageSource ? (
+              <Image
+                source={avatarImageSource}
+                style={styles.profileAvatarImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <Text style={styles.profileAvatarInitials}>{avatarInitials}</Text>
+            )}
+          </View>
+        </View>
+        <View style={styles.profileProgressBlock}>
+          <Text style={styles.profileLevelText}>
+            {t('Level {level}', { level })}
+          </Text>
+          <View style={styles.profileProgressTrack}>
+            <View
+              style={[
+                styles.profileProgressFill,
+                { width: progressWidth },
+                avatarColor ? { backgroundColor: avatarColor } : null,
+              ]}
+            />
+          </View>
+        </View>
+      </Pressable>
 
       <View style={styles.quickActions}>
         <View style={styles.coinBadge}>

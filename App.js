@@ -3,7 +3,7 @@ import 'react-native-gesture-handler';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect } from 'react';
 import { registerRootComponent } from 'expo';
-import { StatusBar, DevSettings, InteractionManager, Platform } from 'react-native';
+import { StatusBar, DevSettings, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AppNavigator from './src/AppNavigator';
 import GlobalErrorBoundary from './src/components/GlobalErrorBoundary';
@@ -48,16 +48,27 @@ function App() {
     }
     initializeAds();
     const unregisterUpdates = registerUpdates();
-    const assetTask = InteractionManager.runAfterInteractions(() => {
-      preloadAppAssets();
-    });
+    let idleHandle = null;
+    let timeoutId = null;
+    if (typeof requestIdleCallback === 'function') {
+      idleHandle = requestIdleCallback(() => {
+        preloadAppAssets();
+      }, { timeout: 1500 });
+    } else {
+      timeoutId = setTimeout(() => {
+        preloadAppAssets();
+      }, 0);
+    }
 
     return () => {
       if (unregisterUpdates) {
         unregisterUpdates();
       }
-      if (assetTask?.cancel) {
-        assetTask.cancel();
+      if (idleHandle !== null && typeof cancelIdleCallback === 'function') {
+        cancelIdleCallback(idleHandle);
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
       }
     };
   }, []);

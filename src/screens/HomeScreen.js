@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Text, View, Platform, InteractionManager, ScrollView } from 'react-native';
+import { Text, View, Platform, ScrollView } from 'react-native';
 import styles from './styles/HomeScreen.styles';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { usePreferences } from '../context/PreferencesContext';
@@ -20,6 +20,7 @@ import HomeHeader from './home/HomeHeader';
 import OfflineBanner from './home/OfflineBanner';
 import StreakCard from './home/StreakCard';
 import useHomeUser from './home/useHomeUser';
+import useSettingsStats from './settings/useSettingsStats';
 import { useTranslation } from '../i18n/useTranslation';
 
 const DEFAULT_DIFFICULTY = 'mittel';
@@ -48,7 +49,7 @@ export default function HomeScreen({ navigation, route }) {
   const hasLobby = Boolean(activeLobby?.code);
   const hasActiveLobby = hasLobby && !isOffline;
   const userId = useSupabaseUserId();
-  const { userName, isGuest } = useHomeUser();
+  const { userName } = useHomeUser();
   const {
     energy,
     energyMax,
@@ -57,6 +58,8 @@ export default function HomeScreen({ navigation, route }) {
     refreshEnergy,
     streaks,
     userStats,
+    avatarId,
+    avatarUri,
     updateUserStats,
   } = usePreferences();
   const { premium } = usePremiumStatus();
@@ -71,18 +74,44 @@ export default function HomeScreen({ navigation, route }) {
   const iapAvailable = Boolean(iapModule && typeof iapModule.connectAsync === 'function');
   const [iapReady, setIapReady] = useState(iapAvailable && Platform.OS !== 'android');
   const restoreAttemptedRef = useRef(false);
+  const {
+    userLevel,
+    avatarInitials,
+    currentAvatar,
+    titleProgress,
+  } = useSettingsStats({
+    streaks,
+    userStats,
+    avatarId,
+    userName,
+  });
 
   useEffect(() => {
     let cancelled = false;
-    const task = InteractionManager.runAfterInteractions(() => {
-      if (!cancelled) {
-        setShowAnimation(true);
-      }
-    });
+    let idleHandle = null;
+    let timeoutId = null;
+
+    if (typeof requestIdleCallback === 'function') {
+      idleHandle = requestIdleCallback(() => {
+        if (!cancelled) {
+          setShowAnimation(true);
+        }
+      }, { timeout: 1000 });
+    } else {
+      timeoutId = setTimeout(() => {
+        if (!cancelled) {
+          setShowAnimation(true);
+        }
+      }, 0);
+    }
+
     return () => {
       cancelled = true;
-      if (task?.cancel) {
-        task.cancel();
+      if (idleHandle !== null && typeof cancelIdleCallback === 'function') {
+        cancelIdleCallback(idleHandle);
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
       }
     };
   }, []);
@@ -480,8 +509,13 @@ export default function HomeScreen({ navigation, route }) {
         coins={coinsAvailable}
         energy={energy}
         energyMax={energyMax}
-        userName={userName}
-        isGuest={isGuest}
+        avatarInitials={avatarInitials}
+        avatarUri={avatarUri}
+        avatarSource={currentAvatar?.source ?? null}
+        avatarColor={currentAvatar?.color ?? null}
+        level={userLevel}
+        progress={titleProgress?.progress ?? 0}
+        onProfilePress={() => navigation.navigate('Profile')}
       />
 
       <ScrollView

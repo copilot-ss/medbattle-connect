@@ -14,7 +14,7 @@ export default function LobbyHeader({
   return (
     <View style={styles.header}>
       <View>
-        <Text style={styles.title}>{t('Multiplayer Arena')}</Text>
+        <Text style={styles.title}>{t('Multiplayer')}</Text>
       </View>
       <View style={styles.headerActions}>
         <Pressable

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { usePreferences } from '../../../context/PreferencesContext';
 import { fetchQuestions } from '../../../services/quizService';
 import { t } from '../../../i18n';
 import { ALLOWED_DIFFICULTIES } from './useQuizConfig';
@@ -42,6 +43,7 @@ export default function useSoloQuestionLoader({
   const safeDifficulty = normalizeDifficulty(normalizedDifficulty);
   const safeCategory =
     typeof category === 'string' && category.trim() ? category.trim() : null;
+  const { language } = usePreferences();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -69,6 +71,8 @@ export default function useSoloQuestionLoader({
       try {
         const data = await fetchQuestions(safeDifficulty, questionLimit, safeCategory, {
           offline: isOffline,
+          language,
+          fallbackLanguage: language === 'de' ? 'de' : null,
         });
         const prepared = prepareQuestions(data);
 
@@ -105,7 +109,7 @@ export default function useSoloQuestionLoader({
     return () => {
       cancelled = true;
     };
-  }, [isEnabled, isOffline, questionLimit, safeCategory, safeDifficulty]);
+  }, [isEnabled, isOffline, language, questionLimit, safeCategory, safeDifficulty]);
 
   return {
     questions,

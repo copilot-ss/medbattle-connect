@@ -55,6 +55,8 @@ export default function MainTabs({ onClearSession }) {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
         }}
       >
         {(props) => (

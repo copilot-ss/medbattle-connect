@@ -15,6 +15,27 @@ const openMatchesCache = {
   data: null,
 };
 
+const DEFAULT_LANGUAGE = 'de';
+
+function normalizeLanguage(value) {
+  if (typeof value !== 'string') {
+    return DEFAULT_LANGUAGE;
+  }
+  const normalized = value.trim().toLowerCase();
+  return normalized === 'en' ? 'en' : DEFAULT_LANGUAGE;
+}
+
+function normalizeLanguageOrNull(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const normalized = value.trim().toLowerCase();
+  return normalized ? normalized : null;
+}
+
 let initialLobbyCleanupPromise = null;
 let lastIdleCleanupAt = 0;
 
@@ -105,6 +126,8 @@ export async function createMatch({
   difficulty = 'mittel',
   questionLimit = 5,
   category = null,
+  language,
+  fallbackLanguage,
   userId,
 } = {}) {
   const hostId = typeof userId === 'string' ? userId : null;
@@ -116,6 +139,13 @@ export async function createMatch({
   const normalizedDifficulty = normalizeDifficulty(difficulty);
   const normalizedCategory =
     typeof category === 'string' && category.trim() ? category.trim() : null;
+  const normalizedLanguage = normalizeLanguage(language);
+  const normalizedFallbackLanguage =
+    fallbackLanguage === undefined
+      ? normalizedLanguage === DEFAULT_LANGUAGE
+        ? DEFAULT_LANGUAGE
+        : null
+      : normalizeLanguageOrNull(fallbackLanguage);
   const limit = Number.isFinite(questionLimit)
     ? Math.max(1, Math.min(questionLimit, 50))
     : 5;
@@ -123,12 +153,19 @@ export async function createMatch({
   try {
     await ensureLobbyCleanup({ force: true });
 
-    const payload = {
+    const basePayload = {
       p_difficulty: normalizedDifficulty,
       p_question_limit: limit,
     };
+    const payload = { ...basePayload };
     if (normalizedCategory) {
       payload.p_category = normalizedCategory;
+    }
+    if (normalizedLanguage) {
+      payload.p_language = normalizedLanguage;
+    }
+    if (normalizedFallbackLanguage !== null) {
+      payload.p_fallback_language = normalizedFallbackLanguage;
     }
 
     let { data, error } = await runSupabaseRequest(
@@ -139,22 +176,36 @@ export async function createMatch({
     if (
       error &&
       (error.code === 'PGRST202' ||
-        String(error.message).includes('schema cache')) &&
-      payload.p_category
+        String(error.message).includes('schema cache'))
     ) {
-      const fallback = await runSupabaseRequest(
-        () =>
-          supabase.rpc('create_match', {
-            p_difficulty: normalizedDifficulty,
-            p_question_limit: limit,
-          }),
-        { label: 'matchService.createMatch.legacy' }
-      );
-      if (!fallback.error) {
-        data = fallback.data;
-        error = null;
-      } else {
-        error = fallback.error;
+      if (payload.p_language || payload.p_fallback_language !== undefined) {
+        const legacyPayload = { ...basePayload };
+        if (normalizedCategory) {
+          legacyPayload.p_category = normalizedCategory;
+        }
+        const legacy = await runSupabaseRequest(
+          () => supabase.rpc('create_match', legacyPayload),
+          { label: 'matchService.createMatch.legacy' }
+        );
+        if (!legacy.error) {
+          data = legacy.data;
+          error = null;
+        } else {
+          error = legacy.error;
+        }
+      }
+
+      if (error && normalizedCategory) {
+        const legacy = await runSupabaseRequest(
+          () => supabase.rpc('create_match', basePayload),
+          { label: 'matchService.createMatch.legacyMinimal' }
+        );
+        if (!legacy.error) {
+          data = legacy.data;
+          error = null;
+        } else {
+          error = legacy.error;
+        }
       }
     }
 
@@ -274,6 +325,8 @@ export async function updateMatchSettings({
   userId,
   difficulty = 'mittel',
   questionLimit = 5,
+  language,
+  fallbackLanguage,
 } = {}) {
   const hostId = typeof userId === 'string' ? userId : null;
 
@@ -286,20 +339,53 @@ export async function updateMatchSettings({
   }
 
   const normalizedDifficulty = normalizeDifficulty(difficulty);
+  const normalizedLanguage = normalizeLanguage(language);
+  const normalizedFallbackLanguage =
+    fallbackLanguage === undefined
+      ? normalizedLanguage === DEFAULT_LANGUAGE
+        ? DEFAULT_LANGUAGE
+        : null
+      : normalizeLanguageOrNull(fallbackLanguage);
   const limit = Number.isFinite(questionLimit)
     ? Math.max(1, Math.min(questionLimit, 50))
     : 5;
 
   try {
-    const { data, error } = await runSupabaseRequest(
-      () =>
-        supabase.rpc('update_match_settings', {
-          p_match_id: matchId,
-          p_difficulty: normalizedDifficulty,
-          p_question_limit: limit,
-        }),
+    const basePayload = {
+      p_match_id: matchId,
+      p_difficulty: normalizedDifficulty,
+      p_question_limit: limit,
+    };
+    const payload = { ...basePayload };
+    if (normalizedLanguage) {
+      payload.p_language = normalizedLanguage;
+    }
+    if (normalizedFallbackLanguage !== null) {
+      payload.p_fallback_language = normalizedFallbackLanguage;
+    }
+
+    let { data, error } = await runSupabaseRequest(
+      () => supabase.rpc('update_match_settings', payload),
       { label: 'matchService.updateMatchSettings' }
     );
+
+    if (
+      error &&
+      (error.code === 'PGRST202' || String(error.message).includes('schema cache'))
+    ) {
+      if (payload.p_language || payload.p_fallback_language !== undefined) {
+        const legacy = await runSupabaseRequest(
+          () => supabase.rpc('update_match_settings', basePayload),
+          { label: 'matchService.updateMatchSettings.legacy' }
+        );
+        if (!legacy.error) {
+          data = legacy.data;
+          error = null;
+        } else {
+          error = legacy.error;
+        }
+      }
+    }
 
     if (error) {
       return { ok: false, error };

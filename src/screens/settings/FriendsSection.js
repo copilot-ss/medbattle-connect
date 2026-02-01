@@ -197,7 +197,6 @@ export default function FriendsSection({
       <View style={styles.friendListDivider} />
 
       <View style={styles.friendHeroRow}>
-        <Text style={styles.friendHeroEmoji}></Text>
         <View style={styles.friendHeroTextGroup}>
           <Text style={styles.friendHeroTitle}>{t('Freunde hinzufügen')}</Text>
           <Text style={styles.friendHeroSubtitle}>
