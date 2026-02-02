@@ -10,12 +10,13 @@ export default function QuizHeader({
   onExit,
   showMeta = true,
   showProgress = true,
+  categoryLabel = '',
 }) {
   const { t } = useTranslation();
   const total = totalQuestions || questionLimit || 0;
-  const current = Math.min(activeIndex + 1, total || activeIndex + 1);
   const isQuickPlay = difficultyLabel === 'Quick Play';
   const resolvedDifficulty = difficultyLabel ? t(difficultyLabel) : '';
+  const resolvedCategory = categoryLabel || t('Quiz');
 
   return (
     <View style={styles.header}>
@@ -27,12 +28,8 @@ export default function QuizHeader({
               : `${resolvedDifficulty} - ${total} ${t('Fragen')}`}
           </Text>
         ) : null}
-        {!isQuickPlay && showProgress ? (
-          <View style={styles.headerProgressPill}>
-            <Text style={styles.headerProgressText}>
-              {current}/{total || '?'}
-            </Text>
-          </View>
+        {showProgress ? (
+          <Text style={styles.headerCategory}>{resolvedCategory}</Text>
         ) : null}
       </View>
       <Pressable onPress={onExit} style={styles.exitButton}>

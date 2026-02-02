@@ -38,11 +38,6 @@ export default function LanguageSettingsCard({ language, onSelectLanguage }) {
                   {t(option.label)}
                 </Text>
               </View>
-              {isActive ? (
-                <View style={styles.languageCheck}>
-                  <Text style={styles.languageCheckText}>✓</Text>
-                </View>
-              ) : null}
             </Pressable>
           );
         })}

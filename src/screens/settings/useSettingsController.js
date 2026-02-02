@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { usePreferences } from '../../context/PreferencesContext';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -210,16 +211,39 @@ export default function useSettingsController({ navigation, route, onClearSessio
     }
   }, [avatarUri, setAvatarId, setAvatarUri, userLevel]);
 
-  const handlePickAvatarPhoto = useCallback(async () => {
+  const openAvatarImagePicker = useCallback(async (source) => {
     try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const permission =
+        source === 'camera'
+          ? await ImagePicker.requestCameraPermissionsAsync()
+          : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
+        Alert.alert(
+          t('Berechtigung erforderlich'),
+          source === 'camera'
+            ? t('Bitte erlaube Zugriff auf die Kamera.')
+            : t('Bitte erlaube Zugriff auf deine Fotos.')
+        );
         return;
       }
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaType.Images,
-        allowsEditing: true,
+      const picker =
+        source === 'camera'
+          ? ImagePicker.launchCameraAsync
+          : ImagePicker.launchImageLibraryAsync;
+
+      if (typeof picker !== 'function') {
+        Alert.alert(t('Kamera nicht verfügbar.'));
+        return;
+      }
+
+      const mediaTypes = ImagePicker.MediaType?.Images
+        ? [ImagePicker.MediaType.Images]
+        : ImagePicker.MediaTypeOptions?.Images;
+
+      const result = await picker({
+        mediaTypes,
+        allowsEditing: source !== 'camera',
         aspect: [1, 1],
         quality: 0.8,
       });
@@ -235,7 +259,20 @@ export default function useSettingsController({ navigation, route, onClearSessio
     } catch (err) {
       console.warn('Konnte Avatar-Foto nicht auswählen:', err);
     }
-  }, [setAvatarUri]);
+  }, [setAvatarUri, t]);
+
+  const handlePickAvatarPhoto = useCallback(() => {
+    Alert.alert(
+      t('Foto wählen'),
+      t('Quelle auswählen'),
+      [
+        { text: t('Abbrechen'), style: 'cancel' },
+        { text: t('Galerie'), onPress: () => openAvatarImagePicker('library') },
+        { text: t('Kamera'), onPress: () => openAvatarImagePicker('camera') },
+      ],
+      { cancelable: true }
+    );
+  }, [openAvatarImagePicker, t]);
 
   useEffect(() => {
     if (!focusTarget) {

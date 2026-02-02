@@ -3,116 +3,173 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
     <title>AGB - MedBattle</title>
     <style>
       :root {
         color-scheme: light;
       }
+      * {
+        box-sizing: border-box;
+      }
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         margin: 0;
-        padding: 24px;
-        line-height: 1.6;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
         color: #0f172a;
         background: #f8fafc;
       }
+      .page {
+        min-height: 100vh;
+        padding: 32px 16px 48px;
+        background:
+          radial-gradient(1200px 600px at 10% -10%, rgba(14, 165, 233, 0.18), transparent 60%),
+          radial-gradient(1000px 600px at 90% 0%, rgba(34, 197, 94, 0.12), transparent 55%),
+          #f8fafc;
+      }
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+      }
       header {
-        margin-bottom: 16px;
+        margin-bottom: 20px;
+      }
+      .eyebrow {
+        margin: 0 0 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-size: 11px;
+        color: #64748b;
       }
       h1 {
-        margin: 0 0 8px 0;
-        font-size: 28px;
+        margin: 0 0 8px;
+        font-size: 32px;
       }
-      h2 {
-        margin: 24px 0 8px 0;
-        font-size: 18px;
+      .lead {
+        margin: 0 0 6px;
+        font-size: 15px;
+        color: #475569;
       }
-      p, li {
-        font-size: 14px;
-      }
-      a {
-        color: #2563eb;
+      .meta {
+        margin: 0;
+        font-size: 12px;
+        color: #64748b;
       }
       .card {
         background: #ffffff;
         border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 16px;
+        border-radius: 16px;
+        padding: 22px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+      }
+      h2 {
+        margin: 22px 0 8px;
+        font-size: 18px;
+      }
+      p, li {
+        font-size: 15px;
+        line-height: 1.7;
+      }
+      ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+      }
+      a {
+        color: #1d4ed8;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      @media (max-width: 640px) {
+        .page {
+          padding: 24px 14px 36px;
+        }
+        h1 {
+          font-size: 26px;
+        }
+        .card {
+          padding: 18px;
+        }
       }
     </style>
   </head>
   <body>
-    <header>
-      <h1>Allgemeine Geschäftsbedingungen (AGB)</h1>
-      <p>Diese Bedingungen regeln die Nutzung der MedBattle App und der zugehörigen Dienste.</p>
-      <p>Stand: 2026-01-12</p>
-    </header>
+    <main class="page">
+      <div class="container">
+        <header>
+          <p class="eyebrow">MedBattle</p>
+          <h1>Allgemeine Geschäftsbedingungen (AGB)</h1>
+          <p class="lead">Diese Bedingungen regeln die Nutzung der MedBattle App und der zugehörigen Dienste.</p>
+          <p class="meta">Stand: 2026-01-12</p>
+        </header>
 
-    <div class="card">
-      <h2>Geltungsbereich</h2>
-      <p>Mit der Nutzung der App akzeptierst du diese Bedingungen. Sie gelten für alle Funktionen der App.</p>
+        <div class="card">
+          <h2>Geltungsbereich</h2>
+          <p>Mit der Nutzung der App akzeptierst du diese Bedingungen. Sie gelten für alle Funktionen der App.</p>
 
-      <h2>Leistungen</h2>
-      <p>MedBattle ist ein Lern- und Quizspiel. Inhalte dienen der Wissensübung und ersetzen keine medizinische Beratung.</p>
+          <h2>Leistungen</h2>
+          <p>MedBattle ist ein Lern- und Quizspiel. Inhalte dienen der Wissensübung und ersetzen keine medizinische Beratung.</p>
 
-      <h2>Accounts</h2>
-      <ul>
-        <li>Du kannst dich mit E-Mail/Passwort oder OAuth anmelden.</li>
-        <li>Du bist für die Sicherheit deiner Zugangsdaten verantwortlich.</li>
-        <li>Wir dürfen Accounts sperren, wenn gegen diese Bedingungen verstoßen wird.</li>
-      </ul>
+          <h2>Accounts</h2>
+          <ul>
+            <li>Du kannst dich mit E-Mail/Passwort oder OAuth anmelden.</li>
+            <li>Du bist für die Sicherheit deiner Zugangsdaten verantwortlich.</li>
+            <li>Wir dürfen Accounts sperren, wenn gegen diese Bedingungen verstoßen wird.</li>
+          </ul>
 
-      <h2>Gastmodus</h2>
-      <ul>
-        <li>Im Gastmodus sind einige Funktionen eingeschränkt.</li>
-        <li>Gastdaten werden lokal auf dem Gerät gespeichert und können verloren gehen.</li>
-      </ul>
+          <h2>Gastmodus</h2>
+          <ul>
+            <li>Im Gastmodus sind einige Funktionen eingeschränkt.</li>
+            <li>Gastdaten werden lokal auf dem Gerät gespeichert und können verloren gehen.</li>
+          </ul>
 
-      <h2>Pflichten der Nutzer</h2>
-      <ul>
-        <li>Keine Weitergabe von Zugangsdaten an Dritte.</li>
-        <li>Keine Manipulation von Scores oder Ranglisten.</li>
-        <li>Kein Missbrauch von Multiplayer- oder Kommunikationsfunktionen.</li>
-      </ul>
+          <h2>Pflichten der Nutzer</h2>
+          <ul>
+            <li>Keine Weitergabe von Zugangsdaten an Dritte.</li>
+            <li>Keine Manipulation von Scores oder Ranglisten.</li>
+            <li>Kein Missbrauch von Multiplayer- oder Kommunikationsfunktionen.</li>
+          </ul>
 
-      <h2>Nutzungsrechte</h2>
-      <p>Wir räumen dir ein einfaches, nicht übertragbares Recht ein, die App für private Zwecke zu nutzen. Inhalte bleiben urheberrechtlich geschützt.</p>
+          <h2>Nutzungsrechte</h2>
+          <p>Wir räumen dir ein einfaches, nicht übertragbares Recht ein, die App für private Zwecke zu nutzen. Inhalte bleiben urheberrechtlich geschützt.</p>
 
-      <h2>Verbotene Nutzung</h2>
-      <ul>
-        <li>Kein Reverse Engineering, keine Umgehung von Schutzmaßnahmen.</li>
-        <li>Keine automatisierten Zugriffe oder Bots.</li>
-        <li>Keine Angriffe auf Server oder andere Nutzer.</li>
-      </ul>
+          <h2>Verbotene Nutzung</h2>
+          <ul>
+            <li>Kein Reverse Engineering, keine Umgehung von Schutzmaßnahmen.</li>
+            <li>Keine automatisierten Zugriffe oder Bots.</li>
+            <li>Keine Angriffe auf Server oder andere Nutzer.</li>
+          </ul>
 
-      <h2>Inhalte und Fortschritt</h2>
-      <p>Fortschritt und Ranglisten können bei Regelverstößen angepasst oder entfernt werden.</p>
+          <h2>Inhalte und Fortschritt</h2>
+          <p>Fortschritt und Ranglisten können bei Regelverstößen angepasst oder entfernt werden.</p>
 
-      <h2>Premium, Käufe und Werbung</h2>
-      <ul>
-        <li>Optionale Käufe und Premium-Funktionen sind innerhalb der App verfügbar.</li>
-        <li>Abrechnung erfolgt über den jeweiligen App-Store.</li>
-        <li>Die kostenlose Version kann Werbung enthalten.</li>
-      </ul>
+          <h2>Premium, Käufe und Werbung</h2>
+          <ul>
+            <li>Optionale Käufe und Premium-Funktionen sind innerhalb der App verfügbar.</li>
+            <li>Abrechnung erfolgt über den jeweiligen App-Store.</li>
+            <li>Die kostenlose Version kann Werbung enthalten.</li>
+          </ul>
 
-      <h2>Verfügbarkeit</h2>
-      <p>Wir bemühen uns um eine stabile App, können jedoch keine dauerhafte Verfügbarkeit garantieren.</p>
+          <h2>Verfügbarkeit</h2>
+          <p>Wir bemühen uns um eine stabile App, können jedoch keine dauerhafte Verfügbarkeit garantieren.</p>
 
-      <h2>Haftung</h2>
-      <p>Wir haften nur für Schäden, die durch Vorsatz oder grobe Fahrlässigkeit verursacht wurden, soweit gesetzlich zulässig.</p>
+          <h2>Haftung</h2>
+          <p>Wir haften nur für Schäden, die durch Vorsatz oder grobe Fahrlässigkeit verursacht wurden, soweit gesetzlich zulässig.</p>
 
-      <h2>Datenschutz</h2>
-      <p>Informationen zur Datenverarbeitung findest du in der Datenschutzerklärung der App.</p>
+          <h2>Datenschutz</h2>
+          <p>Informationen zur Datenverarbeitung findest du in der Datenschutzerklärung der App.</p>
 
-      <h2>Änderungen</h2>
-      <p>Wir können diese Bedingungen aktualisieren. Die aktuelle Version ist unter dem Link in der App erreichbar.</p>
+          <h2>Änderungen</h2>
+          <p>Wir können diese Bedingungen aktualisieren. Die aktuelle Version ist unter dem Link in der App erreichbar.</p>
 
-      <h2>Kontakt</h2>
-      <p>
-        Fragen zu den AGB kannst du an
-        <a href="mailto:babyjeje24@gmail.com">babyjeje24@gmail.com</a>
-        senden.
-      </p>
-    </div>
+          <h2>Kontakt</h2>
+          <p>
+            Fragen zu den AGB kannst du an
+            <a href="mailto:babyjeje24@gmail.com">babyjeje24@gmail.com</a>
+            senden.
+          </p>
+        </div>
+      </div>
+    </main>
   </body>
 </html>

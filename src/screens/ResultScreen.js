@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { usePreferences } from '../context/PreferencesContext';
 import usePremiumStatus from '../hooks/usePremiumStatus';
@@ -19,6 +20,7 @@ import styles, {
 
 export default function ResultScreen({ route, navigation }) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const {
     score = 0,
     total = 0,
@@ -176,6 +178,16 @@ export default function ResultScreen({ route, navigation }) {
     selfDisplayName,
     selfScoreValue,
   ]);
+  const scrollContentStyle = useMemo(
+    () => [
+      styles.scrollContent,
+      {
+        paddingTop: Math.max(insets.top + 16, 24),
+        paddingBottom: Math.max(insets.bottom + 32, 56),
+      },
+    ],
+    [insets.bottom, insets.top]
+  );
 
   return (
     <View style={styles.container}>
@@ -187,7 +199,7 @@ export default function ResultScreen({ route, navigation }) {
       <Sparkle size={32} top={380} left={300} opacity={0.3} rotate="45deg" color={colors.accentGreen} />
       <Sparkle size={28} top={420} left={44} opacity={0.26} rotate="-30deg" color={colors.highlight} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={scrollContentStyle} showsVerticalScrollIndicator={false}>
         <View style={styles.cardWrap}>
           <View style={styles.card}>
           {!isMultiplayer ? (

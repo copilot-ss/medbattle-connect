@@ -4,6 +4,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "i18n:sync": "node scripts/i18n/sync.mjs",
     "postinstall": "patch-package"
   },
   "dependencies": {

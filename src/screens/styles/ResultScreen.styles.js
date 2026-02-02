@@ -11,9 +11,10 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 32,
-    paddingBottom: 120,
-    rowGap: 22,
+    paddingTop: 24,
+    paddingBottom: 56,
+    rowGap: 20,
+    flexGrow: 1,
   },
   backgroundGlowLarge: {
     position: 'absolute',

@@ -448,6 +448,7 @@ export default function useQuizController({ navigation, route }) {
   return {
     activeIndex,
     currentQuestion,
+    category,
     difficultyLabel,
     handleExitCancel,
     handleExitConfirm,
@@ -456,6 +457,7 @@ export default function useQuizController({ navigation, route }) {
     initialJoinCode,
     isAnswerLocked,
     isMultiplayer,
+    isQuickPlay,
     matchIsActive,
     matchJoinCode,
     matchOpponentState,

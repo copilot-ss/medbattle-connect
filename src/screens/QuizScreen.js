@@ -18,6 +18,7 @@ export default function QuizScreen({ navigation, route }) {
   const {
     activeIndex,
     answer,
+    category,
     currentQuestion,
     difficultyLabel,
     handleExitCancel,
@@ -26,6 +27,7 @@ export default function QuizScreen({ navigation, route }) {
     hasQuestions,
     isAnswerLocked,
     isMultiplayer,
+    isQuickPlay,
     matchIsActive,
     progressPercent,
     questionLimit,
@@ -71,10 +73,14 @@ export default function QuizScreen({ navigation, route }) {
     return null;
   }
 
+  const categoryLabel = isQuickPlay
+    ? t('Quick Play')
+    : category
+    ? t(category)
+    : t('Quiz');
+
   return (
     <View style={styles.screen}>
-      <View style={styles.backgroundGlowTop} pointerEvents="none" />
-      <View style={styles.backgroundGlowBottom} pointerEvents="none" />
       <QuizHeader
         difficultyLabel={difficultyLabel}
         totalQuestions={totalQuestions}
@@ -83,6 +89,7 @@ export default function QuizScreen({ navigation, route }) {
         onExit={handleExitRequest}
         showMeta={isMultiplayer}
         showProgress={!isMultiplayer}
+        categoryLabel={categoryLabel}
       />
 
       {isOffline ? (
