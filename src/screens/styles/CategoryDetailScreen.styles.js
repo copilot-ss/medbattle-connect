@@ -7,6 +7,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   backgroundGlowTop: {
+    display: 'none',
     position: 'absolute',
     width: 320,
     height: 320,
@@ -17,6 +18,7 @@ const styles = StyleSheet.create({
     right: -90,
   },
   backgroundGlowBottom: {
+    display: 'none',
     position: 'absolute',
     width: 280,
     height: 280,
@@ -27,7 +29,7 @@ const styles = StyleSheet.create({
     left: -80,
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingTop: 56,
     paddingBottom: 36,
     rowGap: 20,

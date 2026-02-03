@@ -10,13 +10,14 @@ const styles = StyleSheet.create({
   scrollContent: {
     width: '100%',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 56,
     rowGap: 20,
     flexGrow: 1,
   },
   backgroundGlowLarge: {
+    display: 'none',
     position: 'absolute',
     width: 320,
     height: 320,
@@ -25,6 +26,7 @@ const styles = StyleSheet.create({
     top: -60,
   },
   backgroundGlowSmall: {
+    display: 'none',
     position: 'absolute',
     width: 260,
     height: 260,
@@ -35,14 +37,17 @@ const styles = StyleSheet.create({
     right: -40,
   },
   sparkle: {
+    display: 'none',
     position: 'absolute',
   },
   sparkleHorizontal: {
+    display: 'none',
     position: 'absolute',
     left: 0,
     right: 0,
   },
   sparkleVertical: {
+    display: 'none',
     position: 'absolute',
     top: 0,
     bottom: 0,
@@ -251,7 +256,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
   },
   primaryButton: {
-    marginTop: 28,
     width: '100%',
     paddingVertical: 16,
     borderRadius: radii.md,
@@ -283,6 +287,12 @@ const styles = StyleSheet.create({
   primaryButtonDisabled: {
     opacity: 0.6,
   },
+  actionsStack: {
+    width: '100%',
+    marginTop: 24,
+    rowGap: 12,
+    alignItems: 'center',
+  },
   secondaryButton: {
     width: '100%',
     paddingVertical: 14,
@@ -298,12 +308,27 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
   },
   tertiaryButton: {
-    marginTop: 16,
+    width: '100%',
+    maxWidth: 320,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: 'rgba(87, 199, 255, 0.5)',
+    backgroundColor: 'rgba(87, 199, 255, 0.12)',
+    alignItems: 'center',
+    alignSelf: 'center',
+    shadowColor: colors.accent,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   tertiaryButtonText: {
-    color: colors.textMuted,
-    fontSize: 14,
-    fontFamily: fonts.regular,
+    color: '#CBEAFF',
+    fontSize: 15,
+    fontFamily: fonts.bold,
+    letterSpacing: 0.3,
   },
   reviewSection: {
     width: '100%',
@@ -387,6 +412,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   spotlight: {
+    display: 'none',
     position: 'absolute',
     width: '70%',
     height: 120,

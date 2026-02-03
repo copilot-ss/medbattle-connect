@@ -7,6 +7,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   backgroundGlowTop: {
+    display: 'none',
     position: 'absolute',
     width: 280,
     height: 280,
@@ -17,6 +18,7 @@ const styles = StyleSheet.create({
     right: -100,
   },
   backgroundGlowBottom: {
+    display: 'none',
     position: 'absolute',
     width: 240,
     height: 240,
@@ -28,7 +30,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 60,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingBottom: 24,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,

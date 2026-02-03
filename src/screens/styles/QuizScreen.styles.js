@@ -5,7 +5,7 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingVertical: 32,
   },
   header: {
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
   headerCategory: {
     marginTop: 6,
     color: colors.accentPink,
-    fontSize: 18,
+    fontSize: 26,
     fontFamily: fonts.bold,
     letterSpacing: 0.8,
     textShadowColor: 'rgba(87, 199, 255, 0.6)',

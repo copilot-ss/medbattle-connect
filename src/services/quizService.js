@@ -466,6 +466,25 @@ export async function fetchQuestions(
     questionsCache.set(cacheKey, { data: shuffled, fetchedAt: Date.now() });
     return cloneQuestions(shuffled);
   };
+  const resolveOfflineSeeds = () => {
+    const offlineQuestions = normalizeQuestionList(
+      buildOfflineSeedQuestions(
+        normalizedDifficulty,
+        normalizedLimit,
+        normalizedCategory,
+        normalizedLanguage
+      ),
+      normalizedDifficulty
+    );
+    if (!offlineQuestions.length) {
+      return [];
+    }
+    questionsCache.set(cacheKey, { data: offlineQuestions, fetchedAt: Date.now() });
+    syncCachedQuestions(storageKey, offlineQuestions).catch((err) => {
+      console.warn('Konnte Fragen-Cache nicht synchronisieren:', err);
+    });
+    return cloneQuestions(offlineQuestions);
+  };
 
   if (offline) {
     const cached = await resolveCachedQuestions();
@@ -520,17 +539,25 @@ export async function fetchQuestions(
       if (cached.length) {
         return cached;
       }
+      const seeded = resolveOfflineSeeds();
+      if (seeded.length) {
+        return seeded;
+      }
       return [];
     }
 
     const rows = Array.isArray(data) ? data : [];
 
     if (!rows.length) {
-      console.warn('Keine Fragen in Supabase gefunden für Schwierigkeitsgrad:', normalizedDifficulty);
       const cached = await resolveCachedQuestions();
       if (cached.length) {
         return cached;
       }
+      const seeded = resolveOfflineSeeds();
+      if (seeded.length) {
+        return seeded;
+      }
+      console.warn('Keine Fragen in Supabase gefunden für Schwierigkeitsgrad:', normalizedDifficulty);
       return [];
     }
 
@@ -541,6 +568,10 @@ export async function fetchQuestions(
       const cached = await resolveCachedQuestions();
       if (cached.length) {
         return cached;
+      }
+      const seeded = resolveOfflineSeeds();
+      if (seeded.length) {
+        return seeded;
       }
       return [];
     }

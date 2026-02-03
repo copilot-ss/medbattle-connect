@@ -7,10 +7,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingVertical: 32,
   },
   backgroundGlowTop: {
+    display: 'none',
     position: 'absolute',
     width: 320,
     height: 320,
@@ -21,6 +22,7 @@ const styles = StyleSheet.create({
     right: -80,
   },
   backgroundGlowBottom: {
+    display: 'none',
     position: 'absolute',
     width: 260,
     height: 260,

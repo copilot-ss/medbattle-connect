@@ -12,7 +12,7 @@ import ModeCard from './home/ModeCard';
 import styles from './styles/CategoryDetailScreen.styles';
 
 const DEFAULT_DIFFICULTY = 'mittel';
-const CATEGORY_QUESTION_LIMIT = 6;
+const CATEGORY_QUESTION_LIMIT = 10;
 
 export default function CategoryDetailScreen({ navigation, route }) {
   const { t } = useTranslation();
@@ -25,6 +25,11 @@ export default function CategoryDetailScreen({ navigation, route }) {
   const categoryDescription = categoryMeta?.description
     ? t(categoryMeta.description)
     : '';
+  const normalizedCategoryKey =
+    typeof categoryLabel === 'string' ? categoryLabel.trim().toLowerCase() : '';
+  const isFootball =
+    normalizedCategoryKey === 'fußball' || normalizedCategoryKey === 'fussball';
+  const categoryDifficulty = isFootball ? 'schwer' : DEFAULT_DIFFICULTY;
   const { isOnline } = useConnectivity();
   const { energy, energyMax } = usePreferences();
   const { premium } = usePremiumStatus();
@@ -35,12 +40,12 @@ export default function CategoryDetailScreen({ navigation, route }) {
   const rewardCoins = calculateCoinReward({
     correct: CATEGORY_QUESTION_LIMIT,
     total: CATEGORY_QUESTION_LIMIT,
-    difficulty: DEFAULT_DIFFICULTY,
+    difficulty: categoryDifficulty,
   });
   const rewardXp = calculateXpGain({
     correct: CATEGORY_QUESTION_LIMIT,
     total: CATEGORY_QUESTION_LIMIT,
-    difficulty: DEFAULT_DIFFICULTY,
+    difficulty: categoryDifficulty,
     isMultiplayer: false,
   });
 
@@ -49,7 +54,7 @@ export default function CategoryDetailScreen({ navigation, route }) {
       return;
     }
     navigation.navigate('Quiz', {
-      difficulty: DEFAULT_DIFFICULTY,
+      difficulty: categoryDifficulty,
       mode: 'category',
       category: categoryLabel,
     });
@@ -64,7 +69,7 @@ export default function CategoryDetailScreen({ navigation, route }) {
       return;
     }
     navigation.navigate('MultiplayerLobby', {
-      difficulty: DEFAULT_DIFFICULTY,
+      difficulty: categoryDifficulty,
       mode: 'create',
       category: categoryLabel,
     });

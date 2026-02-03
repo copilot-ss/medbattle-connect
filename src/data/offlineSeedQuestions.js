@@ -1,3 +1,5 @@
+import FOOTBALL_SEED_QUESTIONS from './offlineSeedFootballQuestions';
+
 const OFFLINE_SEED_QUESTIONS = [
   {
     id: 'seed-leicht-001',
@@ -7,7 +9,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welches Organ produziert Insulin?',
     options: ['Pankreas', 'Leber', 'Niere', 'Milz'],
     correct_answer: 'Pankreas',
-    explanation: 'Insulin wird in den Beta-Zellen des Pankreas gebildet.',
+    explanation: 'Insulin wird in den Beta-Zellen der Langerhans-Inseln im Pankreas gebildet. Es senkt den Blutzucker, indem es die Glukoseaufnahme in Zellen fördert.',
   },
   {
     id: 'seed-leicht-001-en',
@@ -17,7 +19,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which organ produces insulin?',
     options: ['Pancreas', 'Liver', 'Kidney', 'Spleen'],
     correct_answer: 'Pancreas',
-    explanation: 'Insulin is produced in the beta cells of the pancreas.',
+    explanation: 'Insulin is produced by beta cells in the islets of Langerhans in the pancreas. It lowers blood glucose by promoting cellular glucose uptake.',
   },
   {
     id: 'seed-leicht-002',
@@ -27,7 +29,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Was bewertet die Glasgow Coma Scale?',
     options: ['Bewusstseinslage', 'Lungenfunktion', 'Nierenperfusion', 'Herzzeitvolumen'],
     correct_answer: 'Bewusstseinslage',
-    explanation: 'Die GCS bewertet die Bewusstseinslage über Augen, Sprache und Motorik.',
+    explanation: 'Die Glasgow Coma Scale bewertet Augenöffnung, verbale und motorische Reaktion. Daraus ergibt sich ein Score zur Einschätzung der Bewusstseinslage.',
   },
   {
     id: 'seed-leicht-002-en',
@@ -37,7 +39,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'What does the Glasgow Coma Scale assess?',
     options: ['Level of consciousness', 'Lung function', 'Renal perfusion', 'Cardiac output'],
     correct_answer: 'Level of consciousness',
-    explanation: 'The GCS assesses level of consciousness via eye, verbal, and motor responses.',
+    explanation: 'The Glasgow Coma Scale scores eye, verbal, and motor responses. The total score quantifies level of consciousness.',
   },
   {
     id: 'seed-leicht-003',
@@ -47,7 +49,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welcher Nerv steuert die Mimik?',
     options: ['N. facialis (VII)', 'N. trigeminus (V)', 'N. oculomotorius (III)', 'N. vagus (X)'],
     correct_answer: 'N. facialis (VII)',
-    explanation: 'Der N. facialis innerviert die mimische Muskulatur.',
+    explanation: 'Der N. facialis innerviert die mimische Muskulatur motorisch. Eine Läsion führt typischerweise zur peripheren Fazialisparese.',
   },
   {
     id: 'seed-leicht-003-en',
@@ -57,7 +59,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which nerve controls facial expression?',
     options: ['N. facialis (VII)', 'N. trigeminus (V)', 'N. oculomotorius (III)', 'N. vagus (X)'],
     correct_answer: 'N. facialis (VII)',
-    explanation: 'The facial nerve innervates the muscles of facial expression.',
+    explanation: 'The facial nerve provides motor innervation to the muscles of facial expression. Lesions typically cause peripheral facial palsy.',
   },
   {
     id: 'seed-leicht-004',
@@ -67,7 +69,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welcher periphere Puls wird am Fußrücken getastet?',
     options: ['A. dorsalis pedis', 'A. poplitea', 'A. femoralis', 'A. tibialis posterior'],
     correct_answer: 'A. dorsalis pedis',
-    explanation: 'Der Puls am Fußrücken entspricht der A. dorsalis pedis.',
+    explanation: 'Der Puls am Fußrücken entspricht der A. dorsalis pedis, einer Fortsetzung der A. tibialis anterior. Er ist wichtig zur Beurteilung der peripheren Durchblutung.',
   },
   {
     id: 'seed-leicht-004-en',
@@ -77,7 +79,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which peripheral pulse is palpated on the dorsum of the foot?',
     options: ['A. dorsalis pedis', 'A. poplitea', 'A. femoralis', 'A. tibialis posterior'],
     correct_answer: 'A. dorsalis pedis',
-    explanation: 'The pulse on the dorsum of the foot corresponds to the dorsalis pedis artery.',
+    explanation: 'The dorsum-of-foot pulse is the dorsalis pedis artery, a continuation of the anterior tibial artery. It is commonly checked to assess peripheral perfusion.',
   },
   {
     id: 'seed-mittel-001',
@@ -87,7 +89,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Häufigster Erreger der ambulant erworbenen Pneumonie?',
     options: ['Streptococcus pneumoniae', 'Klebsiella pneumoniae', 'Legionella pneumophila', 'Mycoplasma genitalium'],
     correct_answer: 'Streptococcus pneumoniae',
-    explanation: 'Streptococcus pneumoniae ist der häufigste Erreger der CAP.',
+    explanation: 'Streptococcus pneumoniae ist der häufigste Erreger der ambulant erworbenen Pneumonie. Er ist ein grampositiver Diplokokkus mit Kapsel.',
   },
   {
     id: 'seed-mittel-001-en',
@@ -97,7 +99,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Most common pathogen of community-acquired pneumonia?',
     options: ['Streptococcus pneumoniae', 'Klebsiella pneumoniae', 'Legionella pneumophila', 'Mycoplasma genitalium'],
     correct_answer: 'Streptococcus pneumoniae',
-    explanation: 'Streptococcus pneumoniae is the most common cause of CAP.',
+    explanation: 'Streptococcus pneumoniae is the most common cause of community-acquired pneumonia. It is a Gram-positive, encapsulated diplococcus.',
   },
   {
     id: 'seed-mittel-002',
@@ -107,7 +109,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welche Klappe ist bei Mitralinsuffizienz betroffen?',
     options: ['Mitralklappe', 'Aortenklappe', 'Pulmonalklappe', 'Trikuspidalklappe'],
     correct_answer: 'Mitralklappe',
-    explanation: 'Bei Mitralinsuffizienz schließt die Mitralklappe nicht dicht.',
+    explanation: 'Bei Mitralinsuffizienz schließt die Mitralklappe nicht dicht. Dadurch fließt Blut in der Systole zurück in den linken Vorhof.',
   },
   {
     id: 'seed-mittel-002-en',
@@ -117,7 +119,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which valve is affected in mitral regurgitation?',
     options: ['Mitral valve', 'Aortic valve', 'Pulmonary valve', 'Tricuspid valve'],
     correct_answer: 'Mitral valve',
-    explanation: 'In mitral regurgitation, the mitral valve does not close properly.',
+    explanation: 'In mitral regurgitation the mitral valve does not close properly. During systole blood flows back into the left atrium.',
   },
   {
     id: 'seed-mittel-003',
@@ -127,7 +129,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Erstmaßnahme bei Anaphylaxie?',
     options: ['i.m. Adrenalin', 'Orale Antihistaminika', 'IV Corticosteroide', 'Sauerstoff allein'],
     correct_answer: 'i.m. Adrenalin',
-    explanation: 'Adrenalin i.m. ist die wichtigste Sofortmaßnahme bei Anaphylaxie.',
+    explanation: 'Adrenalin i.m. ist die wichtigste Sofortmaßnahme bei Anaphylaxie. Es wirkt über Alpha- und Beta-Rezeptoren und stabilisiert Kreislauf und Atemwege.',
   },
   {
     id: 'seed-mittel-003-en',
@@ -137,7 +139,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'First-line treatment for anaphylaxis?',
     options: ['IM epinephrine', 'Oral antihistamines', 'IV corticosteroids', 'Oxygen alone'],
     correct_answer: 'IM epinephrine',
-    explanation: 'IM epinephrine is the most important immediate treatment for anaphylaxis.',
+    explanation: 'IM epinephrine is the key immediate treatment for anaphylaxis. It acts on alpha and beta receptors to support airway and circulation.',
   },
   {
     id: 'seed-mittel-004',
@@ -147,7 +149,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Erstbildgebung bei Verdacht auf Appendizitis (Erwachsene)?',
     options: ['CT Abdomen mit Kontrast', 'Ultraschall', 'MRI Becken', 'Röntgen Abdomen'],
     correct_answer: 'CT Abdomen mit Kontrast',
-    explanation: 'Bei Erwachsenen ist das CT die sensitivste Erstbildgebung bei Appendizitis.',
+    explanation: 'Bei Erwachsenen ist das CT die sensitivste Erstbildgebung bei Appendizitis. Es zeigt Entzündungszeichen und alternative Ursachen.',
   },
   {
     id: 'seed-mittel-004-en',
@@ -157,7 +159,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'First-line imaging for suspected appendicitis (adults)?',
     options: ['CT abdomen with contrast', 'Ultrasound', 'MRI pelvis', 'Abdominal X-ray'],
     correct_answer: 'CT abdomen with contrast',
-    explanation: 'In adults, CT is the most sensitive initial imaging for appendicitis.',
+    explanation: 'In adults, CT is the most sensitive initial imaging for appendicitis. It shows inflammatory signs and can reveal alternatives.',
   },
   {
     id: 'seed-schwer-001',
@@ -167,7 +169,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welches Hormon löst den Eisprung aus?',
     options: ['LH', 'Prolaktin', 'TSH', 'GH'],
     correct_answer: 'LH',
-    explanation: 'Der LH-Peak triggert die Ovulation.',
+    explanation: 'Der LH-Peak triggert die Ovulation etwa zur Zyklusmitte. Er führt zum Follikelsprung und zur Luteinisierung.',
   },
   {
     id: 'seed-schwer-001-en',
@@ -177,7 +179,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which hormone triggers ovulation?',
     options: ['LH', 'Prolactin', 'TSH', 'GH'],
     correct_answer: 'LH',
-    explanation: 'The LH surge triggers ovulation.',
+    explanation: 'The LH surge triggers ovulation around mid-cycle. It causes follicle rupture and luteinization.',
   },
   {
     id: 'seed-schwer-002',
@@ -187,7 +189,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Häufigster Erreger unkomplizierter Harnwegsinfekte?',
     options: ['Escherichia coli', 'Staphylococcus aureus', 'Pseudomonas aeruginosa', 'Enterococcus faecalis'],
     correct_answer: 'Escherichia coli',
-    explanation: 'E. coli verursacht die meisten unkomplizierten Harnwegsinfekte.',
+    explanation: 'E. coli verursacht die meisten unkomplizierten Harnwegsinfekte. Es stammt häufig aus der Darmflora und besitzt Adhäsine.',
   },
   {
     id: 'seed-schwer-002-en',
@@ -197,7 +199,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Most common pathogen of uncomplicated urinary tract infections?',
     options: ['Escherichia coli', 'Staphylococcus aureus', 'Pseudomonas aeruginosa', 'Enterococcus faecalis'],
     correct_answer: 'Escherichia coli',
-    explanation: 'E. coli causes most uncomplicated UTIs.',
+    explanation: 'E. coli causes most uncomplicated UTIs. It often originates from gut flora and uses adhesins to attach.',
   },
   {
     id: 'seed-schwer-003',
@@ -207,7 +209,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Bildgebung 1. Wahl bei Verdacht auf Ovarialtorsion?',
     options: ['Transvaginaler Ultraschall', 'CT Abdomen', 'Röntgen Becken', 'PET-CT'],
     correct_answer: 'Transvaginaler Ultraschall',
-    explanation: 'Der transvaginale Ultraschall ist die Methode der ersten Wahl.',
+    explanation: 'Der transvaginale Ultraschall ist die Methode der ersten Wahl. Mit Doppler kann eine verminderte Durchblutung sichtbar werden.',
   },
   {
     id: 'seed-schwer-003-en',
@@ -217,7 +219,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'First-line imaging for suspected ovarian torsion?',
     options: ['Transvaginal ultrasound', 'CT abdomen', 'Pelvic X-ray', 'PET-CT'],
     correct_answer: 'Transvaginal ultrasound',
-    explanation: 'Transvaginal ultrasound is the first-line modality.',
+    explanation: 'Transvaginal ultrasound is first-line. Doppler can show reduced ovarian blood flow.',
   },
   {
     id: 'seed-schwer-004',
@@ -227,7 +229,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Erstmaßnahme bei offener Fraktur einer langen Röhre?',
     options: ['Sterile Abdeckung und i.v. Antibiotika', 'Gips sofort', 'Lokale Salbe', 'Nur kühlen'],
     correct_answer: 'Sterile Abdeckung und i.v. Antibiotika',
-    explanation: 'Offene Frakturen brauchen sterile Abdeckung und frühe Antibiotika.',
+    explanation: 'Offene Frakturen brauchen sterile Abdeckung und frühe i.v. Antibiotika. Zusätzlich sind Tetanusprophylaxe und rasches Débridement wichtig.',
   },
   {
     id: 'seed-schwer-004-en',
@@ -237,7 +239,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Initial management for an open fracture of a long bone?',
     options: ['Sterile coverage and IV antibiotics', 'Immediate cast', 'Topical ointment', 'Cooling only'],
     correct_answer: 'Sterile coverage and IV antibiotics',
-    explanation: 'Open fractures require sterile coverage and early antibiotics.',
+    explanation: 'Open fractures require sterile coverage and early IV antibiotics. Tetanus prophylaxis and prompt debridement are also important.',
   },
   {
     id: 'seed-mittel-005',
@@ -247,7 +249,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welches Molekül ist direkter Energieträger der Zelle?',
     options: ['ATP', 'ADP', 'AMP', 'NADH'],
     correct_answer: 'ATP',
-    explanation: 'ATP liefert direkt Energie für zelluläre Prozesse.',
+    explanation: 'ATP liefert direkt Energie für zelluläre Prozesse durch Hydrolyse zu ADP und Phosphat. Es ist die wichtigste kurzfristige Energiewährung.',
   },
   {
     id: 'seed-mittel-005-en',
@@ -257,7 +259,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which molecule is the cell\'s direct energy carrier?',
     options: ['ATP', 'ADP', 'AMP', 'NADH'],
     correct_answer: 'ATP',
-    explanation: 'ATP directly provides energy for cellular processes.',
+    explanation: 'ATP directly supplies energy by hydrolysis to ADP and phosphate. It is the main short-term energy currency of the cell.',
   },
   {
     id: 'seed-mittel-006',
@@ -267,7 +269,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welches Coenzym transportiert Acylgruppen?',
     options: ['Coenzym A', 'Biotin', 'FAD', 'Pyridoxal'],
     correct_answer: 'Coenzym A',
-    explanation: 'Coenzym A überträgt Acylgruppen im Stoffwechsel.',
+    explanation: 'Coenzym A überträgt Acylgruppen im Stoffwechsel. Es bildet energiereiche Thioester mit Fettsäuren.',
   },
   {
     id: 'seed-mittel-006-en',
@@ -277,7 +279,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which coenzyme transports acyl groups?',
     options: ['Coenzyme A', 'Biotin', 'FAD', 'Pyridoxal'],
     correct_answer: 'Coenzyme A',
-    explanation: 'Coenzyme A transfers acyl groups in metabolism.',
+    explanation: 'Coenzyme A transfers acyl groups in metabolism. It forms high-energy thioester bonds with fatty acids.',
   },
   {
     id: 'seed-mittel-007',
@@ -287,7 +289,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welche Zellen produzieren Antikörper?',
     options: ['B-Lymphozyten', 'T-Lymphozyten', 'Neutrophile', 'Monozyten'],
     correct_answer: 'B-Lymphozyten',
-    explanation: 'B-Zellen differenzieren zu Plasmazellen und bilden Antikörper.',
+    explanation: 'B-Zellen differenzieren zu Plasmazellen und bilden Antikörper. Sie sind zentral für die humorale Immunantwort.',
   },
   {
     id: 'seed-mittel-007-en',
@@ -297,7 +299,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which cells produce antibodies?',
     options: ['B lymphocytes', 'T lymphocytes', 'Neutrophils', 'Monocytes'],
     correct_answer: 'B lymphocytes',
-    explanation: 'B cells differentiate into plasma cells and produce antibodies.',
+    explanation: 'B cells differentiate into plasma cells and produce antibodies. They are central to humoral immunity.',
   },
   {
     id: 'seed-mittel-008',
@@ -307,7 +309,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welches Immunglobulin ist typisch für Typ-I-Allergien?',
     options: ['IgE', 'IgG', 'IgA', 'IgM'],
     correct_answer: 'IgE',
-    explanation: 'IgE vermittelt Soforttyp-Allergien.',
+    explanation: 'IgE vermittelt Soforttyp-Allergien durch Bindung an Mastzellen und Basophile. Bei Kontakt mit dem Allergen wird Histamin freigesetzt.',
   },
   {
     id: 'seed-mittel-008-en',
@@ -317,7 +319,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which immunoglobulin is typical for type I allergies?',
     options: ['IgE', 'IgG', 'IgA', 'IgM'],
     correct_answer: 'IgE',
-    explanation: 'IgE mediates immediate-type allergies.',
+    explanation: 'IgE mediates immediate-type allergies by binding mast cells and basophils. Allergen exposure triggers histamine release.',
   },
   {
     id: 'seed-mittel-009',
@@ -327,7 +329,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welche Basenpaarung ist korrekt?',
     options: ['A-T', 'A-C', 'G-A', 'C-T'],
     correct_answer: 'A-T',
-    explanation: 'In der DNA paart Adenin mit Thymin.',
+    explanation: 'In der DNA paart Adenin mit Thymin über zwei Wasserstoffbrücken. Guanin paart mit Cytosin über drei.',
   },
   {
     id: 'seed-mittel-009-en',
@@ -337,7 +339,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which base pairing is correct?',
     options: ['A-T', 'A-C', 'G-A', 'C-T'],
     correct_answer: 'A-T',
-    explanation: 'In DNA, adenine pairs with thymine.',
+    explanation: 'In DNA, adenine pairs with thymine via two hydrogen bonds. Guanine pairs with cytosine via three.',
   },
   {
     id: 'seed-mittel-010',
@@ -347,7 +349,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Wie heißt die Übersetzung von mRNA in Protein?',
     options: ['Translation', 'Transkription', 'Replikation', 'Splicing'],
     correct_answer: 'Translation',
-    explanation: 'Die Translation ist der Schritt von mRNA zum Protein.',
+    explanation: 'Die Translation ist der Schritt von mRNA zum Protein. Ribosomen lesen Codons und verknüpfen Aminosäuren.',
   },
   {
     id: 'seed-mittel-010-en',
@@ -357,7 +359,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'What is the translation of mRNA into protein called?',
     options: ['Translation', 'Transcription', 'Replication', 'Splicing'],
     correct_answer: 'Translation',
-    explanation: 'Translation is the step from mRNA to protein.',
+    explanation: 'Translation is the step from mRNA to protein. Ribosomes read codons and link amino acids.',
   },
   {
     id: 'seed-mittel-011',
@@ -367,7 +369,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welche Bildgebung nutzt ionisierende Strahlung?',
     options: ['CT', 'MRI', 'Ultraschall', 'fMRT'],
     correct_answer: 'CT',
-    explanation: 'Das CT verwendet Röntgenstrahlung.',
+    explanation: 'Das CT verwendet ionisierende Röntgenstrahlung zur Schichtbildgebung. MRT und Ultraschall sind nicht ionisierend.',
   },
   {
     id: 'seed-mittel-011-en',
@@ -377,7 +379,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which imaging uses ionizing radiation?',
     options: ['CT', 'MRI', 'Ultrasound', 'fMRI'],
     correct_answer: 'CT',
-    explanation: 'CT uses X-rays.',
+    explanation: 'CT uses ionizing X-rays for cross-sectional imaging. MRI and ultrasound are non-ionizing.',
   },
   {
     id: 'seed-mittel-012',
@@ -387,7 +389,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welche MRT-Sequenz zeigt Flüssigkeit hell?',
     options: ['T2', 'T1', 'STIR', 'Gradient Echo'],
     correct_answer: 'T2',
-    explanation: 'In T2-Sequenzen erscheint Flüssigkeit signalreich.',
+    explanation: 'In T2-Sequenzen erscheint Flüssigkeit signalreich und damit hell. T1 zeigt Fett heller und Flüssigkeit eher dunkel.',
   },
   {
     id: 'seed-mittel-012-en',
@@ -397,7 +399,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which MRI sequence shows fluid bright?',
     options: ['T2', 'T1', 'STIR', 'Gradient echo'],
     correct_answer: 'T2',
-    explanation: 'In T2 sequences, fluid appears bright.',
+    explanation: 'In T2 sequences, fluid appears bright. T1 shows fat bright while fluid is relatively dark.',
   },
   {
     id: 'seed-mittel-013',
@@ -407,7 +409,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Wie heißt das Entfernen der Gallenblase?',
     options: ['Cholezystektomie', 'Appendektomie', 'Gastrektomie', 'Nephrektomie'],
     correct_answer: 'Cholezystektomie',
-    explanation: 'Die Gallenblase wird bei einer Cholezystektomie entfernt.',
+    explanation: 'Die Gallenblase wird bei einer Cholezystektomie entfernt. Der Eingriff erfolgt meist laparoskopisch bei Cholezystitis oder Steinen.',
   },
   {
     id: 'seed-mittel-013-en',
@@ -417,7 +419,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'What is the removal of the gallbladder called?',
     options: ['Cholecystectomy', 'Appendectomy', 'Gastrectomy', 'Nephrectomy'],
     correct_answer: 'Cholecystectomy',
-    explanation: 'The gallbladder is removed in a cholecystectomy.',
+    explanation: 'The gallbladder is removed in a cholecystectomy. The procedure is usually laparoscopic for cholecystitis or stones.',
   },
   {
     id: 'seed-mittel-014',
@@ -427,7 +429,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Wie nennt man die Eröffnung der Bauchhöhle?',
     options: ['Laparotomie', 'Laparoskopie', 'Thorakotomie', 'Craniotomie'],
     correct_answer: 'Laparotomie',
-    explanation: 'Eine Laparotomie ist der offene Zugang zur Bauchhöhle.',
+    explanation: 'Eine Laparotomie ist der offene Zugang zur Bauchhöhle. Sie unterscheidet sich von der Laparoskopie mit kleinen Zugängen.',
   },
   {
     id: 'seed-mittel-014-en',
@@ -437,7 +439,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'What is the opening of the abdominal cavity called?',
     options: ['Laparotomy', 'Laparoscopy', 'Thoracotomy', 'Craniotomy'],
     correct_answer: 'Laparotomy',
-    explanation: 'A laparotomy is an open approach to the abdominal cavity.',
+    explanation: 'A laparotomy is an open approach to the abdominal cavity. It differs from laparoscopy, which uses small ports.',
   },
   {
     id: 'seed-leicht-005',
@@ -447,7 +449,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Wie heißt der längste Knochen des Körpers?',
     options: ['Femur', 'Tibia', 'Humerus', 'Ulna'],
     correct_answer: 'Femur',
-    explanation: 'Der Femur (Oberschenkelknochen) ist der längste Knochen.',
+    explanation: 'Der Femur ist der längste Knochen des Körpers. Er trägt das Körpergewicht und bildet Hüft- und Kniegelenk.',
   },
   {
     id: 'seed-leicht-005-en',
@@ -457,7 +459,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'What is the longest bone in the body?',
     options: ['Femur', 'Tibia', 'Humerus', 'Ulna'],
     correct_answer: 'Femur',
-    explanation: 'The femur is the longest bone.',
+    explanation: 'The femur is the longest bone in the body. It bears weight and forms the hip and knee joints.',
   },
   {
     id: 'seed-leicht-006',
@@ -467,7 +469,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Wie heißt der natürliche Herzschrittmacher?',
     options: ['Sinusknoten', 'AV-Knoten', 'His-Bündel', 'Purkinje-Fasern'],
     correct_answer: 'Sinusknoten',
-    explanation: 'Der Sinusknoten gibt den Grundrhythmus vor.',
+    explanation: 'Der Sinusknoten gibt den Grundrhythmus vor, meist 60 bis 100 pro Minute. Er ist der natürliche Taktgeber des Herzens.',
   },
   {
     id: 'seed-leicht-006-en',
@@ -477,7 +479,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'What is the heart\'s natural pacemaker called?',
     options: ['Sinoatrial node', 'AV node', 'Bundle of His', 'Purkinje fibers'],
     correct_answer: 'Sinoatrial node',
-    explanation: 'The sinoatrial node sets the basic rhythm.',
+    explanation: 'The sinoatrial node sets the basic rhythm, usually 60 to 100 beats per minute. It is the heart\'s natural pacemaker.',
   },
   {
     id: 'seed-leicht-007',
@@ -487,7 +489,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welcher Erreger verursacht die Grippe?',
     options: ['Influenzavirus', 'Rhinovirus', 'RSV', 'Adenovirus'],
     correct_answer: 'Influenzavirus',
-    explanation: 'Die Grippe wird durch Influenzaviren verursacht.',
+    explanation: 'Die Grippe wird durch Influenzaviren verursacht. Es handelt sich um Orthomyxoviren mit saisonalen Epidemien.',
   },
   {
     id: 'seed-leicht-007-en',
@@ -497,7 +499,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which pathogen causes influenza (the flu)?',
     options: ['Influenza virus', 'Rhinovirus', 'RSV', 'Adenovirus'],
     correct_answer: 'Influenza virus',
-    explanation: 'Influenza is caused by influenza viruses.',
+    explanation: 'Influenza is caused by influenza viruses. These are orthomyxoviruses responsible for seasonal epidemics.',
   },
   {
     id: 'seed-leicht-008',
@@ -507,7 +509,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welches Medikament senkt Fieber und lindert Schmerzen?',
     options: ['Paracetamol', 'Insulin', 'Heparin', 'Amoxicillin'],
     correct_answer: 'Paracetamol',
-    explanation: 'Paracetamol wirkt analgetisch und antipyretisch.',
+    explanation: 'Paracetamol wirkt analgetisch und antipyretisch. Es hat kaum antiinflammatorische Wirkung und wirkt vor allem zentral.',
   },
   {
     id: 'seed-leicht-008-en',
@@ -517,7 +519,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which medication reduces fever and relieves pain?',
     options: ['Paracetamol', 'Insulin', 'Heparin', 'Amoxicillin'],
     correct_answer: 'Paracetamol',
-    explanation: 'Paracetamol is analgesic and antipyretic.',
+    explanation: 'Paracetamol is analgesic and antipyretic. It has minimal anti-inflammatory effect and acts mainly centrally.',
   },
   {
     id: 'seed-mittel-015',
@@ -527,7 +529,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welcher Nerv innerviert das Zwerchfell?',
     options: ['N. phrenicus', 'N. vagus', 'N. intercostalis', 'N. accessorius'],
     correct_answer: 'N. phrenicus',
-    explanation: 'Das Zwerchfell wird vom N. phrenicus innerviert.',
+    explanation: 'Das Zwerchfell wird vom N. phrenicus innerviert (C3 bis C5). Eine Läsion kann zu Zwerchfellhochstand führen.',
   },
   {
     id: 'seed-mittel-015-en',
@@ -537,7 +539,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which nerve innervates the diaphragm?',
     options: ['Phrenic nerve', 'Vagus nerve', 'Intercostal nerves', 'Accessory nerve'],
     correct_answer: 'Phrenic nerve',
-    explanation: 'The diaphragm is innervated by the phrenic nerve.',
+    explanation: 'The diaphragm is innervated by the phrenic nerve (C3 to C5). Injury can cause diaphragmatic elevation.',
   },
   {
     id: 'seed-mittel-016',
@@ -547,7 +549,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welches Kontrastmittel wird typischerweise in der MRT verwendet?',
     options: ['Gadolinium', 'Jod', 'Barium', 'Luft'],
     correct_answer: 'Gadolinium',
-    explanation: 'MRT nutzt gadoliniumhaltige Kontrastmittel.',
+    explanation: 'MRT nutzt meist gadoliniumhaltige Kontrastmittel, die paramagnetisch sind. CT nutzt dagegen jodhaltige Kontrastmittel.',
   },
   {
     id: 'seed-mittel-016-en',
@@ -557,7 +559,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which contrast agent is typically used in MRI?',
     options: ['Gadolinium', 'Iodine', 'Barium', 'Air'],
     correct_answer: 'Gadolinium',
-    explanation: 'MRI commonly uses gadolinium-based contrast.',
+    explanation: 'MRI commonly uses gadolinium-based contrast agents, which are paramagnetic. CT typically uses iodine-based contrast.',
   },
   {
     id: 'seed-mittel-017',
@@ -567,7 +569,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welche Zellen präsentieren Antigene über MHC II?',
     options: ['Dendritische Zellen', 'Erythrozyten', 'Thrombozyten', 'Neutrophile Granulozyten'],
     correct_answer: 'Dendritische Zellen',
-    explanation: 'Dendritische Zellen sind professionelle antigenpräsentierende Zellen.',
+    explanation: 'Dendritische Zellen präsentieren Antigene über MHC II und aktivieren T-Helfer-Zellen. Sie gelten als professionelle antigenpräsentierende Zellen.',
   },
   {
     id: 'seed-mittel-017-en',
@@ -577,7 +579,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which cells present antigen via MHC II?',
     options: ['Dendritic cells', 'Erythrocytes', 'Platelets', 'Neutrophils'],
     correct_answer: 'Dendritic cells',
-    explanation: 'Dendritic cells are professional antigen-presenting cells.',
+    explanation: 'Dendritic cells present antigen via MHC II and activate helper T cells. They are professional antigen-presenting cells.',
   },
   {
     id: 'seed-mittel-018',
@@ -587,7 +589,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welches Antibiotikum gehört zu den Beta-Laktamen?',
     options: ['Amoxicillin', 'Azithromycin', 'Doxycyclin', 'Ciprofloxacin'],
     correct_answer: 'Amoxicillin',
-    explanation: 'Amoxicillin ist ein Penicillin und damit ein Beta-Laktam.',
+    explanation: 'Amoxicillin ist ein Penicillin und damit ein Beta-Laktam. Es hemmt die bakterielle Zellwandsynthese.',
   },
   {
     id: 'seed-mittel-018-en',
@@ -597,7 +599,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which antibiotic is a beta-lactam?',
     options: ['Amoxicillin', 'Azithromycin', 'Doxycycline', 'Ciprofloxacin'],
     correct_answer: 'Amoxicillin',
-    explanation: 'Amoxicillin is a penicillin and therefore a beta-lactam.',
+    explanation: 'Amoxicillin is a penicillin and therefore a beta-lactam. It inhibits bacterial cell wall synthesis.',
   },
   {
     id: 'seed-mittel-019',
@@ -607,7 +609,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welches Vitamin ist Cofaktor der Transaminasen?',
     options: ['Vitamin B6 (Pyridoxal)', 'Vitamin B12', 'Vitamin C', 'Vitamin K'],
     correct_answer: 'Vitamin B6 (Pyridoxal)',
-    explanation: 'Transaminasen benötigen Pyridoxal-5-phosphat (Vitamin B6).',
+    explanation: 'Transaminasen benötigen Pyridoxal-5-phosphat (Vitamin B6) als Cofaktor. Es spielt eine zentrale Rolle im Aminosäurestoffwechsel.',
   },
   {
     id: 'seed-mittel-019-en',
@@ -617,7 +619,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which vitamin is a cofactor for transaminases?',
     options: ['Vitamin B6 (pyridoxal)', 'Vitamin B12', 'Vitamin C', 'Vitamin K'],
     correct_answer: 'Vitamin B6 (pyridoxal)',
-    explanation: 'Transaminases require pyridoxal phosphate (vitamin B6).',
+    explanation: 'Transaminases require pyridoxal phosphate (vitamin B6) as a cofactor. It is central to amino acid metabolism.',
   },
   {
     id: 'seed-mittel-020',
@@ -627,7 +629,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welches Ion ist hauptverantwortlich für den Aufstrich des Aktionspotentials?',
     options: ['Natrium', 'Kalium', 'Chlorid', 'Calcium'],
     correct_answer: 'Natrium',
-    explanation: 'Der schnelle Natriumeinstrom verursacht den Aufstrich.',
+    explanation: 'Der schnelle Natriumeinstrom über spannungsabhängige Na-Kanäle verursacht den Aufstrich. Dadurch depolarisiert die Zellmembran rasch.',
   },
   {
     id: 'seed-mittel-020-en',
@@ -637,7 +639,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which ion is primarily responsible for the upstroke of the action potential?',
     options: ['Sodium', 'Potassium', 'Chloride', 'Calcium'],
     correct_answer: 'Sodium',
-    explanation: 'Rapid sodium influx causes the upstroke.',
+    explanation: 'Rapid sodium influx through voltage-gated Na channels causes the upstroke. This rapidly depolarizes the membrane.',
   },
   {
     id: 'seed-schwer-005',
@@ -647,7 +649,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welches Enzym katalysiert den geschwindigkeitsbestimmenden Schritt der Glykolyse?',
     options: ['Phosphofructokinase-1', 'Hexokinase', 'Pyruvatkinase', 'Aldolase'],
     correct_answer: 'Phosphofructokinase-1',
-    explanation: 'PFK-1 ist das Schrittmacherenzym der Glykolyse.',
+    explanation: 'PFK-1 ist das Schrittmacherenzym der Glykolyse. Es wird unter anderem durch ATP und Citrat gehemmt, durch AMP aktiviert.',
   },
   {
     id: 'seed-schwer-005-en',
@@ -657,7 +659,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which enzyme catalyzes the rate-limiting step of glycolysis?',
     options: ['Phosphofructokinase-1', 'Hexokinase', 'Pyruvate kinase', 'Aldolase'],
     correct_answer: 'Phosphofructokinase-1',
-    explanation: 'PFK-1 is the rate-limiting enzyme of glycolysis.',
+    explanation: 'PFK-1 is the rate-limiting enzyme of glycolysis. It is inhibited by ATP and citrate and activated by AMP.',
   },
   {
     id: 'seed-schwer-006',
@@ -667,7 +669,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welches Startcodon wird bei der Translation verwendet?',
     options: ['AUG', 'UAA', 'UGA', 'UAG'],
     correct_answer: 'AUG',
-    explanation: 'AUG kodiert Methionin und markiert den Start.',
+    explanation: 'AUG kodiert Methionin und markiert den Start der Translation. In Prokaryoten wird formyliertes Methionin eingesetzt.',
   },
   {
     id: 'seed-schwer-006-en',
@@ -677,7 +679,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which start codon is used in translation?',
     options: ['AUG', 'UAA', 'UGA', 'UAG'],
     correct_answer: 'AUG',
-    explanation: 'AUG codes for methionine and marks the start.',
+    explanation: 'AUG codes for methionine and marks the start of translation. In prokaryotes it is formyl-methionine.',
   },
   {
     id: 'seed-schwer-007',
@@ -687,7 +689,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welches Antidot wird bei Heparin-Überdosierung eingesetzt?',
     options: ['Protamin', 'Vitamin K', 'Naloxon', 'Flumazenil'],
     correct_answer: 'Protamin',
-    explanation: 'Protamin neutralisiert Heparin.',
+    explanation: 'Protamin neutralisiert Heparin durch elektrostatische Bindung. Es wird i.v. als Antidot gegeben.',
   },
   {
     id: 'seed-schwer-007-en',
@@ -697,7 +699,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which antidote is used for heparin overdose?',
     options: ['Protamine', 'Vitamin K', 'Naloxone', 'Flumazenil'],
     correct_answer: 'Protamine',
-    explanation: 'Protamine neutralizes heparin.',
+    explanation: 'Protamine neutralizes heparin via electrostatic binding. It is given IV as the antidote.',
   },
   {
     id: 'seed-schwer-008',
@@ -707,7 +709,7 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Welche Tumorart metastasiert typischerweise lymphogen?',
     options: ['Karzinome', 'Sarkome', 'Melanome', 'Gliome'],
     correct_answer: 'Karzinome',
-    explanation: 'Karzinome metastasieren bevorzugt über Lymphbahnen.',
+    explanation: 'Karzinome metastasieren bevorzugt über Lymphbahnen. Sarkome metastasieren häufiger hämatogen.',
   },
   {
     id: 'seed-schwer-008-en',
@@ -717,8 +719,9 @@ const OFFLINE_SEED_QUESTIONS = [
     question: 'Which tumor type typically metastasizes via lymphatics?',
     options: ['Carcinomas', 'Sarcomas', 'Melanomas', 'Gliomas'],
     correct_answer: 'Carcinomas',
-    explanation: 'Carcinomas preferentially spread via lymphatics.',
+    explanation: 'Carcinomas preferentially spread via lymphatics. Sarcomas more often spread hematogenously.',
   },
+  ...FOOTBALL_SEED_QUESTIONS,
 ];
 
 export default OFFLINE_SEED_QUESTIONS;

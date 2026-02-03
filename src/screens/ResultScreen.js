@@ -259,51 +259,53 @@ export default function ResultScreen({ route, navigation }) {
             </View>
           ) : null}
 
-          {!isMultiplayer ? (
-            <Pressable
-              onPress={() => {
-                navigation.replace('Quiz', {
-                  difficulty: difficultyKey,
-                  mode,
-                  questionLimit,
-                  category,
-                });
-              }}
-              style={[
-                getPrimaryButtonStyle(badge.color),
-                quickPlayLocked ? styles.primaryButtonDisabled : null,
-              ]}
-              disabled={quickPlayLocked}
-            >
-              <View style={styles.primaryButtonContent}>
-                <Text style={styles.primaryButtonText}>
-                  {mode === 'quick' ? t('Nochmal Quick Play') : t('Nächste Challenge')}
-                </Text>
-                {isQuickPlay ? (
-                  <View style={styles.primaryButtonMetaRow}>
-                    <Ionicons name="flash" size={14} color="#0A0A12" />
-                    <Text style={styles.primaryButtonMetaText}>
-                      {t('Energie')} {energyLabel}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-            </Pressable>
-          ) : (
-            <Pressable
-              onPress={() => navigation.navigate('MultiplayerLobby', { mode: 'hub' })}
-              style={getPrimaryButtonStyle(colors.accent)}
-            >
-              <Text style={styles.primaryButtonText}>{t('Zurück zur Arena')}</Text>
-            </Pressable>
-          )}
+          <View style={styles.actionsStack}>
+            {!isMultiplayer ? (
+              <Pressable
+                onPress={() => {
+                  navigation.replace('Quiz', {
+                    difficulty: difficultyKey,
+                    mode,
+                    questionLimit,
+                    category,
+                  });
+                }}
+                style={[
+                  getPrimaryButtonStyle(badge.color),
+                  quickPlayLocked ? styles.primaryButtonDisabled : null,
+                ]}
+                disabled={quickPlayLocked}
+              >
+                <View style={styles.primaryButtonContent}>
+                  <Text style={styles.primaryButtonText}>
+                    {mode === 'quick' ? t('Nochmal Quick Play') : t('Nächste Challenge')}
+                  </Text>
+                  {isQuickPlay ? (
+                    <View style={styles.primaryButtonMetaRow}>
+                      <Ionicons name="flash" size={14} color="#0A0A12" />
+                      <Text style={styles.primaryButtonMetaText}>
+                        {t('Energie')} {energyLabel}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={() => navigation.navigate('MultiplayerLobby', { mode: 'hub' })}
+                style={getPrimaryButtonStyle(colors.accent)}
+              >
+                <Text style={styles.primaryButtonText}>{t('Zurück zur Arena')}</Text>
+              </Pressable>
+            )}
 
-        <Pressable
-          onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
-          style={styles.tertiaryButton}
-        >
-          <Text style={styles.tertiaryButtonText}>{t('Zurück zur Basis')}</Text>
-        </Pressable>
+            <Pressable
+              onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
+              style={styles.tertiaryButton}
+            >
+              <Text style={styles.tertiaryButtonText}>{t('Zurück zur Basis')}</Text>
+            </Pressable>
+          </View>
         </View>
         </View>
 

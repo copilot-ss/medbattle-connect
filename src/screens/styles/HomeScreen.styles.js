@@ -5,11 +5,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingTop: 56,
     paddingBottom: 8,
   },
   backgroundGlowTop: {
+    display: 'none',
     position: 'absolute',
     width: 320,
     height: 320,
@@ -20,6 +21,7 @@ const styles = StyleSheet.create({
     right: -80,
   },
   backgroundGlowBottom: {
+    display: 'none',
     position: 'absolute',
     width: 280,
     height: 280,
