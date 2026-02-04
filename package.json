@@ -25,6 +25,7 @@
     "expo-device": "~55.0.2",
     "expo-font": "~55.0.2",
     "expo-image-picker": "~55.0.2",
+    "expo-in-app-purchases": "~14.0.3",
     "expo-navigation-bar": "~55.0.2",
     "expo-updates": "~55.0.4",
     "expo-web-browser": "~55.0.2",

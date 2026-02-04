@@ -12,7 +12,7 @@ export default function ResultReviewList({ items } = {}) {
 
   return (
     <View style={styles.reviewSection}>
-      <Text style={styles.reviewTitle}>{t('Quiz Review')}</Text>
+      <Text style={styles.reviewTitle}>{t('Quiz Zusammenfassung')}</Text>
       {safeItems.map((item, idx) => {
         const statusLabel = item.timedOut
           ? t('Timeout')

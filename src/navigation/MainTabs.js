@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import HomeScreen from '../screens/HomeScreen';
+import ShopScreen from '../screens/ShopScreen';
 import FriendsScreen from '../screens/FriendsScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -34,6 +35,16 @@ export default function MainTabs({ onClearSession }) {
           tabBarLabel: t('Start'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Shop"
+        component={ShopScreen}
+        options={{
+          tabBarLabel: t('Shop'),
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="cart" size={size} color={color} />
           ),
         }}
       />

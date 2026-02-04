@@ -1,4 +1,6 @@
+import { useCallback } from 'react';
 import { ScrollView, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import FriendsSection from './settings/FriendsSection';
 import SettingsHeader from './settings/SettingsHeader';
 import useSettingsController from './settings/useSettingsController';
@@ -27,6 +29,12 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
     onRemoveFriend,
     friendsFeedback,
   } = useSettingsController({ navigation, route });
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }, [scrollRef])
+  );
 
   return (
     <View style={styles.container}>

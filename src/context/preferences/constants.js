@@ -10,6 +10,7 @@ export const ENERGY_TIMESTAMP_KEY = 'medbattle_energy_timestamp';
 export const LANGUAGE_STORAGE_KEY = 'medbattle_language';
 export const DEFAULT_LANGUAGE = 'de';
 export const MAX_ENERGY = 20;
+export const MAX_ENERGY_CAP_BONUS = 20;
 export const ENERGY_RECHARGE_MS = 30 * 60 * 1000;
 
 export const STREAK_STORAGE_KEYS = {
@@ -30,4 +31,5 @@ export const DEFAULT_USER_STATS = {
   questions: 0,
   xp: 0,
   coins: 0,
+  energyCapBonus: 0,
 };

@@ -144,7 +144,7 @@ export default function useQuizController({ navigation, route }) {
   }, [matchIsActive, progress]);
 
   useEffect(() => {
-    if (!isQuickPlay || isMultiplayer || premium || energyChargedRef.current) {
+    if (isMultiplayer || premium || energyChargedRef.current) {
       return;
     }
 
@@ -153,11 +153,16 @@ export default function useQuizController({ navigation, route }) {
       if (!result.ok) {
         navigation.reset({
           index: 0,
-          routes: [{ name: 'MainTabs', params: { screen: 'Home' } }],
+          routes: [
+            {
+              name: 'MainTabs',
+              params: { screen: 'Home', params: { showBoostModal: true } },
+            },
+          ],
         });
       }
     });
-  }, [consumeEnergy, isMultiplayer, isQuickPlay, navigation, premium]);
+  }, [consumeEnergy, isMultiplayer, navigation, premium]);
 
   const finalizeQuiz = useCallback(
     async (

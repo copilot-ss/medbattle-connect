@@ -2,8 +2,8 @@ export const BADGES = [
   {
     min: 0,
     max: 49,
-    title: 'Med Rookie',
-    subtitle: 'Noch ein Versuch und du kletterst ins Mittelfeld!',
+    title: 'MedBattle Complete',
+    subtitle: '',
     color: '#F97316',
     glow: '#FB923C',
   },

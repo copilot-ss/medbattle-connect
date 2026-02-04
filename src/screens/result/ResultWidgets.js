@@ -1,4 +1,5 @@
-import { Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Text, View } from 'react-native';
 import styles, {
   getSparkleContainerStyle,
   getSparkleHorizontalStyle,
@@ -25,11 +26,130 @@ export function Sparkle({ size, top, left, opacity, rotate = '0deg', color }) {
   );
 }
 
-export function StatPill({ label, value }) {
+export function StatPill({ label, value, emphasis = false }) {
   return (
-    <View style={styles.statPill}>
-      <Text style={styles.statPillLabel}>{label}</Text>
-      <Text style={styles.statPillValue}>{value}</Text>
+    <View style={[styles.statPill, emphasis ? styles.statPillEmphasis : null]}>
+      <Text style={[styles.statPillLabel, emphasis ? styles.statPillLabelEmphasis : null]}>
+        {label}
+      </Text>
+      <Text style={[styles.statPillValue, emphasis ? styles.statPillValueEmphasis : null]}>
+        {value}
+      </Text>
     </View>
+  );
+}
+
+export function RewardPill({ label, value, tone = 'xp', delay = 0 }) {
+  const scale = useRef(new Animated.Value(0.85)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const isXp = tone === 'xp';
+
+  useEffect(() => {
+    const animation = Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 220,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scale, {
+          toValue: 1,
+          speed: 14,
+          bounciness: 6,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]);
+
+    animation.start();
+    return () => animation.stop();
+  }, [delay, opacity, scale]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.rewardPill,
+        isXp ? styles.rewardPillXp : styles.rewardPillCoins,
+        { opacity, transform: [{ scale }] },
+      ]}
+    >
+      <View style={[styles.rewardIcon, isXp ? styles.rewardIconXp : styles.rewardIconCoins]}>
+        <Text style={styles.rewardIconText}>{isXp ? 'XP' : 'C'}</Text>
+      </View>
+      <View style={styles.rewardInline}>
+        <Text style={[styles.rewardValue, isXp ? styles.rewardValueXp : styles.rewardValueCoins]}>
+          {value}
+        </Text>
+        <Text style={[styles.rewardLabel, isXp ? styles.rewardLabelXp : styles.rewardLabelCoins]}>
+          {label}
+        </Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+export function RewardSummary({ items = [], delay = 0 }) {
+  const scale = useRef(new Animated.Value(0.96)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const safeItems = Array.isArray(items) ? items.filter(Boolean) : [];
+
+  useEffect(() => {
+    const animation = Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 220,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scale, {
+          toValue: 1,
+          speed: 14,
+          bounciness: 6,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]);
+
+    animation.start();
+    return () => animation.stop();
+  }, [delay, opacity, scale]);
+
+  if (!safeItems.length) {
+    return null;
+  }
+
+  return (
+    <Animated.View
+      style={[
+        styles.rewardSummary,
+        { opacity, transform: [{ scale }] },
+      ]}
+    >
+      {safeItems.map((item, index) => {
+        const isXp = item.tone === 'xp';
+        const key = item.key ?? `${item.tone}-${index}`;
+
+        return (
+          <View key={key} style={styles.rewardSummaryItem}>
+            <View style={[styles.rewardIcon, isXp ? styles.rewardIconXp : styles.rewardIconCoins]}>
+              <Text style={styles.rewardIconText}>{isXp ? 'XP' : 'C'}</Text>
+            </View>
+            <Text
+              style={[
+                styles.rewardSummaryText,
+                isXp ? styles.rewardValueXp : styles.rewardValueCoins,
+              ]}
+            >
+              {item.value} {item.label}
+            </Text>
+            {index < safeItems.length - 1 ? (
+              <View style={styles.rewardSummaryDivider} />
+            ) : null}
+          </View>
+        );
+      })}
+    </Animated.View>
   );
 }

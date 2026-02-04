@@ -1,4 +1,5 @@
-import { ActivityIndicator, Linking, Pressable, Text, TextInput, View } from 'react-native';
+﻿import { ActivityIndicator, Linking, Pressable, Text, TextInput, View } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/SettingsScreen.styles';
 
@@ -42,14 +43,25 @@ export default function SettingsFooter({
     }
 
     try {
-      const supported = await Linking.canOpenURL(url);
-      if (!supported) {
-        console.warn('Link konnte nicht geöffnet werden.');
+      const resolvedUrl =
+        url.startsWith('http://') || url.startsWith('https://')
+          ? url
+          : `https://${url}`;
+      if (resolvedUrl.startsWith('http')) {
+        await WebBrowser.openBrowserAsync(resolvedUrl, {
+          enableBarCollapsing: true,
+          showInRecents: true,
+        });
         return;
       }
-      await Linking.openURL(url);
+      const supported = await Linking.canOpenURL(resolvedUrl);
+      if (!supported) {
+        console.warn('Link konnte nicht geÃ¶ffnet werden.');
+        return;
+      }
+      await Linking.openURL(resolvedUrl);
     } catch (err) {
-      console.warn('Fehler beim Öffnen des Links:', err);
+      console.warn('Fehler beim Ã–ffnen des Links:', err);
     }
   };
 
@@ -150,3 +162,4 @@ export default function SettingsFooter({
     </View>
   );
 }
+

@@ -282,9 +282,14 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 178, 92, 0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 178, 92, 0.35)',
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
+  },
+  streakIconImage: {
+    width: 22,
+    height: 22,
+    resizeMode: 'contain',
   },
   streakProgressTrack: {
     height: 8,

@@ -6,6 +6,10 @@ import avatars from '../screens/settings/avatars';
 const HOME_ANIMATION = require('../../assets/animations/doctor/doctor.json');
 const EMPTY_BATTLES_ICON = require('../../assets/animations/no-battles.gif');
 const SHARE_ANIM = require('../../assets/animations/share_6172544.gif');
+const ANATOMY_RESULT_ANIM = require('../../assets/animations/anatomy/skeleton_18166394.png');
+const PHARMA_RESULT_LOW = require('../../assets/animations/pharmacology/sleeping_pills_12082332.png');
+const PHARMA_RESULT_HIGH = require('../../assets/animations/pharmacology/tablet_13099875.png');
+const KIWI_RESULT_ANIM = require('../../assets/animations/kiwi.gif');
 const HOST_BADGE_ICON = require('../../assets/icons_profile/caduceus_1839855.png');
 
 const AVATAR_SOURCES = avatars
@@ -16,6 +20,10 @@ const APP_ASSETS = [
   HOME_ANIMATION,
   EMPTY_BATTLES_ICON,
   SHARE_ANIM,
+  ANATOMY_RESULT_ANIM,
+  PHARMA_RESULT_LOW,
+  PHARMA_RESULT_HIGH,
+  KIWI_RESULT_ANIM,
   HOST_BADGE_ICON,
   ...AVATAR_SOURCES,
 ];

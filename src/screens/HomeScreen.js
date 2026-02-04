@@ -42,6 +42,7 @@ const sanitizeStatNumber = (value) => {
 export default function HomeScreen({ navigation, route }) {
   const { t } = useTranslation();
   const routeLobby = route?.params?.activeLobby;
+  const shouldOpenBoostModal = Boolean(route?.params?.showBoostModal);
   const [activeLobbyState, setActiveLobbyState] = useState(null);
   const activeLobby = routeLobby === undefined ? activeLobbyState : routeLobby;
   const { isOnline, isChecking, checkOnline } = useConnectivity();
@@ -131,6 +132,17 @@ export default function HomeScreen({ navigation, route }) {
   useEffect(() => {
     restoreAttemptedRef.current = false;
   }, [isOffline, routeLobby, userId]);
+
+  useEffect(() => {
+    if (!shouldOpenBoostModal) {
+      return;
+    }
+    setEnergyMessage(null);
+    setShowBoostModal(true);
+    if (navigation?.setParams) {
+      navigation.setParams({ showBoostModal: false });
+    }
+  }, [navigation, shouldOpenBoostModal]);
 
   useEffect(() => {
     let active = true;

@@ -21,6 +21,7 @@ Kostenlose kompetitive Medizin-Quiz-App mit Supabase-Backend, Werbung und Premiu
 4. Multiplayer - erledigt
 
 ## Status-Notizen
+- Release-Fokus: Android zuerst (User-Wunsch).
 - Android Start-Crash behoben: SoLoader initialisiert mit `OpenSourceMergedSoMapping` und `expo-modules-core` patcht `ReactStylesDiffMapHelper`.
 - Patch in `patches/expo-modules-core+3.0.28.patch` enthält FeatureFlags-Fallback + backingMap-Feld-Fallback.
 - Lokaler Debug Build läuft auf Gerät ohne Crash (logcat crash buffer leer).

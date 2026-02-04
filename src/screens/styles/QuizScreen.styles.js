@@ -120,6 +120,9 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     marginLeft: 'auto',
   },
+  progressWrap: {
+    position: 'relative',
+  },
   progressTrack: {
     height: 12,
     borderRadius: radii.pill,
@@ -127,6 +130,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',
+  },
+  snailIcon: {
+    position: 'absolute',
+    top: -15,
+    left: 0,
+    width: 26,
+    height: 26,
+    resizeMode: 'contain',
   },
   progressFill: {
     height: '100%',

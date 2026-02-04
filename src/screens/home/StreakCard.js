@@ -1,10 +1,10 @@
 import { memo, useMemo } from 'react';
-import { Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../styles/theme';
+import { Image, Text, View } from 'react-native';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/HomeScreen.styles';
 
+const STREAK_ICON_STATIC = require('../../../assets/icons/flaticon/hingabe_14251500.png');
+const STREAK_ICON_ANIMATED = require('../../../assets/icons/flaticon/hingabe_14251500.gif');
 const STREAK_MILESTONES = [7, 30];
 
 function StreakCard({ streakValue = 0 }) {
@@ -31,6 +31,7 @@ function StreakCard({ streakValue = 0 }) {
         : t('Legend-Status freigeschaltet'),
     };
   }, [streakValue, t]);
+  const hasStreak = streakSummary.safeValue > 0;
 
   return (
     <View style={styles.streakCard}>
@@ -40,7 +41,10 @@ function StreakCard({ streakValue = 0 }) {
           <Text style={styles.streakSubtitle}>{streakSummary.subtitle}</Text>
         </View>
         <View style={styles.streakIconWrap}>
-          <Ionicons name="flame" size={18} color={colors.accentWarm} />
+          <Image
+            source={hasStreak ? STREAK_ICON_ANIMATED : STREAK_ICON_STATIC}
+            style={styles.streakIconImage}
+          />
         </View>
       </View>
       <View style={styles.streakProgressTrack}>

@@ -1,11 +1,4 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  Switch,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, Switch, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/SettingsScreen.styles';
@@ -146,7 +139,6 @@ export default function FriendsSection({
 
         {isLoading ? (
           <View style={styles.friendLoading}>
-            <ActivityIndicator color="#60A5FA" />
             <Text style={styles.friendLoadingText}>
               {t('Online-Status wird geladen ...')}
             </Text>

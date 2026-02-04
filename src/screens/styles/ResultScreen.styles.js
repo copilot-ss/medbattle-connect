@@ -9,11 +9,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     width: '100%',
-    alignItems: 'center',
+    alignItems: 'stretch',
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 56,
-    rowGap: 20,
+    rowGap: 24,
     flexGrow: 1,
   },
   backgroundGlowLarge: {
@@ -53,57 +53,145 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   cardWrap: {
-    width: '100%',
     maxWidth: 420,
     position: 'relative',
     alignItems: 'center',
+    alignSelf: 'stretch',
   },
   card: {
     width: '100%',
     borderRadius: radii.xl,
     paddingVertical: 28,
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',
     zIndex: 1,
   },
-  badgePill: {
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: radii.pill,
-    marginBottom: 18,
-  },
-  badgePillText: {
-    color: '#0A0A12',
-    fontSize: 14,
-    fontFamily: fonts.bold,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
   heading: {
-    fontSize: 32,
+    fontSize: 22,
     fontFamily: fonts.bold,
     color: colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subtitle: {
     fontSize: 16,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
     fontFamily: fonts.regular,
   },
-  statsSection: {
+  subtitleCompact: {
+    marginBottom: 10,
+  },
+  feedbackLine: {
+    fontSize: 15,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: 20,
+    fontFamily: fonts.medium,
+  },
+  feedbackLineLow: {
+    color: colors.accentWarm,
+  },
+  feedbackLineHigh: {
+    color: colors.accentGreen,
+  },
+  anatomyAnimationWrap: {
     width: '100%',
-    borderRadius: radii.lg,
-    paddingVertical: 20,
-    paddingHorizontal: 18,
-    backgroundColor: 'rgba(87, 199, 255, 0.14)',
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  anatomyAnimation: {
+    width: 120,
+    height: 120,
+  },
+  pharmaAnimationWrap: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  pharmaAnimation: {
+    width: 112,
+    height: 112,
+  },
+  scoreSummary: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 6,
+    rowGap: 12,
+  },
+  scoreLabel: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontFamily: fonts.medium,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+  },
+  scoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    columnGap: 12,
+  },
+  scoreValueWrap: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scoreValue: {
+    color: colors.textPrimary,
+    fontSize: 34,
+    fontFamily: fonts.bold,
+  },
+  scorePoints: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(87, 199, 255, 0.16)',
     borderWidth: 1,
     borderColor: 'rgba(87, 199, 255, 0.4)',
+  },
+  scorePointsIcon: {
+    marginRight: 6,
+  },
+  scorePointsText: {
+    color: colors.accent,
+    fontSize: 12,
+    fontFamily: fonts.bold,
+  },
+  scoreKiwi: {
+    width: 26,
+    height: 26,
+  },
+  scoreKiwiWrap: {
+    position: 'absolute',
+    top: -12,
+    right: -26,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(87, 199, 255, 0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(87, 199, 255, 0.4)',
+  },
+  trophyWrap: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 214, 117, 0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 214, 117, 0.4)',
   },
   offlineBanner: {
     width: '100%',
@@ -132,9 +220,48 @@ const styles = StyleSheet.create({
     marginBottom: 0,
     flexWrap: 'wrap',
     rowGap: 8,
+    columnGap: 10,
   },
   statsRowSecondary: {
     marginTop: 10,
+  },
+  rewardRow: {
+    marginTop: 12,
+    justifyContent: 'center',
+    flexWrap: 'nowrap',
+    columnGap: 12,
+  },
+  rewardSummaryRow: {
+    marginTop: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rewardSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(87, 199, 255, 0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(87, 199, 255, 0.4)',
+    columnGap: 10,
+  },
+  rewardSummaryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 8,
+  },
+  rewardSummaryText: {
+    fontSize: 13,
+    fontFamily: fonts.bold,
+  },
+  rewardSummaryDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    marginHorizontal: 12,
   },
   statPill: {
     paddingVertical: 8,
@@ -152,7 +279,103 @@ const styles = StyleSheet.create({
   statPillValue: {
     color: colors.textPrimary,
     fontFamily: fonts.medium,
+    fontSize: 15,
     marginTop: 2,
+  },
+  statPillEmphasis: {
+    backgroundColor: 'rgba(255, 178, 92, 0.28)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 178, 92, 0.7)',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+  },
+  statPillLabelEmphasis: {
+    color: colors.accentWarm,
+    fontSize: 13,
+    letterSpacing: 0.4,
+  },
+  statPillValueEmphasis: {
+    fontSize: 20,
+    fontFamily: fonts.bold,
+  },
+  rewardPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: radii.pill,
+    minWidth: 140,
+    minHeight: 44,
+    flexShrink: 1,
+    columnGap: 10,
+  },
+  rewardPillXp: {
+    backgroundColor: 'rgba(87, 199, 255, 0.24)',
+    borderWidth: 1,
+    borderColor: 'rgba(87, 199, 255, 0.7)',
+    shadowColor: colors.accent,
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+  },
+  rewardPillCoins: {
+    backgroundColor: 'rgba(255, 178, 92, 0.26)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 178, 92, 0.75)',
+    shadowColor: colors.accentWarm,
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+  },
+  rewardIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rewardIconXp: {
+    backgroundColor: 'rgba(87, 199, 255, 0.9)',
+  },
+  rewardIconCoins: {
+    backgroundColor: 'rgba(255, 178, 92, 0.95)',
+  },
+  rewardIconText: {
+    color: '#0A0A12',
+    fontSize: 12,
+    fontFamily: fonts.bold,
+    letterSpacing: 0.4,
+  },
+  rewardInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 6,
+  },
+  rewardValue: {
+    fontSize: 16,
+    fontFamily: fonts.bold,
+    color: colors.textPrimary,
+  },
+  rewardValueXp: {
+    color: '#DFF3FF',
+  },
+  rewardValueCoins: {
+    color: '#FFE6C7',
+  },
+  rewardLabel: {
+    fontSize: 11,
+    fontFamily: fonts.medium,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  rewardLabelXp: {
+    color: '#A7DFFF',
+  },
+  rewardLabelCoins: {
+    color: '#FFD6A8',
   },
   multiplayerCard: {
     width: '100%',
@@ -168,8 +391,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 12,
-    flexWrap: 'wrap',
-    rowGap: 8,
+    flexWrap: 'nowrap',
+    columnGap: 12,
   },
   multiplayerTitle: {
     color: '#CBEAFF',
@@ -314,26 +537,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: 'rgba(87, 199, 255, 0.5)',
-    backgroundColor: 'rgba(87, 199, 255, 0.12)',
+    borderColor: colors.accentWarm,
+    backgroundColor: colors.accentWarm,
     alignItems: 'center',
     alignSelf: 'center',
-    shadowColor: colors.accent,
-    shadowOpacity: 0.25,
+    shadowColor: colors.accentWarm,
+    shadowOpacity: 0.3,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
   tertiaryButtonText: {
-    color: '#CBEAFF',
+    color: '#0A0A12',
     fontSize: 15,
     fontFamily: fonts.bold,
     letterSpacing: 0.3,
   },
   reviewSection: {
-    width: '100%',
     maxWidth: 420,
-    rowGap: 14,
+    rowGap: 16,
+    alignSelf: 'stretch',
   },
   reviewTitle: {
     color: colors.textPrimary,
@@ -344,11 +567,12 @@ const styles = StyleSheet.create({
   reviewCard: {
     width: '100%',
     borderRadius: radii.lg,
-    padding: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
     borderColor: colors.border,
-    rowGap: 10,
+    rowGap: 12,
   },
   reviewHeader: {
     flexDirection: 'row',
@@ -380,7 +604,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 16,
     fontFamily: fonts.bold,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   reviewAnswers: {
     rowGap: 4,
@@ -394,7 +618,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 14,
     fontFamily: fonts.regular,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   reviewAnswerCorrect: {
     color: colors.success,
@@ -409,7 +633,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 14,
     fontFamily: fonts.regular,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   spotlight: {
     display: 'none',
@@ -425,10 +649,6 @@ const styles = StyleSheet.create({
 
 export function getLargeGlowStyle(color) {
   return StyleSheet.compose(styles.backgroundGlowLarge, { backgroundColor: color });
-}
-
-export function getBadgePillStyle(color) {
-  return StyleSheet.compose(styles.badgePill, { backgroundColor: color });
 }
 
 export function getPrimaryButtonStyle(color) {

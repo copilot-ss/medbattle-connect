@@ -10,6 +10,7 @@ import {
   FRIEND_REQUESTS_STORAGE_KEY,
   LANGUAGE_STORAGE_KEY,
   MAX_ENERGY,
+  MAX_ENERGY_CAP_BONUS,
   PUSH_STORAGE_KEY,
   SOUND_STORAGE_KEY,
   STREAK_STORAGE_KEYS,
@@ -64,6 +65,7 @@ export async function loadPreferencesFromStorage() {
             questions: sanitizeStatNumber(parsed?.questions),
             xp: sanitizeStatNumber(parsed?.xp),
             coins: sanitizeStatNumber(parsed?.coins),
+            energyCapBonus: sanitizeStatNumber(parsed?.energyCapBonus),
           };
         }
       } catch (err) {
@@ -89,7 +91,9 @@ export async function loadPreferencesFromStorage() {
     })(),
   ]);
 
-  const recalc = recalcEnergy(loadedEnergy, loadedEnergyTs);
+  const energyCapBonus = sanitizeStatNumber(nextUserStats?.energyCapBonus);
+  const maxEnergy = MAX_ENERGY + Math.min(energyCapBonus, MAX_ENERGY_CAP_BONUS);
+  const recalc = recalcEnergy(loadedEnergy, loadedEnergyTs, maxEnergy);
 
   const normalizedLanguage =
     storedLanguage && storedLanguage.toLowerCase() === 'en' ? 'en' : DEFAULT_LANGUAGE;

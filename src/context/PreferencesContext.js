@@ -5,6 +5,7 @@ import {
   ENERGY_RECHARGE_MS,
   FRIEND_REQUESTS_STORAGE_KEY,
   MAX_ENERGY,
+  MAX_ENERGY_CAP_BONUS,
   PUSH_STORAGE_KEY,
   SOUND_STORAGE_KEY,
   STREAK_STORAGE_KEYS,
@@ -40,6 +41,13 @@ export function PreferencesProvider({ children }) {
   const [nextEnergyAt, setNextEnergyAt] = useState(null);
   const [loading, setLoading] = useState(true);
   const energyTimestampRef = useRef(Date.now());
+  const energyRef = useRef(energy);
+  const energyMaxRef = useRef(MAX_ENERGY);
+  const energyCapBonus = Math.min(
+    sanitizeStatNumber(userStats?.energyCapBonus),
+    MAX_ENERGY_CAP_BONUS
+  );
+  const energyMax = MAX_ENERGY + energyCapBonus;
 
   useEffect(() => {
     let active = true;
@@ -89,6 +97,14 @@ export function PreferencesProvider({ children }) {
     await persistBooleanValue(SOUND_STORAGE_KEY, normalized);
   }, []);
 
+  useEffect(() => {
+    energyRef.current = energy;
+  }, [energy]);
+
+  useEffect(() => {
+    energyMaxRef.current = energyMax;
+  }, [energyMax]);
+
   const setVibrationEnabled = useCallback(async (value) => {
     const normalized = Boolean(value);
     setVibrationEnabledState(normalized);
@@ -129,12 +145,14 @@ export function PreferencesProvider({ children }) {
   const updateUserStats = useCallback(async (updater) => {
     setUserStatsState((prev) => {
       const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater };
+      const merged = { ...prev, ...next };
       const sanitized = {
-        quizzes: sanitizeStatNumber(next.quizzes),
-        correct: sanitizeStatNumber(next.correct),
-        questions: sanitizeStatNumber(next.questions),
-        xp: sanitizeStatNumber(next.xp),
-        coins: sanitizeStatNumber(next.coins),
+        quizzes: sanitizeStatNumber(merged.quizzes),
+        correct: sanitizeStatNumber(merged.correct),
+        questions: sanitizeStatNumber(merged.questions),
+        xp: sanitizeStatNumber(merged.xp),
+        coins: sanitizeStatNumber(merged.coins),
+        energyCapBonus: sanitizeStatNumber(merged.energyCapBonus),
       };
       persistUserStats(sanitized);
       return sanitized;
@@ -142,20 +160,26 @@ export function PreferencesProvider({ children }) {
   }, []);
 
   const refreshEnergy = useCallback(() => {
-    setEnergyState((prev) => {
-      const recalc = recalcEnergy(prev, energyTimestampRef.current);
-      energyTimestampRef.current = recalc.ts;
-      setNextEnergyAt(recalc.nextAt);
-      return recalc.energy;
-    });
+    const recalc = recalcEnergy(
+      energyRef.current,
+      energyTimestampRef.current,
+      energyMaxRef.current
+    );
+    energyTimestampRef.current = recalc.ts;
+    energyRef.current = recalc.energy;
+    setEnergyState(recalc.energy);
+    setNextEnergyAt(recalc.nextAt);
   }, []);
 
   const boostEnergy = useCallback(async () => {
-    setEnergyState(MAX_ENERGY);
+    const now = Date.now();
+    const maxEnergy = energyMaxRef.current;
+    energyTimestampRef.current = now;
+    energyRef.current = maxEnergy;
+    setEnergyState(maxEnergy);
     setNextEnergyAt(null);
-    energyTimestampRef.current = Date.now();
-    await persistEnergy(MAX_ENERGY, energyTimestampRef.current);
-    return { ok: true, energy: MAX_ENERGY };
+    await persistEnergy(maxEnergy, now);
+    return { ok: true, energy: maxEnergy };
   }, []);
 
   const addEnergy = useCallback(async (amount) => {
@@ -164,60 +188,57 @@ export function PreferencesProvider({ children }) {
       return { ok: false, energy: 0, nextAt: null };
     }
 
-    let result = { ok: false, energy: 0, nextAt: null };
+    const maxEnergy = energyMaxRef.current;
+    const recalc = recalcEnergy(energyRef.current, energyTimestampRef.current, maxEnergy);
+    const nextEnergy = Math.min(maxEnergy, recalc.energy + increment);
+    const now = Date.now();
+    const nextAt = nextEnergy >= maxEnergy ? null : now + ENERGY_RECHARGE_MS;
 
-    setEnergyState((prev) => {
-      const recalc = recalcEnergy(prev, energyTimestampRef.current);
-      const nextEnergy = Math.min(MAX_ENERGY, recalc.energy + increment);
-      const nextAt = nextEnergy >= MAX_ENERGY ? null : Date.now() + ENERGY_RECHARGE_MS;
-      const now = Date.now();
+    energyTimestampRef.current = now;
+    energyRef.current = nextEnergy;
+    setEnergyState(nextEnergy);
+    setNextEnergyAt(nextAt);
 
-      energyTimestampRef.current = now;
-      setNextEnergyAt(nextAt);
+    await persistEnergy(nextEnergy, now);
 
-      persistEnergy(nextEnergy, now);
-
-      result = { ok: true, energy: nextEnergy, nextAt };
-      return nextEnergy;
-    });
-
-    return result;
+    return { ok: true, energy: nextEnergy, nextAt };
   }, []);
 
   const consumeEnergy = useCallback(
     async ({ ignoreLimit = false } = {}) => {
       if (ignoreLimit) {
-        return { ok: true, energy: energy, nextAt: nextEnergyAt };
+        return { ok: true, energy: energyRef.current, nextAt: nextEnergyAt };
       }
 
-      let result = { ok: false, energy: 0, nextAt: nextEnergyAt };
+      const recalc = recalcEnergy(
+        energyRef.current,
+        energyTimestampRef.current,
+        energyMaxRef.current
+      );
+      energyTimestampRef.current = recalc.ts;
+      const current = recalc.energy;
 
-      setEnergyState((prev) => {
-        const recalc = recalcEnergy(prev, energyTimestampRef.current);
-        energyTimestampRef.current = recalc.ts;
-        const current = recalc.energy;
+      if (current <= 0) {
+        energyRef.current = current;
+        setEnergyState(current);
+        setNextEnergyAt(recalc.nextAt);
+        return { ok: false, energy: current, nextAt: recalc.nextAt };
+      }
 
-        if (current <= 0) {
-          setNextEnergyAt(recalc.nextAt);
-          result = { ok: false, energy: current, nextAt: recalc.nextAt };
-          return current;
-        }
+      const nextEnergy = Math.max(0, current - 1);
+      const now = Date.now();
+      const maxEnergy = energyMaxRef.current;
+      const nextAt = nextEnergy >= maxEnergy ? null : now + ENERGY_RECHARGE_MS;
 
-        const nextEnergy = Math.max(0, current - 1);
-        const nextAt =
-          nextEnergy >= MAX_ENERGY ? null : Date.now() + ENERGY_RECHARGE_MS;
+      energyTimestampRef.current = now;
+      energyRef.current = nextEnergy;
+      setEnergyState(nextEnergy);
+      setNextEnergyAt(nextAt);
+      await persistEnergy(nextEnergy, now);
 
-        setNextEnergyAt(nextAt);
-
-        persistEnergy(nextEnergy, Date.now());
-
-        result = { ok: true, energy: nextEnergy, nextAt };
-        return nextEnergy;
-      });
-
-      return result;
+      return { ok: true, energy: nextEnergy, nextAt };
     },
-    [energy, nextEnergyAt]
+    [nextEnergyAt]
   );
 
   const setStreakValue = useCallback(async (difficulty, updater) => {
@@ -265,7 +286,7 @@ export function PreferencesProvider({ children }) {
       userStats,
       updateUserStats,
       energy,
-      energyMax: MAX_ENERGY,
+      energyMax,
       nextEnergyAt,
       refreshEnergy,
       consumeEnergy,
@@ -275,7 +296,15 @@ export function PreferencesProvider({ children }) {
     }),
     [
       addEnergy,
+      boostEnergy,
+      consumeEnergy,
+      refreshEnergy,
+      setLanguage,
       loading,
+      energy,
+      energyMax,
+      nextEnergyAt,
+      userStats,
       setSoundEnabled,
       setStreakValue,
       setVibrationEnabled,
@@ -283,6 +312,7 @@ export function PreferencesProvider({ children }) {
       setFriendRequestsEnabled,
       setAvatarId,
       setAvatarUri,
+      updateUserStats,
       soundEnabled,
       vibrationEnabled,
       pushEnabled,

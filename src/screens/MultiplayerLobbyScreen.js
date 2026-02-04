@@ -6,6 +6,7 @@ import * as Clipboard from 'expo-clipboard';
 import {
   createMatch,
   deriveMatchRole,
+  getMatchById,
   joinMatch,
   updateMatchSettings,
   kickMatchGuest,
@@ -36,7 +37,7 @@ import useLobbyMatchState from './multiplayer/hooks/useLobbyMatchState';
 import useLobbyOpenMatches from './multiplayer/hooks/useLobbyOpenMatches';
 import useLobbyPresence from './multiplayer/hooks/useLobbyPresence';
 import useLobbyUser from './multiplayer/hooks/useLobbyUser';
-import { clearActiveLobby } from '../utils/activeLobbyStorage';
+import { clearActiveLobby, loadActiveLobby } from '../utils/activeLobbyStorage';
 import { useTranslation } from '../i18n/useTranslation';
 
 export default function MultiplayerLobbyScreen({ navigation, route }) {
@@ -306,6 +307,34 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     setMatchesError(null);
 
     try {
+      let matchToClose = currentMatch ?? existingMatch ?? null;
+
+      if (!matchToClose) {
+        const stored = await loadActiveLobby();
+        if (stored?.matchId) {
+          const result = await getMatchById(stored.matchId);
+          if (result.ok && result.match) {
+            matchToClose = result.match;
+          }
+        }
+      }
+
+      if (matchToClose?.id && matchToClose.status === 'waiting') {
+        const role = deriveMatchRole(matchToClose, userId);
+        if (role) {
+          closingRef.current = true;
+          try {
+            await abandonMatch({ match: matchToClose, role });
+          } finally {
+            closingRef.current = false;
+          }
+        }
+        if (currentMatch?.id === matchToClose.id) {
+          setCurrentMatch(null);
+        }
+        await clearActiveLobby();
+      }
+
       const result = await createMatch({
         difficulty: selectedDifficulty,
         questionLimit,
@@ -336,6 +365,8 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   }, [
     attachMatchSubscription,
     creating,
+    currentMatch,
+    existingMatch,
     isCreateOnly,
     language,
     questionLimit,

@@ -127,6 +127,8 @@ export default function useQuizInteractionHandlers({
 
       clearFeedbackTimer();
 
+      const feedbackDelayMs = timedOutTrigger ? 1900 : 900;
+
       feedbackTimerRef.current = setTimeout(() => {
         const processAnswer = async () => {
           feedbackTimerRef.current = null;
@@ -172,7 +174,7 @@ export default function useQuizInteractionHandlers({
           console.error('Antwort konnte nicht verarbeitet werden:', err);
           setIsAnswerLocked(false);
         });
-      }, 900);
+      }, feedbackDelayMs);
     },
     [
       activeIndex,
