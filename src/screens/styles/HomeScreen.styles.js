@@ -7,7 +7,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     paddingHorizontal: 24,
     paddingTop: 56,
-    paddingBottom: 8,
+    paddingBottom: 0,
   },
   backgroundGlowTop: {
     display: 'none',
@@ -67,6 +67,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
+    overflow: 'visible',
+    position: 'relative',
   },
   profileAvatarCircle: {
     width: 34,
@@ -80,6 +82,13 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
+  },
+  profileAvatarFrameImage: {
+    position: 'absolute',
+    top: -7,
+    left: -7,
+    width: 56,
+    height: 56,
   },
   profileAvatarInitials: {
     color: colors.textPrimary,
@@ -153,7 +162,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   scrollContent: {
-    paddingBottom: 8,
+    paddingBottom: 24,
     rowGap: 20,
   },
   section: {
@@ -265,10 +274,18 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: 12,
   },
+  streakTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    columnGap: 10,
+    rowGap: 6,
+  },
   streakTitle: {
     color: colors.textPrimary,
     fontSize: 18,
     fontFamily: fonts.bold,
+    flexShrink: 1,
   },
   streakSubtitle: {
     color: colors.textSecondary,
@@ -277,9 +294,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   streakIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
@@ -287,9 +304,50 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   streakIconImage: {
-    width: 22,
-    height: 22,
+    width: 44,
+    height: 44,
     resizeMode: 'contain',
+  },
+  streakShieldButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  streakShieldButtonActive: {
+    backgroundColor: colors.accentWarm,
+    borderColor: 'rgba(255, 178, 92, 0.65)',
+  },
+  streakShieldButtonDisabled: {
+    opacity: 0.5,
+  },
+  streakShieldButtonText: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontFamily: fonts.bold,
+  },
+  streakShieldButtonTextActive: {
+    color: '#0A0A12',
+  },
+  streakShieldBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 178, 92, 0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 178, 92, 0.4)',
+    minWidth: 20,
+    alignItems: 'center',
+  },
+  streakShieldBadgeText: {
+    color: '#FFD0A1',
+    fontSize: 10,
+    fontFamily: fonts.bold,
   },
   streakProgressTrack: {
     height: 8,

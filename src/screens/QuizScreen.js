@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import styles from './styles/QuizScreen.styles';
 import { colors } from '../styles/theme';
@@ -5,6 +6,7 @@ import QuizHeader from './quiz/QuizHeader';
 import TimerBar from './quiz/TimerBar';
 import QuestionCard from './quiz/QuestionCard';
 import OptionsList from './quiz/OptionsList';
+import BoostRow from './quiz/BoostRow';
 import TimeoutBanner from './quiz/TimeoutBanner';
 import ExitConfirmModal from './quiz/ExitConfirmModal';
 import useQuizController from './quiz/useQuizController';
@@ -38,7 +40,51 @@ export default function QuizScreen({ navigation, route }) {
     timeLeftMs,
     timedOut,
     totalQuestions,
+    boostInventory,
+    hiddenOptions,
+    usedBoosts,
+    isTimerFrozen,
+    handleUseFreezeTime,
+    handleUseFiftyFifty,
   } = useQuizController({ navigation, route });
+
+  const boostItems = useMemo(() => {
+    const isBoostDisabled = isAnswerLocked || timedOut || !matchIsActive;
+    const items = [
+      {
+        id: 'joker_5050',
+        label: t('Joker 50/50'),
+        icon: 'help-circle',
+        count: boostInventory.joker_5050,
+        active: Boolean(usedBoosts?.joker_5050),
+        disabled: isBoostDisabled || Boolean(usedBoosts?.joker_5050),
+        onPress: handleUseFiftyFifty,
+      },
+      {
+        id: 'freeze_time',
+        label: t('Zeit einfrieren'),
+        icon: 'time',
+        count: boostInventory.freeze_time,
+        active: Boolean(usedBoosts?.freeze_time) || isTimerFrozen,
+        disabled:
+          isBoostDisabled || Boolean(usedBoosts?.freeze_time) || isTimerFrozen,
+        onPress: handleUseFreezeTime,
+      },
+    ];
+
+    return items.filter((item) => item.count > 0 || item.active);
+  }, [
+    boostInventory.freeze_time,
+    boostInventory.joker_5050,
+    handleUseFiftyFifty,
+    handleUseFreezeTime,
+    isAnswerLocked,
+    isTimerFrozen,
+    matchIsActive,
+    t,
+    timedOut,
+    usedBoosts,
+  ]);
 
   async function handleGoOnline() {
     await checkOnline({ force: true });
@@ -126,9 +172,12 @@ export default function QuizScreen({ navigation, route }) {
         showProgress={!isMultiplayer}
       />
 
+      {boostItems.length ? <BoostRow items={boostItems} /> : null}
+
       <OptionsList
         currentQuestion={currentQuestion}
         selectedOption={selectedOption}
+        hiddenOptions={hiddenOptions}
         timedOut={timedOut}
         isAnswerLocked={isAnswerLocked}
         isMultiplayer={isMultiplayer}

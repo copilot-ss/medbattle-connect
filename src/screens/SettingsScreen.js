@@ -87,7 +87,6 @@ export default function SettingsScreen({
   const showProfileSection = resolvedTab === 'profile';
   const showSignOutSection = resolvedTab === 'settings';
   const headerTitle = title || (resolvedTab === 'profile' ? t('Profil') : t('Einstellungen'));
-
   return (
     <View style={styles.container}>
       <View style={styles.backgroundGlowTop} pointerEvents="none" />

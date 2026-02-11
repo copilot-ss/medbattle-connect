@@ -7,15 +7,21 @@ import styles, {
 export default function OptionsList({
   currentQuestion,
   selectedOption,
+  hiddenOptions,
   timedOut,
   isAnswerLocked,
   isMultiplayer,
   matchIsActive,
   onSelectOption,
 }) {
+  const hiddenSet = new Set(Array.isArray(hiddenOptions) ? hiddenOptions : []);
+  const visibleOptions = Array.isArray(currentQuestion.options)
+    ? currentQuestion.options.filter((opt) => !hiddenSet.has(opt))
+    : [];
+
   return (
     <View style={styles.optionsList}>
-      {currentQuestion.options.map((opt, i) => {
+      {visibleOptions.map((opt, i) => {
         const optionKey = `${i}-${opt}`;
         const isOptionSelected = selectedOption === opt;
         const isCorrectOption = opt === currentQuestion.correct_answer;

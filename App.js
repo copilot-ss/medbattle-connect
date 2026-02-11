@@ -1,7 +1,7 @@
 // App.js
 import 'react-native-gesture-handler';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { registerRootComponent } from 'expo';
 import { StatusBar, DevSettings, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -9,9 +9,10 @@ import AppNavigator from './src/AppNavigator';
 import GlobalErrorBoundary from './src/components/GlobalErrorBoundary';
 import registerGlobalErrorLogging from './src/utils/registerGlobalErrorLogging';
 import { initializeAds } from './src/services/adsService';
-import { preloadAppAssets } from './src/utils/preloadAppAssets';
+import { preloadAppAssets, preloadAppFonts } from './src/utils/preloadAppAssets';
 import registerUpdates from './src/utils/registerUpdates';
 import { initTelemetry } from './src/utils/telemetry';
+import { colors } from './src/styles/theme';
 
 // OAuth-Return in Expo
 WebBrowser.maybeCompleteAuthSession();
@@ -19,7 +20,26 @@ initTelemetry();
 registerGlobalErrorLogging();
 
 function App() {
+  const [fontsReady, setFontsReady] = useState(false);
+
   useEffect(() => {
+    let isMounted = true;
+    const loadFonts = async () => {
+      try {
+        await preloadAppFonts();
+      } catch (err) {
+        if (__DEV__) {
+          console.warn('Font preload failed:', err);
+        }
+      } finally {
+        if (isMounted) {
+          setFontsReady(true);
+        }
+      }
+    };
+
+    loadFonts();
+
     const configureSystemUi = async () => {
       if (Platform.OS !== 'android') {
         return;
@@ -61,6 +81,7 @@ function App() {
     }
 
     return () => {
+      isMounted = false;
       if (unregisterUpdates) {
         unregisterUpdates();
       }
@@ -72,6 +93,14 @@ function App() {
       }
     };
   }, []);
+
+  if (!fontsReady) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
+        <StatusBar hidden />
+      </GestureHandlerRootView>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

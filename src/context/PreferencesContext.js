@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DEFAULT_STREAKS,
+  DEFAULT_BOOSTS,
   DEFAULT_USER_STATS,
+  DOUBLE_XP_DURATION_MS,
   ENERGY_RECHARGE_MS,
   FRIEND_REQUESTS_STORAGE_KEY,
   MAX_ENERGY,
@@ -12,18 +14,31 @@ import {
   VIBRATION_STORAGE_KEY,
 } from './preferences/constants';
 import { recalcEnergy } from './preferences/energyUtils';
-import { sanitizeStatNumber, sanitizeStreakValue } from './preferences/sanitize';
+import {
+  sanitizeStatNumber,
+  sanitizeStreakValue,
+  sanitizeStringArray,
+} from './preferences/sanitize';
 import {
   loadPreferencesFromStorage,
   persistAvatarId,
+  persistAvatarFrameId,
   persistAvatarUri,
   persistBooleanValue,
+  persistBoosts,
+  persistDoubleXpExpiresAt,
   persistEnergy,
   persistLanguage,
+  persistOwnedFrames,
+  persistStreakShieldActive,
   persistStreakValue,
   persistUserStats,
 } from './preferences/storage';
-import { DEFAULT_LOCALE, setLocale } from '../i18n';
+import { DEFAULT_LOCALE, setLocale, t as translate } from '../i18n';
+import {
+  cancelEnergyFullNotification,
+  scheduleEnergyFullNotification,
+} from '../services/notificationsService';
 
 const PreferencesContext = createContext(null);
 
@@ -34,6 +49,11 @@ export function PreferencesProvider({ children }) {
   const [friendRequestsEnabled, setFriendRequestsEnabledState] = useState(true);
   const [avatarId, setAvatarIdState] = useState(null);
   const [avatarUri, setAvatarUriState] = useState(null);
+  const [avatarFrameId, setAvatarFrameIdState] = useState(null);
+  const [ownedFrames, setOwnedFramesState] = useState([]);
+  const [boosts, setBoostsState] = useState(DEFAULT_BOOSTS);
+  const [streakShieldActive, setStreakShieldActiveState] = useState(false);
+  const [doubleXpExpiresAt, setDoubleXpExpiresAtState] = useState(null);
   const [language, setLanguageState] = useState(DEFAULT_LOCALE);
   const [streaks, setStreaksState] = useState(DEFAULT_STREAKS);
   const [userStats, setUserStatsState] = useState(DEFAULT_USER_STATS);
@@ -43,11 +63,16 @@ export function PreferencesProvider({ children }) {
   const energyTimestampRef = useRef(Date.now());
   const energyRef = useRef(energy);
   const energyMaxRef = useRef(MAX_ENERGY);
+  const energyNotificationRef = useRef(null);
   const energyCapBonus = Math.min(
     sanitizeStatNumber(userStats?.energyCapBonus),
     MAX_ENERGY_CAP_BONUS
   );
   const energyMax = MAX_ENERGY + energyCapBonus;
+  const locale = useMemo(
+    () => (language || DEFAULT_LOCALE).toLowerCase(),
+    [language]
+  );
 
   useEffect(() => {
     let active = true;
@@ -66,6 +91,11 @@ export function PreferencesProvider({ children }) {
         setFriendRequestsEnabledState(loaded.friendRequestsEnabled);
         setAvatarIdState(loaded.avatarId);
         setAvatarUriState(loaded.avatarUri);
+        setAvatarFrameIdState(loaded.avatarFrameId);
+        setOwnedFramesState(loaded.ownedFrames);
+        setBoostsState(loaded.boosts);
+        setStreakShieldActiveState(Boolean(loaded.streakShieldActive));
+        setDoubleXpExpiresAtState(loaded.doubleXpExpiresAt ?? null);
         setLanguageState(loaded.language);
         setLocale(loaded.language);
         setStreaksState(loaded.streaks);
@@ -134,6 +164,107 @@ export function PreferencesProvider({ children }) {
     setAvatarUriState(normalized);
     await persistAvatarUri(normalized);
   }, []);
+
+  const setAvatarFrameId = useCallback(async (value) => {
+    const normalized = value || null;
+    setAvatarFrameIdState(normalized);
+    await persistAvatarFrameId(normalized);
+  }, []);
+
+  const setOwnedFrames = useCallback(async (frames) => {
+    const normalized = sanitizeStringArray(frames);
+    setOwnedFramesState(normalized);
+    await persistOwnedFrames(normalized);
+  }, []);
+
+  const setStreakShieldActive = useCallback(async (value) => {
+    const normalized = Boolean(value);
+    setStreakShieldActiveState(normalized);
+    await persistStreakShieldActive(normalized);
+  }, []);
+
+  const setDoubleXpExpiresAt = useCallback(async (value) => {
+    const parsed =
+      Number.isFinite(value) && value > 0 ? Math.floor(value) : null;
+    setDoubleXpExpiresAtState(parsed);
+    await persistDoubleXpExpiresAt(parsed);
+  }, []);
+
+  const normalizeBoosts = useCallback((next) => {
+    return Object.keys(DEFAULT_BOOSTS).reduce((acc, key) => {
+      acc[key] = sanitizeStatNumber(next?.[key]);
+      return acc;
+    }, { ...DEFAULT_BOOSTS });
+  }, []);
+
+  const updateBoosts = useCallback(
+    async (updater) => {
+      setBoostsState((prev) => {
+        const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater };
+        const normalized = normalizeBoosts(next);
+        persistBoosts(normalized);
+        return normalized;
+      });
+    },
+    [normalizeBoosts]
+  );
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+    const legacyCount = sanitizeStatNumber(boosts?.double_xp);
+    if (!doubleXpExpiresAt && legacyCount > 0) {
+      const now = Date.now();
+      setDoubleXpExpiresAt(now + legacyCount * DOUBLE_XP_DURATION_MS);
+      updateBoosts({ double_xp: 0 });
+    }
+  }, [
+    boosts?.double_xp,
+    doubleXpExpiresAt,
+    loading,
+    setDoubleXpExpiresAt,
+    updateBoosts,
+  ]);
+
+  const grantBoost = useCallback(
+    async (boostId, amount = 1) => {
+      if (!boostId) {
+        return false;
+      }
+      const increment = sanitizeStatNumber(amount);
+      if (increment <= 0) {
+        return false;
+      }
+
+      updateBoosts((current) => ({
+        ...current,
+        [boostId]: sanitizeStatNumber((current?.[boostId] ?? 0) + increment),
+      }));
+      return true;
+    },
+    [updateBoosts]
+  );
+
+  const consumeBoost = useCallback(
+    async (boostId, amount = 1) => {
+      if (!boostId) {
+        return false;
+      }
+      const decrement = sanitizeStatNumber(amount);
+      if (decrement <= 0) {
+        return false;
+      }
+      const available = sanitizeStatNumber(boosts?.[boostId]);
+      if (available < decrement) {
+        return false;
+      }
+
+      updateBoosts({ [boostId]: available - decrement });
+      return true;
+    },
+    [boosts, updateBoosts]
+  );
 
   const setLanguage = useCallback(async (value) => {
     const normalized = typeof value === 'string' && value.toLowerCase() === 'en' ? 'en' : DEFAULT_LOCALE;
@@ -241,6 +372,45 @@ export function PreferencesProvider({ children }) {
     [nextEnergyAt]
   );
 
+  useEffect(() => {
+    if (loading || !pushEnabled) {
+      energyNotificationRef.current = null;
+      cancelEnergyFullNotification();
+      return;
+    }
+
+    if (!Number.isFinite(energyMax) || energyMax <= 0) {
+      return;
+    }
+
+    if (energy >= energyMax || !nextEnergyAt) {
+      energyNotificationRef.current = null;
+      cancelEnergyFullNotification();
+      return;
+    }
+
+    const remaining = Math.max(0, energyMax - energy);
+    if (remaining <= 0) {
+      return;
+    }
+
+    const fullAt = nextEnergyAt + (remaining - 1) * ENERGY_RECHARGE_MS;
+    if (!Number.isFinite(fullAt)) {
+      return;
+    }
+
+    if (energyNotificationRef.current === fullAt) {
+      return;
+    }
+
+    energyNotificationRef.current = fullAt;
+    scheduleEnergyFullNotification({
+      fireAt: fullAt,
+      title: translate('Energie voll', null, locale),
+      body: translate('Deine Energie ist wieder voll. Zeit für ein Quiz!', null, locale),
+    });
+  }, [energy, energyMax, nextEnergyAt, pushEnabled, loading, locale]);
+
   const setStreakValue = useCallback(async (difficulty, updater) => {
     const key = STREAK_STORAGE_KEYS[difficulty];
     if (!key) {
@@ -279,6 +449,18 @@ export function PreferencesProvider({ children }) {
       setAvatarId,
       avatarUri,
       setAvatarUri,
+      avatarFrameId,
+      setAvatarFrameId,
+      ownedFrames,
+      setOwnedFrames,
+      boosts,
+      updateBoosts,
+      grantBoost,
+      consumeBoost,
+      streakShieldActive,
+      setStreakShieldActive,
+      doubleXpExpiresAt,
+      setDoubleXpExpiresAt,
       language,
       setLanguage,
       streaks,
@@ -312,6 +494,8 @@ export function PreferencesProvider({ children }) {
       setFriendRequestsEnabled,
       setAvatarId,
       setAvatarUri,
+      setAvatarFrameId,
+      setOwnedFrames,
       updateUserStats,
       soundEnabled,
       vibrationEnabled,
@@ -319,6 +503,16 @@ export function PreferencesProvider({ children }) {
       friendRequestsEnabled,
       avatarId,
       avatarUri,
+      avatarFrameId,
+      ownedFrames,
+      boosts,
+      updateBoosts,
+      grantBoost,
+      consumeBoost,
+      streakShieldActive,
+      setStreakShieldActive,
+      doubleXpExpiresAt,
+      setDoubleXpExpiresAt,
       language,
       streaks,
     ]

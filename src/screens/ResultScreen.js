@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, View, Text, Pressable, ScrollView, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,9 +18,13 @@ import styles, {
 } from './styles/ResultScreen.styles';
 
 const ANATOMY_ANIMATION = require('../../assets/animations/anatomy/skeleton_18166394.png');
-const PHARMA_LOW_ANIMATION = require('../../assets/animations/pharmacology/sleeping_pills_12082332.png');
-const PHARMA_HIGH_ANIMATION = require('../../assets/animations/pharmacology/tablet_13099875.png');
 const KIWI_ANIMATION = require('../../assets/animations/kiwi.gif');
+const ZERO_GHOST_ANIMATION = require('../../assets/animations/score/zero.gif');
+const ZERO_SCORE_SKY_ANIMATION = require('../../assets/animations/score/zero_clouds.gif');
+const ANATOMY_SCORE_ANIMATION = require('../../assets/animations/score/anatomy_trophy.gif');
+const PERFECT_SCORE_ANIMATION = require('../../assets/animations/score/perfect.gif');
+const MID_SCORE_ANIMATION = require('../../assets/animations/score/mid.gif');
+const TROPHY_ICON = require('../../assets/icons/flaticon/trophae_3135735.png');
 
 export default function ResultScreen({ route, navigation }) {
   const { t } = useTranslation();
@@ -71,12 +75,21 @@ export default function ResultScreen({ route, navigation }) {
     return Math.round((score / totalQuestions) * 100);
   }, [score, totalQuestions]);
   const badge = useMemo(() => findBadge(percentage), [percentage]);
-  const badgeSubtitle = badge?.subtitle ?? '';
-  const showSubtitle = useMemo(
-    () => isMultiplayer || (percentage < 95 && Boolean(badgeSubtitle)),
-    [badgeSubtitle, isMultiplayer, percentage]
-  );
+  const isPerfectScore =
+    !isMultiplayer && totalQuestions > 0 && score === totalQuestions;
+  const showZeroScoreAnimation =
+    !isMultiplayer && totalQuestions > 0 && score === 0;
+  const hideMidScoreAnimation =
+    !isMultiplayer && totalQuestions === 6 && score === 1;
+  const showMidScoreAnimation =
+    !isMultiplayer &&
+    totalQuestions > 0 &&
+    score > 0 &&
+    score < totalQuestions &&
+    !hideMidScoreAnimation;
   const showKiwiPeck = !isMultiplayer && score === 0 && totalQuestions === 6;
+  const showZeroFullScreen = showKiwiPeck;
+  const showZeroSparkles = showZeroScoreAnimation && !showKiwiPeck;
   const feedbackLine = useMemo(() => {
     if (isMultiplayer) {
       return null;
@@ -112,8 +125,10 @@ export default function ResultScreen({ route, navigation }) {
       return indexA - indexB;
     });
   }, [answerHistory]);
+  const perfectScoreMotion = useRef(new Animated.Value(0)).current;
+  const [showPerfectTopAnimation, setShowPerfectTopAnimation] = useState(false);
+  const [showZeroGhostOverlay, setShowZeroGhostOverlay] = useState(false);
   const anatomyMotion = useRef(new Animated.Value(0)).current;
-  const pharmaMotion = useRef(new Animated.Value(0)).current;
   const isAnatomyCategory = useMemo(() => {
     if (typeof category !== 'string') {
       return false;
@@ -121,14 +136,6 @@ export default function ResultScreen({ route, navigation }) {
     const normalized = category.trim().toLowerCase();
     return normalized === 'anatomie' || normalized === 'anatomy';
   }, [category]);
-  const isPharmaCategory = useMemo(() => {
-    if (typeof category !== 'string') {
-      return false;
-    }
-    const normalized = category.trim().toLowerCase();
-    return normalized === 'pharmakologie' || normalized === 'pharmacology';
-  }, [category]);
-  const pharmaIsLow = isPharmaCategory && percentage < 50;
 
   const hasOpponent = Boolean(opponentState?.userId);
   const selfBaseName = useMemo(() => {
@@ -231,6 +238,49 @@ export default function ResultScreen({ route, navigation }) {
     selfScoreValue,
   ]);
   useEffect(() => {
+    if (!isPerfectScore) {
+      perfectScoreMotion.stopAnimation();
+      perfectScoreMotion.setValue(0);
+      setShowPerfectTopAnimation(false);
+      return undefined;
+    }
+
+    perfectScoreMotion.setValue(0);
+    const animation = Animated.timing(perfectScoreMotion, {
+      toValue: 1,
+      duration: 650,
+      useNativeDriver: true,
+    });
+
+    animation.start();
+    return () => animation.stop();
+  }, [isPerfectScore, perfectScoreMotion]);
+  useEffect(() => {
+    if (!isPerfectScore) {
+      return undefined;
+    }
+
+    setShowPerfectTopAnimation(true);
+    const timeoutId = setTimeout(() => {
+      setShowPerfectTopAnimation(false);
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [isPerfectScore]);
+  useEffect(() => {
+    if (!showZeroScoreAnimation) {
+      setShowZeroGhostOverlay(false);
+      return undefined;
+    }
+
+    setShowZeroGhostOverlay(true);
+    const timeoutId = setTimeout(() => {
+      setShowZeroGhostOverlay(false);
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [showZeroScoreAnimation]);
+  useEffect(() => {
     if (!isAnatomyCategory) {
       anatomyMotion.stopAnimation();
       anatomyMotion.setValue(0);
@@ -255,31 +305,22 @@ export default function ResultScreen({ route, navigation }) {
     loop.start();
     return () => loop.stop();
   }, [anatomyMotion, isAnatomyCategory]);
-  useEffect(() => {
-    if (!isPharmaCategory) {
-      pharmaMotion.stopAnimation();
-      pharmaMotion.setValue(0);
-      return undefined;
-    }
-
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pharmaMotion, {
-          toValue: 1,
-          duration: 1100,
-          useNativeDriver: true,
+  const perfectScoreAnimatedStyle = isPerfectScore
+    ? {
+        transform: [
+          {
+            translateY: perfectScoreMotion.interpolate({
+              inputRange: [0, 1],
+              outputRange: [-46, 0],
+            }),
+          },
+        ],
+        opacity: perfectScoreMotion.interpolate({
+          inputRange: [0, 0.2, 1],
+          outputRange: [0, 1, 1],
         }),
-        Animated.timing(pharmaMotion, {
-          toValue: 0,
-          duration: 1100,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    loop.start();
-    return () => loop.stop();
-  }, [isPharmaCategory, pharmaMotion]);
+      }
+    : null;
   const anatomyAnimatedStyle = isAnatomyCategory
     ? {
         transform: [
@@ -293,24 +334,6 @@ export default function ResultScreen({ route, navigation }) {
             rotate: anatomyMotion.interpolate({
               inputRange: [0, 1],
               outputRange: ['-2deg', '2deg'],
-            }),
-          },
-        ],
-      }
-    : null;
-  const pharmaAnimatedStyle = isPharmaCategory
-    ? {
-        transform: [
-          {
-            translateY: pharmaMotion.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, -5],
-            }),
-          },
-          {
-            rotate: pharmaMotion.interpolate({
-              inputRange: [0, 1],
-              outputRange: ['-3deg', '3deg'],
             }),
           },
         ],
@@ -332,34 +355,65 @@ export default function ResultScreen({ route, navigation }) {
       <View style={getLargeGlowStyle(badge.glow)} />
       <View style={styles.backgroundGlowSmall} />
 
-      <Sparkle size={36} top={120} left={36} opacity={0.35} rotate="25deg" color={badge.glow} />
-      <Sparkle size={24} top={80} left={280} opacity={0.28} rotate="-10deg" color={colors.accent} />
-      <Sparkle size={32} top={380} left={300} opacity={0.3} rotate="45deg" color={colors.accentGreen} />
-      <Sparkle size={28} top={420} left={44} opacity={0.26} rotate="-30deg" color={colors.highlight} />
+      {!showZeroScoreAnimation ? (
+        <>
+          <Sparkle size={36} top={120} left={36} opacity={0.35} rotate="25deg" color={badge.glow} />
+          <Sparkle size={24} top={80} left={280} opacity={0.28} rotate="-10deg" color={colors.accent} />
+          <Sparkle size={32} top={380} left={300} opacity={0.3} rotate="45deg" color={colors.accentGreen} />
+          <Sparkle size={28} top={420} left={44} opacity={0.26} rotate="-30deg" color={colors.highlight} />
+        </>
+      ) : null}
+
+      {showPerfectTopAnimation ? (
+        <View style={styles.perfectTopAnimationWrap} pointerEvents="none">
+          <Animated.Image
+            source={PERFECT_SCORE_ANIMATION}
+            style={[styles.perfectTopAnimation, perfectScoreAnimatedStyle]}
+            resizeMode="cover"
+          />
+        </View>
+      ) : null}
+      {showZeroGhostOverlay ? (
+        <View style={styles.zeroGhostOverlay} pointerEvents="none">
+          <Image
+            source={ZERO_GHOST_ANIMATION}
+            style={styles.zeroGhostOverlayImage}
+            resizeMode="cover"
+          />
+        </View>
+      ) : null}
+      {showZeroFullScreen ? (
+        <View style={styles.zeroScoreOverlay} pointerEvents="none">
+          <Image
+            source={ZERO_SCORE_SKY_ANIMATION}
+            style={styles.zeroScoreOverlayImage}
+            resizeMode="cover"
+          />
+        </View>
+      ) : null}
 
       <ScrollView contentContainerStyle={scrollContentStyle} showsVerticalScrollIndicator={false}>
+        {showMidScoreAnimation ? (
+          <View style={styles.scoreTopAnimationWrap}>
+            <Image
+              source={MID_SCORE_ANIMATION}
+              style={styles.scoreTopAnimation}
+              resizeMode="cover"
+            />
+          </View>
+        ) : null}
         <View style={styles.cardWrap}>
           <View style={styles.card}>
-          <Text style={styles.heading}>
-            {isMultiplayer
-              ? t('Lobby Ergebnis')
-              : percentage >= 95
-              ? t('Legendary Win!')
-              : t('MedBattle abgeschlossen')}
-          </Text>
-          {showSubtitle ? (
-            <Text
-              style={[
-                styles.subtitle,
-                !isMultiplayer && feedbackLine ? styles.subtitleCompact : null,
-              ]}
-            >
-              {isMultiplayer ? t('Ranking nach richtigen Antworten') : t(badge.subtitle)}
+            <Text style={styles.heading}>
+              {isMultiplayer
+                ? t('Lobby Ergebnis')
+                : percentage >= 95
+                ? t('Legendary Win!')
+                : t('MedBattle abgeschlossen')}
             </Text>
-          ) : null}
-          {!isMultiplayer && feedbackLine ? (
-            <Text style={[styles.feedbackLine, feedbackToneStyle]}>{feedbackLine}</Text>
-          ) : null}
+            {!isMultiplayer && feedbackLine ? (
+              <Text style={[styles.feedbackLine, feedbackToneStyle]}>{feedbackLine}</Text>
+            ) : null}
 
           {isAnatomyCategory ? (
             <View style={styles.anatomyAnimationWrap}>
@@ -371,19 +425,8 @@ export default function ResultScreen({ route, navigation }) {
             </View>
           ) : null}
 
-          {isPharmaCategory ? (
-            <View style={styles.pharmaAnimationWrap}>
-              <Animated.Image
-                source={pharmaIsLow ? PHARMA_LOW_ANIMATION : PHARMA_HIGH_ANIMATION}
-                style={[styles.pharmaAnimation, pharmaAnimatedStyle]}
-                resizeMode="contain"
-              />
-            </View>
-          ) : null}
-
           {!isMultiplayer ? (
             <View style={styles.scoreSummary}>
-              <Text style={styles.scoreLabel}>{t('Dein Score')}</Text>
               <View style={styles.scoreRow}>
                 <View style={styles.scoreValueWrap}>
                   <Text style={styles.scoreValue}>{`${score}/${totalQuestions}`}</Text>
@@ -409,9 +452,43 @@ export default function ResultScreen({ route, navigation }) {
                   </Text>
                 </View>
               </View>
-              <View style={styles.trophyWrap}>
-                <Ionicons name="trophy" size={72} color={colors.highlight} />
-              </View>
+              {!showKiwiPeck ? (
+                <View style={styles.trophyWrap}>
+                  {showZeroSparkles ? (
+                    <>
+                      <Sparkle
+                        size={14}
+                        top={6}
+                        left={12}
+                        opacity={0.5}
+                        rotate="18deg"
+                        color={colors.accentWarm}
+                      />
+                      <Sparkle
+                        size={12}
+                        top={32}
+                        left={86}
+                        opacity={0.45}
+                        rotate="-12deg"
+                        color={colors.highlight}
+                      />
+                    </>
+                  ) : null}
+                  {isAnatomyCategory ? (
+                    <Image
+                      source={ANATOMY_SCORE_ANIMATION}
+                      style={styles.trophyAnimation}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <Image
+                      source={TROPHY_ICON}
+                      style={styles.trophyIcon}
+                      resizeMode="contain"
+                    />
+                  )}
+                </View>
+              ) : null}
               <View style={styles.rewardSummaryRow}>
                 <RewardSummary
                   items={

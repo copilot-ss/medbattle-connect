@@ -30,17 +30,26 @@ const APP_ASSETS = [
 
 const PRELOAD_ASSETS = APP_ASSETS.filter((asset) => typeof asset === 'number');
 
+let fontsPromise = null;
+
+export function preloadAppFonts() {
+  if (!fontsPromise) {
+    fontsPromise = Font.loadAsync({
+      'Kanit-Regular': require('../../assets/fonts/Kanit-Regular.ttf'),
+      'Kanit-SemiBold': require('../../assets/fonts/Kanit-SemiBold.ttf'),
+      'Kanit-Bold': require('../../assets/fonts/Kanit-Bold.ttf'),
+      ...Ionicons.font,
+      ...FontAwesome5.font,
+    });
+  }
+  return fontsPromise;
+}
+
 export async function preloadAppAssets() {
   try {
     await Promise.all([
       Asset.loadAsync(PRELOAD_ASSETS),
-      Font.loadAsync({
-        'Kanit-Regular': require('../../assets/fonts/Kanit-Regular.ttf'),
-        'Kanit-SemiBold': require('../../assets/fonts/Kanit-SemiBold.ttf'),
-        'Kanit-Bold': require('../../assets/fonts/Kanit-Bold.ttf'),
-        ...Ionicons.font,
-        ...FontAwesome5.font,
-      }),
+      preloadAppFonts(),
     ]);
   } catch (err) {
     console.warn('Konnte Assets nicht vorladen:', err);

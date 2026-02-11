@@ -13,6 +13,11 @@ export default function useCountdownTimer(durationMs, { onExpire } = {}) {
   const intervalRef = useRef(null);
   const timeoutRef = useRef(null);
   const expiredRef = useRef(false);
+  const timeLeftRef = useRef(durationMs);
+
+  useEffect(() => {
+    timeLeftRef.current = timeLeftMs;
+  }, [timeLeftMs]);
 
   const clearTimers = useCallback(() => {
     if (intervalRef.current) {
@@ -38,27 +43,43 @@ export default function useCountdownTimer(durationMs, { onExpire } = {}) {
     }
   }, [clearTimers, onExpire]);
 
+  const scheduleTimers = useCallback(
+    (remainingMs) => {
+      clearTimers();
+      expiredRef.current = false;
+      setRunning(true);
+      setTimeLeftMs(remainingMs);
+
+      intervalRef.current = setInterval(() => {
+        setTimeLeftMs((prev) => {
+          const next = prev - 100;
+          if (next <= 0) {
+            handleExpire();
+            return 0;
+          }
+          return next;
+        });
+      }, 100);
+
+      timeoutRef.current = setTimeout(() => {
+        handleExpire();
+      }, remainingMs);
+    },
+    [clearTimers, handleExpire]
+  );
+
   const start = useCallback(() => {
-    clearTimers();
-    expiredRef.current = false;
-    setRunning(true);
-    setTimeLeftMs(durationMs);
+    scheduleTimers(durationMs);
+  }, [durationMs, scheduleTimers]);
 
-    intervalRef.current = setInterval(() => {
-      setTimeLeftMs((prev) => {
-        const next = prev - 100;
-        if (next <= 0) {
-          handleExpire();
-          return 0;
-        }
-        return next;
-      });
-    }, 100);
-
-    timeoutRef.current = setTimeout(() => {
+  const resume = useCallback(() => {
+    const remaining = timeLeftRef.current;
+    if (!Number.isFinite(remaining) || remaining <= 0) {
       handleExpire();
-    }, durationMs);
-  }, [clearTimers, durationMs, handleExpire]);
+      return;
+    }
+    scheduleTimers(remaining);
+  }, [handleExpire, scheduleTimers]);
 
   const stop = useCallback(() => {
     clearTimers();
@@ -83,5 +104,6 @@ export default function useCountdownTimer(durationMs, { onExpire } = {}) {
     start,
     reset: start,
     stop,
+    resume,
   };
 }

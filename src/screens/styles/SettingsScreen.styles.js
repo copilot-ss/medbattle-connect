@@ -7,7 +7,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     paddingHorizontal: 24,
     paddingTop: 60,
-    paddingBottom: 40,
+    paddingBottom: 0,
   },
   backgroundGlowTop: {
     display: 'none',
@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     left: -80,
   },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 0,
     flexGrow: 1,
   },
   header: {
@@ -504,7 +504,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
-    overflow: 'hidden',
+    overflow: 'visible',
+    position: 'relative',
   },
   avatarCircle: {
     flex: 1,
@@ -518,6 +519,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: radii.md,
+  },
+  avatarFrameImage: {
+    position: 'absolute',
+    top: -6,
+    left: -6,
+    width: 84,
+    height: 84,
   },
   avatarText: {
     color: colors.textPrimary,

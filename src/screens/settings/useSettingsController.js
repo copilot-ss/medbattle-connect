@@ -150,7 +150,6 @@ export default function useSettingsController({ navigation, route, onClearSessio
   const linkGoogleLabel = t('Google verbinden');
   const linkGoogleHint =
     t('Verknüpfe Google mit diesem Profil, damit der Google-Login denselben Account nutzt.');
-
   const showAudioSection = activeTab === 'settings';
   const showProfileSection = activeTab === 'profile';
   const showSignOutSection = activeTab === 'settings';

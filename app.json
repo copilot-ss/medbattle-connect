@@ -22,7 +22,8 @@
     "runtimeVersion": "55.0.0",
     "plugins": [
       "expo-font",
-      "sentry-expo"
+      "sentry-expo",
+      "expo-notifications"
     ],
     "extra": {
       "eas": {

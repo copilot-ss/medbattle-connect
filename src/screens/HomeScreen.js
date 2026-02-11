@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View, Platform, ScrollView } from 'react-native';
 import styles from './styles/HomeScreen.styles';
 import { useConnectivity } from '../context/ConnectivityContext';
@@ -7,6 +7,7 @@ import { getInAppPurchases } from '../lib/inAppPurchases';
 import useSupabaseUserId from '../hooks/useSupabaseUserId';
 import usePremiumStatus from '../hooks/usePremiumStatus';
 import { getAdsModule, getRewardedAdUnitId, initializeAds } from '../services/adsService';
+import { registerIapListener } from '../services/iapListeners';
 import { deriveMatchRole, getMatchById } from '../services/matchService';
 import { calculateCoinReward } from '../services/quizService';
 import { syncUserProgressDelta } from '../services/userProgressService';
@@ -62,6 +63,9 @@ export default function HomeScreen({ navigation, route }) {
     avatarId,
     avatarUri,
     updateUserStats,
+    boosts,
+    streakShieldActive,
+    setStreakShieldActive,
   } = usePreferences();
   const { premium } = usePremiumStatus();
   const [energyMessage, setEnergyMessage] = useState(null);
@@ -86,6 +90,15 @@ export default function HomeScreen({ navigation, route }) {
     avatarId,
     userName,
   });
+  const streakShieldCount = sanitizeStatNumber(boosts?.streak_shield);
+  const handleToggleStreakShield = useCallback(() => {
+    if (streakShieldCount <= 0) {
+      return;
+    }
+    setStreakShieldActive(!streakShieldActive).catch((err) => {
+      console.warn('Konnte Streak-Schutz nicht speichern:', err);
+    });
+  }, [setStreakShieldActive, streakShieldActive, streakShieldCount]);
 
   useEffect(() => {
     let cancelled = false;
@@ -231,7 +244,12 @@ export default function HomeScreen({ navigation, route }) {
 
     let cancelled = false;
 
-    iapModule.setPurchaseListener(async ({ responseCode, results, errorCode }) => {
+    const unsubscribe = registerIapListener(
+      async ({ responseCode, results, errorCode }) => {
+        if (cancelled) {
+          return;
+        }
+
       if (responseCode === iapModule.IAPResponseCode.OK) {
         for (const purchase of results) {
           if (purchase.productId === BOOST_PRODUCT_ID && !purchase.acknowledged) {
@@ -251,7 +269,8 @@ export default function HomeScreen({ navigation, route }) {
         setEnergyMessage(t('Boost fehlgeschlagen. Bitte später erneut.'));
       }
       setBoosting(false);
-    });
+      }
+    );
 
     async function initIap() {
       try {
@@ -272,6 +291,7 @@ export default function HomeScreen({ navigation, route }) {
 
     return () => {
       cancelled = true;
+      unsubscribe();
       iapModule.disconnectAsync().catch(() => {});
     };
   }, [boostEnergy, iapAvailable, iapModule]);
@@ -551,7 +571,12 @@ export default function HomeScreen({ navigation, route }) {
           }
         />
 
-        <StreakCard streakValue={streakSummary.total} />
+        <StreakCard
+          streakValue={streakSummary.total}
+          streakShieldCount={streakShieldCount}
+          streakShieldActive={streakShieldActive}
+          onToggleStreakShield={handleToggleStreakShield}
+        />
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('Quiz der Woche')}</Text>

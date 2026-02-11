@@ -81,14 +81,6 @@ export const CATEGORY_META = [
     iconFamily: 'fa5',
     accent: colors.accentGreen,
   },
-  {
-    key: 'Polizei-Spanisch',
-    label: 'Polizei-Spanisch',
-    description: 'Polizeiliche Vokabeln und typische Begriffe für Einsätze und Meldungen.',
-    icon: 'language',
-    iconFamily: 'fa5',
-    accent: colors.accentWarm,
-  },
 ];
 
 export const DEFAULT_CATEGORY_META = {

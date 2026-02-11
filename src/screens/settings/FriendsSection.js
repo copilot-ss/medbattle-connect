@@ -240,13 +240,10 @@ export default function FriendsSection({
             addingFriend ? styles.disabledButton : null,
           ]}
         >
-          {addingFriend ? (
-            <ActivityIndicator color="#F8FAFC" />
-          ) : (
-            <Text style={styles.successButtonText}>{t('Freund hinzufügen')}</Text>
-          )}
+          <Text style={styles.successButtonText}>{t('Freund hinzufügen')}</Text>
         </Pressable>
       </View>
     </View>
   );
 }
+

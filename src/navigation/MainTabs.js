@@ -6,6 +6,7 @@ import ShopScreen from '../screens/ShopScreen';
 import FriendsScreen from '../screens/FriendsScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import SwipeToHomeWrapper from '../components/SwipeToHomeWrapper';
 import styles from '../styles/AppNavigator.styles';
 import { colors } from '../styles/theme';
 import { useTranslation } from '../i18n/useTranslation';
@@ -30,24 +31,34 @@ export default function MainTabs({ onClearSession }) {
     >
       <Tab.Screen
         name="Home"
-        component={HomeScreen}
         options={{
           tabBarLabel: t('Start'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
         }}
-      />
+      >
+        {(props) => (
+          <SwipeToHomeWrapper>
+            <HomeScreen {...props} />
+          </SwipeToHomeWrapper>
+        )}
+      </Tab.Screen>
       <Tab.Screen
         name="Shop"
-        component={ShopScreen}
         options={{
           tabBarLabel: t('Shop'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="cart" size={size} color={color} />
           ),
         }}
-      />
+      >
+        {(props) => (
+          <SwipeToHomeWrapper>
+            <ShopScreen {...props} />
+          </SwipeToHomeWrapper>
+        )}
+      </Tab.Screen>
       <Tab.Screen
         name="Friends"
         options={{
@@ -57,7 +68,11 @@ export default function MainTabs({ onClearSession }) {
           ),
         }}
       >
-        {(props) => <FriendsScreen {...props} showClose={false} />}
+        {(props) => (
+          <SwipeToHomeWrapper>
+            <FriendsScreen {...props} showClose={false} />
+          </SwipeToHomeWrapper>
+        )}
       </Tab.Screen>
       <Tab.Screen
         name="Profile"
@@ -71,14 +86,16 @@ export default function MainTabs({ onClearSession }) {
         }}
       >
         {(props) => (
-          <SettingsScreen
-            {...props}
-            onClearSession={onClearSession}
-            lockedTab="profile"
-            showTabs={false}
-            showClose={false}
-            title={t('Profil')}
-          />
+          <SwipeToHomeWrapper>
+            <SettingsScreen
+              {...props}
+              onClearSession={onClearSession}
+              lockedTab="profile"
+              showTabs={false}
+              showClose={false}
+              title={t('Profil')}
+            />
+          </SwipeToHomeWrapper>
         )}
       </Tab.Screen>
       <Tab.Screen
@@ -90,7 +107,11 @@ export default function MainTabs({ onClearSession }) {
           ),
         }}
       >
-        {(props) => <LeaderboardScreen {...props} showClose={false} />}
+        {(props) => (
+          <SwipeToHomeWrapper>
+            <LeaderboardScreen {...props} showClose={false} />
+          </SwipeToHomeWrapper>
+        )}
       </Tab.Screen>
       <Tab.Screen
         name="Settings"
@@ -102,14 +123,16 @@ export default function MainTabs({ onClearSession }) {
         }}
       >
         {(props) => (
-          <SettingsScreen
-            {...props}
-            onClearSession={onClearSession}
-            lockedTab="settings"
-            showTabs={false}
-            showClose={false}
-            title={t('Einstellungen')}
-          />
+          <SwipeToHomeWrapper>
+            <SettingsScreen
+              {...props}
+              onClearSession={onClearSession}
+              lockedTab="settings"
+              showTabs={false}
+              showClose={false}
+              title={t('Einstellungen')}
+            />
+          </SwipeToHomeWrapper>
         )}
       </Tab.Screen>
     </Tab.Navigator>

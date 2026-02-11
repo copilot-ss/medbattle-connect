@@ -13,3 +13,10 @@ export function sanitizeStatNumber(value) {
   }
   return 0;
 }
+
+export function sanitizeStringArray(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((entry) => typeof entry === 'string' && entry.trim());
+}
