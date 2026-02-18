@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
+  Easing,
   Platform,
   ScrollView,
   Text,
@@ -44,6 +45,25 @@ const ENERGY_PRICE_PER_UNIT = calculateCoinReward({
   total: PERFECT_SOLO_QUESTION_LIMIT,
   difficulty: PERFECT_SOLO_DIFFICULTY,
   isMultiplayer: false,
+});
+const roundToFive = (value) => Math.max(5, Math.round(value / 5) * 5);
+const ENERGY_SINGLE_PRICE = Math.max(15, ENERGY_PRICE_PER_UNIT + 6);
+const SHOP_PRICES = Object.freeze({
+  energy: {
+    one: ENERGY_SINGLE_PRICE,
+    ten: roundToFive(ENERGY_SINGLE_PRICE * 8.8),
+    twenty: roundToFive(ENERGY_SINGLE_PRICE * 16),
+  },
+  energyCap: {
+    plus5: roundToFive(ENERGY_SINGLE_PRICE * 27),
+    plus10: roundToFive(ENERGY_SINGLE_PRICE * 46.5),
+  },
+  boosts: {
+    streakShield: roundToFive(ENERGY_SINGLE_PRICE * 4.5),
+    freezeTime: roundToFive(ENERGY_SINGLE_PRICE * 3.3),
+    doubleXp: roundToFive(ENERGY_SINGLE_PRICE * 7),
+    joker5050: roundToFive(ENERGY_SINGLE_PRICE * 3.8),
+  },
 });
 const COIN_PACKS = [
   {
@@ -131,6 +151,11 @@ const getCoinIconCount = (amount) => {
 const DAILY_GIFT_ICON = {
   uri: 'https://cdn-icons-png.flaticon.com/512/10920/10920490.png',
 };
+const PURCHASE_SPIN_ROTATIONS_PER_SECOND = 8;
+const PURCHASE_SPIN_CYCLE_MS = 4000;
+const PURCHASE_SPIN_ROTATIONS_PER_CYCLE =
+  (PURCHASE_SPIN_ROTATIONS_PER_SECOND * PURCHASE_SPIN_CYCLE_MS) / 1000;
+const PURCHASE_SPIN_DEGREES_PER_CYCLE = `${360 * PURCHASE_SPIN_ROTATIONS_PER_CYCLE}deg`;
 
 const getMsUntilNextDailyClaim = () => {
   const now = new Date();
@@ -194,6 +219,7 @@ export default function ShopScreen() {
   const energyFlashOpacity = useRef(new Animated.Value(0)).current;
   const energyFlashScale = useRef(new Animated.Value(0.6)).current;
   const energyShake = useRef(new Animated.Value(0)).current;
+  const purchaseButtonSpin = useRef(new Animated.Value(0)).current;
   const coinsAvailable = sanitizeStatNumber(userStats?.coins);
   const coinsLabel = formatThousands(coinsAvailable);
   const maxEnergyLimit = MAX_ENERGY + MAX_ENERGY_CAP_BONUS;
@@ -363,6 +389,34 @@ export default function ShopScreen() {
       clearInterval(interval);
     };
   }, [dailyClaimLoading, canClaimDaily]);
+
+  useEffect(() => {
+    if (!purchasingId) {
+      purchaseButtonSpin.stopAnimation(() => {
+        purchaseButtonSpin.setValue(0);
+      });
+      return undefined;
+    }
+
+    purchaseButtonSpin.setValue(0);
+    const spinLoop = Animated.loop(
+      Animated.timing(purchaseButtonSpin, {
+        toValue: PURCHASE_SPIN_ROTATIONS_PER_CYCLE,
+        duration: PURCHASE_SPIN_CYCLE_MS,
+        easing: Easing.linear,
+        isInteraction: false,
+        useNativeDriver: true,
+      })
+    );
+    spinLoop.start();
+
+    return () => {
+      spinLoop.stop();
+      purchaseButtonSpin.stopAnimation(() => {
+        purchaseButtonSpin.setValue(0);
+      });
+    };
+  }, [purchaseButtonSpin, purchasingId]);
 
   const syncCoins = async (cost) => {
     if (!userId || !Number.isFinite(cost) || cost <= 0) {
@@ -560,9 +614,11 @@ export default function ShopScreen() {
     try {
       await updateUserStats((current) => {
         const currentCoins = sanitizeStatNumber(current?.coins);
+        const currentXpBoosts = sanitizeStatNumber(current?.xpBoostsUsed);
         return {
           ...current,
           coins: Math.max(0, currentCoins - item.price),
+          xpBoostsUsed: isDoubleXp ? currentXpBoosts + 1 : currentXpBoosts,
         };
       });
       if (isDoubleXp) {
@@ -660,7 +716,7 @@ export default function ShopScreen() {
             id: 'energy-1',
             title: t(`+1 ${ENERGY_EMOJI}`),
             description: t('Schneller Mini-Boost.'),
-            price: ENERGY_PRICE_PER_UNIT,
+            price: SHOP_PRICES.energy.one,
             icon: 'flash',
             accent: colors.accent,
             kind: 'energy',
@@ -670,7 +726,11 @@ export default function ShopScreen() {
             id: 'energy-10',
             title: t(`+10 ${ENERGY_EMOJI}`),
             description: t('Solider Boost f\u00fcr mehrere Runden.'),
-            price: ENERGY_PRICE_PER_UNIT * 10,
+            price: SHOP_PRICES.energy.ten,
+            savingsPercent: Math.max(
+              0,
+              Math.round((1 - SHOP_PRICES.energy.ten / (SHOP_PRICES.energy.one * 10)) * 100)
+            ),
             icon: 'flash',
             accent: colors.accentWarm,
             kind: 'energy',
@@ -680,7 +740,11 @@ export default function ShopScreen() {
             id: 'energy-20',
             title: t(`+20 ${ENERGY_EMOJI}`),
             description: t('Gro\u00dfer Boost f\u00fcr lange Sessions.'),
-            price: ENERGY_PRICE_PER_UNIT * 20,
+            price: SHOP_PRICES.energy.twenty,
+            savingsPercent: Math.max(
+              0,
+              Math.round((1 - SHOP_PRICES.energy.twenty / (SHOP_PRICES.energy.one * 20)) * 100)
+            ),
             icon: 'flash',
             accent: colors.highlight,
             kind: 'energy',
@@ -696,7 +760,7 @@ export default function ShopScreen() {
             id: 'energy-cap-5',
             title: t(`Max ${ENERGY_EMOJI} +5`),
             description: t('F\u00fcr Power-User: dauerhaft mehr Energie.'),
-            price: 1000,
+            price: SHOP_PRICES.energyCap.plus5,
             icon: 'battery-charging',
             accent: colors.accentGreen,
             kind: 'cap',
@@ -706,7 +770,16 @@ export default function ShopScreen() {
             id: 'energy-cap-10',
             title: t(`Max ${ENERGY_EMOJI} +10`),
             description: t('F\u00fcr Power-User: dauerhaft mehr Energie.'),
-            price: 1900,
+            price: SHOP_PRICES.energyCap.plus10,
+            savingsPercent: Math.max(
+              0,
+              Math.round(
+                (1 -
+                  SHOP_PRICES.energyCap.plus10 /
+                    (SHOP_PRICES.energyCap.plus5 * 2)) *
+                  100
+              )
+            ),
             icon: 'battery-charging',
             accent: colors.accentGreen,
             kind: 'cap',
@@ -722,7 +795,7 @@ export default function ShopScreen() {
             id: 'streak_shield',
             title: t('Streak-Schild'),
             description: t('Schützt eine Streak, wenn du einmal verlierst.'),
-            price: 1,
+            price: SHOP_PRICES.boosts.streakShield,
             icon: 'shield-checkmark',
             accent: colors.accentWarm,
             kind: 'boost',
@@ -731,8 +804,8 @@ export default function ShopScreen() {
           {
             id: 'freeze_time',
             title: t('Zeit einfrieren'),
-            description: t('Stoppt den Timer einmal für 10 Sekunden.'),
-            price: 1,
+            description: t('Stoppt den Timer einmal für 5 Sekunden.'),
+            price: SHOP_PRICES.boosts.freezeTime,
             icon: 'time',
             accent: colors.accent,
             kind: 'boost',
@@ -742,7 +815,7 @@ export default function ShopScreen() {
             id: 'double_xp',
             title: t('Doppel-XP'),
             description: t('2x XP für 6 Stunden.'),
-            price: 1,
+            price: SHOP_PRICES.boosts.doubleXp,
             icon: 'flash',
             accent: colors.accentGreen,
             kind: 'boost',
@@ -752,41 +825,11 @@ export default function ShopScreen() {
             id: 'joker_5050',
             title: t('Joker 50/50'),
             description: t('Entfernt zwei falsche Antworten.'),
-            price: 1,
+            price: SHOP_PRICES.boosts.joker5050,
             icon: 'help-circle',
             accent: colors.highlight,
             kind: 'boost',
             amount: 1,
-          },
-        ],
-      },
-      {
-        key: 'style',
-        title: t('Style'),
-        items: [
-          {
-            id: 'avatar_neon',
-            title: t('Avatar-Pack Neon'),
-            description: t('Neue Avatare + bunte Rahmen.'),
-            price: 35,
-            icon: 'color-palette',
-            accent: colors.accentPink,
-          },
-          {
-            id: 'skin_midnight',
-            title: t('Quiz-Skin "Midnight"'),
-            description: t('Neues Farbschema für Karten & Buttons.'),
-            price: 50,
-            icon: 'moon',
-            accent: colors.accent,
-          },
-          {
-            id: 'title_legend',
-            title: t('Profil-Titel "Legend"'),
-            description: t('Exklusiver Titel im Profil.'),
-            price: 60,
-            icon: 'star',
-            accent: colors.accentWarm,
           },
         ],
       },
@@ -878,6 +921,7 @@ export default function ShopScreen() {
                 const isDailyItem = item.kind === 'daily';
                 const isBoostItem = item.kind === 'boost';
                 const isStreakShield = item.id === 'streak_shield';
+                const isFreezeTime = item.id === 'freeze_time';
                 const isComingSoon = item.comingSoon ?? !item.kind;
                 const canAfford =
                   isIapItem || isDailyItem ? true : coinsAvailable >= item.price;
@@ -894,6 +938,19 @@ export default function ShopScreen() {
                   !capLocked &&
                   !iapLocked &&
                   !dailyLocked;
+                const itemCardSpinStyle = isBuying
+                  ? {
+                      transform: [
+                        { perspective: 900 },
+                        {
+                          rotateY: purchaseButtonSpin.interpolate({
+                            inputRange: [0, PURCHASE_SPIN_ROTATIONS_PER_CYCLE],
+                            outputRange: ['0deg', PURCHASE_SPIN_DEGREES_PER_CYCLE],
+                          }),
+                        },
+                      ],
+                    }
+                  : null;
                 const coinIconCount = isIapItem ? item.coinIconCount : null;
                 const iconImage = item.image;
                 const priceLabel = isIapItem
@@ -902,8 +959,8 @@ export default function ShopScreen() {
                   ? t('Gratis')
                   : `${formatThousands(item.price)} ${COIN_EMOJI}`;
                 const savingsLabel =
-                  isIapItem && item.savingsPercent > 0
-                    ? `${item.savingsPercent}%`
+                  item.savingsPercent > 0
+                    ? `-${item.savingsPercent}%`
                     : null;
                 const buttonLabel = isComingSoon
                   ? t('Kommt bald')
@@ -942,7 +999,7 @@ export default function ShopScreen() {
 
                 return (
                   <View key={item.id} style={[styles.itemWrap, { width: cardWidth }]}>
-                    <View style={styles.itemCard}>
+                    <Animated.View style={[styles.itemCard, itemCardSpinStyle]}>
                       {savingsLabel ? (
                         <View style={styles.itemBadge} pointerEvents="none">
                           <Text style={styles.itemBadgeText}>{savingsLabel}</Text>
@@ -978,6 +1035,7 @@ export default function ShopScreen() {
                           style={[
                             styles.itemTitle,
                             isStreakShield ? styles.itemTitleSingleLine : null,
+                            isFreezeTime ? styles.itemTitleFreezeTime : null,
                           ]}
                           numberOfLines={1}
                           ellipsizeMode="tail"
@@ -998,7 +1056,7 @@ export default function ShopScreen() {
                           {priceLabel}
                         </Text>
                       </View>
-                    </View>
+                    </Animated.View>
                     <Pressable
                       style={[
                         styles.buyButton,

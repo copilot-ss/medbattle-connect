@@ -72,7 +72,12 @@ export default function QuizScreen({ navigation, route }) {
       },
     ];
 
-    return items.filter((item) => item.count > 0 || item.active);
+    return items.filter((item) => {
+      if (item.id === 'freeze_time') {
+        return item.count > 0 && !item.active;
+      }
+      return item.count > 0 || item.active;
+    });
   }, [
     boostInventory.freeze_time,
     boostInventory.joker_5050,
@@ -163,6 +168,7 @@ export default function QuizScreen({ navigation, route }) {
         timeLeftMs={timeLeftMs}
         progressPercent={progressPercent}
         timedOut={timedOut}
+        isFrozen={isTimerFrozen}
       />
 
       <QuestionCard

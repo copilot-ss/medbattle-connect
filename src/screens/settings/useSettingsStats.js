@@ -74,6 +74,22 @@ export default function useSettingsStats({
     () => sanitizeStatNumber(userStats?.coins),
     [userStats?.coins]
   );
+  const multiplayerGames = useMemo(
+    () => sanitizeStatNumber(userStats?.multiplayerGames),
+    [userStats?.multiplayerGames]
+  );
+  const xpBoostsUsed = useMemo(
+    () => sanitizeStatNumber(userStats?.xpBoostsUsed),
+    [userStats?.xpBoostsUsed]
+  );
+  const bestStreak = useMemo(
+    () =>
+      Math.max(
+        sanitizeStatNumber(userStats?.bestStreak),
+        sanitizeStatNumber(totalStreak)
+      ),
+    [totalStreak, userStats?.bestStreak]
+  );
 
   const accuracyPercent = useMemo(() => {
     if (!totalQuestions) {
@@ -135,11 +151,14 @@ export default function useSettingsStats({
   return {
     userTitle,
     totalStreak,
+    bestStreak,
     userLevel,
     quizzesCompleted,
     accuracyPercent,
     xp,
     coins,
+    multiplayerGames,
+    xpBoostsUsed,
     titleProgress,
     unlockedAchievements,
     levelBadgeHeat,

@@ -25,11 +25,7 @@ export default function CategoryDetailScreen({ navigation, route }) {
   const categoryDescription = categoryMeta?.description
     ? t(categoryMeta.description)
     : '';
-  const normalizedCategoryKey =
-    typeof categoryLabel === 'string' ? categoryLabel.trim().toLowerCase() : '';
-  const isFootball =
-    normalizedCategoryKey === 'fußball' || normalizedCategoryKey === 'fussball';
-  const categoryDifficulty = isFootball ? 'schwer' : DEFAULT_DIFFICULTY;
+  const categoryDifficulty = DEFAULT_DIFFICULTY;
   const { isOnline } = useConnectivity();
   const { energy, energyMax } = usePreferences();
   const { premium } = usePremiumStatus();

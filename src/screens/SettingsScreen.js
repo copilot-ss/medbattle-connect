@@ -1,6 +1,7 @@
 import { ScrollView, Text, View } from 'react-native';
 import styles from './styles/SettingsScreen.styles';
 import AudioSettingsCard from './settings/AudioSettingsCard';
+import ClaimRewardTopBar from './settings/ClaimRewardTopBar';
 import LanguageSettingsCard from './settings/LanguageSettingsCard';
 import ProfileSection from './settings/ProfileSection';
 import SettingsFooter from './settings/SettingsFooter';
@@ -26,13 +27,16 @@ export default function SettingsScreen({
     soundEnabled,
     vibrationEnabled,
     pushEnabled,
+    friendRequestsEnabled,
     language,
     soundStatus,
     vibrationStatus,
     pushStatus,
+    friendRequestsStatus,
     handleSoundToggle,
     handleVibrationToggle,
     handlePushToggle,
+    handleFriendRequestsToggle,
     handleLanguageChange,
     userName,
     userLevel,
@@ -50,8 +54,16 @@ export default function SettingsScreen({
     accuracyPercent,
     xp,
     coins,
+    energy,
+    energyMax,
+    streakShieldCount,
+    doubleXpExpiresAt,
     titleProgress,
-    unlockedAchievements,
+    achievements,
+    claimingAchievement,
+    handleClaimAchievement,
+    claimRewardAnimation,
+    handleClaimRewardAnimationDone,
     leaderboardRank,
     loadingRank,
     isGuest,
@@ -106,17 +118,32 @@ export default function SettingsScreen({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        <ClaimRewardTopBar
+          userLevel={userLevel}
+          avatarInitials={avatarInitials}
+          currentAvatar={currentAvatar}
+          avatarUri={avatarUri}
+          xp={xp}
+          coins={coins}
+          energy={energy}
+          energyMax={energyMax}
+          claimRewardAnimation={claimRewardAnimation}
+          onClaimRewardAnimationEnd={handleClaimRewardAnimationDone}
+        />
         {showAudioSection ? (
           <AudioSettingsCard
             soundEnabled={soundEnabled}
             vibrationEnabled={vibrationEnabled}
             pushEnabled={pushEnabled}
+            friendRequestsEnabled={friendRequestsEnabled}
             onSoundToggle={handleSoundToggle}
             onVibrationToggle={handleVibrationToggle}
             onPushToggle={handlePushToggle}
+            onFriendRequestsToggle={handleFriendRequestsToggle}
             soundStatus={soundStatus}
             vibrationStatus={vibrationStatus}
             pushStatus={pushStatus}
+            friendRequestsStatus={friendRequestsStatus}
           />
         ) : null}
         {showAudioSection ? (
@@ -145,8 +172,12 @@ export default function SettingsScreen({
             accuracyPercent={accuracyPercent}
             xp={xp}
             coins={coins}
+            streakShieldCount={streakShieldCount}
+            doubleXpExpiresAt={doubleXpExpiresAt}
             titleProgress={titleProgress}
-            unlockedAchievements={unlockedAchievements}
+            achievements={achievements}
+            claimingAchievement={claimingAchievement}
+            onClaimAchievement={handleClaimAchievement}
             leaderboardRank={leaderboardRank}
             loadingRank={loadingRank}
             newEmail={newEmail}

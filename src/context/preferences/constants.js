@@ -7,6 +7,7 @@ export const AVATAR_URI_KEY = 'medbattle_avatar_uri';
 export const AVATAR_FRAME_KEY = 'medbattle_avatar_frame';
 export const OWNED_FRAMES_KEY = 'medbattle_owned_frames';
 export const BOOSTS_STORAGE_KEY = 'medbattle_boosts';
+export const ACHIEVEMENTS_STORAGE_KEY = 'medbattle_claimed_achievements';
 export const STREAK_SHIELD_ACTIVE_KEY = 'medbattle_streak_shield_active';
 export const DOUBLE_XP_EXPIRES_KEY = 'medbattle_double_xp_expires_at';
 export const USER_STATS_STORAGE_KEY = 'medbattle_user_stats';
@@ -38,6 +39,9 @@ export const DEFAULT_USER_STATS = {
   xp: 0,
   coins: 0,
   energyCapBonus: 0,
+  multiplayerGames: 0,
+  bestStreak: 0,
+  xpBoostsUsed: 0,
 };
 
 export const DEFAULT_BOOSTS = {

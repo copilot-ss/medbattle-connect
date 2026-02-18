@@ -120,6 +120,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     marginLeft: 'auto',
   },
+  timerValueFrozen: {
+    color: '#9EEBFF',
+    textShadowColor: 'rgba(158, 235, 255, 0.75)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 6,
+  },
   progressWrap: {
     position: 'relative',
   },
@@ -130,6 +136,41 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',
+  },
+  progressTrackFrozen: {
+    backgroundColor: 'rgba(110, 194, 238, 0.18)',
+    borderColor: 'rgba(110, 194, 238, 0.8)',
+  },
+  frozenOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    opacity: 0.65,
+  },
+  frozenShard: {
+    width: 3,
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: 'rgba(211, 244, 255, 0.65)',
+    transform: [{ rotate: '18deg' }],
+  },
+  frozenSnowBadge: {
+    position: 'absolute',
+    top: -10,
+    alignSelf: 'center',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(110, 194, 238, 0.9)',
+    backgroundColor: 'rgba(211, 244, 255, 0.9)',
   },
   snailIcon: {
     position: 'absolute',
@@ -180,6 +221,11 @@ const styles = StyleSheet.create({
   boostButtonActive: {
     borderColor: 'rgba(255, 199, 87, 0.6)',
     backgroundColor: 'rgba(255, 199, 87, 0.25)',
+  },
+  boostButtonFreezeActive: {
+    justifyContent: 'center',
+    borderColor: 'rgba(125, 214, 255, 0.95)',
+    backgroundColor: 'rgba(173, 232, 255, 0.55)',
   },
   boostButtonDisabled: {
     opacity: 0.5,
@@ -361,10 +407,14 @@ const styles = StyleSheet.create({
   },
 });
 
-export function getTimerProgressFillStyle(progressPercent, timedOut) {
+export function getTimerProgressFillStyle(progressPercent, timedOut, isFrozen = false) {
   return StyleSheet.compose(styles.progressFill, {
     width: progressPercent,
-    backgroundColor: timedOut ? 'rgba(255, 93, 110, 0.85)' : colors.highlight,
+    backgroundColor: timedOut
+      ? 'rgba(255, 93, 110, 0.85)'
+      : isFrozen
+      ? '#7DD6FF'
+      : colors.highlight,
   });
 }
 

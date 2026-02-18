@@ -16,7 +16,7 @@ import useSoloQuestionLoader from './hooks/useSoloQuestionLoader';
 import useQuizInteractionHandlers from './hooks/useQuizInteractionHandlers';
 
 const DEFAULT_SOLO_QUESTION_LIMIT = 6;
-const BOOST_FREEZE_DURATION_MS = 10 * 1000;
+const BOOST_FREEZE_DURATION_MS = 5 * 1000;
 const DOUBLE_XP_MULTIPLIER = 2;
 const sanitizeStatNumber = (value) => {
   const parsed = parseInt(value, 10);
@@ -288,6 +288,7 @@ export default function useQuizController({ navigation, route }) {
 
       if (submit) {
         const mistakes = totalQuestions - resolvedScore;
+        let nextStreakValue = null;
         if (!isMultiplayer) {
           const shouldIncrease = isQuickPlay
             ? mistakes === 0
@@ -310,7 +311,7 @@ export default function useQuizController({ navigation, route }) {
               ? await consumeBoost('streak_shield')
               : false;
 
-            await setStreakValue(normalizedDifficulty, (current) => {
+            nextStreakValue = await setStreakValue(normalizedDifficulty, (current) => {
               const safeCurrent = Number.isFinite(current) ? current : 0;
               if (shieldConsumed) {
                 return safeCurrent;
@@ -340,6 +341,15 @@ export default function useQuizController({ navigation, route }) {
             questions: sanitizeStatNumber((current?.questions ?? 0) + effectiveTotal),
             xp: sanitizeStatNumber((current?.xp ?? 0) + xpEarned),
             coins: sanitizeStatNumber((current?.coins ?? 0) + coinsEarned),
+            multiplayerGames:
+              sanitizeStatNumber(current?.multiplayerGames) +
+              (isMultiplayer ? 1 : 0),
+            bestStreak: Number.isFinite(nextStreakValue)
+              ? Math.max(
+                  sanitizeStatNumber(current?.bestStreak),
+                  sanitizeStatNumber(nextStreakValue)
+                )
+              : sanitizeStatNumber(current?.bestStreak),
           }));
         } catch (err) {
           console.warn('Konnte lokale Quiz-Statistik nicht aktualisieren:', err);

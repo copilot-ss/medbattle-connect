@@ -129,11 +129,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 10,
+    minHeight: 112,
     position: 'relative',
     borderRadius: radii.lg,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
+    backfaceVisibility: 'hidden',
     rowGap: 8,
   },
   itemBadge: {
@@ -191,9 +193,13 @@ const styles = StyleSheet.create({
   itemTitleSingleLine: {
     fontSize: 12,
   },
+  itemTitleFreezeTime: {
+    fontSize: 14,
+  },
   itemAction: {
     alignItems: 'center',
     width: '100%',
+    marginTop: 'auto',
   },
   priceText: {
     color: colors.highlight,
@@ -204,13 +210,14 @@ const styles = StyleSheet.create({
   },
   buyButton: {
     width: '100%',
-    height: 34,
+    height: 30,
     paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
     overflow: 'visible',
     borderRadius: radii.pill,
+    backfaceVisibility: 'hidden',
     backgroundColor: colors.surfaceHigh,
     borderWidth: 1,
     borderColor: colors.borderStrong,

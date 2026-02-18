@@ -1,5 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import {
+  ENERGY_TIMESTAMP_KEY,
+  ENERGY_VALUE_KEY,
+  MAX_ENERGY,
+  MAX_ENERGY_CAP_BONUS,
+  USER_STATS_STORAGE_KEY,
+} from '../context/preferences/constants';
+import { recalcEnergy } from '../context/preferences/energyUtils';
 
 let Notifications = null;
 const shouldLoadNotifications = Platform.OS === 'android' || Platform.OS === 'ios';
@@ -17,14 +25,66 @@ if (shouldLoadNotifications) {
 
 const ENERGY_NOTIFICATION_KEY = 'medbattle_energy_full_notification_id';
 const ENERGY_CHANNEL_ID = 'energy-full';
+const ENERGY_NOTIFICATION_TAG = 'energy_full';
+const ENERGY_NOTIFICATION_TITLES = ['Energie voll', 'Energy full'];
+let energyNotificationRequestVersion = 0;
+
+const parseNonNegativeInt = (value, fallback = 0) => {
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isFinite(parsed) && parsed >= 0) {
+    return parsed;
+  }
+  return fallback;
+};
+
+const isEnergyFullNow = async () => {
+  try {
+    const [energyRaw, tsRaw, userStatsRaw] = await Promise.all([
+      AsyncStorage.getItem(ENERGY_VALUE_KEY),
+      AsyncStorage.getItem(ENERGY_TIMESTAMP_KEY),
+      AsyncStorage.getItem(USER_STATS_STORAGE_KEY),
+    ]);
+    const energyValue = parseNonNegativeInt(energyRaw, MAX_ENERGY);
+    const timestamp = parseNonNegativeInt(tsRaw, Date.now());
+
+    let energyCapBonus = 0;
+    if (userStatsRaw) {
+      try {
+        const parsed = JSON.parse(userStatsRaw);
+        energyCapBonus = parseNonNegativeInt(parsed?.energyCapBonus, 0);
+      } catch (err) {
+        console.warn('Konnte User-Stats für Notification-Check nicht parsen:', err);
+      }
+    }
+
+    const maxEnergy = MAX_ENERGY + Math.min(energyCapBonus, MAX_ENERGY_CAP_BONUS);
+    const recalc = recalcEnergy(energyValue, timestamp, maxEnergy);
+    return recalc.energy >= maxEnergy;
+  } catch (err) {
+    console.warn('Konnte Energie-Status für Notification-Check nicht laden:', err);
+    return true;
+  }
+};
 
 if (Notifications?.setNotificationHandler) {
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: false,
-      shouldSetBadge: false,
-    }),
+    handleNotification: async (notification) => {
+      const kind = notification?.request?.content?.data?.kind;
+      if (kind === ENERGY_NOTIFICATION_TAG) {
+        const shouldShowAlert = await isEnergyFullNow();
+        return {
+          shouldShowAlert,
+          shouldPlaySound: false,
+          shouldSetBadge: false,
+        };
+      }
+
+      return {
+        shouldShowAlert: true,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+      };
+    },
   });
 }
 
@@ -68,7 +128,37 @@ const ensureEnergyChannel = async () => {
   }
 };
 
+const cancelLegacyEnergyNotifications = async (titles = ENERGY_NOTIFICATION_TITLES) => {
+  if (!Notifications?.getAllScheduledNotificationsAsync) {
+    return;
+  }
+  if (!Notifications?.cancelScheduledNotificationAsync) {
+    return;
+  }
+
+  try {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const titleSet = new Set(Array.isArray(titles) ? titles.filter(Boolean) : []);
+
+    await Promise.all(
+      scheduled
+        .filter((item) => {
+          const tag = item?.content?.data?.kind;
+          const title = item?.content?.title;
+          return tag === ENERGY_NOTIFICATION_TAG || titleSet.has(title);
+        })
+        .map((item) =>
+          Notifications.cancelScheduledNotificationAsync(item.identifier)
+        )
+    );
+  } catch (err) {
+    console.warn('Konnte alte Energie-Notifications nicht entfernen:', err);
+  }
+};
+
 export const scheduleEnergyFullNotification = async ({ fireAt, title, body }) => {
+  const requestVersion = energyNotificationRequestVersion + 1;
+  energyNotificationRequestVersion = requestVersion;
   if (!Number.isFinite(fireAt) || fireAt <= Date.now()) {
     return null;
   }
@@ -77,14 +167,23 @@ export const scheduleEnergyFullNotification = async ({ fireAt, title, body }) =>
   }
 
   const allowed = await ensureNotificationPermission();
+  if (requestVersion !== energyNotificationRequestVersion) {
+    return null;
+  }
   if (!allowed) {
     return null;
   }
 
   await ensureEnergyChannel();
+  if (requestVersion !== energyNotificationRequestVersion) {
+    return null;
+  }
 
   try {
     const existingId = await AsyncStorage.getItem(ENERGY_NOTIFICATION_KEY);
+    if (requestVersion !== energyNotificationRequestVersion) {
+      return null;
+    }
     if (existingId) {
       if (Notifications?.cancelScheduledNotificationAsync) {
         await Notifications.cancelScheduledNotificationAsync(existingId);
@@ -94,17 +193,29 @@ export const scheduleEnergyFullNotification = async ({ fireAt, title, body }) =>
     console.warn('Konnte alte Notification nicht entfernen:', err);
   }
 
+  await cancelLegacyEnergyNotifications([title, ...ENERGY_NOTIFICATION_TITLES]);
+  if (requestVersion !== energyNotificationRequestVersion) {
+    return null;
+  }
+
   try {
     const id = await Notifications.scheduleNotificationAsync({
       content: {
         title,
         body,
+        data: { kind: ENERGY_NOTIFICATION_TAG },
       },
       trigger: {
         type: 'date',
         timestamp: fireAt,
       },
     });
+    if (requestVersion !== energyNotificationRequestVersion) {
+      if (Notifications?.cancelScheduledNotificationAsync) {
+        await Notifications.cancelScheduledNotificationAsync(id);
+      }
+      return null;
+    }
     await AsyncStorage.setItem(ENERGY_NOTIFICATION_KEY, id);
     return id;
   } catch (err) {
@@ -114,15 +225,18 @@ export const scheduleEnergyFullNotification = async ({ fireAt, title, body }) =>
 };
 
 export const cancelEnergyFullNotification = async () => {
+  energyNotificationRequestVersion += 1;
   try {
     const existingId = await AsyncStorage.getItem(ENERGY_NOTIFICATION_KEY);
     if (!existingId) {
+      await cancelLegacyEnergyNotifications();
       return;
     }
     if (Notifications?.cancelScheduledNotificationAsync) {
       await Notifications.cancelScheduledNotificationAsync(existingId);
     }
     await AsyncStorage.removeItem(ENERGY_NOTIFICATION_KEY);
+    await cancelLegacyEnergyNotifications();
   } catch (err) {
     console.warn('Konnte Notification nicht entfernen:', err);
   }

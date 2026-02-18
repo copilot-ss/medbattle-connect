@@ -1,0 +1,25 @@
+diff --git a/node_modules/expo-modules-core/android/src/main/java/com/facebook/react/uimanager/ReactStylesDiffMapHelper.kt b/node_modules/expo-modules-core/android/src/main/java/com/facebook/react/uimanager/ReactStylesDiffMapHelper.kt
+index 823ad6e..41efbad 100644
+--- a/node_modules/expo-modules-core/android/src/main/java/com/facebook/react/uimanager/ReactStylesDiffMapHelper.kt
++++ b/node_modules/expo-modules-core/android/src/main/java/com/facebook/react/uimanager/ReactStylesDiffMapHelper.kt
+@@ -6,9 +6,18 @@ import java.lang.reflect.Field
+ 
+ @get:DoNotStrip
+ private val backingMapField: Field by lazy {
+-  ReactStylesDiffMap::class.java.getDeclaredField("backingMap").apply {
+-    isAccessible = true
++  val clazz = ReactStylesDiffMap::class.java
++  val field = try {
++    clazz.getDeclaredField("backingMap")
++  } catch (_: NoSuchFieldException) {
++    try {
++      clazz.getDeclaredField("mBackingMap")
++    } catch (_: NoSuchFieldException) {
++      clazz.getDeclaredField("internal_backingMap")
++    }
+   }
++  field.isAccessible = true
++  field
+ }
+ 
+ /**

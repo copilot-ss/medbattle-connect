@@ -21,6 +21,7 @@ const QUESTIONS_STORAGE_PREFIX = 'medbattle_questions_cache';
 const MAX_CACHED_QUESTIONS = 200;
 const QUESTION_CACHE_SYNC_TTL = 6 * 60 * 60 * 1000;
 const DEFAULT_LANGUAGE = 'de';
+const BLOCKED_CATEGORY_KEYS = new Set(['fussball', 'football']);
 const questionCacheSyncTimes = new Map();
 const BASE_MATCH_POINTS = 12;
 const COIN_COMPLETION_BONUS = 1;
@@ -33,6 +34,22 @@ const DIFFICULTY_MULTIPLIERS = {
   mittel: 1,
   schwer: 1.25,
 };
+
+function normalizeCategoryKey(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/ß/g, 'ss')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function isBlockedCategory(value) {
+  return BLOCKED_CATEGORY_KEYS.has(normalizeCategoryKey(value));
+}
 
 function normalizeCategoryList(source) {
   const entries = Array.isArray(source) ? source : [];
@@ -49,6 +66,9 @@ function normalizeCategoryList(source) {
         : null;
     const value = typeof raw === 'string' ? raw.trim() : '';
     if (!value) {
+      return;
+    }
+    if (isBlockedCategory(value)) {
       return;
     }
     const key = value.toLowerCase();
@@ -190,6 +210,7 @@ function normalizeQuestionList(rows, fallbackDifficulty) {
     .filter(
       (question) =>
         question &&
+        !isBlockedCategory(question.category) &&
         question.question &&
         question.correct_answer &&
         Array.isArray(question.options) &&
@@ -284,21 +305,28 @@ async function syncCachedQuestions(storageKey, incoming) {
 
 function buildOfflineSeedQuestions(difficulty, limit, category, language) {
   const normalizedLanguage = normalizeLanguage(language);
+  const normalizedCategory =
+    typeof category === 'string' && category.trim() ? category.trim() : null;
+  if (normalizedCategory && isBlockedCategory(normalizedCategory)) {
+    return [];
+  }
   const pool = OFFLINE_SEED_QUESTIONS.filter(
     (question) =>
+      !isBlockedCategory(question?.category) &&
       question?.difficulty === difficulty &&
-      (!category || question?.category === category) &&
+      (!normalizedCategory || question?.category === normalizedCategory) &&
       normalizeLanguage(question?.language ?? DEFAULT_LANGUAGE) === normalizedLanguage
   );
   const fallbackByCategory =
-    category
+    normalizedCategory
       ? OFFLINE_SEED_QUESTIONS.filter(
           (question) =>
-            question?.category === category &&
+            !isBlockedCategory(question?.category) &&
+            question?.category === normalizedCategory &&
             normalizeLanguage(question?.language ?? DEFAULT_LANGUAGE) === normalizedLanguage
         )
       : [];
-  if (category) {
+  if (normalizedCategory) {
     if (pool.length) {
       const shuffled = shuffleList(pool);
       return shuffled.slice(0, limit);
@@ -311,6 +339,7 @@ function buildOfflineSeedQuestions(difficulty, limit, category, language) {
   }
   const languagePool = OFFLINE_SEED_QUESTIONS.filter(
     (question) =>
+      !isBlockedCategory(question?.category) &&
       normalizeLanguage(question?.language ?? DEFAULT_LANGUAGE) === normalizedLanguage
   );
   const source = pool.length ? pool : languagePool;
@@ -436,6 +465,9 @@ export async function fetchQuestions(
     Number.isFinite(limit) && limit > 0 ? Math.min(limit, 50) : 6;
   const normalizedCategory =
     typeof category === 'string' && category.trim() ? category.trim() : null;
+  if (normalizedCategory && isBlockedCategory(normalizedCategory)) {
+    return [];
+  }
   const cacheKey = buildQuestionsCacheKey({
     difficulty: normalizedDifficulty,
     limit: normalizedLimit,

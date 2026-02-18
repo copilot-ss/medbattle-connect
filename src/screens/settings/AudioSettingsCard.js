@@ -6,12 +6,15 @@ export default function AudioSettingsCard({
   soundEnabled,
   vibrationEnabled,
   pushEnabled,
+  friendRequestsEnabled,
   onSoundToggle,
   onVibrationToggle,
   onPushToggle,
+  onFriendRequestsToggle,
   soundStatus,
   vibrationStatus,
   pushStatus,
+  friendRequestsStatus,
 }) {
   const { t } = useTranslation();
 
@@ -45,6 +48,16 @@ export default function AudioSettingsCard({
           trackColor={{ false: '#1F2937', true: '#2563EB' }}
           thumbColor={pushEnabled ? '#F8FAFC' : '#94A3B8'}
           accessibilityHint={pushStatus}
+        />
+      </View>
+      <View style={[styles.rowBetween, styles.rowBetweenSpaced]}>
+        <Text style={styles.cardLabel}>{t('Freundesanfragen')}</Text>
+        <Switch
+          value={friendRequestsEnabled}
+          onValueChange={onFriendRequestsToggle}
+          trackColor={{ false: '#1F2937', true: '#2563EB' }}
+          thumbColor={friendRequestsEnabled ? '#F8FAFC' : '#94A3B8'}
+          accessibilityHint={friendRequestsStatus}
         />
       </View>
     </View>

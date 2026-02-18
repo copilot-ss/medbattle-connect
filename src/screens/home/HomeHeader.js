@@ -1,4 +1,5 @@
 import { Image, Pressable, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/HomeScreen.styles';
 
@@ -12,6 +13,7 @@ export default function HomeHeader({
   avatarColor = null,
   level = 1,
   progress = 0,
+  hasClaimableAchievements = false,
   onProfilePress,
 }) {
   const { t } = useTranslation();
@@ -32,6 +34,7 @@ export default function HomeHeader({
         disabled={!onProfilePress}
         style={({ pressed }) => [
           styles.profileQuickAccess,
+          hasClaimableAchievements ? styles.profileQuickAccessClaimReady : null,
           pressed ? styles.profileQuickAccessPressed : null,
         ]}
         accessibilityRole="button"
@@ -74,6 +77,15 @@ export default function HomeHeader({
             />
           </View>
         </View>
+        {hasClaimableAchievements ? (
+          <View style={styles.profileQuickAccessClaimBadge}>
+            <Ionicons
+              name="checkmark"
+              size={14}
+              color="#F8FAFC"
+            />
+          </View>
+        ) : null}
       </Pressable>
 
       <View style={styles.quickActions}>

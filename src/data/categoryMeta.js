@@ -73,14 +73,6 @@ export const CATEGORY_META = [
     icon: 'cut',
     accent: colors.accentPink,
   },
-  {
-    key: 'Fußball',
-    label: 'Fußball',
-    description: 'Regeln, Taktik, Ligen und große Turniere.',
-    icon: 'futbol',
-    iconFamily: 'fa5',
-    accent: colors.accentGreen,
-  },
 ];
 
 export const DEFAULT_CATEGORY_META = {

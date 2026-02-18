@@ -30,15 +30,17 @@ with updates (slug, explanation, explanation_en) as (
     ('polizei-spanisch-2026-94', '"Vigilancia" bedeutet Überwachung oder Beobachtung, z. B. eine verdeckte Überwachung.', '"Vigilancia" means surveillance or monitoring, for example covert surveillance.'),
     ('polizei-spanisch-2026-95', '"Hallazgo de indicios" ist das Auffinden von Spuren, die später als Beweise dienen können.', '"Hallazgo de indicios" is finding traces that may later serve as evidence.'),
     ('polizei-spanisch-2026-96', '"Cordón policial" ist die polizeiliche Absperrung eines Bereichs, um einen Tatort zu sichern.', '"Cordón policial" is a police cordon used to secure an area or crime scene.')
-)
+),
+updated_questions as (
 update public.questions q
 set explanation = u.explanation
 from updates u
-where q.slug = u.slug;
-
+where q.slug = u.slug
+returning q.id, q.slug
+)
 update public.question_translations qt
 set explanation = u.explanation_en
 from updates u
-join public.questions q on q.slug = u.slug
-where qt.question_id = q.id
+join updated_questions uq on uq.slug = u.slug
+where qt.question_id = uq.id
   and qt.language = 'en';

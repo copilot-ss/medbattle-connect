@@ -26,6 +26,7 @@ import {
   persistAvatarUri,
   persistBooleanValue,
   persistBoosts,
+  persistClaimedAchievements,
   persistDoubleXpExpiresAt,
   persistEnergy,
   persistLanguage,
@@ -52,6 +53,7 @@ export function PreferencesProvider({ children }) {
   const [avatarFrameId, setAvatarFrameIdState] = useState(null);
   const [ownedFrames, setOwnedFramesState] = useState([]);
   const [boosts, setBoostsState] = useState(DEFAULT_BOOSTS);
+  const [claimedAchievements, setClaimedAchievementsState] = useState([]);
   const [streakShieldActive, setStreakShieldActiveState] = useState(false);
   const [doubleXpExpiresAt, setDoubleXpExpiresAtState] = useState(null);
   const [language, setLanguageState] = useState(DEFAULT_LOCALE);
@@ -94,6 +96,7 @@ export function PreferencesProvider({ children }) {
         setAvatarFrameIdState(loaded.avatarFrameId);
         setOwnedFramesState(loaded.ownedFrames);
         setBoostsState(loaded.boosts);
+        setClaimedAchievementsState(loaded.claimedAchievements);
         setStreakShieldActiveState(Boolean(loaded.streakShieldActive));
         setDoubleXpExpiresAtState(loaded.doubleXpExpiresAt ?? null);
         setLanguageState(loaded.language);
@@ -175,6 +178,36 @@ export function PreferencesProvider({ children }) {
     const normalized = sanitizeStringArray(frames);
     setOwnedFramesState(normalized);
     await persistOwnedFrames(normalized);
+  }, []);
+
+  const setClaimedAchievements = useCallback(async (nextAchievements) => {
+    const normalized = sanitizeStringArray(nextAchievements);
+    setClaimedAchievementsState(normalized);
+    await persistClaimedAchievements(normalized);
+  }, []);
+
+  const claimAchievement = useCallback(async (key) => {
+    if (!key) {
+      return false;
+    }
+    let didAdd = false;
+    let nextList = null;
+
+    setClaimedAchievementsState((prev) => {
+      if (prev.includes(key)) {
+        nextList = prev;
+        return prev;
+      }
+      didAdd = true;
+      nextList = [...prev, key];
+      return nextList;
+    });
+
+    if (didAdd && nextList) {
+      await persistClaimedAchievements(nextList);
+      return true;
+    }
+    return false;
   }, []);
 
   const setStreakShieldActive = useCallback(async (value) => {
@@ -284,6 +317,9 @@ export function PreferencesProvider({ children }) {
         xp: sanitizeStatNumber(merged.xp),
         coins: sanitizeStatNumber(merged.coins),
         energyCapBonus: sanitizeStatNumber(merged.energyCapBonus),
+        multiplayerGames: sanitizeStatNumber(merged.multiplayerGames),
+        bestStreak: sanitizeStatNumber(merged.bestStreak),
+        xpBoostsUsed: sanitizeStatNumber(merged.xpBoostsUsed),
       };
       persistUserStats(sanitized);
       return sanitized;
@@ -379,23 +415,37 @@ export function PreferencesProvider({ children }) {
       return;
     }
 
-    if (!Number.isFinite(energyMax) || energyMax <= 0) {
+    const maxEnergy = energyMaxRef.current;
+    if (!Number.isFinite(maxEnergy) || maxEnergy <= 0) {
       return;
     }
 
-    if (energy >= energyMax || !nextEnergyAt) {
+    const snapshot = recalcEnergy(
+      energyRef.current,
+      energyTimestampRef.current,
+      maxEnergy
+    );
+    const currentEnergy = snapshot.energy;
+    const currentNextAt = snapshot.nextAt;
+
+    if (currentEnergy >= maxEnergy || !currentNextAt) {
       energyNotificationRef.current = null;
       cancelEnergyFullNotification();
       return;
     }
 
-    const remaining = Math.max(0, energyMax - energy);
+    const remaining = Math.max(0, maxEnergy - currentEnergy);
     if (remaining <= 0) {
       return;
     }
 
-    const fullAt = nextEnergyAt + (remaining - 1) * ENERGY_RECHARGE_MS;
+    const fullAt = currentNextAt + (remaining - 1) * ENERGY_RECHARGE_MS;
     if (!Number.isFinite(fullAt)) {
+      return;
+    }
+    if (fullAt <= Date.now()) {
+      energyNotificationRef.current = null;
+      cancelEnergyFullNotification();
       return;
     }
 
@@ -457,6 +507,9 @@ export function PreferencesProvider({ children }) {
       updateBoosts,
       grantBoost,
       consumeBoost,
+      claimedAchievements,
+      setClaimedAchievements,
+      claimAchievement,
       streakShieldActive,
       setStreakShieldActive,
       doubleXpExpiresAt,
@@ -505,6 +558,9 @@ export function PreferencesProvider({ children }) {
       avatarUri,
       avatarFrameId,
       ownedFrames,
+      claimedAchievements,
+      setClaimedAchievements,
+      claimAchievement,
       boosts,
       updateBoosts,
       grantBoost,

@@ -2,7 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { usePreferences } from '../../context/PreferencesContext';
+import { sanitizeStatNumber } from '../../context/preferences/sanitize';
 import { useTranslation } from '../../i18n/useTranslation';
+import {
+  getAchievementByKey,
+  getAchievementProgress,
+} from '../../services/achievementService';
+import { syncUserProgressDelta } from '../../services/userProgressService';
 import useLeaderboardRank from './useLeaderboardRank';
 import useSettingsAuth from './useSettingsAuth';
 import useSettingsFriends from './useSettingsFriends';
@@ -27,6 +33,13 @@ export default function useSettingsController({ navigation, route, onClearSessio
     setAvatarUri,
     streaks,
     userStats,
+    boosts,
+    claimedAchievements,
+    claimAchievement,
+    doubleXpExpiresAt,
+    updateUserStats,
+    energy,
+    energyMax,
   } = usePreferences();
   const { t } = useTranslation();
 
@@ -59,8 +72,10 @@ export default function useSettingsController({ navigation, route, onClearSessio
     accuracyPercent,
     xp,
     coins,
+    bestStreak,
+    multiplayerGames,
+    xpBoostsUsed,
     titleProgress,
-    unlockedAchievements,
   } = useSettingsStats({
     streaks,
     userStats,
@@ -91,6 +106,113 @@ export default function useSettingsController({ navigation, route, onClearSessio
     userName,
     userTitle,
   });
+
+  const friendsCount = Array.isArray(friends) ? friends.length : 0;
+  const [claimingAchievement, setClaimingAchievement] = useState(null);
+  const [claimRewardAnimation, setClaimRewardAnimation] = useState(null);
+  const allowAchievementReplay = true;
+
+  const achievementStats = useMemo(
+    () => ({
+      quizzes: quizzesCompleted,
+      bestStreak,
+      multiplayerGames,
+      friends: friendsCount,
+      xpBoostsUsed,
+    }),
+    [
+      bestStreak,
+      friendsCount,
+      multiplayerGames,
+      quizzesCompleted,
+      xpBoostsUsed,
+    ]
+  );
+
+  const achievements = useMemo(
+    () =>
+      getAchievementProgress({
+        stats: achievementStats,
+        claimed: claimedAchievements,
+      }).map((achievement) => ({
+        ...achievement,
+        canReplay: allowAchievementReplay && achievement.isClaimed,
+      })),
+    [achievementStats, allowAchievementReplay, claimedAchievements]
+  );
+
+  const handleClaimAchievement = useCallback(async (achievementKey) => {
+    const achievement = getAchievementByKey(achievementKey);
+    if (!achievement) {
+      return;
+    }
+    if (claimingAchievement) {
+      return;
+    }
+
+    const currentValue = sanitizeStatNumber(
+      achievementStats?.[achievement.statKey]
+    );
+    if (currentValue < sanitizeStatNumber(achievement.threshold)) {
+      return;
+    }
+    const alreadyClaimed = claimedAchievements.includes(achievement.key);
+    if (alreadyClaimed && !allowAchievementReplay) {
+      return;
+    }
+    const isReplayClaim = alreadyClaimed && allowAchievementReplay;
+
+    const rewardXp = sanitizeStatNumber(achievement.reward?.xp);
+    const rewardCoins = sanitizeStatNumber(achievement.reward?.coins);
+    const beforeXp = sanitizeStatNumber(xp);
+    const beforeCoins = sanitizeStatNumber(coins);
+    const afterXp = beforeXp + rewardXp;
+    const afterCoins = beforeCoins + rewardCoins;
+
+    setClaimingAchievement(achievement.key);
+
+    try {
+      await updateUserStats((current) => ({
+        ...current,
+        xp: sanitizeStatNumber(current?.xp) + rewardXp,
+        coins: sanitizeStatNumber(current?.coins) + rewardCoins,
+      }));
+      if (!isReplayClaim) {
+        await claimAchievement(achievement.key);
+      }
+      setClaimRewardAnimation({
+        id: `${achievement.key}-${isReplayClaim ? 'replay-' : ''}${Date.now()}`,
+        fromXp: beforeXp,
+        toXp: afterXp,
+        fromCoins: beforeCoins,
+        toCoins: afterCoins,
+      });
+      if (authUserId && (rewardXp > 0 || rewardCoins !== 0)) {
+        await syncUserProgressDelta(authUserId, {
+          xp: rewardXp,
+          coins: rewardCoins,
+        });
+      }
+    } catch (err) {
+      Alert.alert(t('Fehler'), t('Belohnung konnte nicht abgeholt werden.'));
+    } finally {
+      setClaimingAchievement(null);
+    }
+  }, [
+    achievementStats,
+    authUserId,
+    allowAchievementReplay,
+    claimAchievement,
+    claimedAchievements,
+    claimingAchievement,
+    coins,
+    xp,
+    updateUserStats,
+    t,
+  ]);
+  const handleClaimRewardAnimationDone = useCallback(() => {
+    setClaimRewardAnimation(null);
+  }, []);
 
   const {
     newEmail,
@@ -150,6 +272,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
   const linkGoogleLabel = t('Google verbinden');
   const linkGoogleHint =
     t('Verknüpfe Google mit diesem Profil, damit der Google-Login denselben Account nutzt.');
+  const streakShieldCount = sanitizeStatNumber(boosts?.streak_shield);
   const showAudioSection = activeTab === 'settings';
   const showProfileSection = activeTab === 'profile';
   const showSignOutSection = activeTab === 'settings';
@@ -358,8 +481,19 @@ export default function useSettingsController({ navigation, route, onClearSessio
     accuracyPercent,
     xp,
     coins,
+    energy,
+    energyMax,
+    bestStreak,
+    multiplayerGames,
+    xpBoostsUsed,
+    streakShieldCount,
+    doubleXpExpiresAt,
     titleProgress,
-    unlockedAchievements,
+    achievements,
+    claimingAchievement,
+    handleClaimAchievement,
+    claimRewardAnimation,
+    handleClaimRewardAnimationDone,
     leaderboardRank,
     loadingRank,
     isGuest,

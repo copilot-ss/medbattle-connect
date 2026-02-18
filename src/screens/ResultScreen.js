@@ -17,11 +17,9 @@ import styles, {
   getPrimaryButtonStyle,
 } from './styles/ResultScreen.styles';
 
-const ANATOMY_ANIMATION = require('../../assets/animations/anatomy/skeleton_18166394.png');
 const KIWI_ANIMATION = require('../../assets/animations/kiwi.gif');
 const ZERO_GHOST_ANIMATION = require('../../assets/animations/score/zero.gif');
 const ZERO_SCORE_SKY_ANIMATION = require('../../assets/animations/score/zero_clouds.gif');
-const ANATOMY_SCORE_ANIMATION = require('../../assets/animations/score/anatomy_trophy.gif');
 const PERFECT_SCORE_ANIMATION = require('../../assets/animations/score/perfect.gif');
 const MID_SCORE_ANIMATION = require('../../assets/animations/score/mid.gif');
 const TROPHY_ICON = require('../../assets/icons/flaticon/trophae_3135735.png');
@@ -87,9 +85,10 @@ export default function ResultScreen({ route, navigation }) {
     score > 0 &&
     score < totalQuestions &&
     !hideMidScoreAnimation;
-  const showKiwiPeck = !isMultiplayer && score === 0 && totalQuestions === 6;
+  const showKiwiPeck = false;
   const showZeroFullScreen = showKiwiPeck;
   const showZeroSparkles = showZeroScoreAnimation && !showKiwiPeck;
+  const showScorePoints = !showZeroScoreAnimation;
   const feedbackLine = useMemo(() => {
     if (isMultiplayer) {
       return null;
@@ -128,15 +127,6 @@ export default function ResultScreen({ route, navigation }) {
   const perfectScoreMotion = useRef(new Animated.Value(0)).current;
   const [showPerfectTopAnimation, setShowPerfectTopAnimation] = useState(false);
   const [showZeroGhostOverlay, setShowZeroGhostOverlay] = useState(false);
-  const anatomyMotion = useRef(new Animated.Value(0)).current;
-  const isAnatomyCategory = useMemo(() => {
-    if (typeof category !== 'string') {
-      return false;
-    }
-    const normalized = category.trim().toLowerCase();
-    return normalized === 'anatomie' || normalized === 'anatomy';
-  }, [category]);
-
   const hasOpponent = Boolean(opponentState?.userId);
   const selfBaseName = useMemo(() => {
     const name = typeof playerState?.username === 'string' ? playerState.username.trim() : '';
@@ -280,31 +270,6 @@ export default function ResultScreen({ route, navigation }) {
 
     return () => clearTimeout(timeoutId);
   }, [showZeroScoreAnimation]);
-  useEffect(() => {
-    if (!isAnatomyCategory) {
-      anatomyMotion.stopAnimation();
-      anatomyMotion.setValue(0);
-      return undefined;
-    }
-
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(anatomyMotion, {
-          toValue: 1,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anatomyMotion, {
-          toValue: 0,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    loop.start();
-    return () => loop.stop();
-  }, [anatomyMotion, isAnatomyCategory]);
   const perfectScoreAnimatedStyle = isPerfectScore
     ? {
         transform: [
@@ -319,24 +284,6 @@ export default function ResultScreen({ route, navigation }) {
           inputRange: [0, 0.2, 1],
           outputRange: [0, 1, 1],
         }),
-      }
-    : null;
-  const anatomyAnimatedStyle = isAnatomyCategory
-    ? {
-        transform: [
-          {
-            translateY: anatomyMotion.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, -6],
-            }),
-          },
-          {
-            rotate: anatomyMotion.interpolate({
-              inputRange: [0, 1],
-              outputRange: ['-2deg', '2deg'],
-            }),
-          },
-        ],
       }
     : null;
   const scrollContentStyle = useMemo(
@@ -415,16 +362,6 @@ export default function ResultScreen({ route, navigation }) {
               <Text style={[styles.feedbackLine, feedbackToneStyle]}>{feedbackLine}</Text>
             ) : null}
 
-          {isAnatomyCategory ? (
-            <View style={styles.anatomyAnimationWrap}>
-              <Animated.Image
-                source={ANATOMY_ANIMATION}
-                style={[styles.anatomyAnimation, anatomyAnimatedStyle]}
-                resizeMode="contain"
-              />
-            </View>
-          ) : null}
-
           {!isMultiplayer ? (
             <View style={styles.scoreSummary}>
               <View style={styles.scoreRow}>
@@ -440,17 +377,19 @@ export default function ResultScreen({ route, navigation }) {
                     </View>
                   ) : null}
                 </View>
-                <View style={styles.scorePoints}>
-                  <Ionicons
-                    name="sparkles"
-                    size={14}
-                    color={colors.accent}
-                    style={styles.scorePointsIcon}
-                  />
-                  <Text style={styles.scorePointsText}>
-                    {`+${pointsEarned} ${t('Punkte')}`}
-                  </Text>
-                </View>
+                {showScorePoints ? (
+                  <View style={styles.scorePoints}>
+                    <Ionicons
+                      name="sparkles"
+                      size={14}
+                      color={colors.accent}
+                      style={styles.scorePointsIcon}
+                    />
+                    <Text style={styles.scorePointsText}>
+                      {`+${pointsEarned} ${t('Punkte')}`}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
               {!showKiwiPeck ? (
                 <View style={styles.trophyWrap}>
@@ -474,19 +413,11 @@ export default function ResultScreen({ route, navigation }) {
                       />
                     </>
                   ) : null}
-                  {isAnatomyCategory ? (
-                    <Image
-                      source={ANATOMY_SCORE_ANIMATION}
-                      style={styles.trophyAnimation}
-                      resizeMode="contain"
-                    />
-                  ) : (
-                    <Image
-                      source={TROPHY_ICON}
-                      style={styles.trophyIcon}
-                      resizeMode="contain"
-                    />
-                  )}
+                  <Image
+                    source={TROPHY_ICON}
+                    style={styles.trophyIcon}
+                    resizeMode="contain"
+                  />
                 </View>
               ) : null}
               <View style={styles.rewardSummaryRow}>

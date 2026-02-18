@@ -12,6 +12,12 @@ export default function BoostRow({ items }) {
       {items.map((item) => {
         const disabled = item.disabled || item.count <= 0;
         const active = Boolean(item.active);
+        const freezeActive = item.id === 'freeze_time' && active;
+        if (freezeActive) {
+          return null;
+        }
+        const iconColor = active ? '#0A0A12' : '#E2E8F0';
+        const showCountBadge = item.count > 0;
         return (
           <Pressable
             key={item.id}
@@ -23,11 +29,7 @@ export default function BoostRow({ items }) {
               disabled ? styles.boostButtonDisabled : null,
             ]}
           >
-            <Ionicons
-              name={item.icon}
-              size={16}
-              color={active ? '#0A0A12' : '#E2E8F0'}
-            />
+            <Ionicons name={item.icon} size={16} color={iconColor} />
             <Text
               style={[
                 styles.boostButtonText,
@@ -38,7 +40,7 @@ export default function BoostRow({ items }) {
             >
               {item.label}
             </Text>
-            {item.count > 0 ? (
+            {showCountBadge ? (
               <View style={styles.boostCountBadge}>
                 <Text style={styles.boostCountText}>{item.count}</Text>
               </View>

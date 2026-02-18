@@ -10,6 +10,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/SettingsScreen.styles';
 
+const STREAK_SHIELD_ICON = require('../../../assets/icons/flaticon/schild_473701.png');
+const XP_BOOST_ICON_COLOR = '#f59e0b';
+
 export default function ProfileSection({
   userName,
   userLevel,
@@ -28,8 +31,12 @@ export default function ProfileSection({
   accuracyPercent = 0,
   xp = 0,
   coins = 0,
+  streakShieldCount = 0,
+  doubleXpExpiresAt = null,
   titleProgress = null,
-  unlockedAchievements = [],
+  achievements = [],
+  claimingAchievement = null,
+  onClaimAchievement,
   leaderboardRank = null,
   loadingRank = false,
   newEmail,
@@ -57,12 +64,24 @@ export default function ProfileSection({
     : fallbackTitle;
   const avatarImageSource = avatarUri ? { uri: avatarUri } : currentAvatar?.source;
   const isCustomSelected = Boolean(avatarUri);
+  const resolvedShieldCount = Number.isFinite(streakShieldCount)
+    ? Math.max(0, streakShieldCount)
+    : 0;
+  const xpBoostActive =
+    Number.isFinite(doubleXpExpiresAt) && doubleXpExpiresAt > Date.now();
+  const xpBoostStatus = xpBoostActive ? t('Aktiv') : t('Nicht aktiv');
+
+  const formatThousands = (value) => {
+    const numeric = Number.parseInt(value, 10);
+    if (!Number.isFinite(numeric)) {
+      return '0';
+    }
+    return String(numeric).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
 
   return (
     <View style={[styles.card, styles.profileCard]}>
-      <Text style={styles.cardTitle}>{t('Profil')}</Text>
-
-      <View style={styles.profileRow}>
+      <View style={[styles.profileRow, styles.profileRowNoTitle]}>
         <Pressable
           onPress={onToggleAvatarPicker}
           style={[
@@ -123,15 +142,148 @@ export default function ProfileSection({
         </View>
       </View>
 
-      {unlockedAchievements.length ? (
-        <View style={styles.achievementRow}>
-          {unlockedAchievements.map((achievement) => (
-            <View key={achievement.key} style={styles.achievementPill}>
-              <Text style={styles.achievementText}>{t(achievement.label)}</Text>
+      <View style={styles.profileInventory}>
+        <Text style={styles.profileInventoryTitle}>{t('Items')}</Text>
+        <View style={styles.profileInventoryRow}>
+          <View style={styles.profileInventoryItem}>
+            <View style={styles.profileInventoryIconWrap}>
+              <Image
+                source={STREAK_SHIELD_ICON}
+                style={styles.profileInventoryIcon}
+                resizeMode="contain"
+              />
             </View>
-          ))}
+            <View style={styles.profileInventoryText}>
+              <Text style={styles.profileInventoryLabel}>{t('Streak-Schild')}</Text>
+              <Text style={styles.profileInventoryValue}>{`x${resolvedShieldCount}`}</Text>
+            </View>
+          </View>
+          <View style={styles.profileInventoryItem}>
+            <View style={styles.profileInventoryIconWrap}>
+              <Ionicons
+                name="sparkles"
+                size={16}
+                color={XP_BOOST_ICON_COLOR}
+              />
+            </View>
+            <View style={styles.profileInventoryText}>
+              <Text style={styles.profileInventoryLabel}>{t('Doppel-XP')}</Text>
+              <Text
+                style={[
+                  styles.profileInventoryValue,
+                  xpBoostActive ? styles.profileInventoryValueActive : null,
+                ]}
+              >
+                {xpBoostStatus}
+              </Text>
+            </View>
+          </View>
         </View>
-      ) : null}
+      </View>
+
+      <View style={styles.profileAchievements}>
+        <Text style={styles.profileInventoryTitle}>{t('Abzeichen')}</Text>
+        <View style={styles.profileAchievementList}>
+          {achievements.map((achievement) => {
+            const isClaiming = claimingAchievement === achievement.key;
+            const canReplay = achievement.canReplay === true;
+            const canTriggerClaim = achievement.canClaim || canReplay;
+            const showStatus = achievement.isClaimed || canTriggerClaim;
+            const statusLabel = t('Erhalten');
+            const progressLabel = `${formatThousands(
+              achievement.currentValue
+            )}/${formatThousands(achievement.threshold)}`;
+            const rewardXp = formatThousands(achievement.reward?.xp);
+            const rewardCoins = formatThousands(achievement.reward?.coins);
+
+            return (
+              <View
+                key={achievement.key}
+                style={[
+                  styles.profileAchievementCard,
+                  achievement.canClaim ? styles.profileAchievementCardActive : null,
+                  achievement.isClaimed ? styles.profileAchievementCardClaimed : null,
+                  !showStatus ? styles.profileAchievementCardLocked : null,
+                ]}
+              >
+                <View style={styles.profileAchievementHeader}>
+                  <Text style={styles.profileAchievementTitle}>
+                    {t(achievement.labelKey)}
+                  </Text>
+                  {showStatus ? (
+                    canTriggerClaim ? (
+                      <Pressable
+                        onPress={() =>
+                          !isClaiming
+                            ? onClaimAchievement?.(achievement.key)
+                            : null
+                        }
+                        disabled={isClaiming}
+                        style={({ pressed }) => [
+                          styles.profileAchievementStatus,
+                          achievement.canClaim
+                            ? styles.profileAchievementStatusActive
+                            : styles.profileAchievementStatusClaimed,
+                          !achievement.canClaim
+                            ? styles.profileAchievementStatusClaimedMuted
+                            : null,
+                          isClaiming ? styles.profileAchievementStatusDisabled : null,
+                          pressed && !isClaiming
+                            ? styles.profileAchievementStatusPressed
+                            : null,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.profileAchievementStatusText,
+                            !achievement.canClaim
+                              ? styles.profileAchievementStatusTextClaimed
+                              : null,
+                          ]}
+                        >
+                          {isClaiming ? '...' : statusLabel}
+                        </Text>
+                      </Pressable>
+                    ) : (
+                      <View
+                        style={[
+                          styles.profileAchievementStatus,
+                          styles.profileAchievementStatusClaimed,
+                          styles.profileAchievementStatusClaimedMuted,
+                          styles.profileAchievementStatusDisabled,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.profileAchievementStatusText,
+                            styles.profileAchievementStatusTextClaimed,
+                          ]}
+                        >
+                          {statusLabel}
+                        </Text>
+                      </View>
+                    )
+                  ) : null}
+                </View>
+                <Text style={styles.profileAchievementHint}>
+                  {t(achievement.hintKey)}
+                </Text>
+                <View style={styles.profileAchievementMeta}>
+                  <Text style={styles.profileAchievementProgress}>
+                    {progressLabel}
+                  </Text>
+                  <Text style={styles.profileAchievementReward}>
+                    {`+${rewardXp} XP, +${rewardCoins}`}
+                    <Text style={styles.profileAchievementRewardCoin}>
+                      {' \u{1FA99}'}
+                    </Text>
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      </View>
 
       {showAvatarPicker ? (
         <View style={styles.avatarGrid}>

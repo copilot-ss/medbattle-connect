@@ -46,7 +46,7 @@ function App() {
       }
       try {
         const NavigationBar = require('expo-navigation-bar');
-        await NavigationBar.setBehaviorAsync('overlay-swipe');
+        await NavigationBar.setBehaviorAsync('inset-touch');
         await NavigationBar.setVisibilityAsync('hidden');
         await NavigationBar.setBackgroundColorAsync('#000000');
       } catch (err) {

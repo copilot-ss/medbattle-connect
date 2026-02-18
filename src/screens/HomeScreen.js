@@ -13,6 +13,7 @@ import { calculateCoinReward } from '../services/quizService';
 import { syncUserProgressDelta } from '../services/userProgressService';
 import { clearActiveLobby, loadActiveLobby } from '../utils/activeLobbyStorage';
 import { CATEGORY_META } from '../data/categoryMeta';
+import { getAchievementProgress } from '../services/achievementService';
 import ActiveLobbyBanner from './home/ActiveLobbyBanner';
 import CategoryTile from './home/CategoryTile';
 import EnergyBoostModal from './home/EnergyBoostModal';
@@ -26,7 +27,7 @@ import { useTranslation } from '../i18n/useTranslation';
 
 const DEFAULT_DIFFICULTY = 'mittel';
 const QUICK_PLAY_QUESTIONS = 6;
-const COIN_ENERGY_COST = 10;
+const COIN_ENERGY_COST = 75;
 const COIN_ENERGY_AMOUNT = 5;
 const doctorAnimation = require('../../assets/animations/doctor/doctor.json');
 const BOOST_PRODUCT_ID = 'energy_boost_20';
@@ -64,6 +65,7 @@ export default function HomeScreen({ navigation, route }) {
     avatarUri,
     updateUserStats,
     boosts,
+    claimedAchievements,
     streakShieldActive,
     setStreakShieldActive,
   } = usePreferences();
@@ -84,18 +86,43 @@ export default function HomeScreen({ navigation, route }) {
     avatarInitials,
     currentAvatar,
     titleProgress,
+    quizzesCompleted,
+    bestStreak,
+    multiplayerGames,
+    xpBoostsUsed,
   } = useSettingsStats({
     streaks,
     userStats,
     avatarId,
     userName,
   });
+  const hasClaimableAchievement = useMemo(
+    () =>
+      getAchievementProgress({
+        stats: {
+          quizzes: quizzesCompleted,
+          bestStreak,
+          multiplayerGames,
+          friends: sanitizeStatNumber(userStats?.friends),
+          xpBoostsUsed,
+        },
+        claimed: claimedAchievements,
+      }).some((achievement) => achievement.canClaim),
+    [
+      bestStreak,
+      claimedAchievements,
+      multiplayerGames,
+      quizzesCompleted,
+      userStats?.friends,
+      xpBoostsUsed,
+    ]
+  );
   const streakShieldCount = sanitizeStatNumber(boosts?.streak_shield);
   const handleToggleStreakShield = useCallback(() => {
-    if (streakShieldCount <= 0) {
+    if (streakShieldCount <= 0 || streakShieldActive) {
       return;
     }
-    setStreakShieldActive(!streakShieldActive).catch((err) => {
+    setStreakShieldActive(true).catch((err) => {
       console.warn('Konnte Streak-Schutz nicht speichern:', err);
     });
   }, [setStreakShieldActive, streakShieldActive, streakShieldCount]);
@@ -547,6 +574,7 @@ export default function HomeScreen({ navigation, route }) {
         avatarColor={currentAvatar?.color ?? null}
         level={userLevel}
         progress={titleProgress?.progress ?? 0}
+        hasClaimableAchievements={hasClaimableAchievement}
         onProfilePress={() => navigation.navigate('Profile')}
       />
 

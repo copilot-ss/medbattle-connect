@@ -7,6 +7,7 @@ import styles from '../styles/HomeScreen.styles';
 const STREAK_MILESTONES = [7, 30];
 const STREAK_FLAME_ANIMATION = require('../../../assets/animations/streak/flame.gif');
 const STREAK_FLAME_LOW_ANIMATION = require('../../../assets/animations/streak/flame_low.gif');
+const STREAK_SHIELD_ICON = require('../../../assets/icons/flaticon/schild_473701.png');
 const STREAK_GLOW_STOPS = [
   { step: 0, color: '#FFB25C' },
   { step: 3, color: '#FF915C' },
@@ -112,7 +113,7 @@ function StreakCard({
     ? Math.max(0, streakShieldCount)
     : 0;
   const hasShield = resolvedShieldCount > 0;
-  const shieldDisabled = !hasShield || !onToggleStreakShield;
+  const shieldDisabled = !hasShield || !onToggleStreakShield || streakShieldActive;
   const shieldButtonLabel = !hasShield
     ? t('Kein Schild')
     : streakShieldActive
@@ -139,10 +140,10 @@ function StreakCard({
                 shieldDisabled ? styles.streakShieldButtonDisabled : null,
               ]}
             >
-              <Ionicons
-                name="shield-checkmark"
-                size={12}
-                color={streakShieldActive ? '#0A0A12' : colors.textMuted}
+              <Image
+                source={STREAK_SHIELD_ICON}
+                style={styles.streakShieldIcon}
+                resizeMode="contain"
               />
               <Text
                 style={[
@@ -152,9 +153,6 @@ function StreakCard({
               >
                 {shieldButtonLabel}
               </Text>
-              <View style={styles.streakShieldBadge}>
-                <Text style={styles.streakShieldBadgeText}>{resolvedShieldCount}</Text>
-              </View>
             </Pressable>
           </View>
           <Text style={styles.streakSubtitle}>{streakSummary.subtitle}</Text>

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  ACHIEVEMENTS_STORAGE_KEY,
   AVATAR_STORAGE_KEY,
   AVATAR_URI_KEY,
   AVATAR_FRAME_KEY,
@@ -36,6 +37,7 @@ export async function loadPreferencesFromStorage() {
   let boosts = { ...DEFAULT_BOOSTS };
   let streakShieldActive = false;
   let doubleXpExpiresAt = null;
+  let claimedAchievements = [];
   let loadedEnergy = MAX_ENERGY;
   let loadedEnergyTs = Date.now();
 
@@ -52,6 +54,7 @@ export async function loadPreferencesFromStorage() {
     storedBoosts,
     storedStreakShieldActive,
     storedDoubleXpExpiresAt,
+    storedClaimedAchievements,
   ] = await Promise.all([
     AsyncStorage.getItem(SOUND_STORAGE_KEY),
     AsyncStorage.getItem(VIBRATION_STORAGE_KEY),
@@ -65,6 +68,7 @@ export async function loadPreferencesFromStorage() {
     AsyncStorage.getItem(BOOSTS_STORAGE_KEY),
     AsyncStorage.getItem(STREAK_SHIELD_ACTIVE_KEY),
     AsyncStorage.getItem(DOUBLE_XP_EXPIRES_KEY),
+    AsyncStorage.getItem(ACHIEVEMENTS_STORAGE_KEY),
   ]);
 
   await Promise.all([
@@ -89,6 +93,9 @@ export async function loadPreferencesFromStorage() {
             xp: sanitizeStatNumber(parsed?.xp),
             coins: sanitizeStatNumber(parsed?.coins),
             energyCapBonus: sanitizeStatNumber(parsed?.energyCapBonus),
+            multiplayerGames: sanitizeStatNumber(parsed?.multiplayerGames),
+            bestStreak: sanitizeStatNumber(parsed?.bestStreak),
+            xpBoostsUsed: sanitizeStatNumber(parsed?.xpBoostsUsed),
           };
         }
       } catch (err) {
@@ -146,6 +153,14 @@ export async function loadPreferencesFromStorage() {
     streakShieldActive = storedStreakShieldActive === 'true';
   }
 
+  if (storedClaimedAchievements) {
+    try {
+      claimedAchievements = sanitizeStringArray(JSON.parse(storedClaimedAchievements));
+    } catch (err) {
+      console.warn('Konnte Abzeichen nicht laden:', err);
+    }
+  }
+
   if (storedDoubleXpExpiresAt) {
     const parsed = parseInt(storedDoubleXpExpiresAt, 10);
     if (Number.isFinite(parsed) && parsed > Date.now()) {
@@ -166,6 +181,7 @@ export async function loadPreferencesFromStorage() {
     boosts,
     streakShieldActive,
     doubleXpExpiresAt,
+    claimedAchievements,
     language: normalizedLanguage,
     streaks: nextStreaks,
     userStats: nextUserStats,
@@ -246,6 +262,17 @@ export async function persistStreakShieldActive(value) {
     );
   } catch (err) {
     console.warn('Konnte Streak-Schutz nicht speichern:', err);
+  }
+}
+
+export async function persistClaimedAchievements(value) {
+  try {
+    await AsyncStorage.setItem(
+      ACHIEVEMENTS_STORAGE_KEY,
+      JSON.stringify(value || [])
+    );
+  } catch (err) {
+    console.warn('Konnte Abzeichen nicht speichern:', err);
   }
 }
 

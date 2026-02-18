@@ -1,7 +1,8 @@
-import { useCallback } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { ScrollView, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import FriendsSection from './settings/FriendsSection';
+import FriendsAddSheet from './settings/FriendsAddSheet';
 import SettingsHeader from './settings/SettingsHeader';
 import useSettingsController from './settings/useSettingsController';
 import styles from './styles/SettingsScreen.styles';
@@ -9,11 +10,9 @@ import { useTranslation } from '../i18n/useTranslation';
 
 export default function FriendsScreen({ navigation, route, showClose = true }) {
   const { t } = useTranslation();
+  const [showAddSheet, setShowAddSheet] = useState(false);
   const {
     scrollRef,
-    friendRequestsEnabled,
-    friendRequestsStatus,
-    handleFriendRequestsToggle,
     friendCode,
     copySuccess,
     handleCopyFriendCode,
@@ -36,6 +35,14 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
     }, [scrollRef])
   );
 
+  const handleOpenAdd = useCallback(() => {
+    setShowAddSheet(true);
+  }, []);
+
+  const handleCloseAdd = useCallback(() => {
+    setShowAddSheet(false);
+  }, []);
+
   return (
     <View style={styles.container}>
       <View style={styles.backgroundGlowTop} pointerEvents="none" />
@@ -52,30 +59,30 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
         showsVerticalScrollIndicator={false}
       >
         <FriendsSection
-          friendRequestsEnabled={friendRequestsEnabled}
-          friendRequestsStatus={friendRequestsStatus}
-          onToggleFriendRequests={handleFriendRequestsToggle}
-          friendCode={friendCode}
-          copySuccess={copySuccess}
-          onCopyFriendCode={handleCopyFriendCode}
-          friendCodeInput={friendCodeInput}
-          setFriendCodeInput={setFriendCodeInput}
-          friendInputRef={friendInputRef}
-          onAddFriend={onAddFriend}
-          addingFriend={addingFriend}
           friends={friends}
           loadingFriends={loadingFriends}
           onlineFriends={onlineFriends}
           loadingOnline={loadingOnline}
           onRemoveFriend={onRemoveFriend}
+          onOpenAdd={handleOpenAdd}
+          showAddButton
         />
 
-        {friendsFeedback ? (
-          <View style={styles.banner}>
-            <Text style={styles.bannerText}>{friendsFeedback}</Text>
-          </View>
-        ) : null}
       </ScrollView>
+
+      <FriendsAddSheet
+        visible={showAddSheet}
+        onClose={handleCloseAdd}
+        friendCode={friendCode}
+        copySuccess={copySuccess}
+        onCopyFriendCode={handleCopyFriendCode}
+        friendCodeInput={friendCodeInput}
+        setFriendCodeInput={setFriendCodeInput}
+        friendInputRef={friendInputRef}
+        onAddFriend={onAddFriend}
+        addingFriend={addingFriend}
+        friendsFeedback={friendsFeedback}
+      />
     </View>
   );
 }
