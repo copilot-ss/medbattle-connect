@@ -333,6 +333,13 @@ const styles = StyleSheet.create({
     color: '#07120F',
     fontFamily: fonts.bold,
   },
+  friendRequestSentButton: {
+    backgroundColor: '#22C55E',
+  },
+  friendRequestSentButtonText: {
+    color: '#052E16',
+    fontFamily: fonts.bold,
+  },
   primaryButton: {
     backgroundColor: colors.accent,
   },
@@ -440,7 +447,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     borderWidth: 1,
     borderColor: colors.border,
-    maxHeight: 240,
   },
   friendListDivider: {
     height: 1,
@@ -538,6 +544,9 @@ const styles = StyleSheet.create({
   friendStatusDotLobby: {
     backgroundColor: colors.accent,
   },
+  friendStatusDotQuiz: {
+    backgroundColor: '#FBBF24',
+  },
   friendStatusText: {
     color: colors.accentPink,
     fontSize: 12,
@@ -552,6 +561,9 @@ const styles = StyleSheet.create({
   friendStatusTextLobby: {
     color: '#9EDCFF',
   },
+  friendStatusTextQuiz: {
+    color: '#FCD34D',
+  },
   friendRemoveButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -563,6 +575,42 @@ const styles = StyleSheet.create({
     color: '#FFB1B9',
     fontSize: 12,
     fontFamily: fonts.medium,
+  },
+  friendRequestsSection: {
+    rowGap: 10,
+  },
+  friendRequestsTitle: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontFamily: fonts.bold,
+  },
+  friendRequestRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderColor: colors.border,
+  },
+  friendRequestInfo: {
+    flex: 1,
+    marginRight: 10,
+  },
+  friendRequestAcceptButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.45)',
+    backgroundColor: 'rgba(34, 197, 94, 0.18)',
+  },
+  friendRequestAcceptButtonDisabled: {
+    opacity: 0.65,
+  },
+  friendRequestAcceptText: {
+    color: '#B9F8CC',
+    fontSize: 12,
+    fontFamily: fonts.bold,
   },
   friendAddOverlay: {
     position: 'absolute',
@@ -838,10 +886,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  profileInventoryIcon: {
-    width: 16,
-    height: 16,
-  },
   profileInventoryText: {
     flex: 1,
   },
@@ -1012,6 +1056,13 @@ const styles = StyleSheet.create({
   avatarTileImage: {
     width: '100%',
     height: 84,
+  },
+  avatarTileIconWrap: {
+    width: '100%',
+    height: 84,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(87, 199, 255, 0.08)',
   },
   avatarTilePlaceholder: {
     height: 84,

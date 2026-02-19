@@ -9,6 +9,7 @@ import useOfflineSync from './hooks/useOfflineSync';
 import AuthScreen from './screens/AuthScreen';
 import CategoryDetailScreen from './screens/CategoryDetailScreen';
 import FriendsScreen from './screens/FriendsScreen';
+import LegalScreen from './screens/LegalScreen';
 import MultiplayerLobbyScreen from './screens/MultiplayerLobbyScreen';
 import QuizScreen from './screens/QuizScreen';
 import ResultScreen from './screens/ResultScreen';
@@ -67,6 +68,7 @@ function AppNavigatorInner() {
             </Stack.Screen>
             <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
             <Stack.Screen name="Friends" component={FriendsScreen} />
+            <Stack.Screen name="Legal" component={LegalScreen} />
             <Stack.Screen name="MultiplayerLobby" component={MultiplayerLobbyScreen} />
             <Stack.Screen name="Quiz" component={QuizScreen} />
             <Stack.Screen name="Result" component={ResultScreen} />

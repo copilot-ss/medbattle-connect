@@ -36,6 +36,7 @@ export default function useLobbyOpenMatches({
         const matches = await fetchOpenMatches({
           difficulty,
           force,
+          excludeHostId: userId,
         });
         setOpenMatches(matches);
       } catch (err) {
@@ -47,7 +48,7 @@ export default function useLobbyOpenMatches({
         setMatchesLoading(false);
       }
     },
-    [difficulty, isCreateOnly, isOffline, setMatchesError]
+    [difficulty, isCreateOnly, isOffline, setMatchesError, userId]
   );
 
   useFocusEffect(

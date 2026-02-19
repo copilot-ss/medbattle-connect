@@ -6,6 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
 import { getTitleProgress } from '../../services/titleService';
 import styles from '../styles/SettingsScreen.styles';
@@ -152,6 +153,7 @@ export default function ClaimRewardTopBar({
 }) {
   const { t } = useTranslation();
   const avatarImageSource = avatarUri ? { uri: avatarUri } : currentAvatar?.source;
+  const avatarIconName = !avatarUri ? currentAvatar?.icon : null;
   const levelLabel = t('Level {level}', { level: userLevel });
   const currentTitleProgress = getTitleProgress(xp);
   const currentProgress = Number.isFinite(currentTitleProgress?.progress)
@@ -307,6 +309,12 @@ export default function ClaimRewardTopBar({
                   source={avatarImageSource}
                   style={styles.profileClaimAvatarImage}
                   resizeMode="cover"
+                />
+              ) : avatarIconName ? (
+                <Ionicons
+                  name={avatarIconName}
+                  size={16}
+                  color={currentAvatar?.color || '#CBEAFF'}
                 />
               ) : (
                 <Text style={styles.profileClaimAvatarInitials}>{avatarInitials}</Text>

@@ -360,10 +360,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: fonts.bold,
   },
-  streakShieldIcon: {
-    width: 12,
-    height: 12,
-  },
   streakShieldButtonTextActive: {
     color: '#0A0A12',
   },

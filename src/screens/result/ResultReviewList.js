@@ -2,9 +2,11 @@ import { View, Text } from 'react-native';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/ResultScreen.styles';
 
-export default function ResultReviewList({ items } = {}) {
+export default function ResultReviewList({ items, title = null, answerLabel = null } = {}) {
   const { t } = useTranslation();
   const safeItems = Array.isArray(items) ? items : [];
+  const resolvedTitle = title || t('Quiz Zusammenfassung');
+  const resolvedAnswerLabel = answerLabel || t('Deine Antwort');
 
   if (!safeItems.length) {
     return null;
@@ -12,7 +14,7 @@ export default function ResultReviewList({ items } = {}) {
 
   return (
     <View style={styles.reviewSection}>
-      <Text style={styles.reviewTitle}>{t('Quiz Zusammenfassung')}</Text>
+      <Text style={styles.reviewTitle}>{resolvedTitle}</Text>
       {safeItems.map((item, idx) => {
         const statusLabel = item.timedOut
           ? t('Timeout')
@@ -45,7 +47,7 @@ export default function ResultReviewList({ items } = {}) {
             </View>
             <Text style={styles.reviewQuestion}>{item.question}</Text>
             <View style={styles.reviewAnswers}>
-              <Text style={styles.reviewLabel}>{t('Deine Antwort')}</Text>
+              <Text style={styles.reviewLabel}>{resolvedAnswerLabel}</Text>
               <Text style={styles.reviewAnswer}>{selectedAnswer}</Text>
               <Text style={styles.reviewLabel}>{t('Richtig')}</Text>
               <Text style={[styles.reviewAnswer, styles.reviewAnswerCorrect]}>

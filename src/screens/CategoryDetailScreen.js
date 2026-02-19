@@ -31,7 +31,6 @@ export default function CategoryDetailScreen({ navigation, route }) {
   const { premium } = usePremiumStatus();
   const isOffline = isOnline === false;
   const hasLobby = Boolean(activeLobby?.code);
-  const hasActiveLobby = hasLobby && !isOffline;
 
   const rewardCoins = calculateCoinReward({
     correct: CATEGORY_QUESTION_LIMIT,
@@ -57,16 +56,17 @@ export default function CategoryDetailScreen({ navigation, route }) {
   }
 
   function handlePlayWithFriends() {
-    if (hasActiveLobby) {
-      navigation.navigate('MultiplayerLobby', {
-        existingMatch: activeLobby?.existingMatch ?? null,
-        mode: 'create',
-      });
-      return;
-    }
     navigation.navigate('MultiplayerLobby', {
       difficulty: categoryDifficulty,
       mode: 'create',
+      category: categoryLabel,
+    });
+  }
+
+  function handleJoinLobby() {
+    navigation.navigate('MultiplayerLobby', {
+      difficulty: categoryDifficulty,
+      mode: 'join',
       category: categoryLabel,
     });
   }
@@ -122,15 +122,21 @@ export default function CategoryDetailScreen({ navigation, route }) {
         <View>
           <View style={styles.modeSection}>
             <ModeCard
-              title={t('Solo')}
+              title={t('Spielen')}
               accent={colors.accentWarm}
               onPress={handleStartSolo}
               disabled={hasLobby}
             />
             <ModeCard
-              title={t('Mit Freunden spielen')}
+              title={t('Lobby erstellen')}
               accent={colors.accentGreen}
               onPress={handlePlayWithFriends}
+              disabled={isOffline || hasLobby}
+            />
+            <ModeCard
+              title={t('Lobby beitreten')}
+              accent={colors.accent}
+              onPress={handleJoinLobby}
               disabled={isOffline}
             />
           </View>

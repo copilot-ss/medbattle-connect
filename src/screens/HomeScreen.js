@@ -21,6 +21,7 @@ import FeaturedQuizCard from './home/FeaturedQuizCard';
 import HomeHeader from './home/HomeHeader';
 import OfflineBanner from './home/OfflineBanner';
 import StreakCard from './home/StreakCard';
+import useHomePresence from './home/useHomePresence';
 import useHomeUser from './home/useHomeUser';
 import useSettingsStats from './settings/useSettingsStats';
 import { useTranslation } from '../i18n/useTranslation';
@@ -118,6 +119,11 @@ export default function HomeScreen({ navigation, route }) {
     ]
   );
   const streakShieldCount = sanitizeStatNumber(boosts?.streak_shield);
+  useHomePresence({
+    userId,
+    userName,
+    userTitle: titleProgress?.current?.label ?? null,
+  });
   const handleToggleStreakShield = useCallback(() => {
     if (streakShieldCount <= 0 || streakShieldActive) {
       return;
@@ -571,6 +577,7 @@ export default function HomeScreen({ navigation, route }) {
         avatarInitials={avatarInitials}
         avatarUri={avatarUri}
         avatarSource={currentAvatar?.source ?? null}
+        avatarIcon={currentAvatar?.icon ?? null}
         avatarColor={currentAvatar?.color ?? null}
         level={userLevel}
         progress={titleProgress?.progress ?? 0}

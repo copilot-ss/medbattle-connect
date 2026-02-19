@@ -10,6 +10,7 @@ export default function HomeHeader({
   avatarInitials = '?',
   avatarUri = null,
   avatarSource = null,
+  avatarIcon = null,
   avatarColor = null,
   level = 1,
   progress = 0,
@@ -57,6 +58,12 @@ export default function HomeHeader({
                 source={avatarImageSource}
                 style={styles.profileAvatarImage}
                 resizeMode="cover"
+              />
+            ) : avatarIcon ? (
+              <Ionicons
+                name={avatarIcon}
+                size={18}
+                color={avatarColor || '#CBEAFF'}
               />
             ) : (
               <Text style={styles.profileAvatarInitials}>{avatarInitials}</Text>

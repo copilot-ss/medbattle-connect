@@ -1,7 +1,7 @@
 ﻿# TASKS.md - MedBattle Aufgabenliste
 
 ## Offen
-- Release-Readiness: Play Store-Assets/Content-Rating, OAuth + Gameplay Smoke-Tests, Sentry DSN/Alerts, finaler Store-Build + Device-Smoke-Test.
+- Release-Readiness: Play Store-Assets/Content-Rating, OAuth + Gameplay Smoke-Tests, Sentry DSN/Alerts, Device-Smoke-Test mit aktuellem Production-Build.
 
 ## Release-Checklist
 - [ ] Play Store: Store-Assets (siehe STORE_ASSETS.md).
@@ -27,19 +27,23 @@
 - [ ] Offline: Login-Recall, Offline-Quick-Play, Online-Sync getestet (teilweise via adb; Details in RELEASE_TESTS.md).
 - [ ] Multiplayer: Create/Join/Resume/Abbruch getestet (teilweise via adb; Details in RELEASE_TESTS.md).
 - [ ] Purchases/Ads: Energie-Flow, Rewarded Ad, Premium-Flow getestet.
-- [ ] Telemetry: Crash/Telemetry aktiv (Sentry/Expo) + Alerts konfiguriert (EXPO_PUBLIC_SENTRY_DSN fehlt in `.env`).
+- [ ] Telemetry: Crash/Telemetry aktiv (Sentry/Expo) + Alerts konfiguriert (EXPO_PUBLIC_SENTRY_DSN fehlt in `.env`; EAS `production` Environment hat aktuell keine Variablen).
 - [x] App: Telemetry-Setup verdrahtet (initTelemetry + sentry-expo Plugin).
-- [ ] Release-Build: EAS/Store Build gebaut und Smoke-Test auf GerÃ¤t.
+- [ ] Release-Build: EAS Store Build + Device-Smoke-Test (Build `75e9ace1-34fc-4560-9d44-a421560aa71c` gebaut, Smoke-Test offen).
 - [x] QA: Manuelle Release-Checkliste dokumentiert (`RELEASE_TESTS.md`).
 
 ## In Arbeit
-- Release-Build Android (EAS production) laeuft: `df9539ac-f829-4359-802b-a49b465f1568`.
+- Device-Smoke-Test fuer Android Production-Build `75e9ace1-34fc-4560-9d44-a421560aa71c` (AAB, versionCode 19) ausstehend.
 
 ## Erledigt
+- [x] Release-Build Android (EAS production) erfolgreich: `75e9ace1-34fc-4560-9d44-a421560aa71c` (`FINISHED`, versionCode 19, AAB erstellt).
+- [x] Build-Fix abgeschlossen: veralteten `expo-dev-launcher` Patch entfernt (`patches/expo-dev-launcher+55.0.7.patch`), Dex duplicate `LegacyArchitecture` behoben.
+- [x] Build-Diagnose: Ursache fuer EAS Android Release-Fehler identifiziert (duplicate `LegacyArchitecture` aus `expo-dev-launcher` Patch).
+- [x] Legal/Copyright: Externe Flaticon-Icon-URL entfernt und lokale Drittanbieter-Iconbilder auf Vector-Icons umgestellt.
 - [x] Shop-Balance: Coin-Preise/Rabatte neu kalibriert (mehr Progression, Bundles mit sichtbaren %-Rabatten).
 - [x] Home: Coin->Energie Kaufpreis angehoben, um Shop-Balance nicht zu unterlaufen.
 - [x] EAS Build-Fix: npm Peer-Resolution stabilisiert (`.npmrc` mit `legacy-peer-deps=true` + lockfile refresh).
-- [x] EAS Build-Fix: abel-preset-expo ergaenzt (Bundle-Fehler behoben).
+- [x] EAS Build-Fix: `babel-preset-expo` ergaenzt (Bundle-Fehler behoben).
 - [x] Patches auf aktuelle Versionen migriert (`expo-dev-launcher@55.0.7`, `expo-modules-core@55.0.9`, `react-native-gesture-handler@2.30.0`).
 - [x] DB: Kategorien bereinigt (FuÃŸball + Polizei-Spanisch entfernt), auf 10 Home-Kategorien verteilt und auf exakt 50 Fragen pro Kategorie normalisiert.
 - [x] DB: App-Kategorien auf mindestens 50 Fragen aufgefÃ¼llt (Migration `20260224120000_ensure_min_50_questions_per_app_category.sql`).

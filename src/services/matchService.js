@@ -403,13 +403,21 @@ export async function updateMatchSettings({
 export async function fetchOpenMatches({
   difficulty = null,
   force = false,
+  excludeHostId = null,
 } = {}) {
   await ensureLobbyCleanup({ force });
 
   const normalizedDifficulty = difficulty
     ? normalizeDifficulty(difficulty)
     : null;
-  const cacheKey = normalizedDifficulty ? `waiting:${normalizedDifficulty}` : 'waiting:all';
+  const normalizedExcludeHostId =
+    typeof excludeHostId === 'string' && excludeHostId.trim()
+      ? excludeHostId.trim()
+      : null;
+  const cachePrefix = normalizedDifficulty ? `waiting:${normalizedDifficulty}` : 'waiting:all';
+  const cacheKey = normalizedExcludeHostId
+    ? `${cachePrefix}:exclude:${normalizedExcludeHostId}`
+    : cachePrefix;
   const now = Date.now();
 
   if (
@@ -422,13 +430,42 @@ export async function fetchOpenMatches({
   }
 
   try {
-    const { data, error } = await runSupabaseRequest(
-      () =>
-        supabase.rpc('get_open_matches', {
-          p_difficulty: normalizedDifficulty,
-        }),
-      { label: 'matchService.getOpenMatches' }
-    );
+    let data = null;
+    let error = null;
+
+    if (normalizedExcludeHostId) {
+      let query = supabase
+        .from('matches')
+        .select('id, code, difficulty, question_limit, created_at, host_id, state')
+        .eq('status', MATCH_STATUS.WAITING)
+        .is('guest_id', null)
+        .neq('host_id', normalizedExcludeHostId)
+        .order('created_at', { ascending: true })
+        .limit(24);
+
+      if (normalizedDifficulty) {
+        query = query.eq('difficulty', normalizedDifficulty);
+      }
+
+      const directResult = await runSupabaseRequest(
+        () => query,
+        { label: 'matchService.fetchOpenMatches.direct' }
+      );
+      data = directResult.data;
+      error = directResult.error;
+    }
+
+    if (!normalizedExcludeHostId || error) {
+      const rpcResult = await runSupabaseRequest(
+        () =>
+          supabase.rpc('get_open_matches', {
+            p_difficulty: normalizedDifficulty,
+          }),
+        { label: 'matchService.getOpenMatches' }
+      );
+      data = rpcResult.data;
+      error = rpcResult.error;
+    }
 
     if (error) {
       console.warn('Konnte offene Matches nicht laden:', error.message);
@@ -450,17 +487,21 @@ export async function fetchOpenMatches({
                 questionLimit: Number.isFinite(row.question_limit)
                   ? Math.max(1, row.question_limit)
                   : 5,
-                hostUsername: row.host_username ?? null,
+                hostUsername: row.host_username ?? row?.state?.host?.username ?? null,
+                hostId: row.host_id ?? row?.state?.host?.userId ?? null,
               };
             })
             .filter(Boolean)
         : [];
+    const filtered = normalizedExcludeHostId
+      ? sanitized.filter((item) => item.hostId !== normalizedExcludeHostId)
+      : sanitized;
 
     openMatchesCache.key = cacheKey;
-    openMatchesCache.data = sanitized;
+    openMatchesCache.data = filtered;
     openMatchesCache.fetchedAt = now;
 
-    return sanitized;
+    return filtered;
   } catch (err) {
     console.error('Unerwarteter Fehler beim Laden offener Matches:', err);
     return [];

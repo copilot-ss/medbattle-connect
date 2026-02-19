@@ -15,6 +15,7 @@ export default function SettingsFooter({
   showResetActions = true,
   isGuest = false,
   authResolved = false,
+  onOpenLegal = null,
 }) {
   const { t } = useTranslation();
   const privacyUrl = process.env.EXPO_PUBLIC_PRIVACY_URL;
@@ -36,6 +37,7 @@ export default function SettingsFooter({
   const signOutTextStyle = resolvedGuest
     ? styles.primaryButtonText
     : styles.dangerButtonText;
+  const hasNativeLegalScreen = typeof onOpenLegal === 'function';
 
   const handleOpenUrl = async (url) => {
     if (!url) {
@@ -64,6 +66,17 @@ export default function SettingsFooter({
       console.warn('Fehler beim Ã–ffnen des Links:', err);
     }
   };
+  const handleOpenLegal = async (doc, url) => {
+    if (hasNativeLegalScreen) {
+      onOpenLegal(doc);
+      return;
+    }
+    await handleOpenUrl(url);
+  };
+
+  const hasPrivacyLink = hasNativeLegalScreen || Boolean(privacyUrl);
+  const hasTermsLink = hasNativeLegalScreen || Boolean(termsUrl);
+  const hasSupportLink = hasNativeLegalScreen || Boolean(supportUrl);
 
   return (
     <View style={styles.fixedFooter}>
@@ -121,11 +134,11 @@ export default function SettingsFooter({
 
       <View style={styles.legalRow}>
         <Pressable
-          onPress={() => handleOpenUrl(privacyUrl)}
-          disabled={!privacyUrl}
+          onPress={() => handleOpenLegal('privacy', privacyUrl)}
+          disabled={!hasPrivacyLink}
           style={[
             styles.legalLink,
-            !privacyUrl ? styles.legalLinkDisabled : null,
+            !hasPrivacyLink ? styles.legalLinkDisabled : null,
           ]}
           accessibilityRole="link"
           accessibilityLabel={t('Datenschutz')}
@@ -134,11 +147,11 @@ export default function SettingsFooter({
         </Pressable>
         <Text style={styles.legalDivider}>|</Text>
         <Pressable
-          onPress={() => handleOpenUrl(termsUrl)}
-          disabled={!termsUrl}
+          onPress={() => handleOpenLegal('terms', termsUrl)}
+          disabled={!hasTermsLink}
           style={[
             styles.legalLink,
-            !termsUrl ? styles.legalLinkDisabled : null,
+            !hasTermsLink ? styles.legalLinkDisabled : null,
           ]}
           accessibilityRole="link"
           accessibilityLabel={t('AGB')}
@@ -147,11 +160,11 @@ export default function SettingsFooter({
         </Pressable>
         <Text style={styles.legalDivider}>|</Text>
         <Pressable
-          onPress={() => handleOpenUrl(supportUrl)}
-          disabled={!supportUrl}
+          onPress={() => handleOpenLegal('support', supportUrl)}
+          disabled={!hasSupportLink}
           style={[
             styles.legalLink,
-            !supportUrl ? styles.legalLinkDisabled : null,
+            !hasSupportLink ? styles.legalLinkDisabled : null,
           ]}
           accessibilityRole="link"
           accessibilityLabel={t('Support')}

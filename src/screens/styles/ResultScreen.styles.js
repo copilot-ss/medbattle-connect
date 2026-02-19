@@ -441,6 +441,41 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     paddingHorizontal: 20,
   },
+  multiplayerWaitingCard: {
+    width: '100%',
+    marginTop: 20,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    rowGap: 8,
+    alignItems: 'center',
+  },
+  multiplayerWaitingTitle: {
+    color: '#CBEAFF',
+    fontSize: 17,
+    fontFamily: fonts.medium,
+    textAlign: 'center',
+  },
+  multiplayerWaitingName: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontFamily: fonts.bold,
+    textAlign: 'center',
+  },
+  multiplayerWaitingLoader: {
+    marginTop: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 10,
+  },
+  multiplayerWaitingHint: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontFamily: fonts.regular,
+  },
   multiplayerRewards: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -468,6 +503,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  scoreboardRowInteractive: {
+    opacity: 0.98,
+  },
+  scoreboardRowSelected: {
+    borderColor: 'rgba(255, 178, 92, 0.75)',
+    backgroundColor: 'rgba(255, 178, 92, 0.18)',
   },
   scoreboardRowSelf: {
     borderColor: 'rgba(87, 199, 255, 0.6)',

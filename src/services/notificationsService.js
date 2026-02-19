@@ -1,10 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import {
+  ENERGY_BASE_STORAGE_KEY,
   ENERGY_TIMESTAMP_KEY,
   ENERGY_VALUE_KEY,
   MAX_ENERGY,
   MAX_ENERGY_CAP_BONUS,
+  NEW_ACCOUNT_MAX_ENERGY,
   USER_STATS_STORAGE_KEY,
 } from '../context/preferences/constants';
 import { recalcEnergy } from '../context/preferences/energyUtils';
@@ -16,10 +18,19 @@ if (shouldLoadNotifications) {
     // Use require so missing native modules don't crash the app.
     Notifications = require('expo-notifications');
   } catch (err) {
-    console.warn(
-      'expo-notifications nicht verfügbar (native module fehlt). Dev-Client/App neu bauen.',
-      err
-    );
+    const errorMessage =
+      typeof err?.message === 'string' ? err.message : '';
+    const isMissingTopicModule =
+      errorMessage.includes('ExpoTopicSubscriptionModule');
+    if (isMissingTopicModule) {
+      console.warn(
+        'expo-notifications nicht verfuegbar: ExpoTopicSubscriptionModule fehlt. Dev-Client/App neu bauen (z. B. npx expo run:android).'
+      );
+    } else {
+      console.warn(
+        `expo-notifications nicht verfuegbar (native module fehlt). Dev-Client/App neu bauen.${errorMessage ? ` Fehler: ${errorMessage}` : ''}`
+      );
+    }
   }
 }
 
@@ -39,12 +50,19 @@ const parseNonNegativeInt = (value, fallback = 0) => {
 
 const isEnergyFullNow = async () => {
   try {
-    const [energyRaw, tsRaw, userStatsRaw] = await Promise.all([
+    const [energyBaseRaw, energyRaw, tsRaw, userStatsRaw] = await Promise.all([
+      AsyncStorage.getItem(ENERGY_BASE_STORAGE_KEY),
       AsyncStorage.getItem(ENERGY_VALUE_KEY),
       AsyncStorage.getItem(ENERGY_TIMESTAMP_KEY),
       AsyncStorage.getItem(USER_STATS_STORAGE_KEY),
     ]);
-    const energyValue = parseNonNegativeInt(energyRaw, MAX_ENERGY);
+    const hasLegacySnapshot =
+      energyRaw !== null || tsRaw !== null || Boolean(userStatsRaw);
+    const energyBase = parseNonNegativeInt(
+      energyBaseRaw,
+      hasLegacySnapshot ? MAX_ENERGY : NEW_ACCOUNT_MAX_ENERGY
+    );
+    const energyValue = parseNonNegativeInt(energyRaw, energyBase);
     const timestamp = parseNonNegativeInt(tsRaw, Date.now());
 
     let energyCapBonus = 0;
@@ -53,15 +71,15 @@ const isEnergyFullNow = async () => {
         const parsed = JSON.parse(userStatsRaw);
         energyCapBonus = parseNonNegativeInt(parsed?.energyCapBonus, 0);
       } catch (err) {
-        console.warn('Konnte User-Stats für Notification-Check nicht parsen:', err);
+        console.warn('Konnte User-Stats fÃ¼r Notification-Check nicht parsen:', err);
       }
     }
 
-    const maxEnergy = MAX_ENERGY + Math.min(energyCapBonus, MAX_ENERGY_CAP_BONUS);
+    const maxEnergy = energyBase + Math.min(energyCapBonus, MAX_ENERGY_CAP_BONUS);
     const recalc = recalcEnergy(energyValue, timestamp, maxEnergy);
     return recalc.energy >= maxEnergy;
   } catch (err) {
-    console.warn('Konnte Energie-Status für Notification-Check nicht laden:', err);
+    console.warn('Konnte Energie-Status fÃ¼r Notification-Check nicht laden:', err);
     return true;
   }
 };
@@ -241,3 +259,4 @@ export const cancelEnergyFullNotification = async () => {
     console.warn('Konnte Notification nicht entfernen:', err);
   }
 };
+

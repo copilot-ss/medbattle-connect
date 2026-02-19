@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import FriendsSection from './settings/FriendsSection';
@@ -23,10 +23,15 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
     addingFriend,
     friends,
     loadingFriends,
+    friendRequests,
+    loadingFriendRequests,
+    respondingFriendRequestId,
+    onAcceptFriendRequest,
     onlineFriends,
     loadingOnline,
     onRemoveFriend,
     friendsFeedback,
+    friendRequestSent,
   } = useSettingsController({ navigation, route });
 
   useFocusEffect(
@@ -41,7 +46,19 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
 
   const handleCloseAdd = useCallback(() => {
     setShowAddSheet(false);
-  }, []);
+    setFriendCodeInput('');
+  }, [setFriendCodeInput]);
+
+  useEffect(() => {
+    if (!showAddSheet || !friendRequestSent || addingFriend) {
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      setShowAddSheet(false);
+      setFriendCodeInput('');
+    }, 220);
+    return () => clearTimeout(timer);
+  }, [addingFriend, friendRequestSent, setFriendCodeInput, showAddSheet]);
 
   return (
     <View style={styles.container}>
@@ -61,6 +78,10 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
         <FriendsSection
           friends={friends}
           loadingFriends={loadingFriends}
+          friendRequests={friendRequests}
+          loadingFriendRequests={loadingFriendRequests}
+          respondingFriendRequestId={respondingFriendRequestId}
+          onAcceptFriendRequest={onAcceptFriendRequest}
           onlineFriends={onlineFriends}
           loadingOnline={loadingOnline}
           onRemoveFriend={onRemoveFriend}
@@ -82,6 +103,7 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
         onAddFriend={onAddFriend}
         addingFriend={addingFriend}
         friendsFeedback={friendsFeedback}
+        friendRequestSent={friendRequestSent}
       />
     </View>
   );

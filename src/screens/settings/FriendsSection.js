@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/SettingsScreen.styles';
@@ -6,6 +6,10 @@ import styles from '../styles/SettingsScreen.styles';
 export default function FriendsSection({
   friends,
   loadingFriends,
+  friendRequests,
+  loadingFriendRequests,
+  respondingFriendRequestId,
+  onAcceptFriendRequest,
   onlineFriends,
   loadingOnline,
   onRemoveFriend,
@@ -33,6 +37,7 @@ export default function FriendsSection({
       name: presence?.username ?? code,
       title: presence?.title ?? null,
       isOnline: Boolean(presence),
+      activity: presence?.activity ?? (presence ? 'online' : 'offline'),
       lobby: presence?.lobby ?? null,
       lobbyPlayers: presence?.lobbyPlayers ?? null,
       lobbyCapacity: presence?.lobbyCapacity ?? null,
@@ -50,6 +55,7 @@ export default function FriendsSection({
       name: friend?.username ?? code,
       title: friend?.title ?? null,
       isOnline: true,
+      activity: friend?.activity ?? (friend?.lobby ? 'lobby' : 'online'),
       lobby: friend?.lobby ?? null,
       lobbyPlayers: friend?.lobbyPlayers ?? null,
       lobbyCapacity: friend?.lobbyCapacity ?? null,
@@ -58,7 +64,15 @@ export default function FriendsSection({
   });
 
   entries.sort((a, b) => {
-    const rank = (entry) => (entry.lobby ? 2 : entry.isOnline ? 1 : 0);
+    const rank = (entry) => {
+      if (entry.lobby) {
+        return 3;
+      }
+      if (entry.activity === 'quiz') {
+        return 2;
+      }
+      return entry.isOnline ? 1 : 0;
+    };
     const diff = rank(b) - rank(a);
     if (diff !== 0) {
       return diff;
@@ -68,6 +82,7 @@ export default function FriendsSection({
 
   const totalCount = entries.length;
   const onlineCount = entries.filter((entry) => entry.isOnline).length;
+  const quizCount = entries.filter((entry) => entry.activity === 'quiz').length;
   const lobbyCount = entries.filter((entry) => entry.lobby).length;
   const statusSummaryParts = [];
   if (totalCount) {
@@ -77,6 +92,9 @@ export default function FriendsSection({
   }
   if (lobbyCount) {
     statusSummaryParts.push(t('{lobbyCount} in Lobby', { lobbyCount }));
+  }
+  if (quizCount) {
+    statusSummaryParts.push(t('{quizCount} im Quiz', { quizCount }));
   }
   const statusSummary = statusSummaryParts.join(' | ');
   const isLoading = loadingFriends || loadingOnline;
@@ -90,12 +108,18 @@ export default function FriendsSection({
       }
       return t('Lobby');
     }
+    if (entry.activity === 'quiz') {
+      return t('Im Quiz');
+    }
     return entry.isOnline ? t('Online') : t('Offline');
   };
 
   const resolveDotStyle = (entry) => {
     if (entry.lobby) {
       return styles.friendStatusDotLobby;
+    }
+    if (entry.activity === 'quiz') {
+      return styles.friendStatusDotQuiz;
     }
     return entry.isOnline ? styles.friendStatusDotOnline : styles.friendStatusDotOffline;
   };
@@ -104,8 +128,14 @@ export default function FriendsSection({
     if (entry.lobby) {
       return styles.friendStatusTextLobby;
     }
+    if (entry.activity === 'quiz') {
+      return styles.friendStatusTextQuiz;
+    }
     return entry.isOnline ? styles.friendStatusTextOnline : styles.friendStatusTextOffline;
   };
+
+  const requests = Array.isArray(friendRequests) ? friendRequests : [];
+  const showRequestsSection = loadingFriendRequests || requests.length > 0;
 
   return (
     <View style={[styles.card, styles.squadCard]}>
@@ -177,6 +207,60 @@ export default function FriendsSection({
             {t('Noch keine Freunde gespeichert. Teile deinen Code und starte!')}
           </Text>
         )}
+
+        {showRequestsSection ? (
+          <>
+            <View style={styles.friendListDivider} />
+            <View style={styles.friendRequestsSection}>
+              <Text style={styles.friendRequestsTitle}>{t('Freundesanfragen')}</Text>
+              {loadingFriendRequests ? (
+                <View style={styles.friendLoading}>
+                  <ActivityIndicator size="small" color="#60A5FA" />
+                  <Text style={styles.friendLoadingText}>
+                    {t('Freundesanfragen werden geladen ...')}
+                  </Text>
+                </View>
+              ) : (
+                requests.map((request, index) => {
+                  const requesterName = request?.username ?? request?.code ?? t('Freund');
+                  const requestCode = request?.code ?? '';
+                  const isBusy = respondingFriendRequestId === request?.id;
+                  const showCode =
+                    requestCode &&
+                    String(requesterName).toUpperCase() !== String(requestCode).toUpperCase();
+                  return (
+                    <View
+                      key={request?.id ?? `${requestCode}-${index}`}
+                      style={[
+                        styles.friendRequestRow,
+                        index === requests.length - 1 ? styles.friendRowLast : null,
+                      ]}
+                    >
+                      <View style={styles.friendRequestInfo}>
+                        <Text style={styles.friendCodeText}>{requesterName}</Text>
+                        {showCode ? (
+                          <Text style={styles.friendTitleText}>{requestCode}</Text>
+                        ) : null}
+                      </View>
+                      <Pressable
+                        onPress={() => onAcceptFriendRequest?.(request?.id)}
+                        style={[
+                          styles.friendRequestAcceptButton,
+                          isBusy ? styles.friendRequestAcceptButtonDisabled : null,
+                        ]}
+                        disabled={isBusy || !request?.id}
+                      >
+                        <Text style={styles.friendRequestAcceptText}>
+                          {isBusy ? t('Annehmen...') : t('Annehmen')}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          </>
+        ) : null}
       </View>
     </View>
   );

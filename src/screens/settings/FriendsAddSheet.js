@@ -15,8 +15,14 @@ export default function FriendsAddSheet({
   onAddFriend,
   addingFriend,
   friendsFeedback,
+  friendRequestSent = false,
 }) {
   const { t } = useTranslation();
+  const hasInput = Boolean(friendCodeInput.trim());
+  const submitDisabled = addingFriend || !hasInput || friendRequestSent;
+  const submitLabel = friendRequestSent
+    ? t('Freundesanfrage gesendet')
+    : t('Freund hinzufügen');
 
   if (!visible) {
     return null;
@@ -81,14 +87,22 @@ export default function FriendsAddSheet({
           />
           <Pressable
             onPress={onAddFriend}
-            disabled={addingFriend}
+            disabled={submitDisabled}
             style={[
               styles.actionButton,
               styles.successButton,
+              friendRequestSent ? styles.friendRequestSentButton : null,
               addingFriend ? styles.disabledButton : null,
             ]}
           >
-            <Text style={styles.successButtonText}>{t('Freund hinzufügen')}</Text>
+            <Text
+              style={[
+                styles.successButtonText,
+                friendRequestSent ? styles.friendRequestSentButtonText : null,
+              ]}
+            >
+              {submitLabel}
+            </Text>
           </Pressable>
         </View>
 

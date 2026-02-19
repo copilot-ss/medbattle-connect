@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 import { supabase } from '../../lib/supabaseClient';
 import { useTranslation } from '../../i18n/useTranslation';
 
@@ -10,6 +11,7 @@ export default function useFriendsPresence({
   friends,
 }) {
   const { t } = useTranslation();
+  const isFocused = useIsFocused();
   const [onlineFriends, setOnlineFriends] = useState([]);
   const [loadingOnline, setLoadingOnline] = useState(false);
   const presenceChannelRef = useRef(null);
@@ -18,7 +20,7 @@ export default function useFriendsPresence({
     let cancelled = false;
 
     async function attachPresence() {
-      if (!userId || !friendCode) {
+      if (!userId || !friendCode || !isFocused) {
         setOnlineFriends([]);
         return;
       }
@@ -65,10 +67,20 @@ export default function useFriendsPresence({
             const lobbyCapacity = Number.isFinite(Number(meta.lobbyCapacity))
               ? Number(meta.lobbyCapacity)
               : null;
+            const activityValue =
+              typeof meta.activity === 'string'
+                ? meta.activity.trim().toLowerCase()
+                : '';
+            const activity = lobby
+              ? 'lobby'
+              : activityValue === 'quiz'
+              ? 'quiz'
+              : 'online';
             next.push({
               code,
               username: meta.username ?? t('Freund:in'),
               title: meta.title ?? null,
+              activity,
               lobby,
               lobbyPlayers,
               lobbyCapacity,
@@ -94,6 +106,7 @@ export default function useFriendsPresence({
               code: friendCode,
               username: userName || 'MedBattle',
               title: userTitle ?? null,
+              activity: 'online',
               lobby: null,
               lobbyPlayers: null,
               lobbyCapacity: null,
@@ -113,7 +126,7 @@ export default function useFriendsPresence({
         presenceChannelRef.current = null;
       }
     };
-  }, [friendCode, friends, userId, userName, userTitle, t]);
+  }, [friendCode, friends, isFocused, userId, userName, userTitle, t]);
 
   return { onlineFriends, loadingOnline };
 }

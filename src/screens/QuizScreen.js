@@ -10,11 +10,13 @@ import BoostRow from './quiz/BoostRow';
 import TimeoutBanner from './quiz/TimeoutBanner';
 import ExitConfirmModal from './quiz/ExitConfirmModal';
 import useQuizController from './quiz/useQuizController';
+import useQuizPresence from './quiz/useQuizPresence';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { useTranslation } from '../i18n/useTranslation';
 
 export default function QuizScreen({ navigation, route }) {
   const { t } = useTranslation();
+  useQuizPresence();
   const { isOnline, isChecking, checkOnline } = useConnectivity();
   const isOffline = isOnline === false;
   const {
@@ -175,7 +177,7 @@ export default function QuizScreen({ navigation, route }) {
         activeIndex={activeIndex}
         totalQuestions={totalQuestions}
         question={currentQuestion.question}
-        showProgress={!isMultiplayer}
+        showProgress
       />
 
       {boostItems.length ? <BoostRow items={boostItems} /> : null}

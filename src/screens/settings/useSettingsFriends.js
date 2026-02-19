@@ -4,8 +4,10 @@ import * as Clipboard from 'expo-clipboard';
 import {
   addFriend,
   fetchFriends,
+  fetchFriendRequests,
   migrateLocalFriends,
   removeFriend,
+  respondFriendRequest,
 } from '../../services/friendsService';
 import { formatUserError } from '../../utils/formatUserError';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -22,24 +24,39 @@ export default function useSettingsFriends({
   userTitle,
 }) {
   const { t } = useTranslation();
-  const [friendCodeInput, setFriendCodeInput] = useState('');
+  const [friendCodeInput, setFriendCodeInputState] = useState('');
   const [friends, setFriends] = useState([]);
   const [loadingFriends, setLoadingFriends] = useState(true);
+  const [friendRequests, setFriendRequests] = useState([]);
+  const [loadingFriendRequests, setLoadingFriendRequests] = useState(true);
+  const [respondingFriendRequestId, setRespondingFriendRequestId] = useState(null);
   const [addingFriend, setAddingFriend] = useState(false);
   const [friendsFeedback, setFriendsFeedback] = useState(null);
+  const [sentFriendRequestCode, setSentFriendRequestCode] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
   const [friendsMigrated, setFriendsMigrated] = useState(false);
+  const normalizedFriendCodeInput = friendCodeInput
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase();
+  const friendRequestSent =
+    Boolean(sentFriendRequestCode) &&
+    normalizedFriendCodeInput === sentFriendRequestCode;
 
   const loadFriends = useCallback(
-    async (currentUserId) => {
+    async (currentUserId, options = {}) => {
+      const { silent = false } = options;
       if (!currentUserId) {
         setFriends([]);
-        setLoadingFriends(false);
+        if (!silent) {
+          setLoadingFriends(false);
+        }
         return;
       }
 
-      setLoadingFriends(true);
-      setFriendsFeedback(null);
+      if (!silent) {
+        setLoadingFriends(true);
+        setFriendsFeedback(null);
+      }
 
       try {
         const list = await fetchFriends(currentUserId);
@@ -52,10 +69,46 @@ export default function useSettingsFriends({
           })
         );
       } finally {
-        setLoadingFriends(false);
+        if (!silent) {
+          setLoadingFriends(false);
+        }
       }
     },
-    []
+    [t]
+  );
+
+  const loadFriendRequests = useCallback(
+    async (currentUserId, options = {}) => {
+      const { silent = false } = options;
+      if (!currentUserId) {
+        setFriendRequests([]);
+        if (!silent) {
+          setLoadingFriendRequests(false);
+        }
+        return;
+      }
+
+      if (!silent) {
+        setLoadingFriendRequests(true);
+      }
+
+      try {
+        const list = await fetchFriendRequests(currentUserId);
+        setFriendRequests(Array.isArray(list) ? list : []);
+      } catch (err) {
+        setFriendsFeedback(
+          formatUserError(err, {
+            supabaseUrl: SUPABASE_URL_HINT,
+            fallback: t('Freundesanfragen konnten nicht geladen werden.'),
+          })
+        );
+      } finally {
+        if (!silent) {
+          setLoadingFriendRequests(false);
+        }
+      }
+    },
+    [t]
   );
 
   useEffect(() => {
@@ -71,6 +124,8 @@ export default function useSettingsFriends({
       if (!userId) {
         setFriends([]);
         setLoadingFriends(false);
+        setFriendRequests([]);
+        setLoadingFriendRequests(false);
         return;
       }
 
@@ -89,7 +144,10 @@ export default function useSettingsFriends({
       }
 
       if (active) {
-        loadFriends(userId);
+        await Promise.all([
+          loadFriends(userId),
+          loadFriendRequests(userId),
+        ]);
       }
     }
 
@@ -98,14 +156,41 @@ export default function useSettingsFriends({
     return () => {
       active = false;
     };
-  }, [authUserId, friendsMigrated, loadFriends, localGuestId, userId]);
+  }, [authUserId, friendsMigrated, loadFriendRequests, loadFriends, localGuestId, userId]);
 
   useFocusEffect(
     useCallback(() => {
-      if (userId) {
-        loadFriends(userId);
+      if (!userId) {
+        return undefined;
       }
-    }, [loadFriends, userId])
+
+      const refresh = (silent = false) => {
+        loadFriends(userId, { silent });
+        loadFriendRequests(userId, { silent });
+      };
+
+      refresh(false);
+      const intervalId = setInterval(() => {
+        refresh(true);
+      }, 12000);
+
+      return () => {
+        clearInterval(intervalId);
+      };
+    }, [loadFriendRequests, loadFriends, userId])
+  );
+
+  const handleFriendCodeInputChange = useCallback(
+    (value) => {
+      setFriendCodeInputState(value);
+      const normalized = String(value ?? '')
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .toUpperCase();
+      if (!normalized || normalized !== sentFriendRequestCode) {
+        setSentFriendRequestCode('');
+      }
+    },
+    [sentFriendRequestCode]
   );
 
   const handleAddFriend = useCallback(async () => {
@@ -118,7 +203,7 @@ export default function useSettingsFriends({
       return;
     }
 
-    const normalizedCode = friendCodeInput.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    const normalizedCode = normalizedFriendCodeInput;
 
     if (!normalizedCode) {
       setFriendsFeedback(t('Bitte einen gültigen Code eingeben.'));
@@ -151,9 +236,17 @@ export default function useSettingsFriends({
         setFriends((prev) => [...prev, result.friend]);
       }
 
-      setFriendCodeInput('');
-      setFriendsFeedback(t('Freund wurde hinzugefügt.'));
+      if (result.pending) {
+        setSentFriendRequestCode(normalizedCode);
+        setFriendCodeInputState(normalizedCode);
+        setFriendsFeedback(t('Freundesanfrage gesendet.'));
+      } else {
+        setSentFriendRequestCode('');
+        setFriendCodeInputState('');
+        setFriendsFeedback(t('Freund wurde hinzugefügt.'));
+      }
     } catch (err) {
+      setSentFriendRequestCode('');
       setFriendsFeedback(
         formatUserError(err, {
           supabaseUrl: SUPABASE_URL_HINT,
@@ -163,7 +256,57 @@ export default function useSettingsFriends({
     } finally {
       setAddingFriend(false);
     }
-  }, [addingFriend, friendCode, friendCodeInput, friends, userId]);
+  }, [addingFriend, friendCode, friends, normalizedFriendCodeInput, t, userId]);
+
+  const handleRespondToFriendRequest = useCallback(async (requestId, action = 'accept') => {
+    if (!userId || !requestId || respondingFriendRequestId) {
+      return;
+    }
+
+    setRespondingFriendRequestId(requestId);
+    setFriendsFeedback(null);
+
+    try {
+      const result = await respondFriendRequest(userId, requestId, action);
+
+      if (!result?.ok) {
+        throw result?.error ?? new Error(t('Freundesanfrage konnte nicht verarbeitet werden.'));
+      }
+
+      if (Array.isArray(result.requests)) {
+        setFriendRequests(result.requests);
+      } else {
+        setFriendRequests((prev) => prev.filter((item) => item.id !== requestId));
+      }
+
+      if (action === 'accept') {
+        await Promise.all([
+          loadFriends(userId, { silent: true }),
+          loadFriendRequests(userId, { silent: true }),
+        ]);
+        setFriendsFeedback(t('Freund wurde hinzugefügt.'));
+      }
+    } catch (err) {
+      setFriendsFeedback(
+        formatUserError(err, {
+          supabaseUrl: SUPABASE_URL_HINT,
+          fallback: t('Freundesanfrage konnte nicht verarbeitet werden.'),
+        })
+      );
+    } finally {
+      setRespondingFriendRequestId(null);
+    }
+  }, [
+    loadFriendRequests,
+    loadFriends,
+    respondingFriendRequestId,
+    t,
+    userId,
+  ]);
+
+  const handleAcceptFriendRequest = useCallback((requestId) => {
+    handleRespondToFriendRequest(requestId, 'accept');
+  }, [handleRespondToFriendRequest]);
 
   const handleRemoveFriend = useCallback(async (friend) => {
     if (!userId || !friend) {
@@ -192,7 +335,7 @@ export default function useSettingsFriends({
         })
       );
     }
-  }, [userId]);
+  }, [t, userId]);
 
   const handleCopyFriendCode = useCallback(async () => {
     if (!friendCode) {
@@ -217,15 +360,20 @@ export default function useSettingsFriends({
 
   return {
     friendCodeInput,
-    setFriendCodeInput,
+    setFriendCodeInput: handleFriendCodeInputChange,
     onAddFriend: handleAddFriend,
     addingFriend,
     friends,
     loadingFriends,
+    friendRequests,
+    loadingFriendRequests,
+    respondingFriendRequestId,
+    onAcceptFriendRequest: handleAcceptFriendRequest,
     onlineFriends,
     loadingOnline,
     onRemoveFriend: handleRemoveFriend,
     friendsFeedback,
+    friendRequestSent,
     friendCode,
     copySuccess,
     handleCopyFriendCode,

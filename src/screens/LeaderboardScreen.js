@@ -40,13 +40,18 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
-  const currentAvatarSource = useMemo(() => {
-    if (avatarUri) {
-      return { uri: avatarUri };
-    }
-    const entry = AVATARS.find((item) => item.id === avatarId);
-    return entry?.source ?? null;
-  }, [avatarId, avatarUri]);
+  const currentAvatarEntry = useMemo(
+    () => AVATARS.find((item) => item.id === avatarId) ?? AVATARS[0],
+    [avatarId]
+  );
+  const currentAvatarSource = useMemo(
+    () => (avatarUri ? { uri: avatarUri } : currentAvatarEntry?.source ?? null),
+    [avatarUri, currentAvatarEntry?.source]
+  );
+  const currentAvatarIcon = useMemo(
+    () => (!avatarUri ? currentAvatarEntry?.icon ?? null : null),
+    [avatarUri, currentAvatarEntry?.icon]
+  );
 
   const loadLeaderboard = useCallback(
     async (options = {}) => {
@@ -133,6 +138,7 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
       : item.avatarUrl
       ? { uri: item.avatarUrl }
       : null;
+    const avatarIcon = isCurrent && !avatarSource ? currentAvatarIcon : null;
 
     return (
       <View
@@ -148,6 +154,12 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
         <View style={styles.entryAvatar}>
           {avatarSource ? (
             <Image source={avatarSource} style={styles.entryAvatarImage} resizeMode="cover" />
+          ) : avatarIcon ? (
+            <Ionicons
+              name={avatarIcon}
+              size={20}
+              color={currentAvatarEntry?.color ?? '#9EDCFF'}
+            />
           ) : (
             <Text style={styles.entryAvatarText}>{initials}</Text>
           )}

@@ -37,6 +37,7 @@ export default function useQuizController({ navigation, route }) {
   const [hiddenOptions, setHiddenOptions] = useState([]);
   const [usedBoosts, setUsedBoosts] = useState({});
   const [isTimerFrozen, setIsTimerFrozen] = useState(false);
+  const freezeActiveRef = useRef(false);
   const freezeTimeoutRef = useRef(null);
   const questionIdRef = useRef(null);
   const matchActiveRef = useRef(true);
@@ -514,6 +515,7 @@ export default function useQuizController({ navigation, route }) {
     }
 
     setUsedBoosts((prev) => ({ ...prev, freeze_time: true }));
+    freezeActiveRef.current = true;
     setIsTimerFrozen(true);
     stopTimer();
     clearFreezeTimeout();
@@ -521,6 +523,7 @@ export default function useQuizController({ navigation, route }) {
     const activeKey = questionIdRef.current;
     freezeTimeoutRef.current = setTimeout(() => {
       freezeTimeoutRef.current = null;
+      freezeActiveRef.current = false;
       setIsTimerFrozen(false);
       if (!matchActiveRef.current || exitConfirmRef.current) {
         return;
@@ -588,12 +591,14 @@ export default function useQuizController({ navigation, route }) {
   useEffect(() => {
     setHiddenOptions([]);
     setUsedBoosts({});
+    freezeActiveRef.current = false;
     setIsTimerFrozen(false);
     clearFreezeTimeout();
   }, [clearFreezeTimeout, currentQuestion?.id]);
 
   useEffect(() => {
     if (isAnswerLocked) {
+      freezeActiveRef.current = false;
       clearFreezeTimeout();
       setIsTimerFrozen(false);
     }
@@ -614,6 +619,7 @@ export default function useQuizController({ navigation, route }) {
     resetQuestionState();
     setHiddenOptions([]);
     setUsedBoosts({});
+    freezeActiveRef.current = false;
     setIsTimerFrozen(false);
     clearFreezeTimeout();
   }, [
@@ -652,6 +658,18 @@ export default function useQuizController({ navigation, route }) {
   }, [answer]);
 
   useEffect(() => {
+    const questionKey = currentQuestion?.id ?? `${activeIndex}`;
+    const keepLocalFreeze =
+      freezeActiveRef.current &&
+      questionIdRef.current === questionKey &&
+      matchIsActive &&
+      !showExitConfirm;
+
+    if (keepLocalFreeze) {
+      // Freeze boost bleibt strikt lokal und darf durch Match-Updates nicht neu gestartet werden.
+      return;
+    }
+
     if (!currentQuestion || !matchIsActive || showExitConfirm) {
       stopTimer();
       return;
@@ -659,7 +677,7 @@ export default function useQuizController({ navigation, route }) {
 
     setTimedOut(false);
     resetTimer();
-  }, [currentQuestion?.id, matchIsActive, resetTimer, showExitConfirm, stopTimer]);
+  }, [activeIndex, currentQuestion?.id, matchIsActive, resetTimer, showExitConfirm, stopTimer]);
 
   useEffect(() => {
     return () => {

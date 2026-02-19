@@ -20,8 +20,8 @@ import { useConnectivity } from '../context/ConnectivityContext';
 import { usePreferences } from '../context/PreferencesContext';
 import {
   DOUBLE_XP_DURATION_MS,
-  MAX_ENERGY,
   MAX_ENERGY_CAP_BONUS,
+  NEW_ACCOUNT_MAX_ENERGY,
 } from '../context/preferences/constants';
 import useSupabaseUserId from '../hooks/useSupabaseUserId';
 import { getInAppPurchases } from '../lib/inAppPurchases';
@@ -148,9 +148,6 @@ const getCoinIconCount = (amount) => {
   return 4;
 };
 
-const DAILY_GIFT_ICON = {
-  uri: 'https://cdn-icons-png.flaticon.com/512/10920/10920490.png',
-};
 const PURCHASE_SPIN_ROTATIONS_PER_SECOND = 8;
 const PURCHASE_SPIN_CYCLE_MS = 4000;
 const PURCHASE_SPIN_ROTATIONS_PER_CYCLE =
@@ -196,6 +193,7 @@ export default function ShopScreen() {
   const userId = useSupabaseUserId();
   const {
     userStats,
+    energyBase,
     energy,
     energyMax,
     addEnergy,
@@ -222,7 +220,11 @@ export default function ShopScreen() {
   const purchaseButtonSpin = useRef(new Animated.Value(0)).current;
   const coinsAvailable = sanitizeStatNumber(userStats?.coins);
   const coinsLabel = formatThousands(coinsAvailable);
-  const maxEnergyLimit = MAX_ENERGY + MAX_ENERGY_CAP_BONUS;
+  const resolvedEnergyBase =
+    Number.isFinite(energyBase) && energyBase > 0
+      ? energyBase
+      : NEW_ACCOUNT_MAX_ENERGY;
+  const maxEnergyLimit = resolvedEnergyBase + MAX_ENERGY_CAP_BONUS;
   const remainingCap = Math.max(0, maxEnergyLimit - energyMax);
   const resolvedEnergy = Number.isFinite(energy) ? energy : 0;
   const resolvedEnergyMax =
@@ -700,7 +702,6 @@ export default function ShopScreen() {
             id: 'daily-coins',
             title: t(`5 ${COIN_EMOJI}`),
             priceLabel: t('Gratis'),
-            image: DAILY_GIFT_ICON,
             icon: 'gift',
             accent: colors.accentGreen,
             kind: 'daily',

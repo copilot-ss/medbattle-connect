@@ -5,7 +5,6 @@ import styles from '../styles/MultiplayerLobbyScreen.styles';
 import { getInitials } from './lobbyUtils';
 
 const SHARE_ANIM = require('../../../assets/animations/share_6172544.gif');
-const HOST_BADGE_ICON = require('../../../assets/icons_profile/caduceus_1839855.png');
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function LobbyParticipantsCard({
@@ -45,7 +44,8 @@ export default function LobbyParticipantsCard({
 
       <View style={styles.participantGrid}>
         {participants.map((participant) => {
-          const canKick = isHostWaiting && participant.key === 'guest';
+          const canKick =
+            isHostWaiting && participant.key === 'guest' && !participant.isPending;
           const isSelected = kickCandidateKey === participant.key;
           return (
             <View key={participant.key} style={styles.participantSlot}>
@@ -61,16 +61,25 @@ export default function LobbyParticipantsCard({
                   style={[
                     styles.participantAvatar,
                     participant.isPlaceholder ? styles.participantAvatarGhost : null,
+                    participant.isPending ? styles.participantAvatarPending : null,
                     canKick && isSelected ? styles.participantAvatarKick : null,
                   ]}
                 >
                   {participant.role === 'Host' && !participant.isPlaceholder ? (
-                    <Image source={HOST_BADGE_ICON} style={styles.hostBadge} />
+                    <View style={styles.hostBadge}>
+                      <Ionicons name="medkit" size={14} color="#0A0A12" />
+                    </View>
                   ) : null}
                   {participant.avatarSource && !participant.isPlaceholder ? (
                     <Image source={participant.avatarSource} style={styles.participantAvatarImage} />
                   ) : participant.avatarUrl && !participant.isPlaceholder ? (
                     <Image source={{ uri: participant.avatarUrl }} style={styles.participantAvatarImage} />
+                  ) : participant.avatarIcon && !participant.isPlaceholder ? (
+                    <Ionicons
+                      name={participant.avatarIcon}
+                      size={24}
+                      color={participant.avatarColor || '#9EDCFF'}
+                    />
                   ) : (
                     <Text style={styles.participantAvatarText}>
                       {participant.isPlaceholder ? '?' : getInitials(participant.name)}
@@ -81,11 +90,17 @@ export default function LobbyParticipantsCard({
                   style={[
                     styles.participantName,
                     participant.isPlaceholder ? styles.participantPlaceholder : null,
+                    participant.isPending ? styles.participantPending : null,
                   ]}
                   numberOfLines={1}
                 >
                   {participant.name}
                 </Text>
+                {participant.isPending ? (
+                  <Text style={styles.participantPendingLabel}>
+                    {t('Wartet auf Rückkehr')}
+                  </Text>
+                ) : null}
               </Pressable>
               {canKick && isSelected ? (
                 <Pressable

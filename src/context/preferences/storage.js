@@ -10,12 +10,14 @@ import {
   DEFAULT_STREAKS,
   DEFAULT_USER_STATS,
   DEFAULT_LANGUAGE,
+  ENERGY_BASE_STORAGE_KEY,
   ENERGY_TIMESTAMP_KEY,
   ENERGY_VALUE_KEY,
   FRIEND_REQUESTS_STORAGE_KEY,
   LANGUAGE_STORAGE_KEY,
   MAX_ENERGY,
   MAX_ENERGY_CAP_BONUS,
+  NEW_ACCOUNT_MAX_ENERGY,
   OWNED_FRAMES_KEY,
   PUSH_STORAGE_KEY,
   SOUND_STORAGE_KEY,
@@ -38,8 +40,12 @@ export async function loadPreferencesFromStorage() {
   let streakShieldActive = false;
   let doubleXpExpiresAt = null;
   let claimedAchievements = [];
-  let loadedEnergy = MAX_ENERGY;
+  let loadedEnergy = NEW_ACCOUNT_MAX_ENERGY;
   let loadedEnergyTs = Date.now();
+  let resolvedEnergyBase = NEW_ACCOUNT_MAX_ENERGY;
+  let hasStoredUserStats = false;
+  let hasStoredEnergyValue = false;
+  let hasStoredEnergyTimestamp = false;
 
   const [
     storedSound,
@@ -55,6 +61,7 @@ export async function loadPreferencesFromStorage() {
     storedStreakShieldActive,
     storedDoubleXpExpiresAt,
     storedClaimedAchievements,
+    storedEnergyBase,
   ] = await Promise.all([
     AsyncStorage.getItem(SOUND_STORAGE_KEY),
     AsyncStorage.getItem(VIBRATION_STORAGE_KEY),
@@ -69,6 +76,7 @@ export async function loadPreferencesFromStorage() {
     AsyncStorage.getItem(STREAK_SHIELD_ACTIVE_KEY),
     AsyncStorage.getItem(DOUBLE_XP_EXPIRES_KEY),
     AsyncStorage.getItem(ACHIEVEMENTS_STORAGE_KEY),
+    AsyncStorage.getItem(ENERGY_BASE_STORAGE_KEY),
   ]);
 
   await Promise.all([
@@ -84,6 +92,7 @@ export async function loadPreferencesFromStorage() {
     (async () => {
       try {
         const rawStats = await AsyncStorage.getItem(USER_STATS_STORAGE_KEY);
+        hasStoredUserStats = Boolean(rawStats);
         if (rawStats) {
           const parsed = JSON.parse(rawStats);
           nextUserStats = {
@@ -106,10 +115,12 @@ export async function loadPreferencesFromStorage() {
       try {
         const rawEnergy = await AsyncStorage.getItem(ENERGY_VALUE_KEY);
         const rawTs = await AsyncStorage.getItem(ENERGY_TIMESTAMP_KEY);
-        if (rawEnergy) {
+        if (rawEnergy !== null) {
+          hasStoredEnergyValue = true;
           loadedEnergy = sanitizeStatNumber(rawEnergy);
         }
-        if (rawTs) {
+        if (rawTs !== null) {
+          hasStoredEnergyTimestamp = true;
           const parsedTs = parseInt(rawTs, 10);
           if (Number.isFinite(parsedTs)) {
             loadedEnergyTs = parsedTs;
@@ -121,8 +132,30 @@ export async function loadPreferencesFromStorage() {
     })(),
   ]);
 
+  const parsedEnergyBase = parseInt(storedEnergyBase ?? '', 10);
+  if (Number.isFinite(parsedEnergyBase) && parsedEnergyBase > 0) {
+    resolvedEnergyBase = parsedEnergyBase;
+  } else if (hasStoredUserStats || hasStoredEnergyValue || hasStoredEnergyTimestamp) {
+    resolvedEnergyBase = MAX_ENERGY;
+  }
+
+  if (storedEnergyBase === null) {
+    try {
+      await AsyncStorage.setItem(ENERGY_BASE_STORAGE_KEY, String(resolvedEnergyBase));
+    } catch (err) {
+      console.warn('Konnte Energie-Basis nicht speichern:', err);
+    }
+  }
+
+  if (!hasStoredEnergyValue) {
+    loadedEnergy = resolvedEnergyBase;
+  }
+  if (!hasStoredEnergyTimestamp) {
+    loadedEnergyTs = Date.now();
+  }
+
   const energyCapBonus = sanitizeStatNumber(nextUserStats?.energyCapBonus);
-  const maxEnergy = MAX_ENERGY + Math.min(energyCapBonus, MAX_ENERGY_CAP_BONUS);
+  const maxEnergy = resolvedEnergyBase + Math.min(energyCapBonus, MAX_ENERGY_CAP_BONUS);
   const recalc = recalcEnergy(loadedEnergy, loadedEnergyTs, maxEnergy);
 
   const normalizedLanguage =
@@ -185,6 +218,7 @@ export async function loadPreferencesFromStorage() {
     language: normalizedLanguage,
     streaks: nextStreaks,
     userStats: nextUserStats,
+    energyBase: resolvedEnergyBase,
     energy: recalc.energy,
     energyTimestamp: recalc.ts,
     nextEnergyAt: recalc.nextAt,

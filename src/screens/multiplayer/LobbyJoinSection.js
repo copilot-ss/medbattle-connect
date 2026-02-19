@@ -28,6 +28,31 @@ export default function LobbyJoinSection({
 
   return (
     <>
+      <View style={styles.listHeader}>
+        <Text style={styles.listTitle}>{t('Offene Lobbys')}</Text>
+        <Pressable onPress={onRefreshMatches}>
+          <Text style={styles.listRefresh}>{t('Aktualisieren')}</Text>
+        </Pressable>
+      </View>
+
+      {matchesLoading ? (
+        <View style={styles.loadingList}>
+          <ActivityIndicator size="small" color="#60A5FA" />
+          <Text style={styles.loadingListText}>{t('Lade Lobbys ...')}</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={openMatches}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMatch}
+          scrollEnabled={false}
+          contentContainerStyle={
+            openMatches.length ? styles.listContent : styles.listEmpty
+          }
+          ListEmptyComponent={<LobbyEmptyState />}
+        />
+      )}
+
       <View style={styles.joinSection}>
         <Text style={styles.joinLabel}>{t('Match-Code eingeben')}</Text>
         <View style={styles.joinRow}>
@@ -61,31 +86,6 @@ export default function LobbyJoinSection({
           </AnimatedPressable>
         </View>
       </View>
-
-      <View style={styles.listHeader}>
-        <Text style={styles.listTitle}>{t('Offene Lobbys')}</Text>
-        <Pressable onPress={onRefreshMatches}>
-          <Text style={styles.listRefresh}>{t('Aktualisieren')}</Text>
-        </Pressable>
-      </View>
-
-      {matchesLoading ? (
-        <View style={styles.loadingList}>
-          <ActivityIndicator size="small" color="#60A5FA" />
-          <Text style={styles.loadingListText}>{t('Lade Lobbys ...')}</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={openMatches}
-          keyExtractor={(item) => item.id}
-          renderItem={renderMatch}
-          scrollEnabled={false}
-          contentContainerStyle={
-            openMatches.length ? styles.listContent : styles.listEmpty
-          }
-          ListEmptyComponent={<LobbyEmptyState />}
-        />
-      )}
     </>
   );
 }

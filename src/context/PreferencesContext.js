@@ -6,8 +6,8 @@ import {
   DOUBLE_XP_DURATION_MS,
   ENERGY_RECHARGE_MS,
   FRIEND_REQUESTS_STORAGE_KEY,
-  MAX_ENERGY,
   MAX_ENERGY_CAP_BONUS,
+  NEW_ACCOUNT_MAX_ENERGY,
   PUSH_STORAGE_KEY,
   SOUND_STORAGE_KEY,
   STREAK_STORAGE_KEYS,
@@ -59,18 +59,19 @@ export function PreferencesProvider({ children }) {
   const [language, setLanguageState] = useState(DEFAULT_LOCALE);
   const [streaks, setStreaksState] = useState(DEFAULT_STREAKS);
   const [userStats, setUserStatsState] = useState(DEFAULT_USER_STATS);
-  const [energy, setEnergyState] = useState(MAX_ENERGY);
+  const [energyBase, setEnergyBaseState] = useState(NEW_ACCOUNT_MAX_ENERGY);
+  const [energy, setEnergyState] = useState(NEW_ACCOUNT_MAX_ENERGY);
   const [nextEnergyAt, setNextEnergyAt] = useState(null);
   const [loading, setLoading] = useState(true);
   const energyTimestampRef = useRef(Date.now());
   const energyRef = useRef(energy);
-  const energyMaxRef = useRef(MAX_ENERGY);
+  const energyMaxRef = useRef(NEW_ACCOUNT_MAX_ENERGY);
   const energyNotificationRef = useRef(null);
   const energyCapBonus = Math.min(
     sanitizeStatNumber(userStats?.energyCapBonus),
     MAX_ENERGY_CAP_BONUS
   );
-  const energyMax = MAX_ENERGY + energyCapBonus;
+  const energyMax = energyBase + energyCapBonus;
   const locale = useMemo(
     () => (language || DEFAULT_LOCALE).toLowerCase(),
     [language]
@@ -103,6 +104,7 @@ export function PreferencesProvider({ children }) {
         setLocale(loaded.language);
         setStreaksState(loaded.streaks);
         setUserStatsState(loaded.userStats);
+        setEnergyBaseState(loaded.energyBase ?? NEW_ACCOUNT_MAX_ENERGY);
         energyTimestampRef.current = loaded.energyTimestamp;
         setEnergyState(loaded.energy);
         setNextEnergyAt(loaded.nextEnergyAt);
@@ -520,6 +522,7 @@ export function PreferencesProvider({ children }) {
       setStreakValue,
       userStats,
       updateUserStats,
+      energyBase,
       energy,
       energyMax,
       nextEnergyAt,
@@ -536,6 +539,7 @@ export function PreferencesProvider({ children }) {
       refreshEnergy,
       setLanguage,
       loading,
+      energyBase,
       energy,
       energyMax,
       nextEnergyAt,

@@ -13,6 +13,8 @@ export default function useLobbyMatchState({
   difficulty,
   existingMatch,
   isCreateOnly,
+  allowCompletedLobby = false,
+  suppressActiveNavigation = false,
   refreshMatches,
   setMatchesError,
   closingRef,
@@ -46,6 +48,10 @@ export default function useLobbyMatchState({
       return;
     }
 
+    if (suppressActiveNavigation) {
+      return;
+    }
+
     const role = deriveMatchRole(currentMatch, userId);
 
     if (!role) {
@@ -61,7 +67,7 @@ export default function useLobbyMatchState({
         role,
       });
     }
-  }, [currentMatch, difficulty, navigation, userId]);
+  }, [currentMatch, difficulty, navigation, suppressActiveNavigation, userId]);
 
   useEffect(() => {
     if (!currentMatch || currentMatch.status !== 'waiting' || isOffline) {
@@ -136,9 +142,13 @@ export default function useLobbyMatchState({
       return;
     }
 
+    const shouldClearOnCancelled = currentMatch.status === 'cancelled';
+    const shouldClearOnCompleted =
+      currentMatch.status === 'completed' && !allowCompletedLobby;
+
     if (
-      currentMatch.status === 'cancelled' ||
-      currentMatch.status === 'completed'
+      shouldClearOnCancelled ||
+      shouldClearOnCompleted
     ) {
       clearActiveLobby();
       if (subscriptionRef.current) {
@@ -153,14 +163,21 @@ export default function useLobbyMatchState({
       }
 
       if (
-        currentMatch.status === 'cancelled' &&
+        shouldClearOnCancelled &&
         !closingRef?.current &&
         setMatchesError
       ) {
         setMatchesError(new Error('Lobby wurde geschlossen.'));
       }
     }
-  }, [closingRef, currentMatch, isCreateOnly, refreshMatches, setMatchesError]);
+  }, [
+    allowCompletedLobby,
+    closingRef,
+    currentMatch,
+    isCreateOnly,
+    refreshMatches,
+    setMatchesError,
+  ]);
 
   useEffect(() => {
     if (!currentMatch || !userId) {

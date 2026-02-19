@@ -7,7 +7,6 @@ import styles from '../styles/HomeScreen.styles';
 const STREAK_MILESTONES = [7, 30];
 const STREAK_FLAME_ANIMATION = require('../../../assets/animations/streak/flame.gif');
 const STREAK_FLAME_LOW_ANIMATION = require('../../../assets/animations/streak/flame_low.gif');
-const STREAK_SHIELD_ICON = require('../../../assets/icons/flaticon/schild_473701.png');
 const STREAK_GLOW_STOPS = [
   { step: 0, color: '#FFB25C' },
   { step: 3, color: '#FF915C' },
@@ -140,10 +139,10 @@ function StreakCard({
                 shieldDisabled ? styles.streakShieldButtonDisabled : null,
               ]}
             >
-              <Image
-                source={STREAK_SHIELD_ICON}
-                style={styles.streakShieldIcon}
-                resizeMode="contain"
+              <Ionicons
+                name="shield-checkmark"
+                size={12}
+                color={streakShieldActive ? '#0A0A12' : colors.accentWarm}
               />
               <Text
                 style={[

@@ -9,8 +9,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/SettingsScreen.styles';
-
-const STREAK_SHIELD_ICON = require('../../../assets/icons/flaticon/schild_473701.png');
 const XP_BOOST_ICON_COLOR = '#f59e0b';
 
 export default function ProfileSection({
@@ -63,6 +61,7 @@ export default function ProfileSection({
     ? t(titleProgress.current.label)
     : fallbackTitle;
   const avatarImageSource = avatarUri ? { uri: avatarUri } : currentAvatar?.source;
+  const avatarIconName = !avatarUri ? currentAvatar?.icon : null;
   const isCustomSelected = Boolean(avatarUri);
   const resolvedShieldCount = Number.isFinite(streakShieldCount)
     ? Math.max(0, streakShieldCount)
@@ -102,6 +101,12 @@ export default function ProfileSection({
                 source={avatarImageSource}
                 style={styles.avatarImage}
                 resizeMode="cover"
+              />
+            ) : avatarIconName ? (
+              <Ionicons
+                name={avatarIconName}
+                size={30}
+                color={currentAvatar?.color || '#9EDCFF'}
               />
             ) : (
               <Text style={styles.avatarText}>{avatarInitials}</Text>
@@ -147,10 +152,10 @@ export default function ProfileSection({
         <View style={styles.profileInventoryRow}>
           <View style={styles.profileInventoryItem}>
             <View style={styles.profileInventoryIconWrap}>
-              <Image
-                source={STREAK_SHIELD_ICON}
-                style={styles.profileInventoryIcon}
-                resizeMode="contain"
+              <Ionicons
+                name="shield-checkmark"
+                size={16}
+                color="#f59e0b"
               />
             </View>
             <View style={styles.profileInventoryText}>
@@ -325,11 +330,21 @@ export default function ProfileSection({
                   locked ? styles.avatarTileLocked : null,
                 ]}
               >
-                <Image
-                  source={item.source}
-                  style={styles.avatarTileImage}
-                  resizeMode="cover"
-                />
+                {item.source ? (
+                  <Image
+                    source={item.source}
+                    style={styles.avatarTileImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.avatarTileIconWrap}>
+                    <Ionicons
+                      name={item.icon || 'person-outline'}
+                      size={30}
+                      color={item.color || '#9EDCFF'}
+                    />
+                  </View>
+                )}
                 {locked ? (
                   <View style={styles.avatarTileLockBanner}>
                     <Text style={styles.avatarTileLevel}>

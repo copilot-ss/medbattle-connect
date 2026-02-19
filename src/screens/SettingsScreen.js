@@ -216,6 +216,7 @@ export default function SettingsScreen({
           showResetActions={showResetActions}
           isGuest={isGuest}
           authResolved={authResolved}
+          onOpenLegal={(doc) => navigation.navigate('Legal', { doc })}
         />
       ) : null}
     </View>

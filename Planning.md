@@ -4,7 +4,7 @@
 Kostenlose kompetitive Medizin-Quiz-App mit Supabase-Backend, Werbung und Premium-Modus.
 
 ## Architektur
-- React Native (Expo)
+- React Native Expo dev
 - Supabase für Auth, Scores und Fragen
 - State: Zustand / AsyncStorage
 - Screens: Home, Quiz, Result

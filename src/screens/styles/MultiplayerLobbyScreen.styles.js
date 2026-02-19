@@ -35,87 +35,6 @@ const styles = StyleSheet.create({
     paddingBottom: 36,
     gap: 16,
   },
-  createHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  createTitle: {
-    color: colors.textPrimary,
-    fontSize: 28,
-    fontFamily: fonts.bold,
-  },
-  createContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  createSubtitle: {
-    fontSize: 18,
-    color: colors.textSecondary,
-    marginBottom: 18,
-    fontFamily: fonts.regular,
-  },
-  createDifficultyColumn: {
-    width: '100%',
-  },
-  createDifficultyCard: {
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    borderRadius: radii.lg,
-    borderWidth: 2,
-    backgroundColor: colors.surface,
-  },
-  createDifficultySpacing: {
-    marginBottom: 14,
-  },
-  createDifficultyLabel: {
-    fontSize: 18,
-    fontFamily: fonts.bold,
-    marginBottom: 6,
-  },
-  createDifficultyPoints: {
-    color: colors.textMuted,
-    fontSize: 13,
-    fontFamily: fonts.regular,
-  },
-  createQuestionBlock: {
-    width: '100%',
-    marginTop: 18,
-  },
-  createQuestionLabel: {
-    color: colors.textSecondary,
-    fontFamily: fonts.medium,
-    marginBottom: 10,
-  },
-  createSeparator: {
-    width: '100%',
-    borderTopWidth: 1,
-    borderColor: colors.border,
-    marginTop: 26,
-    paddingTop: 26,
-    alignItems: 'center',
-  },
-  createPlayButton: {
-    marginTop: 6,
-    paddingVertical: 14,
-    paddingHorizontal: 76,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    backgroundColor: colors.success,
-    borderColor: colors.success,
-    shadowOpacity: 0.45,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 12,
-  },
-  createPlayButtonText: {
-    color: '#07120F',
-    fontFamily: fonts.bold,
-    fontSize: 20,
-    letterSpacing: 0.2,
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -211,32 +130,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: fonts.regular,
   },
-  configCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 24,
-  },
-  configTitle: {
-    color: colors.textPrimary,
-    fontSize: 18,
-    fontFamily: fonts.bold,
-  },
-  configSection: {
-    marginBottom: 18,
-  },
-  configLabel: {
-    color: colors.textSecondary,
-    fontFamily: fonts.medium,
-    marginBottom: 10,
-  },
-  configValue: {
-    color: colors.textPrimary,
-    fontFamily: fonts.medium,
-    fontSize: 14,
-  },
   difficultyChips: {
     flexDirection: 'row',
     columnGap: 10,
@@ -290,24 +183,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     minWidth: 36,
     textAlign: 'center',
-  },
-  startAction: {
-    marginTop: 6,
-    backgroundColor: colors.success,
-    borderRadius: radii.md,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.success,
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
-  },
-  startActionText: {
-    color: '#07120F',
-    fontSize: 16,
-    fontFamily: fonts.bold,
   },
   lobbyCard: {
     backgroundColor: colors.surface,
@@ -478,10 +353,20 @@ const styles = StyleSheet.create({
     right: -8,
     width: 28,
     height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#57C7FF',
+    borderWidth: 1,
+    borderColor: 'rgba(11, 18, 32, 0.8)',
   },
   participantAvatarGhost: {
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderColor: colors.border,
+  },
+  participantAvatarPending: {
+    backgroundColor: 'rgba(148, 163, 184, 0.18)',
+    borderColor: 'rgba(148, 163, 184, 0.5)',
   },
   participantAvatarText: {
     color: colors.textPrimary,
@@ -501,6 +386,15 @@ const styles = StyleSheet.create({
   },
   participantPlaceholder: {
     color: colors.textMuted,
+  },
+  participantPending: {
+    color: colors.textMuted,
+  },
+  participantPendingLabel: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontFamily: fonts.regular,
+    textAlign: 'center',
   },
   kickButton: {
     flexDirection: 'row',
@@ -582,7 +476,8 @@ const styles = StyleSheet.create({
   actionsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginTop: 20,
+    marginBottom: 12,
   },
   primaryAction: {
     alignSelf: 'center',
