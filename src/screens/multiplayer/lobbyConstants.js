@@ -1,7 +1,7 @@
 export const DIFFICULTY_LABELS = {
-  leicht: 'Leicht',
-  mittel: 'Mittel',
-  schwer: 'Schwer',
+  leicht: 'Kinder',
+  mittel: 'Studenten',
+  schwer: 'Doktor',
 };
 
 export const DIFFICULTY_ACCENTS = {

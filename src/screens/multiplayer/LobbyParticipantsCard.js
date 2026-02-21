@@ -45,7 +45,20 @@ export default function LobbyParticipantsCard({
 
   return (
     <View style={styles.lobbyCard}>
-      <Text style={styles.lobbyTitle}>{t('Lobby')}</Text>
+      <View style={styles.lobbyTitleRow}>
+        <Text style={styles.lobbyTitle}>{t('Lobby')}</Text>
+        {isHostWaiting ? (
+          <Pressable
+            onPress={onOpenSettings}
+            style={styles.lobbySettingsButton}
+            accessibilityRole="button"
+            accessibilityLabel={t('Lobby Einstellungen')}
+            hitSlop={8}
+          >
+            <Ionicons name="settings-outline" size={14} color="#94A3B8" />
+          </Pressable>
+        ) : null}
+      </View>
 
       <View style={styles.participantsHeader}>
         <Text style={styles.participantsTitle}>{t('Spieler')}</Text>
@@ -165,13 +178,6 @@ export default function LobbyParticipantsCard({
               {startingMatch ? t('Starte ...') : t('Start')}
             </Text>
           </AnimatedPressable>
-          <Pressable
-            onPress={onOpenSettings}
-            style={styles.lobbySettingsButton}
-            accessibilityLabel={t('Lobby Einstellungen')}
-          >
-            <Ionicons name="settings-outline" size={18} color="#93C5FD" />
-          </Pressable>
         </View>
       ) : null}
       <LobbyCodeActionsRow

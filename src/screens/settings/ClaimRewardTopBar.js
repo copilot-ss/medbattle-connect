@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Text, View } from 'react-native';
+import { Animated, Easing, Platform, Text, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useTranslation } from '../../i18n/useTranslation';
 import { getTitleLevel } from '../../services/titleService';
@@ -27,6 +27,7 @@ export default function ClaimRewardTopBar({
   onClaimRewardAnimationEnd,
 }) {
   const { t } = useTranslation();
+  const useNativeBlur = Platform.OS !== 'android';
   const [showClaimOverlay, setShowClaimOverlay] = useState(false);
   const [animatedLevel, setAnimatedLevel] = useState(userLevel);
   const [animatedCoins, setAnimatedCoins] = useState(coins);
@@ -211,12 +212,15 @@ export default function ClaimRewardTopBar({
           { opacity: overlayOpacityAnim },
         ]}
       >
-        <BlurView
-          tint="dark"
-          intensity={80}
-          experimentalBlurMethod="dimezisBlurView"
-          style={styles.claimOverlayBlur}
-        />
+        {useNativeBlur ? (
+          <BlurView
+            tint="dark"
+            intensity={80}
+            style={styles.claimOverlayBlur}
+          />
+        ) : (
+          <View style={styles.claimOverlayBlur} />
+        )}
         <View style={styles.claimOverlayDimmer} />
       </Animated.View>
 

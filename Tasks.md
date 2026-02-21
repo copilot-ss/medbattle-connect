@@ -36,6 +36,9 @@
 - Device-Smoke-Test fuer Android Production-Build `75e9ace1-34fc-4560-9d44-a421560aa71c` (AAB, versionCode 19) ausstehend.
 
 ## Erledigt
+- [x] DB: Migration erstellt, die fehlende Frage-Erklaerungen in `questions`/`question_translations` auffuellt und fuer neue Eintraege per Trigger erzwingt.
+- [x] Quiz: Fehlende Frage-Erklaerungen werden im Client automatisch mit Fallback-Text ergaenzt.
+- [x] UI: Schwierigkeitsnamen auf Kinder / Studenten / Doktor umgestellt (statt leicht / mittel / schwer).
 - [x] Release-Build Android (EAS production) erfolgreich: `75e9ace1-34fc-4560-9d44-a421560aa71c` (`FINISHED`, versionCode 19, AAB erstellt).
 - [x] Build-Fix abgeschlossen: veralteten `expo-dev-launcher` Patch entfernt (`patches/expo-dev-launcher+55.0.7.patch`), Dex duplicate `LegacyArchitecture` behoben.
 - [x] Build-Diagnose: Ursache fuer EAS Android Release-Fehler identifiziert (duplicate `LegacyArchitecture` aus `expo-dev-launcher` Patch).

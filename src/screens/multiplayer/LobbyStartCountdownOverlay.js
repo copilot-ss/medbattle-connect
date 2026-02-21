@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { Animated, Easing, Text, View } from 'react-native';
+import { Animated, Easing, Platform, Text, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/MultiplayerLobbyScreen.styles';
@@ -9,6 +9,7 @@ export default function LobbyStartCountdownOverlay({
   countdownValue = 3,
 }) {
   const { t } = useTranslation();
+  const useNativeBlur = Platform.OS !== 'android';
   const textScale = useRef(new Animated.Value(0.75)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -78,12 +79,15 @@ export default function LobbyStartCountdownOverlay({
           { opacity: overlayOpacity },
         ]}
       >
-        <BlurView
-          tint="dark"
-          intensity={75}
-          experimentalBlurMethod="dimezisBlurView"
-          style={styles.startCountdownBlur}
-        />
+        {useNativeBlur ? (
+          <BlurView
+            tint="dark"
+            intensity={75}
+            style={styles.startCountdownBlur}
+          />
+        ) : (
+          <View style={styles.startCountdownBlur} />
+        )}
         <View style={styles.startCountdownDimmer} />
       </Animated.View>
 

@@ -19,6 +19,28 @@ function normalizeDifficulty(value) {
   return 'mittel';
 }
 
+function ensureQuestionExplanation(question) {
+  if (!question || typeof question !== 'object') {
+    return null;
+  }
+
+  const explanation =
+    typeof question.explanation === 'string' ? question.explanation.trim() : '';
+  if (explanation) {
+    return explanation;
+  }
+
+  const correctAnswer =
+    typeof question.correct_answer === 'string'
+      ? question.correct_answer.trim()
+      : '';
+  if (!correctAnswer) {
+    return 'Pruefe die Antwortoptionen und merke dir den Kernpunkt dieser Frage.';
+  }
+
+  return `Richtige Antwort: ${correctAnswer}.`;
+}
+
 function sanitizeQuestionsForMatch(questions) {
   if (!Array.isArray(questions)) {
     return [];
@@ -46,7 +68,7 @@ function sanitizeQuestionsForMatch(questions) {
         id: question.id ?? null,
         question: question.question ?? '',
         correct_answer: question.correct_answer ?? null,
-        explanation: question.explanation ?? null,
+        explanation: ensureQuestionExplanation(question),
         options: uniqueOptions,
       };
     })

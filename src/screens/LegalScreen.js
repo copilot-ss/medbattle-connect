@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import {
   Linking,
   Pressable,
@@ -7,12 +6,10 @@ import {
   Text,
   View,
 } from 'react-native';
-import * as WebBrowser from 'expo-web-browser';
 import { colors, fonts, radii } from '../styles/theme';
 import {
   LEGAL_CONTACT_EMAIL,
   LEGAL_DOCS,
-  LEGAL_EXTERNAL_URLS,
 } from './legal/legalContent';
 
 const SECTION_SPACING = 16;
@@ -104,55 +101,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontSize: 14,
   },
-  footerHint: {
-    color: colors.textMuted,
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 8,
-  },
 });
-
-const resolveUrl = (url) => {
-  if (!url) {
-    return null;
-  }
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url;
-  }
-  return `https://${url}`;
-};
 
 export default function LegalScreen({ navigation, route }) {
   const requestedDoc = route?.params?.doc;
   const docKey = typeof requestedDoc === 'string' ? requestedDoc : 'privacy';
   const legalDoc = LEGAL_DOCS[docKey] || LEGAL_DOCS.privacy;
-  const externalUrl = useMemo(
-    () => resolveUrl(LEGAL_EXTERNAL_URLS[legalDoc.id]),
-    [legalDoc.id]
-  );
-
-  const handleOpenExternal = async () => {
-    if (!externalUrl) {
-      return;
-    }
-
-    try {
-      await WebBrowser.openBrowserAsync(externalUrl, {
-        enableBarCollapsing: true,
-        showInRecents: true,
-      });
-    } catch (error) {
-      try {
-        const supported = await Linking.canOpenURL(externalUrl);
-        if (supported) {
-          await Linking.openURL(externalUrl);
-        }
-      } catch (fallbackError) {
-        console.warn('Legal link konnte nicht geoeffnet werden:', fallbackError);
-      }
-    }
-  };
 
   const handleContact = async () => {
     const mailto = `mailto:${LEGAL_CONTACT_EMAIL}`;
@@ -162,7 +116,7 @@ export default function LegalScreen({ navigation, route }) {
         await Linking.openURL(mailto);
       }
     } catch (error) {
-      console.warn('Kontakt-Mail konnte nicht geoeffnet werden:', error);
+      console.warn('Support email could not be opened:', error);
     }
   };
 
@@ -178,13 +132,13 @@ export default function LegalScreen({ navigation, route }) {
               onPress={() => navigation.goBack()}
               style={styles.backButton}
               accessibilityRole="button"
-              accessibilityLabel="Zurueck"
+              accessibilityLabel="Back"
             >
-              <Text style={styles.backText}>Zurueck</Text>
+              <Text style={styles.backText}>Back</Text>
             </Pressable>
           </View>
           <Text style={styles.title}>{legalDoc.title}</Text>
-          <Text style={styles.meta}>Stand: {legalDoc.updatedAt}</Text>
+          <Text style={styles.meta}>Updated: {legalDoc.updatedAt}</Text>
           <Text style={styles.intro}>{legalDoc.intro}</Text>
         </View>
 
@@ -214,28 +168,13 @@ export default function LegalScreen({ navigation, route }) {
               style={styles.browserButton}
               onPress={handleContact}
               accessibilityRole="button"
-              accessibilityLabel="Support E-Mail"
+              accessibilityLabel="Support email"
             >
-              <Text style={styles.browserButtonText}>Support per E-Mail</Text>
+              <Text style={styles.browserButtonText}>Contact support</Text>
             </Pressable>
-          ) : null}
-
-          {externalUrl ? (
-            <>
-              <Pressable
-                style={styles.browserButton}
-                onPress={handleOpenExternal}
-                accessibilityRole="link"
-                accessibilityLabel="Im Browser oeffnen"
-              >
-                <Text style={styles.browserButtonText}>Im Browser oeffnen</Text>
-              </Pressable>
-              <Text style={styles.footerHint}>{externalUrl}</Text>
-            </>
           ) : null}
         </View>
       </ScrollView>
     </View>
   );
 }
-

@@ -65,7 +65,7 @@ export default function QuizScreen({ navigation, route }) {
       {
         id: 'freeze_time',
         label: t('Zeit einfrieren'),
-        icon: 'time',
+        icon: 'snow',
         count: boostInventory.freeze_time,
         active: Boolean(usedBoosts?.freeze_time) || isTimerFrozen,
         disabled:
@@ -75,9 +75,6 @@ export default function QuizScreen({ navigation, route }) {
     ];
 
     return items.filter((item) => {
-      if (item.id === 'freeze_time') {
-        return item.count > 0 && !item.active;
-      }
       return item.count > 0 || item.active;
     });
   }, [
