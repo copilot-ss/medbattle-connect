@@ -15,12 +15,14 @@ export default function useLobbyMatchState({
   isCreateOnly,
   allowCompletedLobby = false,
   suppressActiveNavigation = false,
+  onMatchActive = null,
   refreshMatches,
   setMatchesError,
   closingRef,
 }) {
   const [currentMatch, setCurrentMatch] = useState(null);
   const subscriptionRef = useRef(null);
+  const handledActiveMatchIdRef = useRef(null);
   const { isOnline } = useConnectivity();
   const isOffline = isOnline === false;
   const lastOnlineRef = useRef(isOnline);
@@ -59,6 +61,23 @@ export default function useLobbyMatchState({
     }
 
     if (currentMatch.status === 'active') {
+      if (handledActiveMatchIdRef.current === currentMatch.id) {
+        return;
+      }
+      handledActiveMatchIdRef.current = currentMatch.id;
+
+      if (typeof onMatchActive === 'function') {
+        try {
+          onMatchActive({
+            match: currentMatch,
+            role,
+          });
+          return;
+        } catch (err) {
+          console.warn('Konnte Match-Start-Callback nicht ausfuehren:', err);
+        }
+      }
+
       navigation.replace('Quiz', {
         difficulty: currentMatch.difficulty ?? difficulty,
         mode: 'multiplayer',
@@ -67,7 +86,14 @@ export default function useLobbyMatchState({
         role,
       });
     }
-  }, [currentMatch, difficulty, navigation, suppressActiveNavigation, userId]);
+  }, [
+    currentMatch,
+    difficulty,
+    navigation,
+    onMatchActive,
+    suppressActiveNavigation,
+    userId,
+  ]);
 
   useEffect(() => {
     if (!currentMatch || currentMatch.status !== 'waiting' || isOffline) {

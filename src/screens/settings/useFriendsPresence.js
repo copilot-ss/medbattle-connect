@@ -8,6 +8,10 @@ export default function useFriendsPresence({
   friendCode,
   userName,
   userTitle,
+  avatarId,
+  avatarUri,
+  avatarIcon,
+  avatarColor,
   friends,
 }) {
   const { t } = useTranslation();
@@ -77,9 +81,26 @@ export default function useFriendsPresence({
               ? 'quiz'
               : 'online';
             next.push({
+              userId: meta.userId ?? null,
               code,
               username: meta.username ?? t('Freund:in'),
               title: meta.title ?? null,
+              avatarId:
+                typeof meta.avatarId === 'string' && meta.avatarId.trim()
+                  ? meta.avatarId.trim()
+                  : null,
+              avatarUri:
+                typeof meta.avatarUri === 'string' && /^https?:\/\//i.test(meta.avatarUri)
+                  ? meta.avatarUri
+                  : null,
+              avatarIcon:
+                typeof meta.avatarIcon === 'string' && meta.avatarIcon.trim()
+                  ? meta.avatarIcon.trim()
+                  : null,
+              avatarColor:
+                typeof meta.avatarColor === 'string' && meta.avatarColor.trim()
+                  ? meta.avatarColor.trim()
+                  : null,
               activity,
               lobby,
               lobbyPlayers,
@@ -107,6 +128,22 @@ export default function useFriendsPresence({
               username: userName || 'MedBattle',
               title: userTitle ?? null,
               activity: 'online',
+              avatarId:
+                typeof avatarId === 'string' && avatarId.trim()
+                  ? avatarId.trim()
+                  : null,
+              avatarUri:
+                typeof avatarUri === 'string' && /^https?:\/\//i.test(avatarUri)
+                  ? avatarUri
+                  : null,
+              avatarIcon:
+                typeof avatarIcon === 'string' && avatarIcon.trim()
+                  ? avatarIcon.trim()
+                  : null,
+              avatarColor:
+                typeof avatarColor === 'string' && avatarColor.trim()
+                  ? avatarColor.trim()
+                  : null,
               lobby: null,
               lobbyPlayers: null,
               lobbyCapacity: null,
@@ -126,7 +163,19 @@ export default function useFriendsPresence({
         presenceChannelRef.current = null;
       }
     };
-  }, [friendCode, friends, isFocused, userId, userName, userTitle, t]);
+  }, [
+    avatarColor,
+    avatarIcon,
+    avatarId,
+    avatarUri,
+    friendCode,
+    friends,
+    isFocused,
+    userId,
+    userName,
+    userTitle,
+    t,
+  ]);
 
   return { onlineFriends, loadingOnline };
 }

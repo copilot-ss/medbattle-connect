@@ -29,6 +29,25 @@ const styles = StyleSheet.create({
   tabBarItem: {
     paddingVertical: 0,
   },
+  tabBarBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#ef4444',
+    color: '#ffffff',
+    fontFamily: fonts.bold,
+    fontSize: 10,
+    lineHeight: 14,
+    textAlignVertical: 'center',
+  },
+  tabBarDotBadge: {
+    minWidth: 10,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#22c55e',
+    top: 4,
+  },
 });
 
 export default styles;

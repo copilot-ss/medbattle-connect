@@ -112,6 +112,18 @@ export function getTitleProgress(xp) {
   };
 }
 
+export function getTitleLevel(xp) {
+  const safeXp = sanitizeNumber(xp);
+  const tiers = TITLE_TIERS.slice().sort((a, b) => a.minXp - b.minXp);
+  const index = tiers.reduce((acc, tier, idx) => {
+    if (tier.minXp <= safeXp) {
+      return idx;
+    }
+    return acc;
+  }, 0);
+  return index + 1;
+}
+
 export function getUnlockedAchievements({
   xp = 0,
   quizzes = 0,

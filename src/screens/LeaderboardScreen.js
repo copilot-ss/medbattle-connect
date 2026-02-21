@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Pressable,
   RefreshControl,
   Text,
@@ -10,15 +9,19 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { supabase } from '../lib/supabaseClient';
+import AvatarView from '../components/avatar/AvatarView';
 import styles from './styles/LeaderboardScreen.styles';
 import { colors } from '../styles/theme';
 import { fetchLeaderboard } from '../services/quizService';
 import { getTitleProgress } from '../services/titleService';
 import { usePreferences } from '../context/PreferencesContext';
-import AVATARS from './settings/avatars';
-import { getInitials } from './result/resultUtils';
+import useSupabaseUserId from '../hooks/useSupabaseUserId';
+import useCurrentAvatar from '../hooks/useCurrentAvatar';
 import { useTranslation } from '../i18n/useTranslation';
+import PublicProfileSheet from '../components/PublicProfileSheet';
+import usePublicProfileSheet from '../hooks/usePublicProfileSheet';
+import { getAvatarInitials, getAvatarPresetSource } from '../utils/avatarUtils';
+import { buildPublicProfilePayload } from '../utils/publicProfile';
 
 function formatUserId(value, t) {
   if (!value) {
@@ -39,19 +42,13 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const [currentUserId, setCurrentUserId] = useState(null);
-  const currentAvatarEntry = useMemo(
-    () => AVATARS.find((item) => item.id === avatarId) ?? AVATARS[0],
-    [avatarId]
-  );
-  const currentAvatarSource = useMemo(
-    () => (avatarUri ? { uri: avatarUri } : currentAvatarEntry?.source ?? null),
-    [avatarUri, currentAvatarEntry?.source]
-  );
-  const currentAvatarIcon = useMemo(
-    () => (!avatarUri ? currentAvatarEntry?.icon ?? null : null),
-    [avatarUri, currentAvatarEntry?.icon]
-  );
+  const currentUserId = useSupabaseUserId();
+  const { openProfile, sheetProps } = usePublicProfileSheet();
+  const {
+    avatarEntry: currentAvatarEntry,
+    avatarSource: currentAvatarSource,
+    avatarIcon: currentAvatarIcon,
+  } = useCurrentAvatar(avatarId);
 
   const loadLeaderboard = useCallback(
     async (options = {}) => {
@@ -84,37 +81,6 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
     loadLeaderboard();
   }, [loadLeaderboard]);
 
-  useEffect(() => {
-    let active = true;
-
-    supabase.auth.getUser().then(({ data, error: userError }) => {
-      if (!active) {
-        return;
-      }
-
-      if (userError) {
-        console.warn('Konnte Nutzer nicht abrufen:', userError.message);
-      }
-
-      setCurrentUserId(data?.user?.id ?? null);
-    });
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (!active) {
-          return;
-        }
-
-        setCurrentUserId(session?.user?.id ?? null);
-      }
-    );
-
-    return () => {
-      active = false;
-      authListener?.subscription?.unsubscribe();
-    };
-  }, []);
-
   const refresh = useCallback(() => {
     loadLeaderboard({ force: true });
   }, [loadLeaderboard]);
@@ -132,16 +98,39 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
       ? item.username
       : formatUserId(item.userId, t);
     const displayName = isCurrent ? `${name} (${t('Du')})` : name;
-    const initials = getInitials(name);
+    const initials = getAvatarInitials(name);
+    const avatarUriValue = isCurrent ? avatarUri : item.avatarUrl;
     const avatarSource = isCurrent
       ? currentAvatarSource
-      : item.avatarUrl
-      ? { uri: item.avatarUrl }
-      : null;
-    const avatarIcon = isCurrent && !avatarSource ? currentAvatarIcon : null;
+      : getAvatarPresetSource(item.avatarIcon);
+    const avatarIcon = isCurrent
+      ? currentAvatarIcon
+      : item.avatarIcon ?? null;
+    const avatarColor = isCurrent
+      ? (currentAvatarEntry?.color ?? '#9EDCFF')
+      : (item.avatarColor ?? '#9EDCFF');
 
     return (
-      <View
+      <Pressable
+        onPress={
+          isCurrent
+            ? undefined
+            : () =>
+                openProfile(buildPublicProfilePayload({
+                  userId: item.userId ?? null,
+                  name,
+                  username: item.username ?? null,
+                  title,
+                  xp: item.xp,
+                  rank: index + 1,
+                  points: item.points,
+                  avatarUrl: item.avatarUrl ?? null,
+                  avatarIcon: item.avatarIcon ?? null,
+                  avatarColor: item.avatarColor ?? null,
+                  statusLabel: 'Rangliste',
+                }))
+        }
+        disabled={isCurrent}
         style={[
           styles.entry,
           {
@@ -151,19 +140,17 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
         ]}
       >
         <Text style={[styles.entryRank, { color: accent }]}>{index + 1}.</Text>
-        <View style={styles.entryAvatar}>
-          {avatarSource ? (
-            <Image source={avatarSource} style={styles.entryAvatarImage} resizeMode="cover" />
-          ) : avatarIcon ? (
-            <Ionicons
-              name={avatarIcon}
-              size={20}
-              color={currentAvatarEntry?.color ?? '#9EDCFF'}
-            />
-          ) : (
-            <Text style={styles.entryAvatarText}>{initials}</Text>
-          )}
-        </View>
+        <AvatarView
+          uri={avatarUriValue}
+          source={avatarSource}
+          icon={avatarIcon}
+          color={avatarColor}
+          initials={initials}
+          circleStyle={styles.entryAvatar}
+          imageStyle={styles.entryAvatarImage}
+          iconSize={20}
+          textStyle={styles.entryAvatarText}
+        />
         <View style={styles.entryMeta}>
           <Text style={styles.entryName}>{displayName}</Text>
           <Text style={styles.entryTitle}>{t('Titel')}: {title}</Text>
@@ -172,7 +159,7 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
           <Text style={styles.entryScore}>{item.points}</Text>
           <Text style={styles.entryScoreLabel}>{t('Punkte')}</Text>
         </View>
-      </View>
+      </Pressable>
     );
   }
 
@@ -234,6 +221,10 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
           style={styles.list}
         />
       )}
+
+      <PublicProfileSheet
+        {...sheetProps}
+      />
     </View>
   );
 }

@@ -1,6 +1,7 @@
-import { Image, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
+import AvatarView from '../../components/avatar/AvatarView';
 import styles from '../styles/HomeScreen.styles';
 
 export default function HomeHeader({
@@ -26,8 +27,6 @@ export default function HomeHeader({
     : `${resolvedEnergy}`;
   const safeProgress = Number.isFinite(progress) ? Math.min(Math.max(progress, 0), 1) : 0;
   const progressWidth = `${Math.round(safeProgress * 100)}%`;
-  const avatarImageSource = avatarUri ? { uri: avatarUri } : avatarSource;
-
   return (
     <View style={styles.header}>
       <Pressable
@@ -41,35 +40,25 @@ export default function HomeHeader({
         accessibilityRole="button"
         accessibilityLabel={t('Profil')}
       >
-        <View
-          style={[
+        <AvatarView
+          uri={avatarUri}
+          source={avatarSource}
+          icon={avatarIcon}
+          color={avatarColor}
+          initials={avatarInitials}
+          frameStyle={[
             styles.profileAvatarFrame,
             avatarColor ? { borderColor: avatarColor } : null,
           ]}
-        >
-          <View
-            style={[
-              styles.profileAvatarCircle,
-              avatarColor ? { backgroundColor: `${avatarColor}33` } : null,
-            ]}
-          >
-            {avatarImageSource ? (
-              <Image
-                source={avatarImageSource}
-                style={styles.profileAvatarImage}
-                resizeMode="cover"
-              />
-            ) : avatarIcon ? (
-              <Ionicons
-                name={avatarIcon}
-                size={18}
-                color={avatarColor || '#CBEAFF'}
-              />
-            ) : (
-              <Text style={styles.profileAvatarInitials}>{avatarInitials}</Text>
-            )}
-          </View>
-        </View>
+          circleStyle={[
+            styles.profileAvatarCircle,
+            avatarColor ? { backgroundColor: `${avatarColor}33` } : null,
+          ]}
+          imageStyle={styles.profileAvatarImage}
+          iconSize={18}
+          iconColor={avatarColor || '#CBEAFF'}
+          textStyle={styles.profileAvatarInitials}
+        />
         <View style={styles.profileProgressBlock}>
           <Text style={styles.profileLevelText}>
             {t('Level {level}', { level })}

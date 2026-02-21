@@ -1,6 +1,5 @@
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   Text,
   TextInput,
@@ -8,6 +7,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
+import AvatarView from '../../components/avatar/AvatarView';
 import styles from '../styles/SettingsScreen.styles';
 const XP_BOOST_ICON_COLOR = '#f59e0b';
 
@@ -18,13 +18,8 @@ export default function ProfileSection({
   levelBadgeHeat,
   avatarInitials,
   currentAvatar,
-  avatarId,
   avatarUri,
-  avatars,
-  showAvatarPicker,
-  onToggleAvatarPicker,
-  onSelectAvatar,
-  onPickAvatarPhoto,
+  onEditAvatar,
   quizzesCompleted = 0,
   accuracyPercent = 0,
   xp = 0,
@@ -60,9 +55,6 @@ export default function ProfileSection({
   const resolvedTitle = titleProgress?.current?.label
     ? t(titleProgress.current.label)
     : fallbackTitle;
-  const avatarImageSource = avatarUri ? { uri: avatarUri } : currentAvatar?.source;
-  const avatarIconName = !avatarUri ? currentAvatar?.icon : null;
-  const isCustomSelected = Boolean(avatarUri);
   const resolvedShieldCount = Number.isFinite(streakShieldCount)
     ? Math.max(0, streakShieldCount)
     : 0;
@@ -82,7 +74,7 @@ export default function ProfileSection({
     <View style={[styles.card, styles.profileCard]}>
       <View style={[styles.profileRow, styles.profileRowNoTitle]}>
         <Pressable
-          onPress={onToggleAvatarPicker}
+          onPress={onEditAvatar}
           style={[
             styles.avatarFrame,
             currentAvatar?.color
@@ -90,28 +82,21 @@ export default function ProfileSection({
               : null,
           ]}
         >
-          <View
-            style={[
+          <AvatarView
+            uri={avatarUri}
+            source={currentAvatar?.source ?? null}
+            icon={currentAvatar?.icon ?? null}
+            color={currentAvatar?.color ?? null}
+            initials={avatarInitials}
+            circleStyle={[
               styles.avatarCircle,
               currentAvatar?.color ? { backgroundColor: `${currentAvatar.color}30` } : null,
             ]}
-          >
-            {avatarImageSource ? (
-              <Image
-                source={avatarImageSource}
-                style={styles.avatarImage}
-                resizeMode="cover"
-              />
-            ) : avatarIconName ? (
-              <Ionicons
-                name={avatarIconName}
-                size={30}
-                color={currentAvatar?.color || '#9EDCFF'}
-              />
-            ) : (
-              <Text style={styles.avatarText}>{avatarInitials}</Text>
-            )}
-          </View>
+            imageStyle={styles.avatarImage}
+            iconSize={30}
+            iconColor={currentAvatar?.color || '#9EDCFF'}
+            textStyle={styles.avatarText}
+          />
         </Pressable>
         <View style={styles.profileInfo}>
           <Text style={styles.profileName}>{userName}</Text>
@@ -289,74 +274,6 @@ export default function ProfileSection({
           })}
         </View>
       </View>
-
-      {showAvatarPicker ? (
-        <View style={styles.avatarGrid}>
-          <Pressable
-            onPress={onPickAvatarPhoto}
-            style={[
-              styles.avatarTile,
-              styles.avatarTileCustom,
-              isCustomSelected ? styles.avatarTileSelected : null,
-            ]}
-            accessibilityLabel={t('Foto aus Galerie')}
-          >
-            {avatarUri ? (
-              <Image
-                source={{ uri: avatarUri }}
-                style={styles.avatarTileImage}
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={styles.avatarTilePlaceholder}>
-                <Ionicons name="image" size={22} color="#93C5FD" />
-                <Text style={styles.avatarTilePlaceholderText}>{t('Foto')}</Text>
-              </View>
-            )}
-          </Pressable>
-          {avatars.map((item) => {
-            const locked = userLevel < item.level;
-            const selected =
-              !avatarUri && (avatarId === item.id || (!avatarId && item.id === currentAvatar?.id));
-            return (
-              <Pressable
-                key={item.id}
-                onPress={() => onSelectAvatar(item)}
-                disabled={locked}
-                style={[
-                  styles.avatarTile,
-                  { borderColor: locked ? 'rgba(148,163,184,0.35)' : item.color },
-                  selected ? styles.avatarTileSelected : null,
-                  locked ? styles.avatarTileLocked : null,
-                ]}
-              >
-                {item.source ? (
-                  <Image
-                    source={item.source}
-                    style={styles.avatarTileImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={styles.avatarTileIconWrap}>
-                    <Ionicons
-                      name={item.icon || 'person-outline'}
-                      size={30}
-                      color={item.color || '#9EDCFF'}
-                    />
-                  </View>
-                )}
-                {locked ? (
-                  <View style={styles.avatarTileLockBanner}>
-                    <Text style={styles.avatarTileLevel}>
-                      {t('Level {level}', { level: item.level })}
-                    </Text>
-                  </View>
-                ) : null}
-              </Pressable>
-            );
-          })}
-        </View>
-      ) : null}
 
       {showEmailActions ? (
         <View style={styles.fieldGroup}>

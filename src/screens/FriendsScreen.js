@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { RefreshControl, ScrollView, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import FriendsSection from './settings/FriendsSection';
 import FriendsAddSheet from './settings/FriendsAddSheet';
@@ -7,10 +7,13 @@ import SettingsHeader from './settings/SettingsHeader';
 import useSettingsController from './settings/useSettingsController';
 import styles from './styles/SettingsScreen.styles';
 import { useTranslation } from '../i18n/useTranslation';
+import PublicProfileSheet from '../components/PublicProfileSheet';
+import usePublicProfileSheet from '../hooks/usePublicProfileSheet';
 
 export default function FriendsScreen({ navigation, route, showClose = true }) {
   const { t } = useTranslation();
   const [showAddSheet, setShowAddSheet] = useState(false);
+  const { openProfile, sheetProps } = usePublicProfileSheet();
   const {
     scrollRef,
     friendCode,
@@ -27,11 +30,14 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
     loadingFriendRequests,
     respondingFriendRequestId,
     onAcceptFriendRequest,
+    onDeclineFriendRequest,
     onlineFriends,
-    loadingOnline,
     onRemoveFriend,
     friendsFeedback,
+    clearFriendsFeedback,
     friendRequestSent,
+    refreshingFriends,
+    onRefreshFriends,
   } = useSettingsController({ navigation, route });
 
   useFocusEffect(
@@ -41,13 +47,15 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
   );
 
   const handleOpenAdd = useCallback(() => {
+    clearFriendsFeedback?.();
     setShowAddSheet(true);
-  }, []);
+  }, [clearFriendsFeedback]);
 
   const handleCloseAdd = useCallback(() => {
     setShowAddSheet(false);
     setFriendCodeInput('');
-  }, [setFriendCodeInput]);
+    clearFriendsFeedback?.();
+  }, [clearFriendsFeedback, setFriendCodeInput]);
 
   useEffect(() => {
     if (!showAddSheet || !friendRequestSent || addingFriend) {
@@ -56,9 +64,16 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
     const timer = setTimeout(() => {
       setShowAddSheet(false);
       setFriendCodeInput('');
+      clearFriendsFeedback?.();
     }, 220);
     return () => clearTimeout(timer);
-  }, [addingFriend, friendRequestSent, setFriendCodeInput, showAddSheet]);
+  }, [
+    addingFriend,
+    clearFriendsFeedback,
+    friendRequestSent,
+    setFriendCodeInput,
+    showAddSheet,
+  ]);
 
   return (
     <View style={styles.container}>
@@ -74,6 +89,14 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
         ref={scrollRef}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={(
+          <RefreshControl
+            refreshing={refreshingFriends}
+            onRefresh={onRefreshFriends}
+            tintColor="#60A5FA"
+            colors={['#60A5FA']}
+          />
+        )}
       >
         <FriendsSection
           friends={friends}
@@ -82,9 +105,10 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
           loadingFriendRequests={loadingFriendRequests}
           respondingFriendRequestId={respondingFriendRequestId}
           onAcceptFriendRequest={onAcceptFriendRequest}
+          onDeclineFriendRequest={onDeclineFriendRequest}
           onlineFriends={onlineFriends}
-          loadingOnline={loadingOnline}
           onRemoveFriend={onRemoveFriend}
+          onOpenProfile={openProfile}
           onOpenAdd={handleOpenAdd}
           showAddButton
         />
@@ -104,6 +128,9 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
         addingFriend={addingFriend}
         friendsFeedback={friendsFeedback}
         friendRequestSent={friendRequestSent}
+      />
+      <PublicProfileSheet
+        {...sheetProps}
       />
     </View>
   );

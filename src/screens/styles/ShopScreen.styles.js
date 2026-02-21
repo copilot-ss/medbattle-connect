@@ -138,6 +138,10 @@ const styles = StyleSheet.create({
     backfaceVisibility: 'hidden',
     rowGap: 8,
   },
+  itemCardDaily: {
+    minHeight: 102,
+    paddingBottom: 9,
+  },
   itemBadge: {
     position: 'absolute',
     top: 8,
@@ -228,6 +232,10 @@ const styles = StyleSheet.create({
   buyButtonActive: {
     backgroundColor: colors.accent,
     borderColor: 'rgba(87, 199, 255, 0.7)',
+  },
+  buyButtonDailyActive: {
+    backgroundColor: colors.success,
+    borderColor: 'rgba(57, 229, 138, 0.75)',
   },
   buyButtonDisabled: {
     opacity: 0.6,

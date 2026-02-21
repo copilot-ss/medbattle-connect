@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
+import { Image } from 'react-native';
 import {
   addFriend,
   fetchFriends,
@@ -15,6 +16,58 @@ import useFriendsPresence from './useFriendsPresence';
 
 const SUPABASE_URL_HINT = process.env.EXPO_PUBLIC_SUPABASE_URL;
 
+function isRemoteAvatarUrl(value) {
+  return typeof value === 'string' && /^https?:\/\//i.test(value.trim());
+}
+
+async function prefetchFriendAvatars(friends = []) {
+  const urls = Array.from(
+    new Set(
+      (Array.isArray(friends) ? friends : [])
+        .map((entry) => (isRemoteAvatarUrl(entry?.avatarUrl) ? entry.avatarUrl.trim() : null))
+        .filter(Boolean)
+    )
+  );
+  if (!urls.length) {
+    return;
+  }
+  await Promise.allSettled(urls.map((url) => Image.prefetch(url)));
+}
+
+function mergeFriendsList(nextFriends = [], prevFriends = []) {
+  const previousByCode = new Map(
+    (Array.isArray(prevFriends) ? prevFriends : [])
+      .map((entry) => [entry?.code, entry])
+      .filter(([code]) => Boolean(code))
+  );
+
+  return (Array.isArray(nextFriends) ? nextFriends : []).map((entry) => {
+    const code = entry?.code ?? null;
+    const previous = code ? previousByCode.get(code) : null;
+    if (!previous) {
+      return entry;
+    }
+
+    const nextXp = Number.isFinite(entry?.xp) ? Number(entry.xp) : null;
+    const prevXp = Number.isFinite(previous?.xp) ? Number(previous.xp) : null;
+    const resolvedAvatarUrl = isRemoteAvatarUrl(entry?.avatarUrl)
+      ? entry.avatarUrl.trim()
+      : isRemoteAvatarUrl(previous?.avatarUrl)
+        ? previous.avatarUrl.trim()
+        : null;
+
+    return {
+      ...previous,
+      ...entry,
+      username: entry?.username ?? previous?.username ?? null,
+      xp: nextXp ?? prevXp,
+      avatarUrl: resolvedAvatarUrl,
+      avatarIcon: entry?.avatarIcon ?? previous?.avatarIcon ?? null,
+      avatarColor: entry?.avatarColor ?? previous?.avatarColor ?? null,
+    };
+  });
+}
+
 export default function useSettingsFriends({
   userId,
   authUserId,
@@ -22,19 +75,26 @@ export default function useSettingsFriends({
   friendCode,
   userName,
   userTitle,
+  avatarId,
+  avatarUri,
+  avatarIcon,
+  avatarColor,
 }) {
   const { t } = useTranslation();
   const [friendCodeInput, setFriendCodeInputState] = useState('');
   const [friends, setFriends] = useState([]);
-  const [loadingFriends, setLoadingFriends] = useState(true);
+  const [loadingFriends, setLoadingFriends] = useState(false);
   const [friendRequests, setFriendRequests] = useState([]);
-  const [loadingFriendRequests, setLoadingFriendRequests] = useState(true);
+  const [loadingFriendRequests, setLoadingFriendRequests] = useState(false);
+  const [refreshingFriends, setRefreshingFriends] = useState(false);
   const [respondingFriendRequestId, setRespondingFriendRequestId] = useState(null);
   const [addingFriend, setAddingFriend] = useState(false);
   const [friendsFeedback, setFriendsFeedback] = useState(null);
   const [sentFriendRequestCode, setSentFriendRequestCode] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
   const [friendsMigrated, setFriendsMigrated] = useState(false);
+  const hasLoadedFriendsRef = useRef(false);
+  const refreshInFlightRef = useRef(false);
   const normalizedFriendCodeInput = friendCodeInput
     .replace(/[^a-zA-Z0-9]/g, '')
     .toUpperCase();
@@ -47,20 +107,28 @@ export default function useSettingsFriends({
       const { silent = false } = options;
       if (!currentUserId) {
         setFriends([]);
-        if (!silent) {
-          setLoadingFriends(false);
-        }
+        setLoadingFriends(false);
+        hasLoadedFriendsRef.current = false;
         return;
       }
 
-      if (!silent) {
+      const showInitialBlockingLoad = silent && !hasLoadedFriendsRef.current;
+
+      if (!silent || showInitialBlockingLoad) {
         setLoadingFriends(true);
-        setFriendsFeedback(null);
+        if (!silent) {
+          setFriendsFeedback(null);
+        }
       }
 
       try {
-        const list = await fetchFriends(currentUserId);
-        setFriends(list);
+        const list = await fetchFriends(currentUserId, {
+          suppressTimeoutWarning: silent,
+        });
+        const normalized = Array.isArray(list) ? list : [];
+        await prefetchFriendAvatars(normalized);
+        setFriends((previous) => mergeFriendsList(normalized, previous));
+        hasLoadedFriendsRef.current = true;
       } catch (err) {
         setFriendsFeedback(
           formatUserError(err, {
@@ -69,9 +137,7 @@ export default function useSettingsFriends({
           })
         );
       } finally {
-        if (!silent) {
-          setLoadingFriends(false);
-        }
+        setLoadingFriends(false);
       }
     },
     [t]
@@ -82,9 +148,7 @@ export default function useSettingsFriends({
       const { silent = false } = options;
       if (!currentUserId) {
         setFriendRequests([]);
-        if (!silent) {
-          setLoadingFriendRequests(false);
-        }
+        setLoadingFriendRequests(false);
         return;
       }
 
@@ -93,8 +157,12 @@ export default function useSettingsFriends({
       }
 
       try {
-        const list = await fetchFriendRequests(currentUserId);
-        setFriendRequests(Array.isArray(list) ? list : []);
+        const list = await fetchFriendRequests(currentUserId, {
+          suppressTimeoutWarning: silent,
+        });
+        const normalized = Array.isArray(list) ? list : [];
+        await prefetchFriendAvatars(normalized);
+        setFriendRequests(normalized);
       } catch (err) {
         setFriendsFeedback(
           formatUserError(err, {
@@ -103,9 +171,7 @@ export default function useSettingsFriends({
           })
         );
       } finally {
-        if (!silent) {
-          setLoadingFriendRequests(false);
-        }
+        setLoadingFriendRequests(false);
       }
     },
     [t]
@@ -116,6 +182,10 @@ export default function useSettingsFriends({
       setFriendsMigrated(false);
     }
   }, [authUserId]);
+
+  useEffect(() => {
+    hasLoadedFriendsRef.current = false;
+  }, [userId]);
 
   useEffect(() => {
     let active = true;
@@ -131,10 +201,7 @@ export default function useSettingsFriends({
 
       if (authUserId && localGuestId && !friendsMigrated) {
         try {
-          const migration = await migrateLocalFriends(localGuestId, authUserId);
-          if (active && migration.ok && Array.isArray(migration.friends)) {
-            setFriends(migration.friends);
-          }
+          await migrateLocalFriends(localGuestId, authUserId);
           if (active) {
             setFriendsMigrated(true);
           }
@@ -145,8 +212,8 @@ export default function useSettingsFriends({
 
       if (active) {
         await Promise.all([
-          loadFriends(userId),
-          loadFriendRequests(userId),
+          loadFriends(userId, { silent: true }),
+          loadFriendRequests(userId, { silent: true }),
         ]);
       }
     }
@@ -164,25 +231,67 @@ export default function useSettingsFriends({
         return undefined;
       }
 
-      const refresh = (silent = false) => {
-        loadFriends(userId, { silent });
-        loadFriendRequests(userId, { silent });
+      let active = true;
+
+      const refresh = async (silent = false) => {
+        if (!active || refreshInFlightRef.current) {
+          return;
+        }
+
+        refreshInFlightRef.current = true;
+        try {
+          await Promise.all([
+            loadFriends(userId, { silent }),
+            loadFriendRequests(userId, { silent }),
+          ]);
+        } finally {
+          refreshInFlightRef.current = false;
+        }
       };
 
-      refresh(false);
+      void refresh(true);
       const intervalId = setInterval(() => {
-        refresh(true);
-      }, 12000);
+        void refresh(true);
+      }, 15000);
 
       return () => {
+        active = false;
         clearInterval(intervalId);
       };
     }, [loadFriendRequests, loadFriends, userId])
   );
 
+  const handleRefreshFriends = useCallback(async () => {
+    if (!userId || refreshingFriends || refreshInFlightRef.current) {
+      return;
+    }
+
+    setRefreshingFriends(true);
+    setFriendsFeedback(null);
+    refreshInFlightRef.current = true;
+
+    try {
+      await Promise.all([
+        loadFriends(userId, { silent: true }),
+        loadFriendRequests(userId, { silent: true }),
+      ]);
+    } finally {
+      refreshInFlightRef.current = false;
+      setRefreshingFriends(false);
+    }
+  }, [
+    loadFriendRequests,
+    loadFriends,
+    refreshingFriends,
+    userId,
+  ]);
+
   const handleFriendCodeInputChange = useCallback(
     (value) => {
       setFriendCodeInputState(value);
+      if (friendsFeedback) {
+        setFriendsFeedback(null);
+      }
       const normalized = String(value ?? '')
         .replace(/[^a-zA-Z0-9]/g, '')
         .toUpperCase();
@@ -190,8 +299,12 @@ export default function useSettingsFriends({
         setSentFriendRequestCode('');
       }
     },
-    [sentFriendRequestCode]
+    [friendsFeedback, sentFriendRequestCode]
   );
+
+  const clearFriendsFeedback = useCallback(() => {
+    setFriendsFeedback(null);
+  }, []);
 
   const handleAddFriend = useCallback(async () => {
     if (!userId) {
@@ -231,7 +344,7 @@ export default function useSettingsFriends({
       }
 
       if (Array.isArray(result.friends)) {
-        setFriends(result.friends);
+        setFriends((previous) => mergeFriendsList(result.friends, previous));
       } else if (result.friend) {
         setFriends((prev) => [...prev, result.friend]);
       }
@@ -307,6 +420,9 @@ export default function useSettingsFriends({
   const handleAcceptFriendRequest = useCallback((requestId) => {
     handleRespondToFriendRequest(requestId, 'accept');
   }, [handleRespondToFriendRequest]);
+  const handleDeclineFriendRequest = useCallback((requestId) => {
+    handleRespondToFriendRequest(requestId, 'decline');
+  }, [handleRespondToFriendRequest]);
 
   const handleRemoveFriend = useCallback(async (friend) => {
     if (!userId || !friend) {
@@ -321,7 +437,7 @@ export default function useSettingsFriends({
       }
 
       if (Array.isArray(result.friends)) {
-        setFriends(result.friends);
+        setFriends((previous) => mergeFriendsList(result.friends, previous));
       } else {
         setFriends((prev) =>
           prev.filter((item) => item.code !== friend.code)
@@ -355,6 +471,10 @@ export default function useSettingsFriends({
     friendCode,
     userName,
     userTitle,
+    avatarId,
+    avatarUri,
+    avatarIcon,
+    avatarColor,
     friends,
   });
 
@@ -369,13 +489,17 @@ export default function useSettingsFriends({
     loadingFriendRequests,
     respondingFriendRequestId,
     onAcceptFriendRequest: handleAcceptFriendRequest,
+    onDeclineFriendRequest: handleDeclineFriendRequest,
     onlineFriends,
     loadingOnline,
     onRemoveFriend: handleRemoveFriend,
     friendsFeedback,
+    clearFriendsFeedback,
     friendRequestSent,
     friendCode,
     copySuccess,
     handleCopyFriendCode,
+    refreshingFriends,
+    onRefreshFriends: handleRefreshFriends,
   };
 }

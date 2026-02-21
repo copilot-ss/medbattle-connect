@@ -1,15 +1,17 @@
-import { Image, Pressable, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Pressable, Text, View } from 'react-native';
 import { useTranslation } from '../../i18n/useTranslation';
+import AvatarView from '../../components/avatar/AvatarView';
 import styles from '../styles/ResultScreen.styles';
 
 export default function ResultScoreboard({
   entries,
   selectedEntryKey,
   onSelectEntry,
+  onOpenProfile,
 }) {
   const { t } = useTranslation();
   const isInteractive = typeof onSelectEntry === 'function';
+  const canOpenProfile = typeof onOpenProfile === 'function';
 
   return (
     <View style={styles.multiplayerCard}>
@@ -28,30 +30,35 @@ export default function ResultScoreboard({
             ]}
           >
             <Text style={styles.scoreboardRank}>{entry.rank}.</Text>
-            <View style={styles.scoreboardAvatar}>
-              {entry.avatarSource ? (
-                <Image
-                  source={entry.avatarSource}
-                  style={styles.scoreboardAvatarImage}
-                />
-              ) : entry.avatarIcon ? (
-                <Ionicons
-                  name={entry.avatarIcon}
-                  size={20}
-                  color={entry.avatarColor || '#9EDCFF'}
-                />
-              ) : (
-                <Text style={styles.scoreboardAvatarText}>{entry.initials}</Text>
-              )}
-            </View>
-            <View style={styles.scoreboardMeta}>
-              <Text style={styles.scoreboardName} numberOfLines={1}>
-                {entry.name}
-              </Text>
-              {entry.isSelf ? (
-                <Text style={styles.scoreboardTag}>{t('Du')}</Text>
-              ) : null}
-            </View>
+            <Pressable
+              onPress={
+                canOpenProfile && !entry.isSelf && entry.userId
+                  ? () => onOpenProfile(entry)
+                  : undefined
+              }
+              disabled={!canOpenProfile || entry.isSelf || !entry.userId}
+              style={styles.scoreboardIdentityPressable}
+            >
+              <AvatarView
+                uri={entry.avatarUrl ?? null}
+                source={entry.avatarSource ?? null}
+                icon={entry.avatarIcon ?? null}
+                color={entry.avatarColor || '#9EDCFF'}
+                initials={entry.initials}
+                circleStyle={styles.scoreboardAvatar}
+                imageStyle={styles.scoreboardAvatarImage}
+                iconSize={20}
+                textStyle={styles.scoreboardAvatarText}
+              />
+              <View style={styles.scoreboardMeta}>
+                <Text style={styles.scoreboardName} numberOfLines={1}>
+                  {entry.name}
+                </Text>
+                {entry.isSelf ? (
+                  <Text style={styles.scoreboardTag}>{t('Du')}</Text>
+                ) : null}
+              </View>
+            </Pressable>
             <View style={styles.scoreboardScoreBox}>
               <Text style={styles.scoreboardScore}>
                 {Number.isFinite(entry.score) ? entry.score : '-'}
@@ -61,11 +68,6 @@ export default function ResultScoreboard({
           </Pressable>
         ))}
       </View>
-      {isInteractive ? (
-        <Text style={styles.multiplayerMeta}>
-          {t('Tippe auf einen Spieler, um Antworten zu sehen.')}
-        </Text>
-      ) : null}
     </View>
   );
 }

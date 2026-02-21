@@ -17,7 +17,9 @@ export default function useLobbyFriends(userId) {
 
       setFriendsLoading(true);
       try {
-        const result = await fetchFriends(userId);
+        const result = await fetchFriends(userId, {
+          suppressTimeoutWarning: true,
+        });
         if (active) {
           setFriends(Array.isArray(result) ? result : []);
         }

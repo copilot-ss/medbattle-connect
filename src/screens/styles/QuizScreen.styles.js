@@ -240,22 +240,6 @@ const styles = StyleSheet.create({
     color: '#2B1400',
     fontFamily: fonts.bold,
   },
-  boostCountBadge: {
-    minWidth: 20,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: radii.pill,
-    backgroundColor: 'rgba(148, 163, 184, 0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  boostCountText: {
-    color: colors.textPrimary,
-    fontSize: 11,
-    fontFamily: fonts.bold,
-  },
   questionMeta: {
     color: colors.accent,
     fontSize: 16,

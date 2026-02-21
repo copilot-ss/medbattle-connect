@@ -1,0 +1,15 @@
+Flaticon avatar stickers used in MedBattle profile picker:
+
+1) Doctor sticker (male avatar)
+   File: flaticon_arzt_6181883.png
+   Source: https://www.flaticon.com/de/kostenloses-sticker/arzt_6181883
+   Author: inipagistudio
+
+2) Nurse sticker (female avatar)
+   File: flaticon_krankenschwester_6181895.png
+   Source: https://www.flaticon.com/de/kostenloses-sticker/krankenschwester_6181895
+   Author: inipagistudio
+
+License note:
+- Flaticon Free License requires attribution.
+- If no attribution is shown in app/store/legal text, a Premium license is required.

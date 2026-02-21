@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import { AppState } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
@@ -7,14 +9,67 @@ import FriendsScreen from '../screens/FriendsScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import SwipeToHomeWrapper from '../components/SwipeToHomeWrapper';
+import useFriendRequestMonitor from '../hooks/useFriendRequestMonitor';
 import styles from '../styles/AppNavigator.styles';
 import { colors } from '../styles/theme';
 import { useTranslation } from '../i18n/useTranslation';
+import {
+  isDailyCoinsClaimAvailable,
+  loadDailyCoinsClaimDate,
+  subscribeDailyCoinsClaimDate,
+} from '../services/dailyRewardsService';
 
 const Tab = createBottomTabNavigator();
+const SHOP_BADGE_REFRESH_INTERVAL_MS = 60 * 1000;
+
+function useShopRewardBadge() {
+  const [showShopRewardBadge, setShowShopRewardBadge] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    const refreshIfActive = async () => {
+      const claimDate = await loadDailyCoinsClaimDate();
+      if (!active) {
+        return;
+      }
+      setShowShopRewardBadge(isDailyCoinsClaimAvailable(claimDate));
+    };
+
+    void refreshIfActive();
+
+    const unsubscribeClaimDate = subscribeDailyCoinsClaimDate((claimDate) => {
+      if (!active) {
+        return;
+      }
+      setShowShopRewardBadge(isDailyCoinsClaimAvailable(claimDate));
+    });
+
+    const appStateSubscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        void refreshIfActive();
+      }
+    });
+
+    const intervalId = setInterval(() => {
+      void refreshIfActive();
+    }, SHOP_BADGE_REFRESH_INTERVAL_MS);
+
+    return () => {
+      active = false;
+      clearInterval(intervalId);
+      appStateSubscription.remove();
+      unsubscribeClaimDate();
+    };
+  }, []);
+
+  return showShopRewardBadge;
+}
 
 export default function MainTabs({ onClearSession }) {
   const { t } = useTranslation();
+  const { pendingRequestCount } = useFriendRequestMonitor();
+  const showShopRewardBadge = useShopRewardBadge();
 
   return (
     <Tab.Navigator
@@ -48,6 +103,8 @@ export default function MainTabs({ onClearSession }) {
         name="Shop"
         options={{
           tabBarLabel: t('Shop'),
+          tabBarBadge: showShopRewardBadge ? '' : undefined,
+          tabBarBadgeStyle: showShopRewardBadge ? styles.tabBarDotBadge : undefined,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="cart" size={size} color={color} />
           ),
@@ -63,6 +120,8 @@ export default function MainTabs({ onClearSession }) {
         name="Friends"
         options={{
           tabBarLabel: t('Freunde'),
+          tabBarBadge: pendingRequestCount > 0 ? pendingRequestCount : undefined,
+          tabBarBadgeStyle: styles.tabBarBadge,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="people" size={size} color={color} />
           ),

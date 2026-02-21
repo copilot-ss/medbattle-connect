@@ -520,6 +520,12 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontFamily: fonts.medium,
   },
+  scoreboardIdentityPressable: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 0,
+  },
   scoreboardAvatar: {
     width: 40,
     height: 40,

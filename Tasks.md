@@ -47,9 +47,18 @@
 - [x] Patches auf aktuelle Versionen migriert (`expo-dev-launcher@55.0.7`, `expo-modules-core@55.0.9`, `react-native-gesture-handler@2.30.0`).
 - [x] DB: Kategorien bereinigt (FuÃŸball + Polizei-Spanisch entfernt), auf 10 Home-Kategorien verteilt und auf exakt 50 Fragen pro Kategorie normalisiert.
 - [x] DB: App-Kategorien auf mindestens 50 Fragen aufgefÃ¼llt (Migration `20260224120000_ensure_min_50_questions_per_app_category.sql`).
+- [x] DB: Pro App-Kategorie und Schwierigkeit mindestens 10 Fragen sichergestellt (Migration `20260225120000_ensure_min_10_questions_per_difficulty_per_category.sql`).
 - [x] Profil: Abzeichen-Claim mit temporÃ¤rer XP/Coins-Header-Animation umgesetzt.
 - [x] Kategorien: FuÃŸball-Quiz entfernt (UI, Offline-Seeds und Kategorie-Filter).
 - [x] Refactor: groÃŸe Screens (Settings/Multiplayer) in kleinere Hooks/Components splitten.
+- [x] Refactor: Multiplayer-Lobby UI weiter modularisiert (Join-Liste/Code-Form + Code/Freunde-Bereiche ausgelagert).
+- [x] Refactor: `useLobbyMatchActions` in Create/Start-, Join- und Leave-Hooks aufgeteilt.
+- [x] Refactor: `useLobbyParticipants` aufgeteilt (Seen-Tracking Hook + Participant-Builder Utils).
+- [x] Refactor: `MultiplayerLobbyScreen` weiter verschlankt (Animationen/Sharing/Route-Config in Hooks/Utils ausgelagert).
+- [x] Refactor: `MultiplayerLobbyScreen` stark verkleinert (Match-Actions + Host-Settings in Hooks ausgelagert, Join-List-Rendering in Section-Komponente).
+- [x] Refactor: `ResultScreen` stark verkleinert (Multiplayer-/Review-Logik + Score-Animationen in Hooks ausgelagert).
+- [x] Refactor: `ShopScreen` stark verkleinert (Konfiguration/Formatter + Sections-Builder + Section-Rendering ausgelagert).
+- [x] Refactor: `HomeScreen` stark verkleinert (Active-Lobby-Recovery + Boost/IAP/Ad-Flow in Hooks ausgelagert).
 - [x] DB-Refactor: Indexe fÃ¼r Fragen/Leaderboard + updated_at Trigger fÃ¼r users/questions.
 - [x] Supabase Local Auth: Passwort-Policy in `supabase/config.toml` gesetzt.
 - [x] Alternative Passwort-Policy im Client erzwungen (min. 12 Zeichen, GroÃŸ/Klein, Zahl, Sonderzeichen).

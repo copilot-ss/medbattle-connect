@@ -15,10 +15,14 @@ function ensurePlayerState(match, role) {
     return {
       userId: null,
       username: null,
+      title: null,
       index: 0,
       score: 0,
       finished: false,
       answers: [],
+      avatarUrl: null,
+      avatarIcon: null,
+      avatarColor: null,
     };
   }
 
@@ -28,39 +32,61 @@ function ensurePlayerState(match, role) {
     return {
       userId: null,
       username: null,
+      title: null,
       index: 0,
       score: 0,
       finished: false,
       answers: [],
+      avatarUrl: null,
+      avatarIcon: null,
+      avatarColor: null,
     };
   }
 
   return {
     userId: state.userId ?? null,
     username: state.username ?? null,
+    title: state.title ?? null,
     index: Number.isFinite(state.index) ? Math.max(state.index, 0) : 0,
     score: Number.isFinite(state.score) ? Math.max(state.score, 0) : 0,
     finished: Boolean(state.finished),
     answers: Array.isArray(state.answers) ? state.answers : [],
+    avatarUrl: state.avatar_url ?? state.avatarUrl ?? null,
+    avatarIcon: state.avatar_icon ?? state.avatarIcon ?? null,
+    avatarColor: state.avatar_color ?? state.avatarColor ?? null,
     gaveUp: Boolean(state.gaveUp),
   };
 }
 
 export default function useMultiplayerMatch(matchId, userId, options = {}) {
-  const [state, setState] = useState(() => ({
-    loading: Boolean(matchId),
-    match: null,
-    error: null,
-  }));
-  const lastLoadedIdRef = useRef(null);
+  const expectedDifficulty = options.expectedDifficulty ?? null;
+  const initialMatchOption = options.initialMatch ?? null;
   const { isOnline } = useConnectivity();
   const isOffline = isOnline === false;
   const lastOnlineRef = useRef(isOnline);
-
-  const expectedDifficulty = options.expectedDifficulty ?? null;
+  const initialMatch = useMemo(() => {
+    if (!matchId || !userId || !initialMatchOption) {
+      return null;
+    }
+    if (initialMatchOption.id !== matchId) {
+      return null;
+    }
+    const initialRole = deriveMatchRole(initialMatchOption, userId);
+    return initialRole ? initialMatchOption : null;
+  }, [initialMatchOption, matchId, userId]);
+  const initialMatchHasQuestions = useMemo(
+    () => Array.isArray(initialMatch?.questions) && initialMatch.questions.length > 0,
+    [initialMatch?.questions]
+  );
+  const [state, setState] = useState(() => ({
+    loading: Boolean(matchId) && !initialMatchHasQuestions,
+    match: initialMatch,
+    error: null,
+  }));
+  const lastLoadedIdRef = useRef(initialMatch?.id ?? null);
 
   const loadMatch = useCallback(
-    async ({ skipIfSame = false } = {}) => {
+    async ({ skipIfSame = false, silent = false } = {}) => {
       if (!matchId || !userId) {
         return;
       }
@@ -78,11 +104,13 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
         return;
       }
 
-      setState((prev) => ({
-        ...prev,
-        loading: true,
-        error: null,
-      }));
+      if (!silent) {
+        setState((prev) => ({
+          ...prev,
+          loading: true,
+          error: null,
+        }));
+      }
 
       const result = await getMatchById(matchId);
 
@@ -130,6 +158,29 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
   );
 
   useEffect(() => {
+    if (!initialMatch) {
+      return;
+    }
+
+    lastLoadedIdRef.current = initialMatch.id;
+    setState((prev) => {
+      const shouldKeepPrevious =
+        prev.match?.id === initialMatch.id &&
+        prev.loading === !initialMatchHasQuestions &&
+        prev.error == null;
+      if (shouldKeepPrevious) {
+        return prev;
+      }
+
+      return {
+        loading: !initialMatchHasQuestions,
+        match: initialMatch,
+        error: null,
+      };
+    });
+  }, [initialMatch, initialMatchHasQuestions]);
+
+  useEffect(() => {
     let active = true;
 
     if (!matchId || !userId) {
@@ -138,6 +189,19 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
         match: null,
         error: null,
       });
+      return () => {
+        active = false;
+      };
+    }
+
+    if (initialMatch) {
+      loadMatch({ skipIfSame: false, silent: true }).catch((err) => {
+        if (!active) {
+          return;
+        }
+        console.warn('Match konnte nicht im Hintergrund aktualisiert werden:', err);
+      });
+
       return () => {
         active = false;
       };
@@ -166,7 +230,7 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
     return () => {
       active = false;
     };
-  }, [loadMatch, matchId, userId]);
+  }, [initialMatch, loadMatch, matchId, userId]);
 
   useEffect(() => {
     if (!matchId || !userId || isOffline) {

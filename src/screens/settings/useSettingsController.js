@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { usePreferences } from '../../context/PreferencesContext';
 import { sanitizeStatNumber } from '../../context/preferences/sanitize';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -9,6 +8,7 @@ import {
   getAchievementProgress,
 } from '../../services/achievementService';
 import { syncUserProgressDelta } from '../../services/userProgressService';
+import { syncProfileAvatar } from '../../services/userService';
 import useLeaderboardRank from './useLeaderboardRank';
 import useSettingsAuth from './useSettingsAuth';
 import useSettingsFriends from './useSettingsFriends';
@@ -30,7 +30,6 @@ export default function useSettingsController({ navigation, route, onClearSessio
     avatarId,
     setAvatarId,
     avatarUri,
-    setAvatarUri,
     streaks,
     userStats,
     boosts,
@@ -45,9 +44,9 @@ export default function useSettingsController({ navigation, route, onClearSessio
 
   const [focusTarget, setFocusTarget] = useState(route?.params?.focus ?? null);
   const [activeTab, setActiveTab] = useState('profile');
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const scrollRef = useRef(null);
   const friendInputRef = useRef(null);
+  const lastAvatarSyncSignatureRef = useRef(null);
 
   const {
     userName,
@@ -96,13 +95,17 @@ export default function useSettingsController({ navigation, route, onClearSessio
     loadingFriendRequests,
     respondingFriendRequestId,
     onAcceptFriendRequest: handleAcceptFriendRequest,
+    onDeclineFriendRequest: handleDeclineFriendRequest,
     onlineFriends,
     loadingOnline,
     onRemoveFriend: handleRemoveFriend,
     friendsFeedback,
+    clearFriendsFeedback,
     friendRequestSent,
     copySuccess,
     handleCopyFriendCode,
+    refreshingFriends,
+    onRefreshFriends,
   } = useSettingsFriends({
     userId,
     authUserId,
@@ -110,6 +113,10 @@ export default function useSettingsController({ navigation, route, onClearSessio
     friendCode,
     userName,
     userTitle,
+    avatarId,
+    avatarUri,
+    avatarIcon: currentAvatar?.icon ?? null,
+    avatarColor: currentAvatar?.color ?? null,
   });
 
   const friendsCount = Array.isArray(friends) ? friends.length : 0;
@@ -257,10 +264,10 @@ export default function useSettingsController({ navigation, route, onClearSessio
         : t('Freundesanfragen blockiert'),
     [friendRequestsEnabled, t]
   );
-  const emailCtaLabel = isGuest ? t('E-Mail-Account erstellen') : t('E-Mail ändern');
+  const emailCtaLabel = isGuest ? t('E-Mail-Account erstellen') : t('E-Mail \u00e4ndern');
   const emailCtaHint = isGuest
     ? t('Lege einen Account mit E-Mail an.')
-    : t('Neue E-Mail wird nach Bestätigung aktiv.');
+    : t('Neue E-Mail wird nach Best\u00e4tigung aktiv.');
   const normalizedProviders = useMemo(
     () => (authProviders || []).map((provider) => String(provider).toLowerCase()),
     [authProviders]
@@ -276,7 +283,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
   const showLinkGoogle = !isGuest && Boolean(authUserId) && !googleLinked;
   const linkGoogleLabel = t('Google verbinden');
   const linkGoogleHint =
-    t('Verknüpfe Google mit diesem Profil, damit der Google-Login denselben Account nutzt.');
+    t('Verkn\u00fcpfe Google mit diesem Profil, damit der Google-Login denselben Account nutzt.');
   const streakShieldCount = sanitizeStatNumber(boosts?.streak_shield);
   const showAudioSection = activeTab === 'settings';
   const showProfileSection = activeTab === 'profile';
@@ -321,85 +328,59 @@ export default function useSettingsController({ navigation, route, onClearSessio
     });
   }, [setLanguage]);
 
-  const handleSelectAvatar = useCallback((item) => {
-    if (!item) {
+  useEffect(() => {
+    if (avatarUri || !avatarId || !currentAvatar?.id || avatarId === currentAvatar.id) {
       return;
     }
-    if (userLevel < item.level) {
-      return;
-    }
-    setAvatarId(item.id).catch((err) => {
-      console.warn('Konnte Avatar nicht speichern:', err);
+
+    setAvatarId(currentAvatar.id).catch((err) => {
+      console.warn('Konnte veralteten Avatar nicht korrigieren:', err);
     });
-    if (avatarUri) {
-      setAvatarUri(null).catch((err) => {
-        console.warn('Konnte Avatar-Foto nicht löschen:', err);
-      });
+  }, [avatarId, avatarUri, currentAvatar?.id, setAvatarId]);
+
+  useEffect(() => {
+    if (!authUserId || isGuest) {
+      lastAvatarSyncSignatureRef.current = null;
+      return;
     }
-  }, [avatarUri, setAvatarId, setAvatarUri, userLevel]);
 
-  const openAvatarImagePicker = useCallback(async (source) => {
-    try {
-      const permission =
-        source === 'camera'
-          ? await ImagePicker.requestCameraPermissionsAsync()
-          : await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert(
-          t('Berechtigung erforderlich'),
-          source === 'camera'
-            ? t('Bitte erlaube Zugriff auf die Kamera.')
-            : t('Bitte erlaube Zugriff auf deine Fotos.')
-        );
-        return;
-      }
+    const remoteAvatarUri =
+      typeof avatarUri === 'string' && /^https?:\/\//i.test(avatarUri.trim())
+        ? avatarUri.trim()
+        : null;
 
-      const picker =
-        source === 'camera'
-          ? ImagePicker.launchCameraAsync
-          : ImagePicker.launchImageLibraryAsync;
+    const payload = remoteAvatarUri
+      ? {
+          avatarUrl: remoteAvatarUri,
+          avatarIcon: null,
+          avatarColor: null,
+        }
+      : {
+          avatarUrl: null,
+          avatarIcon: currentAvatar?.icon ?? null,
+          avatarColor: currentAvatar?.color ?? null,
+        };
 
-      if (typeof picker !== 'function') {
-        Alert.alert(t('Kamera nicht verfügbar.'));
-        return;
-      }
-
-      const mediaTypes = ImagePicker.MediaType?.Images
-        ? [ImagePicker.MediaType.Images]
-        : ImagePicker.MediaTypeOptions?.Images;
-
-      const result = await picker({
-        mediaTypes,
-        allowsEditing: source !== 'camera',
-        aspect: [1, 1],
-        quality: 0.8,
-      });
-
-      if (result.canceled) {
-        return;
-      }
-
-      const asset = Array.isArray(result.assets) ? result.assets[0] : null;
-      if (asset?.uri) {
-        await setAvatarUri(asset.uri);
-      }
-    } catch (err) {
-      console.warn('Konnte Avatar-Foto nicht auswählen:', err);
+    const signature = JSON.stringify(payload);
+    if (signature === lastAvatarSyncSignatureRef.current) {
+      return;
     }
-  }, [setAvatarUri, t]);
 
-  const handlePickAvatarPhoto = useCallback(() => {
-    Alert.alert(
-      t('Foto wählen'),
-      t('Quelle auswählen'),
-      [
-        { text: t('Abbrechen'), style: 'cancel' },
-        { text: t('Galerie'), onPress: () => openAvatarImagePicker('library') },
-        { text: t('Kamera'), onPress: () => openAvatarImagePicker('camera') },
-      ],
-      { cancelable: true }
-    );
-  }, [openAvatarImagePicker, t]);
+    lastAvatarSyncSignatureRef.current = signature;
+    let active = true;
+
+    (async () => {
+      const syncResult = await syncProfileAvatar(authUserId, payload);
+      if (!syncResult.ok && active) {
+        console.warn('Konnte Profil-Avatar nicht synchronisieren:', syncResult.error);
+        lastAvatarSyncSignatureRef.current = null;
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [authUserId, avatarUri, currentAvatar?.color, currentAvatar?.icon, isGuest]);
 
   useEffect(() => {
     if (!focusTarget) {
@@ -438,10 +419,6 @@ export default function useSettingsController({ navigation, route, onClearSessio
     };
   }, [focusTarget, handleSignOut, setShowResetForm]);
 
-  const handleToggleAvatarPicker = useCallback(
-    () => setShowAvatarPicker((prev) => !prev),
-    []
-  );
 
   return {
     // refs
@@ -478,10 +455,6 @@ export default function useSettingsController({ navigation, route, onClearSessio
     avatarId,
     setAvatarId,
     avatarUri,
-    showAvatarPicker,
-    handleToggleAvatarPicker,
-    handleSelectAvatar,
-    handlePickAvatarPhoto,
     quizzesCompleted,
     accuracyPercent,
     xp,
@@ -529,11 +502,15 @@ export default function useSettingsController({ navigation, route, onClearSessio
     loadingFriendRequests,
     respondingFriendRequestId,
     onAcceptFriendRequest: handleAcceptFriendRequest,
+    onDeclineFriendRequest: handleDeclineFriendRequest,
     onlineFriends,
     loadingOnline,
     onRemoveFriend: handleRemoveFriend,
     friendsFeedback,
+    clearFriendsFeedback,
     friendRequestSent,
+    refreshingFriends,
+    onRefreshFriends,
     // feedback banners
     feedback,
     // auth/reset
@@ -548,3 +525,5 @@ export default function useSettingsController({ navigation, route, onClearSessio
     showResetActions,
   };
 }
+
+

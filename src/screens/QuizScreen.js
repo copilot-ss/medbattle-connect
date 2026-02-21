@@ -56,7 +56,7 @@ export default function QuizScreen({ navigation, route }) {
       {
         id: 'joker_5050',
         label: t('Joker 50/50'),
-        icon: 'help-circle',
+        icon: 'sparkles',
         count: boostInventory.joker_5050,
         active: Boolean(usedBoosts?.joker_5050),
         disabled: isBoostDisabled || Boolean(usedBoosts?.joker_5050),

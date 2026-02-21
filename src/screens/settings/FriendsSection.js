@@ -1,6 +1,10 @@
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
+import { getTitleProgress } from '../../services/titleService';
+import AvatarView from '../../components/avatar/AvatarView';
+import { getAvatarInitials, getAvatarPresetSource } from '../../utils/avatarUtils';
+import { buildPublicProfilePayload } from '../../utils/publicProfile';
 import styles from '../styles/SettingsScreen.styles';
 
 export default function FriendsSection({
@@ -10,9 +14,10 @@ export default function FriendsSection({
   loadingFriendRequests,
   respondingFriendRequestId,
   onAcceptFriendRequest,
+  onDeclineFriendRequest,
   onlineFriends,
-  loadingOnline,
   onRemoveFriend,
+  onOpenProfile,
   onOpenAdd,
   showAddButton = false,
 }) {
@@ -32,15 +37,25 @@ export default function FriendsSection({
       return;
     }
     const presence = onlineByCode.get(code) ?? null;
+    const fallbackTitle =
+      Number.isFinite(friend?.xp)
+        ? getTitleProgress(friend.xp).current?.label ?? null
+        : null;
     entries.push({
       code,
-      name: presence?.username ?? code,
-      title: presence?.title ?? null,
+      name: presence?.username ?? friend?.username ?? null,
+      username: presence?.username ?? friend?.username ?? null,
+      title: presence?.title ?? fallbackTitle,
+      xp: Number.isFinite(friend?.xp) ? friend.xp : null,
       isOnline: Boolean(presence),
       activity: presence?.activity ?? (presence ? 'online' : 'offline'),
       lobby: presence?.lobby ?? null,
       lobbyPlayers: presence?.lobbyPlayers ?? null,
       lobbyCapacity: presence?.lobbyCapacity ?? null,
+      userId: presence?.userId ?? null,
+      avatarUrl: presence?.avatarUri ?? friend?.avatarUrl ?? null,
+      avatarIcon: presence?.avatarIcon ?? friend?.avatarIcon ?? null,
+      avatarColor: presence?.avatarColor ?? friend?.avatarColor ?? null,
     });
     seen.add(code);
   });
@@ -52,13 +67,19 @@ export default function FriendsSection({
     }
     entries.push({
       code,
-      name: friend?.username ?? code,
+      name: friend?.username ?? null,
+      username: friend?.username ?? null,
       title: friend?.title ?? null,
+      xp: Number.isFinite(friend?.xp) ? friend.xp : null,
       isOnline: true,
       activity: friend?.activity ?? (friend?.lobby ? 'lobby' : 'online'),
       lobby: friend?.lobby ?? null,
       lobbyPlayers: friend?.lobbyPlayers ?? null,
       lobbyCapacity: friend?.lobbyCapacity ?? null,
+      userId: friend?.userId ?? null,
+      avatarUrl: friend?.avatarUri ?? friend?.avatarUrl ?? null,
+      avatarIcon: friend?.avatarIcon ?? null,
+      avatarColor: friend?.avatarColor ?? null,
     });
     seen.add(code);
   });
@@ -97,7 +118,7 @@ export default function FriendsSection({
     statusSummaryParts.push(t('{quizCount} im Quiz', { quizCount }));
   }
   const statusSummary = statusSummaryParts.join(' | ');
-  const isLoading = loadingFriends || loadingOnline;
+  const isLoading = loadingFriends && entries.length === 0;
 
   const formatStatus = (entry) => {
     if (entry.lobby) {
@@ -167,41 +188,81 @@ export default function FriendsSection({
             </Text>
           </View>
         ) : entries.length ? (
-          entries.map((friend, index) => (
-            <View
-              key={friend.code}
-              style={[
-                styles.friendRow,
-                index === entries.length - 1 ? styles.friendRowLast : null,
-              ]}
-            >
-              <View>
-                <Text style={styles.friendCodeText}>
-                  {friend.name || t('Freund')}
-                </Text>
-                {friend.title ? (
-                  <Text style={styles.friendTitleText}>{t(friend.title)}</Text>
-                ) : null}
-                <View style={styles.friendStatusRow}>
-                  <View style={[styles.friendStatusDot, resolveDotStyle(friend)]} />
-                  <Text
-                    style={[
-                      styles.friendStatusText,
-                      resolveStatusTextStyle(friend),
-                    ]}
-                  >
-                    {formatStatus(friend)}
-                  </Text>
-                </View>
-              </View>
-              <Pressable
-                onPress={() => onRemoveFriend({ code: friend.code })}
-                style={styles.friendRemoveButton}
+          entries.map((friend, index) => {
+            const presetAvatarSource = getAvatarPresetSource(friend.avatarIcon);
+
+            return (
+              <View
+                key={friend.code}
+                style={[
+                  styles.friendRow,
+                  index === entries.length - 1 ? styles.friendRowLast : null,
+                ]}
               >
-                <Text style={styles.friendRemoveText}>{t('Entfernen')}</Text>
-              </Pressable>
-            </View>
-          ))
+                <Pressable
+                  style={styles.friendMainPressable}
+                  onPress={() =>
+                    onOpenProfile?.(buildPublicProfilePayload({
+                      userId: friend.userId ?? null,
+                      friendCode: friend.code ?? null,
+                      name: friend.name ?? t('Freund'),
+                      username: friend.username ?? null,
+                      title: friend.title ?? null,
+                      xp: Number.isFinite(friend.xp) ? friend.xp : null,
+                      isOnline: Boolean(friend.isOnline),
+                      activity: friend.activity ?? null,
+                      statusLabel: formatStatus(friend),
+                      avatarUrl: friend.avatarUrl ?? null,
+                      avatarIcon: friend.avatarIcon ?? null,
+                      avatarColor: friend.avatarColor ?? null,
+                    }))
+                  }
+                  disabled={!onOpenProfile}
+                >
+                  <View style={styles.friendIdentityRow}>
+                    <AvatarView
+                      uri={friend.avatarUrl}
+                      source={presetAvatarSource}
+                      icon={friend.avatarIcon}
+                      color={friend.avatarColor ?? '#9EDCFF'}
+                      initials={getAvatarInitials(friend.name || t('Freund'))}
+                      circleStyle={styles.friendAvatar}
+                      imageStyle={styles.friendAvatarImage}
+                      iconSize={20}
+                      textStyle={styles.friendAvatarText}
+                    />
+                    <View style={styles.friendIdentityMeta}>
+                      <Text style={styles.friendCodeText} numberOfLines={1}>
+                        {friend.name || t('Freund')}
+                      </Text>
+                      {friend.title ? (
+                        <Text style={styles.friendTitleText} numberOfLines={1}>
+                          {t(friend.title)}
+                        </Text>
+                      ) : null}
+                      <View style={styles.friendStatusRow}>
+                        <View style={[styles.friendStatusDot, resolveDotStyle(friend)]} />
+                        <Text
+                          style={[
+                            styles.friendStatusText,
+                            resolveStatusTextStyle(friend),
+                          ]}
+                        >
+                          {formatStatus(friend)}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </Pressable>
+                <Pressable
+                  onPress={() => onRemoveFriend({ code: friend.code })}
+                  style={styles.friendRemoveButton}
+                >
+                  <Text style={styles.friendRemoveText}>{t('Entfernen')}</Text>
+                </Pressable>
+              </View>
+            );
+          })
         ) : (
           <Text style={styles.friendEmptyText}>
             {t('Noch keine Freunde gespeichert. Teile deinen Code und starte!')}
@@ -222,12 +283,24 @@ export default function FriendsSection({
                 </View>
               ) : (
                 requests.map((request, index) => {
-                  const requesterName = request?.username ?? request?.code ?? t('Freund');
+                  const requesterName =
+                    request?.displayName
+                    ?? request?.username
+                    ?? t('Freund');
                   const requestCode = request?.code ?? '';
+                  const requestXp =
+                    Number.isFinite(request?.xp) && request.xp >= 0
+                      ? request.xp
+                      : null;
+                  const requestTitle =
+                    Number.isFinite(requestXp)
+                      ? getTitleProgress(requestXp).current?.label ?? null
+                      : null;
+                  const requestAvatarUrl = request?.avatarUrl ?? null;
+                  const requestAvatarIcon = request?.avatarIcon ?? null;
+                  const requestAvatarColor = request?.avatarColor ?? null;
+                  const requestPresetAvatarSource = getAvatarPresetSource(requestAvatarIcon);
                   const isBusy = respondingFriendRequestId === request?.id;
-                  const showCode =
-                    requestCode &&
-                    String(requesterName).toUpperCase() !== String(requestCode).toUpperCase();
                   return (
                     <View
                       key={request?.id ?? `${requestCode}-${index}`}
@@ -236,24 +309,82 @@ export default function FriendsSection({
                         index === requests.length - 1 ? styles.friendRowLast : null,
                       ]}
                     >
-                      <View style={styles.friendRequestInfo}>
-                        <Text style={styles.friendCodeText}>{requesterName}</Text>
-                        {showCode ? (
-                          <Text style={styles.friendTitleText}>{requestCode}</Text>
-                        ) : null}
-                      </View>
                       <Pressable
-                        onPress={() => onAcceptFriendRequest?.(request?.id)}
-                        style={[
-                          styles.friendRequestAcceptButton,
-                          isBusy ? styles.friendRequestAcceptButtonDisabled : null,
-                        ]}
-                        disabled={isBusy || !request?.id}
+                        style={styles.friendRequestInfo}
+                        onPress={() =>
+                          onOpenProfile?.(buildPublicProfilePayload({
+                            userId: request?.requesterId ?? null,
+                            friendCode: requestCode || null,
+                            name: requesterName,
+                            username: request?.username ?? null,
+                            title: requestTitle ?? null,
+                            xp: requestXp,
+                            isOnline: false,
+                            activity: 'offline',
+                            statusLabel: t('Offline'),
+                            avatarUrl: requestAvatarUrl,
+                            avatarIcon: requestAvatarIcon,
+                            avatarColor: requestAvatarColor,
+                          }))
+                        }
+                        disabled={!onOpenProfile}
                       >
-                        <Text style={styles.friendRequestAcceptText}>
-                          {isBusy ? t('Annehmen...') : t('Annehmen')}
-                        </Text>
+                        <View style={styles.friendIdentityRow}>
+                          <AvatarView
+                            uri={requestAvatarUrl}
+                            source={requestPresetAvatarSource}
+                            icon={requestAvatarIcon}
+                            color={requestAvatarColor ?? '#9EDCFF'}
+                            initials={getAvatarInitials(requesterName)}
+                            circleStyle={styles.friendAvatar}
+                            imageStyle={styles.friendAvatarImage}
+                            iconSize={20}
+                            textStyle={styles.friendAvatarText}
+                          />
+                          <View style={styles.friendIdentityMeta}>
+                            <Text style={styles.friendCodeText} numberOfLines={1}>
+                              {requesterName}
+                            </Text>
+                            {requestTitle ? (
+                              <Text style={styles.friendTitleText} numberOfLines={1}>
+                                {t(requestTitle)}
+                              </Text>
+                            ) : null}
+                            <View style={styles.friendStatusRow}>
+                              <View style={[styles.friendStatusDot, styles.friendStatusDotOffline]} />
+                              <Text style={[styles.friendStatusText, styles.friendStatusTextOffline]}>
+                                {t('Offline')}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
                       </Pressable>
+                      <View style={styles.friendRequestActions}>
+                        <Pressable
+                          onPress={() => onDeclineFriendRequest?.(request?.id)}
+                          style={[
+                            styles.friendRequestDeclineButton,
+                            isBusy ? styles.friendRequestAcceptButtonDisabled : null,
+                          ]}
+                          disabled={isBusy || !request?.id}
+                        >
+                          <Text style={styles.friendRequestDeclineText}>
+                            {isBusy ? t('Ablehnen...') : t('Ablehnen')}
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => onAcceptFriendRequest?.(request?.id)}
+                          style={[
+                            styles.friendRequestAcceptButton,
+                            isBusy ? styles.friendRequestAcceptButtonDisabled : null,
+                          ]}
+                          disabled={isBusy || !request?.id}
+                        >
+                          <Text style={styles.friendRequestAcceptText}>
+                            {isBusy ? t('Annehmen...') : t('Annehmen')}
+                          </Text>
+                        </Pressable>
+                      </View>
                     </View>
                   );
                 })

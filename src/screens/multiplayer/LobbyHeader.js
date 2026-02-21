@@ -5,11 +5,13 @@ import styles from '../styles/MultiplayerLobbyScreen.styles';
 
 export default function LobbyHeader({
   isCreateOnly,
+  hasActiveLobby = false,
   closingLobby,
   onNavigateHome,
   onLeaveLobby,
 }) {
   const { t } = useTranslation();
+  const showLeaveButton = isCreateOnly || hasActiveLobby;
 
   return (
     <View style={styles.header}>
@@ -27,7 +29,7 @@ export default function LobbyHeader({
         >
           <Ionicons name="home" size={18} color="#E2E8F0" />
         </Pressable>
-        {isCreateOnly ? (
+        {showLeaveButton ? (
           <Pressable
             style={[
               styles.closeButton,

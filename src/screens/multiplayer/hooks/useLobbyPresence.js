@@ -106,6 +106,9 @@ export default function useLobbyPresence({
           if (meta.userId === userId) {
             return;
           }
+          if (isInCurrentLobby) {
+            return;
+          }
           if (!code || !friendCodes.has(code) || seen.has(code)) {
             return;
           }

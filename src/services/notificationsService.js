@@ -12,6 +12,33 @@ import {
 import { recalcEnergy } from '../context/preferences/energyUtils';
 
 let Notifications = null;
+const NOTIFICATIONS_MISSING_WARN_KEY =
+  '__medbattle_notifications_native_missing_warned__';
+
+function logMissingNotificationsNative(message, level = 'warn') {
+  let alreadyWarned = false;
+  try {
+    alreadyWarned = Boolean(globalThis[NOTIFICATIONS_MISSING_WARN_KEY]);
+  } catch (_err) {
+    alreadyWarned = false;
+  }
+  if (alreadyWarned) {
+    return;
+  }
+
+  try {
+    globalThis[NOTIFICATIONS_MISSING_WARN_KEY] = true;
+  } catch (_err) {
+    // Ignore write failures in restricted runtimes.
+  }
+
+  if (level === 'warn') {
+    console.warn(message);
+    return;
+  }
+  console.log(message);
+}
+
 const shouldLoadNotifications = Platform.OS === 'android' || Platform.OS === 'ios';
 if (shouldLoadNotifications) {
   try {
@@ -23,11 +50,12 @@ if (shouldLoadNotifications) {
     const isMissingTopicModule =
       errorMessage.includes('ExpoTopicSubscriptionModule');
     if (isMissingTopicModule) {
-      console.warn(
-        'expo-notifications nicht verfuegbar: ExpoTopicSubscriptionModule fehlt. Dev-Client/App neu bauen (z. B. npx expo run:android).'
+      logMissingNotificationsNative(
+        'expo-notifications nicht verfuegbar: ExpoTopicSubscriptionModule fehlt. Dev-Client/App neu bauen (z. B. npx expo run:android).',
+        'info'
       );
     } else {
-      console.warn(
+      logMissingNotificationsNative(
         `expo-notifications nicht verfuegbar (native module fehlt). Dev-Client/App neu bauen.${errorMessage ? ` Fehler: ${errorMessage}` : ''}`
       );
     }
@@ -38,7 +66,12 @@ const ENERGY_NOTIFICATION_KEY = 'medbattle_energy_full_notification_id';
 const ENERGY_CHANNEL_ID = 'energy-full';
 const ENERGY_NOTIFICATION_TAG = 'energy_full';
 const ENERGY_NOTIFICATION_TITLES = ['Energie voll', 'Energy full'];
+const FRIEND_REQUEST_CHANNEL_ID = 'friend-requests';
+const FRIEND_REQUEST_NOTIFICATION_TAG = 'friend_request';
+const RECENT_FRIEND_REQUEST_LIMIT = 50;
 let energyNotificationRequestVersion = 0;
+let gameplayNotificationSuppressed = false;
+const recentFriendRequestIds = [];
 
 const parseNonNegativeInt = (value, fallback = 0) => {
   const parsed = Number.parseInt(value, 10);
@@ -84,14 +117,52 @@ const isEnergyFullNow = async () => {
   }
 };
 
+function createSilentNotificationResponse() {
+  return {
+    shouldShowAlert: false,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  };
+}
+
+function rememberRecentFriendRequest(requestId) {
+  if (!requestId) {
+    return;
+  }
+  if (recentFriendRequestIds.includes(requestId)) {
+    return;
+  }
+  recentFriendRequestIds.push(requestId);
+  if (recentFriendRequestIds.length > RECENT_FRIEND_REQUEST_LIMIT) {
+    recentFriendRequestIds.shift();
+  }
+}
+
+function hasRecentFriendRequest(requestId) {
+  if (!requestId) {
+    return false;
+  }
+  return recentFriendRequestIds.includes(requestId);
+}
+
 if (Notifications?.setNotificationHandler) {
   Notifications.setNotificationHandler({
     handleNotification: async (notification) => {
       const kind = notification?.request?.content?.data?.kind;
+      if (gameplayNotificationSuppressed) {
+        return createSilentNotificationResponse();
+      }
       if (kind === ENERGY_NOTIFICATION_TAG) {
         const shouldShowAlert = await isEnergyFullNow();
         return {
           shouldShowAlert,
+          shouldPlaySound: false,
+          shouldSetBadge: false,
+        };
+      }
+      if (kind === FRIEND_REQUEST_NOTIFICATION_TAG) {
+        return {
+          shouldShowAlert: true,
           shouldPlaySound: false,
           shouldSetBadge: false,
         };
@@ -143,6 +214,23 @@ const ensureEnergyChannel = async () => {
     });
   } catch (err) {
     console.warn('Konnte Notification-Channel nicht setzen:', err);
+  }
+};
+
+const ensureFriendRequestChannel = async () => {
+  if (Platform.OS !== 'android') {
+    return;
+  }
+  if (!Notifications?.setNotificationChannelAsync) {
+    return;
+  }
+  try {
+    await Notifications.setNotificationChannelAsync(FRIEND_REQUEST_CHANNEL_ID, {
+      name: 'Friend requests',
+      importance: Notifications.AndroidImportance.DEFAULT,
+    });
+  } catch (err) {
+    console.warn('Konnte Friend-Request-Channel nicht setzen:', err);
   }
 };
 
@@ -257,6 +345,57 @@ export const cancelEnergyFullNotification = async () => {
     await cancelLegacyEnergyNotifications();
   } catch (err) {
     console.warn('Konnte Notification nicht entfernen:', err);
+  }
+};
+
+export const setGameplayNotificationSuppressed = (value) => {
+  gameplayNotificationSuppressed = Boolean(value);
+};
+
+export const isGameplayNotificationSuppressed = () => gameplayNotificationSuppressed;
+
+export const scheduleFriendRequestNotification = async ({
+  title,
+  body,
+  requestId = null,
+} = {}) => {
+  if (!title || !body) {
+    return null;
+  }
+  if (!Notifications?.scheduleNotificationAsync) {
+    return null;
+  }
+  if (gameplayNotificationSuppressed) {
+    return null;
+  }
+  if (hasRecentFriendRequest(requestId)) {
+    return null;
+  }
+
+  const allowed = await ensureNotificationPermission();
+  if (!allowed) {
+    return null;
+  }
+
+  await ensureFriendRequestChannel();
+
+  try {
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data: {
+          kind: FRIEND_REQUEST_NOTIFICATION_TAG,
+          requestId: requestId ?? null,
+        },
+      },
+      trigger: null,
+    });
+    rememberRecentFriendRequest(requestId);
+    return id;
+  } catch (err) {
+    console.warn('Konnte Friend-Request-Notification nicht planen:', err);
+    return null;
   }
 };
 

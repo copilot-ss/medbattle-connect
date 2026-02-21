@@ -51,6 +51,42 @@ function isBlockedCategory(value) {
   return BLOCKED_CATEGORY_KEYS.has(normalizeCategoryKey(value));
 }
 
+function sanitizeAvatarUrl(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  return /^https?:\/\//i.test(trimmed) ? trimmed : null;
+}
+
+function sanitizeAvatarIcon(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return /^[a-z0-9-]+$/i.test(trimmed) ? trimmed : null;
+}
+
+function sanitizeAvatarColor(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (/^#[0-9a-f]{3,8}$/i.test(trimmed)) {
+    return trimmed;
+  }
+  if (/^rgba?\([^)]+\)$/i.test(trimmed)) {
+    return trimmed;
+  }
+  return null;
+}
+
 function normalizeCategoryList(source) {
   const entries = Array.isArray(source) ? source : [];
   const deduped = new Map();
@@ -784,21 +820,26 @@ export function calculateCoinReward({
 }
 
 export async function fetchLeaderboard(limit = 20, { force = false } = {}) {
+  const requestedLimit =
+    Number.isFinite(limit) && limit > 0
+      ? Math.max(1, Math.min(Math.floor(limit), 100))
+      : 20;
   const now = Date.now();
 
   if (
     !force &&
     leaderboardCache.data &&
-    now - leaderboardCache.fetchedAt < LEADERBOARD_CACHE_TTL
+    now - leaderboardCache.fetchedAt < LEADERBOARD_CACHE_TTL &&
+    leaderboardCache.data.length >= requestedLimit
   ) {
-    return leaderboardCache.data.slice(0, limit);
+    return leaderboardCache.data.slice(0, requestedLimit);
   }
 
   try {
     const { data, error } = await runSupabaseRequest(
       () =>
         supabase.rpc('get_leaderboard', {
-          p_limit: limit,
+          p_limit: requestedLimit,
         }),
       { label: 'quizService.getLeaderboard' }
     );
@@ -812,13 +853,53 @@ export async function fetchLeaderboard(limit = 20, { force = false } = {}) {
       return [];
     }
 
+    const userIds = Array.from(
+      new Set(
+        data
+          .map((item) => item?.user_id ?? item?.userId ?? null)
+          .filter(Boolean)
+      )
+    );
+    const profileByUserId = new Map();
+
+    if (userIds.length) {
+      const profileResult = await runSupabaseRequest(
+        () =>
+          supabase
+            .from('profiles')
+            .select('id, avatar_url, avatar_icon, avatar_color, display_name')
+            .in('id', userIds),
+        { label: 'quizService.getLeaderboardProfiles' }
+      );
+
+      if (!profileResult.error && Array.isArray(profileResult.data)) {
+        profileResult.data.forEach((row) => {
+          if (!row?.id) {
+            return;
+          }
+          profileByUserId.set(row.id, row);
+        });
+      }
+    }
+
     const ranked = data.map((item) => ({
       id: item.id,
       userId: item.user_id,
-      username: item.username ?? null,
+      username:
+        item.username
+        ?? profileByUserId.get(item.user_id)?.display_name
+        ?? null,
       xp: Number.isFinite(item.xp) ? item.xp : null,
       points: Number.isFinite(item.points) ? item.points : 0,
-      avatarUrl: item.avatar_url ?? item.avatarUrl ?? null,
+      avatarUrl:
+        sanitizeAvatarUrl(item.avatar_url ?? item.avatarUrl)
+        ?? sanitizeAvatarUrl(profileByUserId.get(item.user_id)?.avatar_url),
+      avatarIcon:
+        sanitizeAvatarIcon(item.avatar_icon ?? item.avatarIcon)
+        ?? sanitizeAvatarIcon(profileByUserId.get(item.user_id)?.avatar_icon),
+      avatarColor:
+        sanitizeAvatarColor(item.avatar_color ?? item.avatarColor)
+        ?? sanitizeAvatarColor(profileByUserId.get(item.user_id)?.avatar_color),
       difficulty: item.difficulty ?? 'unbekannt',
       createdAt: item.created_at ?? null,
     }));

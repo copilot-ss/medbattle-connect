@@ -1,11 +1,19 @@
-import { ActivityIndicator, Animated, Image, Pressable, Text, View } from 'react-native';
+import { Animated, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
+import AvatarView from '../../components/avatar/AvatarView';
+import { getAvatarInitials } from '../../utils/avatarUtils';
 import styles from '../styles/MultiplayerLobbyScreen.styles';
-import { getInitials } from './lobbyUtils';
+import LobbyCodeActionsRow from './LobbyCodeActionsRow';
+import LobbyOnlineFriendsSection from './LobbyOnlineFriendsSection';
 
-const SHARE_ANIM = require('../../../assets/animations/share_6172544.gif');
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const PARTICIPANT_AVATAR_INNER_STYLE = {
+  width: '100%',
+  height: '100%',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
 
 export default function LobbyParticipantsCard({
   participants,
@@ -13,6 +21,7 @@ export default function LobbyParticipantsCard({
   maxPlayers,
   isHostWaiting,
   onSelectParticipant,
+  onOpenParticipantProfile,
   kickCandidateKey,
   onKickGuest,
   kickingPlayer,
@@ -24,9 +33,12 @@ export default function LobbyParticipantsCard({
   currentJoinCode,
   copied,
   onCopyCode,
-  onShareCode,
+  difficultyLabel,
+  questionLimit,
+  categoryLabel,
   friendsLoading,
   onlineFriends,
+  invitingFriendCodes,
   onInviteFriend,
 }) {
   const { t } = useTranslation();
@@ -47,11 +59,32 @@ export default function LobbyParticipantsCard({
           const canKick =
             isHostWaiting && participant.key === 'guest' && !participant.isPending;
           const isSelected = kickCandidateKey === participant.key;
+          const canOpenProfile =
+            typeof onOpenParticipantProfile === 'function' &&
+            !participant.isPlaceholder &&
+            Boolean(participant.userId);
+          const participantInitials = participant.isPlaceholder
+            ? '?'
+            : getAvatarInitials(participant.name);
+          const participantAvatarUri =
+            !participant.isPlaceholder ? participant.avatarUrl ?? null : null;
+          const participantAvatarSource =
+            !participant.isPlaceholder ? participant.avatarSource ?? null : null;
+          const participantAvatarIcon =
+            !participant.isPlaceholder ? participant.avatarIcon ?? null : null;
           return (
             <View key={participant.key} style={styles.participantSlot}>
               <Pressable
-                onPress={() => onSelectParticipant(participant.key)}
-                disabled={!canKick}
+                onPress={
+                  canOpenProfile
+                    ? () => onOpenParticipantProfile(participant)
+                    : undefined
+                }
+                onLongPress={
+                  canKick ? () => onSelectParticipant(participant.key) : undefined
+                }
+                delayLongPress={240}
+                disabled={!canOpenProfile && !canKick}
                 style={[
                   styles.participantAvatarCard,
                   canKick && isSelected ? styles.participantAvatarCardSelected : null,
@@ -65,26 +98,22 @@ export default function LobbyParticipantsCard({
                     canKick && isSelected ? styles.participantAvatarKick : null,
                   ]}
                 >
-                  {participant.role === 'Host' && !participant.isPlaceholder ? (
+                  {participant.isHost && !participant.isPlaceholder ? (
                     <View style={styles.hostBadge}>
                       <Ionicons name="medkit" size={14} color="#0A0A12" />
                     </View>
                   ) : null}
-                  {participant.avatarSource && !participant.isPlaceholder ? (
-                    <Image source={participant.avatarSource} style={styles.participantAvatarImage} />
-                  ) : participant.avatarUrl && !participant.isPlaceholder ? (
-                    <Image source={{ uri: participant.avatarUrl }} style={styles.participantAvatarImage} />
-                  ) : participant.avatarIcon && !participant.isPlaceholder ? (
-                    <Ionicons
-                      name={participant.avatarIcon}
-                      size={24}
-                      color={participant.avatarColor || '#9EDCFF'}
-                    />
-                  ) : (
-                    <Text style={styles.participantAvatarText}>
-                      {participant.isPlaceholder ? '?' : getInitials(participant.name)}
-                    </Text>
-                  )}
+                  <AvatarView
+                    uri={participantAvatarUri}
+                    source={participantAvatarSource}
+                    icon={participantAvatarIcon}
+                    color={participant.avatarColor || '#9EDCFF'}
+                    initials={participantInitials}
+                    circleStyle={PARTICIPANT_AVATAR_INNER_STYLE}
+                    imageStyle={styles.participantAvatarImage}
+                    iconSize={24}
+                    textStyle={styles.participantAvatarText}
+                  />
                 </View>
                 <Text
                   style={[
@@ -145,61 +174,21 @@ export default function LobbyParticipantsCard({
           </Pressable>
         </View>
       ) : null}
-      <View style={styles.codeActionsRow}>
-        <Pressable
-          onPress={onCopyCode}
-          style={[
-            styles.codeBadge,
-            copied ? styles.codeBadgeSuccess : null,
-          ]}
-        >
-          <Text style={styles.codeBadgeText}>{currentJoinCode}</Text>
-          <Text style={copied ? styles.codeHintSuccess : styles.codeHint}>
-            {copied ? t('Kopiert!') : t('Tippen zum Kopieren')}
-          </Text>
-        </Pressable>
-        <Pressable onPress={onShareCode} style={styles.shareButton}>
-          <Image source={SHARE_ANIM} style={styles.shareIconAnim} />
-        </Pressable>
-      </View>
-
-      <View style={styles.onlineFriendsSection}>
-        <Text style={styles.onlineFriendsTitle}>{t('Freunde online')}</Text>
-
-        {friendsLoading ? (
-          <View style={styles.loadingInline}>
-            <ActivityIndicator size="small" color="#60A5FA" />
-            <Text style={styles.loadingInlineText}>{t('Suche Freunde ...')}</Text>
-          </View>
-        ) : null}
-
-        {!friendsLoading && onlineFriends.length ? (
-          <View style={styles.onlineFriendList}>
-            {onlineFriends.map((friend) => (
-              <Pressable
-                key={friend.code}
-                onPress={() => onInviteFriend(friend)}
-                style={styles.onlineFriendCard}
-              >
-                <Text style={styles.onlineFriendName}>
-                  {friend.username ?? t('Freund:in')}
-                </Text>
-                {friend.title ? (
-                  <Text style={styles.onlineFriendTitle}>{friend.title}</Text>
-                ) : null}
-                <Text style={styles.onlineFriendCode}>{friend.code}</Text>
-                <Text style={styles.onlineFriendHint}>{t('Einladen')}</Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-
-        {!friendsLoading && !onlineFriends.length ? (
-          <Text style={styles.onlineFriendEmpty}>
-            {t('Keine Freunde online.')}
-          </Text>
-        ) : null}
-      </View>
+      <LobbyCodeActionsRow
+        currentJoinCode={currentJoinCode}
+        copied={copied}
+        onCopyCode={onCopyCode}
+        difficultyLabel={difficultyLabel}
+        questionLimit={questionLimit}
+        categoryLabel={categoryLabel}
+      />
+      <LobbyOnlineFriendsSection
+        isHostWaiting={isHostWaiting}
+        friendsLoading={friendsLoading}
+        onlineFriends={onlineFriends}
+        invitingFriendCodes={invitingFriendCodes}
+        onInviteFriend={onInviteFriend}
+      />
     </View>
   );
 }

@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import styles from './styles/SettingsScreen.styles';
 import AudioSettingsCard from './settings/AudioSettingsCard';
@@ -7,7 +8,6 @@ import ProfileSection from './settings/ProfileSection';
 import SettingsFooter from './settings/SettingsFooter';
 import SettingsHeader from './settings/SettingsHeader';
 import SettingsTabs from './settings/SettingsTabs';
-import AVATARS from './settings/avatars';
 import useSettingsController from './settings/useSettingsController';
 import { useTranslation } from '../i18n/useTranslation';
 
@@ -44,18 +44,11 @@ export default function SettingsScreen({
     levelBadgeHeat,
     avatarInitials,
     currentAvatar,
-    avatarId,
     avatarUri,
-    showAvatarPicker,
-    handleToggleAvatarPicker,
-    handleSelectAvatar,
-    handlePickAvatarPhoto,
     quizzesCompleted,
     accuracyPercent,
     xp,
     coins,
-    energy,
-    energyMax,
     streakShieldCount,
     doubleXpExpiresAt,
     titleProgress,
@@ -99,126 +92,128 @@ export default function SettingsScreen({
   const showProfileSection = resolvedTab === 'profile';
   const showSignOutSection = resolvedTab === 'settings';
   const headerTitle = title || (resolvedTab === 'profile' ? t('Profil') : t('Einstellungen'));
+
+  const handleOpenAvatarEdit = useCallback(() => {
+    const parentNavigation = navigation?.getParent?.();
+    if (parentNavigation && typeof parentNavigation.navigate === 'function') {
+      parentNavigation.navigate('AvatarEdit');
+      return;
+    }
+    navigation.navigate('AvatarEdit');
+  }, [navigation]);
+
   return (
-    <View style={styles.container}>
-      <View style={styles.backgroundGlowTop} pointerEvents="none" />
-      <View style={styles.backgroundGlowBottom} pointerEvents="none" />
-      <SettingsHeader
-        onClose={showClose ? () => navigation.goBack() : null}
-        showClose={showClose}
-        title={headerTitle}
+    <View style={styles.screenRoot}>
+      <View style={styles.container}>
+        <View style={styles.backgroundGlowTop} pointerEvents="none" />
+        <View style={styles.backgroundGlowBottom} pointerEvents="none" />
+        <SettingsHeader
+          onClose={showClose ? () => navigation.goBack() : null}
+          showClose={showClose}
+          title={headerTitle}
+        />
+
+        {showTabRow ? (
+          <SettingsTabs activeTab={activeTab} onChange={setActiveTab} />
+        ) : null}
+
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {showAudioSection ? (
+            <AudioSettingsCard
+              soundEnabled={soundEnabled}
+              vibrationEnabled={vibrationEnabled}
+              pushEnabled={pushEnabled}
+              friendRequestsEnabled={friendRequestsEnabled}
+              onSoundToggle={handleSoundToggle}
+              onVibrationToggle={handleVibrationToggle}
+              onPushToggle={handlePushToggle}
+              onFriendRequestsToggle={handleFriendRequestsToggle}
+              soundStatus={soundStatus}
+              vibrationStatus={vibrationStatus}
+              pushStatus={pushStatus}
+              friendRequestsStatus={friendRequestsStatus}
+            />
+          ) : null}
+          {showAudioSection ? (
+            <LanguageSettingsCard
+              language={language}
+              onSelectLanguage={handleLanguageChange}
+            />
+          ) : null}
+
+          {showProfileSection ? (
+            <ProfileSection
+              userName={userName}
+              userLevel={userLevel}
+              totalStreak={totalStreak}
+              levelBadgeHeat={levelBadgeHeat}
+              avatarInitials={avatarInitials}
+              currentAvatar={currentAvatar}
+              avatarUri={avatarUri}
+              onEditAvatar={handleOpenAvatarEdit}
+              quizzesCompleted={quizzesCompleted}
+              accuracyPercent={accuracyPercent}
+              xp={xp}
+              coins={coins}
+              streakShieldCount={streakShieldCount}
+              doubleXpExpiresAt={doubleXpExpiresAt}
+              titleProgress={titleProgress}
+              achievements={achievements}
+              claimingAchievement={claimingAchievement}
+              onClaimAchievement={handleClaimAchievement}
+              leaderboardRank={leaderboardRank}
+              loadingRank={loadingRank}
+              newEmail={newEmail}
+              setNewEmail={setNewEmail}
+              emailCtaLabel={emailCtaLabel}
+              emailCtaHint={emailCtaHint}
+              loadingEmail={loadingEmail}
+              onEmailUpdate={handleEmailUpdate}
+              showEmailActions={showEmailActions}
+              showLinkGoogle={showLinkGoogle}
+              linkGoogleLabel={linkGoogleLabel}
+              linkGoogleHint={linkGoogleHint}
+              linkingGoogle={linkingGoogle}
+              onLinkGoogle={handleLinkGoogle}
+            />
+          ) : null}
+
+          {feedback && (showProfileSection || showSignOutSection) ? (
+            <View style={styles.banner}>
+              <Text style={styles.bannerText}>{feedback}</Text>
+            </View>
+          ) : null}
+
+        </ScrollView>
+
+        {showSignOutSection ? (
+          <SettingsFooter
+            showResetForm={showResetForm}
+            onToggleResetForm={handleToggleResetForm}
+            resetEmail={resetEmail}
+            setResetEmail={setResetEmail}
+            loadingReset={loadingReset}
+            onResetPassword={handlePasswordReset}
+            signingOut={signingOut}
+            onSignOut={handleSignOut}
+            showResetActions={showResetActions}
+            isGuest={isGuest}
+            authResolved={authResolved}
+            onOpenLegal={(doc) => navigation.navigate('Legal', { doc })}
+          />
+        ) : null}
+      </View>
+      <ClaimRewardTopBar
+        userLevel={userLevel}
+        xp={xp}
+        coins={coins}
+        claimRewardAnimation={claimRewardAnimation}
+        onClaimRewardAnimationEnd={handleClaimRewardAnimationDone}
       />
-
-      {showTabRow ? (
-        <SettingsTabs activeTab={activeTab} onChange={setActiveTab} />
-      ) : null}
-
-      <ScrollView
-        ref={scrollRef}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <ClaimRewardTopBar
-          userLevel={userLevel}
-          avatarInitials={avatarInitials}
-          currentAvatar={currentAvatar}
-          avatarUri={avatarUri}
-          xp={xp}
-          coins={coins}
-          energy={energy}
-          energyMax={energyMax}
-          claimRewardAnimation={claimRewardAnimation}
-          onClaimRewardAnimationEnd={handleClaimRewardAnimationDone}
-        />
-        {showAudioSection ? (
-          <AudioSettingsCard
-            soundEnabled={soundEnabled}
-            vibrationEnabled={vibrationEnabled}
-            pushEnabled={pushEnabled}
-            friendRequestsEnabled={friendRequestsEnabled}
-            onSoundToggle={handleSoundToggle}
-            onVibrationToggle={handleVibrationToggle}
-            onPushToggle={handlePushToggle}
-            onFriendRequestsToggle={handleFriendRequestsToggle}
-            soundStatus={soundStatus}
-            vibrationStatus={vibrationStatus}
-            pushStatus={pushStatus}
-            friendRequestsStatus={friendRequestsStatus}
-          />
-        ) : null}
-        {showAudioSection ? (
-          <LanguageSettingsCard
-            language={language}
-            onSelectLanguage={handleLanguageChange}
-          />
-        ) : null}
-
-        {showProfileSection ? (
-          <ProfileSection
-            userName={userName}
-            userLevel={userLevel}
-            totalStreak={totalStreak}
-            levelBadgeHeat={levelBadgeHeat}
-            avatarInitials={avatarInitials}
-            currentAvatar={currentAvatar}
-            avatarId={avatarId}
-            avatarUri={avatarUri}
-            avatars={AVATARS}
-            showAvatarPicker={showAvatarPicker}
-            onToggleAvatarPicker={handleToggleAvatarPicker}
-            onSelectAvatar={handleSelectAvatar}
-            onPickAvatarPhoto={handlePickAvatarPhoto}
-            quizzesCompleted={quizzesCompleted}
-            accuracyPercent={accuracyPercent}
-            xp={xp}
-            coins={coins}
-            streakShieldCount={streakShieldCount}
-            doubleXpExpiresAt={doubleXpExpiresAt}
-            titleProgress={titleProgress}
-            achievements={achievements}
-            claimingAchievement={claimingAchievement}
-            onClaimAchievement={handleClaimAchievement}
-            leaderboardRank={leaderboardRank}
-            loadingRank={loadingRank}
-            newEmail={newEmail}
-            setNewEmail={setNewEmail}
-            emailCtaLabel={emailCtaLabel}
-            emailCtaHint={emailCtaHint}
-            loadingEmail={loadingEmail}
-            onEmailUpdate={handleEmailUpdate}
-            showEmailActions={showEmailActions}
-            showLinkGoogle={showLinkGoogle}
-            linkGoogleLabel={linkGoogleLabel}
-            linkGoogleHint={linkGoogleHint}
-            linkingGoogle={linkingGoogle}
-            onLinkGoogle={handleLinkGoogle}
-          />
-        ) : null}
-
-        {feedback && (showProfileSection || showSignOutSection) ? (
-          <View style={styles.banner}>
-            <Text style={styles.bannerText}>{feedback}</Text>
-          </View>
-        ) : null}
-
-      </ScrollView>
-
-      {showSignOutSection ? (
-        <SettingsFooter
-          showResetForm={showResetForm}
-          onToggleResetForm={handleToggleResetForm}
-          resetEmail={resetEmail}
-          setResetEmail={setResetEmail}
-          loadingReset={loadingReset}
-          onResetPassword={handlePasswordReset}
-          signingOut={signingOut}
-          onSignOut={handleSignOut}
-          showResetActions={showResetActions}
-          isGuest={isGuest}
-          authResolved={authResolved}
-          onOpenLegal={(doc) => navigation.navigate('Legal', { doc })}
-        />
-      ) : null}
     </View>
   );
 }

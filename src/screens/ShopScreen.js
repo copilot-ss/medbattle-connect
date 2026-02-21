@@ -6,12 +6,10 @@ import {
   ScrollView,
   Text,
   View,
-  Pressable,
-  Image,
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import styles from './styles/ShopScreen.styles';
@@ -26,168 +24,31 @@ import {
 import useSupabaseUserId from '../hooks/useSupabaseUserId';
 import { getInAppPurchases } from '../lib/inAppPurchases';
 import { useTranslation } from '../i18n/useTranslation';
-import { calculateCoinReward } from '../services/quizService';
 import {
-  DAILY_FREE_COINS,
-  getLocalDateKey,
+  getMsUntilNextDailyClaim,
+  isDailyCoinsClaimAvailable,
   loadDailyCoinsClaimDate,
   persistDailyCoinsClaimDate,
 } from '../services/dailyRewardsService';
 import { registerIapListener } from '../services/iapListeners';
 import { syncUserProgressDelta } from '../services/userProgressService';
-
-const COIN_EMOJI = '🪙';
-const ENERGY_EMOJI = '\u26A1';
-const PERFECT_SOLO_QUESTION_LIMIT = 6;
-const PERFECT_SOLO_DIFFICULTY = 'mittel';
-const ENERGY_PRICE_PER_UNIT = calculateCoinReward({
-  correct: PERFECT_SOLO_QUESTION_LIMIT,
-  total: PERFECT_SOLO_QUESTION_LIMIT,
-  difficulty: PERFECT_SOLO_DIFFICULTY,
-  isMultiplayer: false,
-});
-const roundToFive = (value) => Math.max(5, Math.round(value / 5) * 5);
-const ENERGY_SINGLE_PRICE = Math.max(15, ENERGY_PRICE_PER_UNIT + 6);
-const SHOP_PRICES = Object.freeze({
-  energy: {
-    one: ENERGY_SINGLE_PRICE,
-    ten: roundToFive(ENERGY_SINGLE_PRICE * 8.8),
-    twenty: roundToFive(ENERGY_SINGLE_PRICE * 16),
-  },
-  energyCap: {
-    plus5: roundToFive(ENERGY_SINGLE_PRICE * 27),
-    plus10: roundToFive(ENERGY_SINGLE_PRICE * 46.5),
-  },
-  boosts: {
-    streakShield: roundToFive(ENERGY_SINGLE_PRICE * 4.5),
-    freezeTime: roundToFive(ENERGY_SINGLE_PRICE * 3.3),
-    doubleXp: roundToFive(ENERGY_SINGLE_PRICE * 7),
-    joker5050: roundToFive(ENERGY_SINGLE_PRICE * 3.8),
-  },
-});
-const COIN_PACKS = [
-  {
-    id: 'coins-600',
-    title: '600 Coins',
-    amount: 600,
-    productId: 'coins_600',
-    priceCents: 199,
-    priceLabel: '1,99 €',
-  },
-  {
-    id: 'coins-1500',
-    title: '1.500 Coins',
-    amount: 1500,
-    productId: 'coins_1500',
-    priceCents: 399,
-    priceLabel: '3,99 €',
-  },
-  {
-    id: 'coins-3200',
-    title: '3.200 Coins',
-    amount: 3200,
-    productId: 'coins_3200',
-    priceCents: 699,
-    priceLabel: '6,99 €',
-  },
-  {
-    id: 'coins-7500',
-    title: '7.500 Coins',
-    amount: 7500,
-    productId: 'coins_7500',
-    priceCents: 1499,
-    priceLabel: '14,99 €',
-  },
-  {
-    id: 'coins-16000',
-    title: '16.000 Coins',
-    amount: 16000,
-    productId: 'coins_16000',
-    priceCents: 2999,
-    priceLabel: '29,99 €',
-  },
-  {
-    id: 'coins-60000',
-    title: '60.000 Coins',
-    amount: 60000,
-    productId: 'coins_60000',
-    priceCents: 9999,
-    priceLabel: '99,99 €',
-  },
-];
-const BASE_COIN_PRICE =
-  COIN_PACKS[0].priceCents / COIN_PACKS[0].amount;
-const COIN_PACK_PRODUCT_IDS = COIN_PACKS.map((pack) => pack.productId);
-const COIN_PACKS_BY_PRODUCT = COIN_PACKS.reduce((acc, pack) => {
-  acc[pack.productId] = pack;
-  return acc;
-}, {});
-const getSavingsPercent = (pack) => {
-  if (!pack?.priceCents || !pack?.amount) {
-    return 0;
-  }
-
-  const packPricePerCoin = pack.priceCents / pack.amount;
-  const savings = 1 - packPricePerCoin / BASE_COIN_PRICE;
-  return Math.max(0, Math.round(savings * 100));
-};
-
-const getCoinIconCount = (amount) => {
-  if (!Number.isFinite(amount)) {
-    return 1;
-  }
-  if (amount <= 600) {
-    return 1;
-  }
-  if (amount <= 3200) {
-    return 2;
-  }
-  if (amount <= 16000) {
-    return 3;
-  }
-  return 4;
-};
-
-const PURCHASE_SPIN_ROTATIONS_PER_SECOND = 8;
-const PURCHASE_SPIN_CYCLE_MS = 4000;
-const PURCHASE_SPIN_ROTATIONS_PER_CYCLE =
-  (PURCHASE_SPIN_ROTATIONS_PER_SECOND * PURCHASE_SPIN_CYCLE_MS) / 1000;
-const PURCHASE_SPIN_DEGREES_PER_CYCLE = `${360 * PURCHASE_SPIN_ROTATIONS_PER_CYCLE}deg`;
-
-const getMsUntilNextDailyClaim = () => {
-  const now = new Date();
-  const next = new Date(now);
-  next.setHours(24, 0, 0, 0);
-  return Math.max(0, next.getTime() - now.getTime());
-};
-
-const formatCountdown = (ms) => {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  const pad = (value) => String(value).padStart(2, '0');
-  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-};
-
-const formatThousands = (value) => {
-  const numeric = Number.parseInt(value, 10);
-  if (!Number.isFinite(numeric)) {
-    return '0';
-  }
-  return String(numeric).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-};
-
-const sanitizeStatNumber = (value) => {
-  const parsed = Number.parseInt(value, 10);
-  if (Number.isFinite(parsed) && parsed >= 0) {
-    return parsed;
-  }
-  return 0;
-};
+import useShopSections from './shop/useShopSections';
+import ShopSections from './shop/ShopSections';
+import {
+  COIN_EMOJI,
+  COIN_PACK_PRODUCT_IDS,
+  COIN_PACKS_BY_PRODUCT,
+  ENERGY_EMOJI,
+  PURCHASE_SPIN_CYCLE_MS,
+  PURCHASE_SPIN_ROTATIONS_PER_CYCLE,
+  formatCountdown,
+  formatThousands,
+  sanitizeStatNumber,
+} from './shop/shopConfig';
 
 export default function ShopScreen() {
   const { t } = useTranslation();
+  const isFocused = useIsFocused();
   const insets = useSafeAreaInsets();
   const { isOnline } = useConnectivity();
   const userId = useSupabaseUserId();
@@ -214,6 +75,7 @@ export default function ShopScreen() {
   const [dailyClaimDate, setDailyClaimDate] = useState(null);
   const [dailyClaimLoading, setDailyClaimLoading] = useState(true);
   const [dailyTimeLeft, setDailyTimeLeft] = useState(null);
+  const [showClaimedDailyUntilLeave, setShowClaimedDailyUntilLeave] = useState(false);
   const energyFlashOpacity = useRef(new Animated.Value(0)).current;
   const energyFlashScale = useRef(new Animated.Value(0.6)).current;
   const energyShake = useRef(new Animated.Value(0)).current;
@@ -245,8 +107,9 @@ export default function ShopScreen() {
   }, [cardGap, cardPeek, screenWidth]);
   const contentPaddingTop = Math.max(insets.top + 16, 56);
   const contentPaddingBottom = 24;
-  const todayKey = getLocalDateKey();
-  const canClaimDaily = !dailyClaimDate || dailyClaimDate !== todayKey;
+  const canClaimDaily = isDailyCoinsClaimAvailable(dailyClaimDate);
+  const showDailySection =
+    !dailyClaimLoading && (canClaimDaily || (isFocused && showClaimedDailyUntilLeave));
   const dailyTimerLabel =
     dailyTimeLeft === null ? null : formatCountdown(dailyTimeLeft);
 
@@ -340,6 +203,7 @@ export default function ShopScreen() {
   useFocusEffect(
     useCallback(() => {
       setShopMessage(null);
+      setShowClaimedDailyUntilLeave(false);
       if (typeof requestAnimationFrame === 'function') {
         requestAnimationFrame(resetScrollPositions);
       } else {
@@ -347,6 +211,7 @@ export default function ShopScreen() {
       }
       return () => {
         setShopMessage(null);
+        setShowClaimedDailyUntilLeave(false);
       };
     }, [resetScrollPositions])
   );
@@ -375,13 +240,13 @@ export default function ShopScreen() {
   }, []);
 
   useEffect(() => {
-    if (dailyClaimLoading || canClaimDaily) {
+    if (dailyClaimLoading || canClaimDaily || !showDailySection) {
       setDailyTimeLeft(null);
       return undefined;
     }
 
     const updateCountdown = () => {
-      setDailyTimeLeft(getMsUntilNextDailyClaim());
+      setDailyTimeLeft(getMsUntilNextDailyClaim(dailyClaimDate));
     };
 
     updateCountdown();
@@ -390,7 +255,7 @@ export default function ShopScreen() {
     return () => {
       clearInterval(interval);
     };
-  }, [dailyClaimLoading, canClaimDaily]);
+  }, [dailyClaimDate, dailyClaimLoading, canClaimDaily, showDailySection]);
 
   useEffect(() => {
     if (!purchasingId) {
@@ -483,12 +348,12 @@ export default function ShopScreen() {
               await iapModule.finishTransactionAsync(purchase, false);
               await grantCoins(pack.amount);
             } catch (err) {
-              setShopMessage(t('Kauf fehlgeschlagen. Bitte später erneut.'));
+              setShopMessage(t('Kauf fehlgeschlagen. Bitte spÃ¤ter erneut.'));
             }
           }
         } else if (responseCode === iapModule.IAPResponseCode.USER_CANCELED) {
         } else if (errorCode) {
-          setShopMessage(t('Kauf fehlgeschlagen. Bitte später erneut.'));
+          setShopMessage(t('Kauf fehlgeschlagen. Bitte spÃ¤ter erneut.'));
         }
 
         setPurchasingId(null);
@@ -504,7 +369,7 @@ export default function ShopScreen() {
         }
       } catch (err) {
         if (!cancelled) {
-          setShopMessage(t('Kauf ist gerade nicht verfügbar.'));
+          setShopMessage(t('Kauf ist gerade nicht verfÃ¼gbar.'));
         }
       }
     }
@@ -647,11 +512,11 @@ export default function ShopScreen() {
       return;
     }
     if (isOffline) {
-      setShopMessage(t('Offline: Kauf ist gerade nicht verfügbar.'));
+      setShopMessage(t('Offline: Kauf ist gerade nicht verfÃ¼gbar.'));
       return;
     }
     if (!iapReady || !iapAvailable || !iapModule) {
-      setShopMessage(t('Kauf ist gerade nicht verfügbar.'));
+      setShopMessage(t('Kauf ist gerade nicht verfÃ¼gbar.'));
       return;
     }
 
@@ -662,7 +527,7 @@ export default function ShopScreen() {
       await iapModule.requestPurchaseAsync({ sku: item.productId });
     } catch (err) {
       setPurchasingId(null);
-      setShopMessage(t('Kauf fehlgeschlagen. Bitte später erneut.'));
+      setShopMessage(t('Kauf fehlgeschlagen. Bitte spÃ¤ter erneut.'));
     }
   };
 
@@ -671,8 +536,7 @@ export default function ShopScreen() {
       return;
     }
 
-    const claimKey = getLocalDateKey();
-    if (dailyClaimDate === claimKey) {
+    if (!canClaimDaily) {
       setShopMessage(t('Heute schon abgeholt.'));
       return;
     }
@@ -687,172 +551,17 @@ export default function ShopScreen() {
     }
 
     await grantCoins(amount);
-    await persistDailyCoinsClaimDate(claimKey);
-    setDailyClaimDate(claimKey);
+    const claimTimestamp = Date.now();
+    await persistDailyCoinsClaimDate(claimTimestamp);
+    setDailyClaimDate(String(claimTimestamp));
+    setShowClaimedDailyUntilLeave(true);
     setPurchasingId(null);
   };
 
-  const sections = useMemo(
-    () => [
-      {
-        key: 'daily',
-        title: t('Gratis Coins'),
-        items: [
-          {
-            id: 'daily-coins',
-            title: t(`5 ${COIN_EMOJI}`),
-            priceLabel: t('Gratis'),
-            icon: 'gift',
-            accent: colors.accentGreen,
-            kind: 'daily',
-            amount: DAILY_FREE_COINS,
-          },
-        ],
-      },
-      {
-        key: 'energy',
-        title: t('Energie'),
-        items: [
-          {
-            id: 'energy-1',
-            title: t(`+1 ${ENERGY_EMOJI}`),
-            description: t('Schneller Mini-Boost.'),
-            price: SHOP_PRICES.energy.one,
-            icon: 'flash',
-            accent: colors.accent,
-            kind: 'energy',
-            amount: 1,
-          },
-          {
-            id: 'energy-10',
-            title: t(`+10 ${ENERGY_EMOJI}`),
-            description: t('Solider Boost f\u00fcr mehrere Runden.'),
-            price: SHOP_PRICES.energy.ten,
-            savingsPercent: Math.max(
-              0,
-              Math.round((1 - SHOP_PRICES.energy.ten / (SHOP_PRICES.energy.one * 10)) * 100)
-            ),
-            icon: 'flash',
-            accent: colors.accentWarm,
-            kind: 'energy',
-            amount: 10,
-          },
-          {
-            id: 'energy-20',
-            title: t(`+20 ${ENERGY_EMOJI}`),
-            description: t('Gro\u00dfer Boost f\u00fcr lange Sessions.'),
-            price: SHOP_PRICES.energy.twenty,
-            savingsPercent: Math.max(
-              0,
-              Math.round((1 - SHOP_PRICES.energy.twenty / (SHOP_PRICES.energy.one * 20)) * 100)
-            ),
-            icon: 'flash',
-            accent: colors.highlight,
-            kind: 'energy',
-            amount: 20,
-          },
-        ],
-      },
-      {
-        key: 'energy-cap',
-        title: t('Max Energie'),
-        items: [
-          {
-            id: 'energy-cap-5',
-            title: t(`Max ${ENERGY_EMOJI} +5`),
-            description: t('F\u00fcr Power-User: dauerhaft mehr Energie.'),
-            price: SHOP_PRICES.energyCap.plus5,
-            icon: 'battery-charging',
-            accent: colors.accentGreen,
-            kind: 'cap',
-            amount: 5,
-          },
-          {
-            id: 'energy-cap-10',
-            title: t(`Max ${ENERGY_EMOJI} +10`),
-            description: t('F\u00fcr Power-User: dauerhaft mehr Energie.'),
-            price: SHOP_PRICES.energyCap.plus10,
-            savingsPercent: Math.max(
-              0,
-              Math.round(
-                (1 -
-                  SHOP_PRICES.energyCap.plus10 /
-                    (SHOP_PRICES.energyCap.plus5 * 2)) *
-                  100
-              )
-            ),
-            icon: 'battery-charging',
-            accent: colors.accentGreen,
-            kind: 'cap',
-            amount: 10,
-          },
-        ],
-      },
-      {
-        key: 'boosts',
-        title: t('Boosts'),
-        items: [
-          {
-            id: 'streak_shield',
-            title: t('Streak-Schild'),
-            description: t('Schützt eine Streak, wenn du einmal verlierst.'),
-            price: SHOP_PRICES.boosts.streakShield,
-            icon: 'shield-checkmark',
-            accent: colors.accentWarm,
-            kind: 'boost',
-            amount: 1,
-          },
-          {
-            id: 'freeze_time',
-            title: t('Zeit einfrieren'),
-            description: t('Stoppt den Timer einmal für 5 Sekunden.'),
-            price: SHOP_PRICES.boosts.freezeTime,
-            icon: 'time',
-            accent: colors.accent,
-            kind: 'boost',
-            amount: 1,
-          },
-          {
-            id: 'double_xp',
-            title: t('Doppel-XP'),
-            description: t('2x XP für 6 Stunden.'),
-            price: SHOP_PRICES.boosts.doubleXp,
-            icon: 'flash',
-            accent: colors.accentGreen,
-            kind: 'boost',
-            amount: 1,
-          },
-          {
-            id: 'joker_5050',
-            title: t('Joker 50/50'),
-            description: t('Entfernt zwei falsche Antworten.'),
-            price: SHOP_PRICES.boosts.joker5050,
-            icon: 'help-circle',
-            accent: colors.highlight,
-            kind: 'boost',
-            amount: 1,
-          },
-        ],
-      },
-      {
-        key: 'coins',
-        title: t('Coins kaufen'),
-        items: COIN_PACKS.map((pack) => ({
-          id: pack.id,
-          title: t(pack.title),
-          priceLabel: pack.priceLabel,
-          savingsPercent: getSavingsPercent(pack),
-          coinIconCount: getCoinIconCount(pack.amount),
-          icon: 'cash',
-          accent: colors.highlight,
-          kind: 'iap',
-          productId: pack.productId,
-          amount: pack.amount,
-        })),
-      },
-    ],
-    [t]
-  );
+  const sections = useShopSections({
+    showDailySection,
+    t,
+  });
 
   return (
     <View style={styles.screen}>
@@ -881,7 +590,7 @@ export default function ShopScreen() {
               <Text style={styles.title}>{t('Shop')}</Text>
               <View style={styles.headerBadges}>
                 <View style={styles.coinsBadge}>
-                  <Text style={styles.coinsEmoji}>🪙</Text>
+                  <Text style={styles.coinsEmoji}>{COIN_EMOJI}</Text>
                   <Text style={styles.coinsText}>
                     {coinsLabel} {t('Coins')}
                   </Text>
@@ -889,7 +598,7 @@ export default function ShopScreen() {
                 <Animated.View
                   style={[styles.energyBadge, { transform: [{ translateX: energyShake }] }]}
                 >
-                  <Text style={styles.energyEmoji}>{'\u26A1'}</Text>
+                  <Text style={styles.energyEmoji}>{ENERGY_EMOJI}</Text>
                   <Text style={styles.energyText}>{energyLabel}</Text>
                 </Animated.View>
               </View>
@@ -903,191 +612,33 @@ export default function ShopScreen() {
           ) : null}
         </View>
 
-        {sections.map((section) => (
-          <View key={section.key} style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{section.title}</Text>
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.cardList}
-              ref={registerHorizontalRef(section.key)}
-            >
-              {section.items.map((item) => {
-                const isBuying = purchasingId === item.id;
-                const isEnergyItem = item.kind === 'energy';
-                const isCapItem = item.kind === 'cap';
-                const isIapItem = item.kind === 'iap';
-                const isDailyItem = item.kind === 'daily';
-                const isBoostItem = item.kind === 'boost';
-                const isStreakShield = item.id === 'streak_shield';
-                const isFreezeTime = item.id === 'freeze_time';
-                const isComingSoon = item.comingSoon ?? !item.kind;
-                const canAfford =
-                  isIapItem || isDailyItem ? true : coinsAvailable >= item.price;
-                const energyLocked =
-                  isEnergyItem && (isEnergyFull || remainingEnergySpace < item.amount);
-                const capLocked = isCapItem && remainingCap < item.amount;
-                const iapLocked = isIapItem && (!iapReady || isOffline);
-                const dailyLocked = isDailyItem && (!canClaimDaily || dailyClaimLoading);
-                const canBuy =
-                  !isComingSoon &&
-                  !isBuying &&
-                  canAfford &&
-                  !energyLocked &&
-                  !capLocked &&
-                  !iapLocked &&
-                  !dailyLocked;
-                const itemCardSpinStyle = isBuying
-                  ? {
-                      transform: [
-                        { perspective: 900 },
-                        {
-                          rotateY: purchaseButtonSpin.interpolate({
-                            inputRange: [0, PURCHASE_SPIN_ROTATIONS_PER_CYCLE],
-                            outputRange: ['0deg', PURCHASE_SPIN_DEGREES_PER_CYCLE],
-                          }),
-                        },
-                      ],
-                    }
-                  : null;
-                const coinIconCount = isIapItem ? item.coinIconCount : null;
-                const iconImage = item.image;
-                const priceLabel = isIapItem
-                  ? item.priceLabel
-                  : isDailyItem
-                  ? t('Gratis')
-                  : `${formatThousands(item.price)} ${COIN_EMOJI}`;
-                const savingsLabel =
-                  item.savingsPercent > 0
-                    ? `-${item.savingsPercent}%`
-                    : null;
-                const buttonLabel = isComingSoon
-                  ? t('Kommt bald')
-                  : isDailyItem
-                  ? canClaimDaily
-                    ? t('Gratis')
-                    : dailyTimerLabel || t('Morgen wieder')
-                  : t('Kaufen');
-
-                const handlePress = () => {
-                  if (isComingSoon || isBuying) {
-                    return;
-                  }
-                  if (isEnergyItem) {
-                    handleBuyEnergy(item);
-                    return;
-                  }
-                  if (isCapItem) {
-                    handleBuyEnergyCap(item);
-                    return;
-                  }
-                  if (isBoostItem) {
-                    handleBuyBoost(item);
-                    return;
-                  }
-                  if (isIapItem) {
-                    handleBuyIap(item);
-                    return;
-                  }
-                  if (isDailyItem) {
-                    handleClaimDailyCoins(item);
-                    return;
-                  }
-                  setShopMessage(t('Kommt bald'));
-                };
-
-                return (
-                  <View key={item.id} style={[styles.itemWrap, { width: cardWidth }]}>
-                    <Animated.View style={[styles.itemCard, itemCardSpinStyle]}>
-                      {savingsLabel ? (
-                        <View style={styles.itemBadge} pointerEvents="none">
-                          <Text style={styles.itemBadgeText}>{savingsLabel}</Text>
-                        </View>
-                      ) : null}
-                      <View style={[styles.itemIconWrap, { backgroundColor: item.accent }]}>
-                        {iconImage ? (
-                          <Image
-                            source={iconImage}
-                            style={styles.itemIconImage}
-                            resizeMode="contain"
-                          />
-                        ) : coinIconCount ? (
-                          <View style={styles.coinStack}>
-                            {Array.from({ length: coinIconCount }, (_, index) => (
-                              <Text
-                                key={`${item.id}-coin-${index}`}
-                                style={[
-                                  styles.coinStackEmoji,
-                                  index > 0 ? styles.coinStackEmojiOffset : null,
-                                ]}
-                              >
-                                {COIN_EMOJI}
-                              </Text>
-                            ))}
-                          </View>
-                        ) : (
-                          <Ionicons name={item.icon} size={20} color="#0A0A12" />
-                        )}
-                      </View>
-                      <View style={styles.itemInfo}>
-                        <Text
-                          style={[
-                            styles.itemTitle,
-                            isStreakShield ? styles.itemTitleSingleLine : null,
-                            isFreezeTime ? styles.itemTitleFreezeTime : null,
-                          ]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                          adjustsFontSizeToFit
-                          minimumFontScale={0.8}
-                        >
-                          {item.title}
-                        </Text>
-                      </View>
-                      <View style={styles.itemAction}>
-                        <Text
-                          style={styles.priceText}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                          adjustsFontSizeToFit
-                          minimumFontScale={0.85}
-                        >
-                          {priceLabel}
-                        </Text>
-                      </View>
-                    </Animated.View>
-                    <Pressable
-                      style={[
-                        styles.buyButton,
-                        styles.buyButtonOutside,
-                        canBuy ? styles.buyButtonActive : styles.buyButtonDisabled,
-                      ]}
-                      disabled={isComingSoon || isBuying}
-                      onPress={handlePress}
-                    >
-                      <Text
-                        style={[
-                          styles.buyButtonText,
-                          canBuy ? styles.buyButtonTextActive : null,
-                        ]}
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                        adjustsFontSizeToFit
-                        minimumFontScale={0.85}
-                      >
-                        {buttonLabel}
-                      </Text>
-                    </Pressable>
-                  </View>
-                );
-              })}
-            </ScrollView>
-          </View>
-        ))}
+        <ShopSections
+          sections={sections}
+          styles={styles}
+          registerHorizontalRef={registerHorizontalRef}
+          cardWidth={cardWidth}
+          purchasingId={purchasingId}
+          coinsAvailable={coinsAvailable}
+          isEnergyFull={isEnergyFull}
+          remainingEnergySpace={remainingEnergySpace}
+          remainingCap={remainingCap}
+          iapReady={iapReady}
+          isOffline={isOffline}
+          canClaimDaily={canClaimDaily}
+          dailyClaimLoading={dailyClaimLoading}
+          dailyTimerLabel={dailyTimerLabel}
+          purchaseButtonSpin={purchaseButtonSpin}
+          onBuyEnergy={handleBuyEnergy}
+          onBuyEnergyCap={handleBuyEnergyCap}
+          onBuyBoost={handleBuyBoost}
+          onBuyIap={handleBuyIap}
+          onClaimDailyCoins={handleClaimDailyCoins}
+          onShowComingSoon={() => setShopMessage(t('Kommt bald'))}
+          t={t}
+        />
 
       </ScrollView>
     </View>
   );
 }
+

@@ -27,6 +27,11 @@ export default function useQuizConfig(route) {
     typeof route?.params?.questionLimit === 'number' && Number.isFinite(route.params.questionLimit)
       ? Math.max(1, Math.floor(route.params.questionLimit))
       : null;
+  const preloadedMatch =
+    route?.params?.preloadedMatch &&
+    typeof route.params.preloadedMatch === 'object'
+      ? route.params.preloadedMatch
+      : null;
   const categoryParam =
     typeof route?.params?.category === 'string' ? route.params.category : null;
   const normalizedCategory =
@@ -44,5 +49,6 @@ export default function useQuizConfig(route) {
     difficultyLabel,
     requestedQuestionLimit,
     category: normalizedCategory,
+    preloadedMatch,
   };
 }

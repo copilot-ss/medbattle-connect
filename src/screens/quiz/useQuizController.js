@@ -80,6 +80,7 @@ export default function useQuizController({ navigation, route }) {
     difficultyLabel,
     requestedQuestionLimit,
     category,
+    preloadedMatch,
   } = useQuizConfig(route);
 
 
@@ -97,6 +98,7 @@ export default function useQuizController({ navigation, route }) {
     surrender: surrenderMatch,
   } = useMultiplayerMatch(matchId, userId, {
     expectedDifficulty: normalizedDifficulty,
+    initialMatch: preloadedMatch,
   });
 
   const questionLimit = useMemo(() => {
@@ -590,7 +592,6 @@ export default function useQuizController({ navigation, route }) {
 
   useEffect(() => {
     setHiddenOptions([]);
-    setUsedBoosts({});
     freezeActiveRef.current = false;
     setIsTimerFrozen(false);
     clearFreezeTimeout();

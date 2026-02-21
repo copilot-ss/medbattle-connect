@@ -1,4 +1,15 @@
-import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import {
+  Animated,
+  Easing,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/SettingsScreen.styles';
@@ -18,11 +29,49 @@ export default function FriendsAddSheet({
   friendRequestSent = false,
 }) {
   const { t } = useTranslation();
+  const androidKeyboardTranslateY = useRef(new Animated.Value(0)).current;
   const hasInput = Boolean(friendCodeInput.trim());
   const submitDisabled = addingFriend || !hasInput || friendRequestSent;
   const submitLabel = friendRequestSent
     ? t('Freundesanfrage gesendet')
     : t('Freund hinzufügen');
+
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !visible) {
+      androidKeyboardTranslateY.setValue(0);
+      return undefined;
+    }
+
+    const animateTo = (toValue, duration = 180) => {
+      Animated.timing(androidKeyboardTranslateY, {
+        toValue,
+        duration: Number.isFinite(duration) ? duration : 180,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const handleShow = (event) => {
+      const rawHeight = event?.endCoordinates?.height ?? 0;
+      const keyboardHeight = Number.isFinite(rawHeight) ? rawHeight : 0;
+      const target = -Math.max(0, keyboardHeight - 8);
+      animateTo(target, event?.duration);
+    };
+
+    const handleHide = (event) => {
+      animateTo(0, event?.duration);
+    };
+
+    const showSub = Keyboard.addListener('keyboardDidShow', handleShow);
+    const hideSub = Keyboard.addListener('keyboardDidHide', handleHide);
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+      androidKeyboardTranslateY.stopAnimation();
+      androidKeyboardTranslateY.setValue(0);
+    };
+  }, [androidKeyboardTranslateY, visible]);
 
   if (!visible) {
     return null;
@@ -31,11 +80,19 @@ export default function FriendsAddSheet({
   return (
     <KeyboardAvoidingView
       style={styles.friendAddOverlay}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}
+      enabled={Platform.OS === 'ios'}
     >
       <Pressable style={styles.friendAddBackdrop} onPress={onClose} />
-      <View style={styles.friendAddCard}>
+      <Animated.View
+        style={[
+          styles.friendAddCard,
+          Platform.OS === 'android'
+            ? { transform: [{ translateY: androidKeyboardTranslateY }] }
+            : null,
+        ]}
+      >
         <View style={styles.friendAddHeader}>
           <Text style={styles.friendAddTitle}>{t('Freunde hinzufügen')}</Text>
           <Pressable
@@ -111,7 +168,7 @@ export default function FriendsAddSheet({
             <Text style={styles.bannerText}>{friendsFeedback}</Text>
           </View>
         ) : null}
-      </View>
+      </Animated.View>
     </KeyboardAvoidingView>
   );
 }
