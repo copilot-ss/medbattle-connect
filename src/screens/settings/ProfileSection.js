@@ -1,5 +1,6 @@
-import {
+﻿import {
   ActivityIndicator,
+  Animated,
   Pressable,
   Text,
   TextInput,
@@ -8,8 +9,19 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
 import AvatarView from '../../components/avatar/AvatarView';
+import { getTitleProgress } from '../../services/titleService';
 import styles from '../styles/SettingsScreen.styles';
+import useProfileSectionAnimations from './useProfileSectionAnimations';
+
 const XP_BOOST_ICON_COLOR = '#f59e0b';
+
+function formatThousands(value) {
+  const numeric = Number.parseInt(value, 10);
+  if (!Number.isFinite(numeric)) {
+    return '0';
+  }
+  return String(numeric).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
 
 export default function ProfileSection({
   userName,
@@ -52,8 +64,10 @@ export default function ProfileSection({
   const fallbackTitle = t('Med Rookie');
   const googleHintFallback = t('Google mit diesem Profil verknüpfen.');
   const googleLabelFallback = t('Google verbinden');
-  const resolvedTitle = titleProgress?.current?.label
-    ? t(titleProgress.current.label)
+  const safeXp = Number.isFinite(xp) ? Math.max(0, Math.round(xp)) : 0;
+  const resolvedTitleProgress = titleProgress ?? getTitleProgress(safeXp);
+  const resolvedTitle = resolvedTitleProgress?.current?.label
+    ? t(resolvedTitleProgress.current.label)
     : fallbackTitle;
   const resolvedShieldCount = Number.isFinite(streakShieldCount)
     ? Math.max(0, streakShieldCount)
@@ -61,273 +75,335 @@ export default function ProfileSection({
   const xpBoostActive =
     Number.isFinite(doubleXpExpiresAt) && doubleXpExpiresAt > Date.now();
   const xpBoostStatus = xpBoostActive ? t('Aktiv') : t('Nicht aktiv');
-
-  const formatThousands = (value) => {
-    const numeric = Number.parseInt(value, 10);
-    if (!Number.isFinite(numeric)) {
-      return '0';
-    }
-    return String(numeric).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  };
+  const progressTarget = Number.isFinite(resolvedTitleProgress?.progress)
+    ? Math.max(0, Math.min(1, resolvedTitleProgress.progress))
+    : 0;
+  const progressPercent = Math.round(progressTarget * 100);
+  const currentTierMinXp = Number.isFinite(resolvedTitleProgress?.current?.minXp)
+    ? resolvedTitleProgress.current.minXp
+    : 0;
+  const nextTierMinXp = Number.isFinite(resolvedTitleProgress?.next?.minXp)
+    ? resolvedTitleProgress.next.minXp
+    : null;
+  const tierXpProgress = Math.max(0, safeXp - currentTierMinXp);
+  const tierXpTotal = nextTierMinXp != null
+    ? Math.max(1, nextTierMinXp - currentTierMinXp)
+    : 1;
+  const progressHint = nextTierMinXp != null
+    ? `${formatThousands(tierXpProgress)} / ${formatThousands(tierXpTotal)} XP`
+    : t('Max-Level erreicht');
+  const nextTitleLabel = resolvedTitleProgress?.next?.label
+    ? t(resolvedTitleProgress.next.label)
+    : null;
+  const {
+    heroAnimatedStyle,
+    statsAnimatedStyle,
+    inventoryAnimatedStyle,
+    achievementsAnimatedStyle,
+    accountAnimatedStyle,
+    avatarAnimatedStyle,
+    progressWidth,
+    handleAvatarPressIn,
+    handleAvatarPressOut,
+  } = useProfileSectionAnimations({
+    progressTarget,
+  });
 
   return (
     <View style={[styles.card, styles.profileCard]}>
-      <View style={[styles.profileRow, styles.profileRowNoTitle]}>
-        <Pressable
-          onPress={onEditAvatar}
-          style={[
-            styles.avatarFrame,
-            currentAvatar?.color
-              ? { borderColor: currentAvatar.color, shadowColor: currentAvatar.color }
-              : null,
-          ]}
-        >
-          <AvatarView
-            uri={avatarUri}
-            source={currentAvatar?.source ?? null}
-            icon={currentAvatar?.icon ?? null}
-            color={currentAvatar?.color ?? null}
-            initials={avatarInitials}
-            circleStyle={[
-              styles.avatarCircle,
-              currentAvatar?.color ? { backgroundColor: `${currentAvatar.color}30` } : null,
+      <Animated.View style={heroAnimatedStyle}>
+        <View style={[styles.profileRow, styles.profileRowNoTitle]}>
+          <Pressable
+            onPress={onEditAvatar}
+            onPressIn={handleAvatarPressIn}
+            onPressOut={handleAvatarPressOut}
+            style={[
+              styles.avatarFrame,
+              currentAvatar?.color
+                ? { borderColor: currentAvatar.color, shadowColor: currentAvatar.color }
+                : null,
             ]}
-            imageStyle={styles.avatarImage}
-            iconSize={30}
-            iconColor={currentAvatar?.color || '#9EDCFF'}
-            textStyle={styles.avatarText}
-          />
-        </Pressable>
-        <View style={styles.profileInfo}>
-          <Text style={styles.profileName}>{userName}</Text>
-          <View style={[styles.levelBadge, levelBadgeHeat]}>
-            <Text style={styles.levelBadgeText}>
-              {`${levelLabel}${streakSuffix}`}
-            </Text>
-          </View>
-          <View style={styles.profileTitleRow}>
-            <Text style={styles.profileTitleLabel}>{t('Titel')}</Text>
-            <Text style={styles.profileTitleValue}>
-              {resolvedTitle}
-            </Text>
-          </View>
-          <Text style={styles.profileXpText}>{xpCoinsLabel}</Text>
-        </View>
-      </View>
-
-      <View style={styles.profileStatsRow}>
-        <View style={styles.profileStatCard}>
-          <Text style={styles.profileStatLabel}>{t('Bestenliste')}</Text>
-          <Text style={styles.profileStatValue}>
-            {loadingRank ? '...' : leaderboardRank ? `#${leaderboardRank}` : '-'}
-          </Text>
-        </View>
-        <View style={styles.profileStatCard}>
-          <Text style={styles.profileStatLabel}>{t('Quizzes')}</Text>
-          <Text style={styles.profileStatValue}>{quizzesCompleted}</Text>
-        </View>
-        <View style={styles.profileStatCard}>
-          <Text style={styles.profileStatLabel}>{t('Trefferquote')}</Text>
-          <Text style={styles.profileStatValue}>{accuracyPercent}%</Text>
-        </View>
-      </View>
-
-      <View style={styles.profileInventory}>
-        <Text style={styles.profileInventoryTitle}>{t('Items')}</Text>
-        <View style={styles.profileInventoryRow}>
-          <View style={styles.profileInventoryItem}>
-            <View style={styles.profileInventoryIconWrap}>
-              <Ionicons
-                name="shield-checkmark"
-                size={16}
-                color="#f59e0b"
-              />
-            </View>
-            <View style={styles.profileInventoryText}>
-              <Text style={styles.profileInventoryLabel}>{t('Streak-Schild')}</Text>
-              <Text style={styles.profileInventoryValue}>{`x${resolvedShieldCount}`}</Text>
-            </View>
-          </View>
-          <View style={styles.profileInventoryItem}>
-            <View style={styles.profileInventoryIconWrap}>
-              <Ionicons
-                name="sparkles"
-                size={16}
-                color={XP_BOOST_ICON_COLOR}
-              />
-            </View>
-            <View style={styles.profileInventoryText}>
-              <Text style={styles.profileInventoryLabel}>{t('Doppel-XP')}</Text>
-              <Text
-                style={[
-                  styles.profileInventoryValue,
-                  xpBoostActive ? styles.profileInventoryValueActive : null,
+          >
+            <Animated.View style={avatarAnimatedStyle}>
+              <AvatarView
+                uri={avatarUri}
+                source={currentAvatar?.source ?? null}
+                icon={currentAvatar?.icon ?? null}
+                color={currentAvatar?.color ?? null}
+                initials={avatarInitials}
+                circleStyle={[
+                  styles.avatarCircle,
+                  currentAvatar?.color ? { backgroundColor: `${currentAvatar.color}30` } : null,
                 ]}
-              >
-                {xpBoostStatus}
+                imageStyle={styles.avatarImage}
+                iconSize={30}
+                iconColor={currentAvatar?.color || '#9EDCFF'}
+                textStyle={styles.avatarText}
+              />
+            </Animated.View>
+          </Pressable>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{userName}</Text>
+            <View style={[styles.levelBadge, levelBadgeHeat]}>
+              <Text style={styles.levelBadgeText}>
+                {`${levelLabel}${streakSuffix}`}
               </Text>
             </View>
+            <View style={styles.profileTitleRow}>
+              <Text style={styles.profileTitleLabel}>{t('Titel')}</Text>
+              <Text style={styles.profileTitleValue}>
+                {resolvedTitle}
+              </Text>
+            </View>
+            <Text style={styles.profileXpText}>{xpCoinsLabel}</Text>
           </View>
         </View>
-      </View>
 
-      <View style={styles.profileAchievements}>
-        <Text style={styles.profileInventoryTitle}>{t('Abzeichen')}</Text>
-        <View style={styles.profileAchievementList}>
-          {achievements.map((achievement) => {
-            const isClaiming = claimingAchievement === achievement.key;
-            const canReplay = achievement.canReplay === true;
-            const canTriggerClaim = achievement.canClaim || canReplay;
-            const showStatus = achievement.isClaimed || canTriggerClaim;
-            const statusLabel = t('Erhalten');
-            const progressLabel = `${formatThousands(
-              achievement.currentValue
-            )}/${formatThousands(achievement.threshold)}`;
-            const rewardXp = formatThousands(achievement.reward?.xp);
-            const rewardCoins = formatThousands(achievement.reward?.coins);
+        <View style={styles.profileLevelProgressBlock}>
+          <View style={styles.profileLevelProgressHeader}>
+            <Text style={styles.profileLevelProgressLabel}>{t('Level-Fortschritt')}</Text>
+            <Text style={styles.profileLevelProgressPercent}>{`${progressPercent}%`}</Text>
+          </View>
+          <View style={styles.profileLevelProgressTrack}>
+            <Animated.View
+              style={[
+                styles.profileLevelProgressFill,
+                { width: progressWidth },
+              ]}
+            />
+          </View>
+          <View style={styles.profileLevelProgressMetaRow}>
+            <Text style={styles.profileLevelProgressMeta}>{progressHint}</Text>
+            {nextTitleLabel ? (
+              <Text style={styles.profileLevelProgressMeta}>{`-> ${nextTitleLabel}`}</Text>
+            ) : null}
+          </View>
+        </View>
+      </Animated.View>
 
-            return (
-              <View
-                key={achievement.key}
-                style={[
-                  styles.profileAchievementCard,
-                  achievement.canClaim ? styles.profileAchievementCardActive : null,
-                  achievement.isClaimed ? styles.profileAchievementCardClaimed : null,
-                  !showStatus ? styles.profileAchievementCardLocked : null,
-                ]}
-              >
-                <View style={styles.profileAchievementHeader}>
-                  <Text style={styles.profileAchievementTitle}>
-                    {t(achievement.labelKey)}
-                  </Text>
-                  {showStatus ? (
-                    canTriggerClaim ? (
-                      <Pressable
-                        onPress={() =>
-                          !isClaiming
-                            ? onClaimAchievement?.(achievement.key)
-                            : null
-                        }
-                        disabled={isClaiming}
-                        style={({ pressed }) => [
-                          styles.profileAchievementStatus,
-                          achievement.canClaim
-                            ? styles.profileAchievementStatusActive
-                            : styles.profileAchievementStatusClaimed,
-                          !achievement.canClaim
-                            ? styles.profileAchievementStatusClaimedMuted
-                            : null,
-                          isClaiming ? styles.profileAchievementStatusDisabled : null,
-                          pressed && !isClaiming
-                            ? styles.profileAchievementStatusPressed
-                            : null,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.profileAchievementStatusText,
+      <Animated.View style={statsAnimatedStyle}>
+        <View style={styles.profileStatsRow}>
+          <View style={styles.profileStatCard}>
+            <Text style={styles.profileStatLabel}>{t('Rang')}</Text>
+            <Text style={styles.profileStatValue}>
+              {loadingRank ? '...' : leaderboardRank ? `#${leaderboardRank}` : '-'}
+            </Text>
+          </View>
+          <View style={styles.profileStatCard}>
+            <Text style={styles.profileStatLabel}>{t('Quizzes')}</Text>
+            <Text style={styles.profileStatValue}>{quizzesCompleted}</Text>
+          </View>
+          <View style={styles.profileStatCard}>
+            <Text style={styles.profileStatLabel}>{t('Quote')}</Text>
+            <Text style={styles.profileStatValue}>{accuracyPercent}%</Text>
+          </View>
+        </View>
+      </Animated.View>
+
+      <Animated.View style={inventoryAnimatedStyle}>
+        <View style={styles.profileInventory}>
+          <Text style={styles.profileInventoryTitle}>{t('Items')}</Text>
+          <View style={styles.profileInventoryRow}>
+            <View style={styles.profileInventoryItem}>
+              <View style={styles.profileInventoryIconWrap}>
+                <Ionicons
+                  name="shield-checkmark"
+                  size={16}
+                  color="#f59e0b"
+                />
+              </View>
+              <View style={styles.profileInventoryText}>
+                <Text style={styles.profileInventoryLabel}>{t('Streak-Schild')}</Text>
+                <Text style={styles.profileInventoryValue}>{`x${resolvedShieldCount}`}</Text>
+              </View>
+            </View>
+            <View style={styles.profileInventoryItem}>
+              <View style={styles.profileInventoryIconWrap}>
+                <Ionicons
+                  name="sparkles"
+                  size={16}
+                  color={XP_BOOST_ICON_COLOR}
+                />
+              </View>
+              <View style={styles.profileInventoryText}>
+                <Text style={styles.profileInventoryLabel}>{t('Doppel-XP')}</Text>
+                <Text
+                  style={[
+                    styles.profileInventoryValue,
+                    xpBoostActive ? styles.profileInventoryValueActive : null,
+                  ]}
+                >
+                  {xpBoostStatus}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Animated.View>
+
+      <Animated.View style={achievementsAnimatedStyle}>
+        <View style={styles.profileAchievements}>
+          <Text style={styles.profileInventoryTitle}>{t('Abzeichen')}</Text>
+          <View style={styles.profileAchievementList}>
+            {achievements.map((achievement) => {
+              const isClaiming = claimingAchievement === achievement.key;
+              const canReplay = achievement.canReplay === true;
+              const canTriggerClaim = achievement.canClaim || canReplay;
+              const showStatus = achievement.isClaimed || canTriggerClaim;
+              const statusLabel = t('Erhalten');
+              const progressLabel = `${formatThousands(
+                achievement.currentValue
+              )}/${formatThousands(achievement.threshold)}`;
+              const rewardXp = formatThousands(achievement.reward?.xp);
+              const rewardCoins = formatThousands(achievement.reward?.coins);
+
+              return (
+                <View
+                  key={achievement.key}
+                  style={[
+                    styles.profileAchievementCard,
+                    achievement.canClaim ? styles.profileAchievementCardActive : null,
+                    achievement.isClaimed ? styles.profileAchievementCardClaimed : null,
+                    !showStatus ? styles.profileAchievementCardLocked : null,
+                  ]}
+                >
+                  <View style={styles.profileAchievementHeader}>
+                    <Text style={styles.profileAchievementTitle}>
+                      {t(achievement.labelKey)}
+                    </Text>
+                    {showStatus ? (
+                      canTriggerClaim ? (
+                        <Pressable
+                          onPress={() =>
+                            !isClaiming
+                              ? onClaimAchievement?.(achievement.key)
+                              : null
+                          }
+                          disabled={isClaiming}
+                          style={({ pressed }) => [
+                            styles.profileAchievementStatus,
+                            achievement.canClaim
+                              ? styles.profileAchievementStatusActive
+                              : styles.profileAchievementStatusClaimed,
                             !achievement.canClaim
-                              ? styles.profileAchievementStatusTextClaimed
+                              ? styles.profileAchievementStatusClaimedMuted
+                              : null,
+                            isClaiming ? styles.profileAchievementStatusDisabled : null,
+                            pressed && !isClaiming
+                              ? styles.profileAchievementStatusPressed
                               : null,
                           ]}
                         >
-                          {isClaiming ? '...' : statusLabel}
-                        </Text>
-                      </Pressable>
-                    ) : (
-                      <View
-                        style={[
-                          styles.profileAchievementStatus,
-                          styles.profileAchievementStatusClaimed,
-                          styles.profileAchievementStatusClaimedMuted,
-                          styles.profileAchievementStatusDisabled,
-                        ]}
-                      >
-                        <Text
+                          <Text
+                            style={[
+                              styles.profileAchievementStatusText,
+                              !achievement.canClaim
+                                ? styles.profileAchievementStatusTextClaimed
+                                : null,
+                            ]}
+                          >
+                            {isClaiming ? '...' : statusLabel}
+                          </Text>
+                        </Pressable>
+                      ) : (
+                        <View
                           style={[
-                            styles.profileAchievementStatusText,
-                            styles.profileAchievementStatusTextClaimed,
+                            styles.profileAchievementStatus,
+                            styles.profileAchievementStatusClaimed,
+                            styles.profileAchievementStatusClaimedMuted,
+                            styles.profileAchievementStatusDisabled,
                           ]}
                         >
-                          {statusLabel}
-                        </Text>
-                      </View>
-                    )
-                  ) : null}
-                </View>
-                <Text style={styles.profileAchievementHint}>
-                  {t(achievement.hintKey)}
-                </Text>
-                <View style={styles.profileAchievementMeta}>
-                  <Text style={styles.profileAchievementProgress}>
-                    {progressLabel}
+                          <Text
+                            style={[
+                              styles.profileAchievementStatusText,
+                              styles.profileAchievementStatusTextClaimed,
+                            ]}
+                          >
+                            {statusLabel}
+                          </Text>
+                        </View>
+                      )
+                    ) : null}
+                  </View>
+                  <Text style={styles.profileAchievementHint}>
+                    {t(achievement.hintKey)}
                   </Text>
-                  <Text style={styles.profileAchievementReward}>
-                    {`+${rewardXp} XP, +${rewardCoins}`}
-                    <Text style={styles.profileAchievementRewardCoin}>
-                      {' \u{1FA99}'}
+                  <View style={styles.profileAchievementMeta}>
+                    <Text style={styles.profileAchievementProgress}>
+                      {progressLabel}
                     </Text>
-                  </Text>
+                    <Text style={styles.profileAchievementReward}>
+                      {`+${rewardXp} XP, +${rewardCoins}`}
+                      <Text style={styles.profileAchievementRewardCoin}>
+                        {' \u{1FA99}'}
+                      </Text>
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            );
-          })}
+              );
+            })}
+          </View>
         </View>
-      </View>
+      </Animated.View>
 
-      {showEmailActions ? (
-        <View style={styles.fieldGroup}>
-          <TextInput
-            value={newEmail}
-            onChangeText={setNewEmail}
-            placeholder={t('name@example.com')}
-            placeholderTextColor="#64748B"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            style={styles.input}
-          />
-          <Text style={styles.helperText}>{emailCtaHint}</Text>
-          <Pressable
-            onPress={onEmailUpdate}
-            disabled={loadingEmail}
-            style={[
-              styles.actionButton,
-              styles.primaryButton,
-              loadingEmail ? styles.disabledButton : null,
-            ]}
-          >
-            {loadingEmail ? (
-              <ActivityIndicator color="#F8FAFC" />
-            ) : (
-              <Text style={styles.primaryButtonText}>{emailCtaLabel}</Text>
-            )}
-          </Pressable>
-        </View>
-      ) : null}
+      {showEmailActions || showLinkGoogle ? (
+        <Animated.View style={accountAnimatedStyle}>
+          {showEmailActions ? (
+            <View style={styles.fieldGroup}>
+              <TextInput
+                value={newEmail}
+                onChangeText={setNewEmail}
+                placeholder={t('name@example.com')}
+                placeholderTextColor="#64748B"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                style={styles.input}
+              />
+              <Text style={styles.helperText}>{emailCtaHint}</Text>
+              <Pressable
+                onPress={onEmailUpdate}
+                disabled={loadingEmail}
+                style={[
+                  styles.actionButton,
+                  styles.primaryButton,
+                  loadingEmail ? styles.disabledButton : null,
+                ]}
+              >
+                {loadingEmail ? (
+                  <ActivityIndicator color="#F8FAFC" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>{emailCtaLabel}</Text>
+                )}
+              </Pressable>
+            </View>
+          ) : null}
 
-      {showLinkGoogle ? (
-        <View style={styles.fieldGroup}>
-          <Text style={styles.helperText}>
-            {linkGoogleHint || googleHintFallback}
-          </Text>
-          <Pressable
-            onPress={onLinkGoogle}
-            disabled={linkingGoogle}
-            style={[
-              styles.actionButton,
-              styles.primaryButton,
-              linkingGoogle ? styles.disabledButton : null,
-            ]}
-          >
-            {linkingGoogle ? (
-              <ActivityIndicator color="#F8FAFC" />
-            ) : (
-              <Text style={styles.primaryButtonText}>
-                {linkGoogleLabel || googleLabelFallback}
+          {showLinkGoogle ? (
+            <View style={styles.fieldGroup}>
+              <Text style={styles.helperText}>
+                {linkGoogleHint || googleHintFallback}
               </Text>
-            )}
-          </Pressable>
-        </View>
+              <Pressable
+                onPress={onLinkGoogle}
+                disabled={linkingGoogle}
+                style={[
+                  styles.actionButton,
+                  styles.primaryButton,
+                  linkingGoogle ? styles.disabledButton : null,
+                ]}
+              >
+                {linkingGoogle ? (
+                  <ActivityIndicator color="#F8FAFC" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>
+                    {linkGoogleLabel || googleLabelFallback}
+                  </Text>
+                )}
+              </Pressable>
+            </View>
+          ) : null}
+        </Animated.View>
       ) : null}
     </View>
   );

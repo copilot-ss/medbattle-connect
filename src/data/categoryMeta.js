@@ -75,7 +75,7 @@ export const CATEGORY_META = [
   },
 ];
 
-export const DEFAULT_CATEGORY_META = {
+const DEFAULT_CATEGORY_META = {
   key: 'Medizin',
   label: 'Medizin',
   description: 'Medizinische Grundlagen und klinische Praxis.',

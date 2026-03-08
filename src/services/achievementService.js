@@ -89,10 +89,6 @@ const sanitizeStatNumber = (value) => {
   return 0;
 };
 
-export function getAchievementDefinitions() {
-  return ACHIEVEMENTS.slice();
-}
-
 export function getAchievementByKey(key) {
   if (!key) {
     return null;

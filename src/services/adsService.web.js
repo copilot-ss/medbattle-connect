@@ -1,7 +1,3 @@
-export function getBannerAdUnitId() {
-  return null;
-}
-
 export function getRewardedAdUnitId() {
   return null;
 }

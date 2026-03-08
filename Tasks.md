@@ -1,7 +1,7 @@
 ﻿# TASKS.md - MedBattle Aufgabenliste
 
 ## Offen
-- Release-Readiness: Play Store-Assets/Content-Rating, OAuth + Gameplay Smoke-Tests, Sentry DSN/Alerts, Device-Smoke-Test mit aktuellem Production-Build.
+- Release-Readiness: Play Store-Assets/Content-Rating, OAuth + Gameplay Smoke-Tests, Sentry DSN/Alerts, Device-Smoke-Test mit aktuellem Production-Build, Google Service Account Key fuer Play-Submit in EAS.
 
 ## Release-Checklist
 - [ ] Play Store: Store-Assets (siehe STORE_ASSETS.md).
@@ -27,15 +27,19 @@
 - [ ] Offline: Login-Recall, Offline-Quick-Play, Online-Sync getestet (teilweise via adb; Details in RELEASE_TESTS.md).
 - [ ] Multiplayer: Create/Join/Resume/Abbruch getestet (teilweise via adb; Details in RELEASE_TESTS.md).
 - [ ] Purchases/Ads: Energie-Flow, Rewarded Ad, Premium-Flow getestet.
-- [ ] Telemetry: Crash/Telemetry aktiv (Sentry/Expo) + Alerts konfiguriert (EXPO_PUBLIC_SENTRY_DSN fehlt in `.env`; EAS `production` Environment hat aktuell keine Variablen).
+- [ ] Telemetry: Crash/Telemetry aktiv (Sentry/Expo) + Alerts konfiguriert (EXPO_PUBLIC_SENTRY_DSN fehlt weiterhin; EAS `production` Environment ist jetzt fuer App-ENV gesetzt).
 - [x] App: Telemetry-Setup verdrahtet (initTelemetry + sentry-expo Plugin).
-- [ ] Release-Build: EAS Store Build + Device-Smoke-Test (Build `75e9ace1-34fc-4560-9d44-a421560aa71c` gebaut, Smoke-Test offen).
+- [ ] Release-Build: EAS Store Build + Device-Smoke-Test (Build `a80f9a26-1f1a-4c1d-8aaf-3f31bd25e9c3` gebaut, versionCode 25, Smoke-Test offen; EAS Submit blockiert ohne Google Service Account JSON).
 - [x] QA: Manuelle Release-Checkliste dokumentiert (`RELEASE_TESTS.md`).
 
 ## In Arbeit
-- Device-Smoke-Test fuer Android Production-Build `75e9ace1-34fc-4560-9d44-a421560aa71c` (AAB, versionCode 19) ausstehend.
+- Device-Smoke-Test fuer Android Production-Build `a80f9a26-1f1a-4c1d-8aaf-3f31bd25e9c3` (AAB, versionCode 25) ausstehend.
 
 ## Erledigt
+- [x] EAS Environment `production` mit App-ENV aus `.env` befuellt (`eas env:push production --path .env --force`).
+- [x] Build-Fix: RN/Gradle Repo-Setup stabilisiert (`react.includeJitpackRepository=false` + scoped JitPack fuer `com.github.*`), JitPack-Timeout fuer BouncyCastle umgangen.
+- [x] Build-Fix: Hermes Compiler-Pfad fuer RN 0.83 angepasst (`android/app/build.gradle` nutzt `hermes-compiler` mit Fallback auf legacy Pfad).
+- [x] Release-Build Android (EAS production) erfolgreich: `a80f9a26-1f1a-4c1d-8aaf-3f31bd25e9c3` (`FINISHED`, versionCode 25, AAB erstellt).
 - [x] DB: Migration erstellt, die fehlende Frage-Erklaerungen in `questions`/`question_translations` auffuellt und fuer neue Eintraege per Trigger erzwingt.
 - [x] Quiz: Fehlende Frage-Erklaerungen werden im Client automatisch mit Fallback-Text ergaenzt.
 - [x] UI: Schwierigkeitsnamen auf Kinder / Studenten / Doktor umgestellt (statt leicht / mittel / schwer).

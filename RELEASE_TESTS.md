@@ -61,10 +61,13 @@ Note: Offline Quick-Play/Sync and Multiplayer flows still need manual in-app che
 - Kauf-Flow: Premium setzt Werbung aus, Energie-Dialog passt.
 
 ## Telemetry
-- EXPO_PUBLIC_SENTRY_DSN gesetzt (Prod).
-- Test-Event erscheint im Sentry Projekt.
-- Alerts im Sentry Projekt aktiv (Crash + Spike).
+- EAS `production` Environment ist gesetzt (Supabase/Links), aber ohne `EXPO_PUBLIC_SENTRY_DSN`.
+- [ ] EXPO_PUBLIC_SENTRY_DSN gesetzt (Prod).
+- [ ] Test-Event erscheint im Sentry Projekt.
+- [ ] Alerts im Sentry Projekt aktiv (Crash + Spike).
 
 ## Release Build
 - [x] EAS Store Build erstellt: `75e9ace1-34fc-4560-9d44-a421560aa71c` (Android, versionCode 19, `FINISHED` am 2026-02-18).
-- [ ] Device-Smoke-Test auf realem Geraet mit diesem Build: Start, Login, Spiel, Werbung/Purchase, Multiplayer, Logout.
+- [x] EAS Store Build erstellt: `a80f9a26-1f1a-4c1d-8aaf-3f31bd25e9c3` (Android, versionCode 25, `FINISHED` am 2026-03-07).
+- [ ] Device-Smoke-Test auf realem Geraet mit Build `a80f9a26-1f1a-4c1d-8aaf-3f31bd25e9c3`: Start, Login, Spiel, Werbung/Purchase, Multiplayer, Logout.
+- [ ] Play Submit per EAS: Google Service Account JSON in EAS Credentials hinterlegen (ohne Key blockiert `eas submit`).

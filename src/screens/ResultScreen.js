@@ -21,6 +21,7 @@ import ResultReviewList from './result/ResultReviewList';
 import { RewardSummary, Sparkle } from './result/ResultWidgets';
 import useResultMultiplayerData from './result/hooks/useResultMultiplayerData';
 import useResultScoreAnimations from './result/hooks/useResultScoreAnimations';
+import useResultEntranceAnimations from './result/hooks/useResultEntranceAnimations';
 import { useTranslation } from '../i18n/useTranslation';
 import PublicProfileSheet from '../components/PublicProfileSheet';
 import usePublicProfileSheet from '../hooks/usePublicProfileSheet';
@@ -219,6 +220,36 @@ export default function ResultScreen({ route, navigation }) {
     isPerfectScore,
     showZeroScoreAnimation,
   });
+  const entranceTriggerKey = useMemo(
+    () => [
+      isMultiplayer ? 'mp' : 'solo',
+      score,
+      totalQuestions,
+      percentage,
+      showMultiplayerWaiting ? 'wait' : 'ready',
+      showOfflineNote ? 'offline' : 'online',
+      isMultiplayer ? selectedReviewItems.length : reviewItems.length,
+    ].join(':'),
+    [
+      isMultiplayer,
+      percentage,
+      reviewItems.length,
+      score,
+      selectedReviewItems.length,
+      showMultiplayerWaiting,
+      showOfflineNote,
+      totalQuestions,
+    ]
+  );
+  const {
+    headerAnimatedStyle,
+    summaryAnimatedStyle,
+    offlineAnimatedStyle,
+    actionsAnimatedStyle,
+    reviewAnimatedStyle,
+  } = useResultEntranceAnimations({
+    triggerKey: entranceTriggerKey,
+  });
   const scrollContentStyle = useMemo(
     () => [
       styles.scrollContent,
@@ -315,200 +346,210 @@ export default function ResultScreen({ route, navigation }) {
         ) : null}
         <View style={styles.cardWrap}>
           <View style={styles.card}>
-            <Text style={styles.heading}>
-              {isMultiplayer
-                ? t('Lobby Ergebnis')
-                : percentage >= 95
-                ? t('Legendary Win!')
-                : t('MedBattle abgeschlossen')}
-            </Text>
-            {!isMultiplayer && feedbackLine ? (
-              <Text style={[styles.feedbackLine, feedbackToneStyle]}>
-                {feedbackLine}
+            <Animated.View style={[headerAnimatedStyle, { width: '100%' }]}>
+              <Text style={styles.heading}>
+                {isMultiplayer
+                  ? t('Lobby Ergebnis')
+                  : percentage >= 95
+                  ? t('Legendary Win!')
+                  : t('MedBattle abgeschlossen')}
               </Text>
-            ) : null}
-
-            {!isMultiplayer ? (
-              <View style={styles.scoreSummary}>
-                <View style={styles.scoreRow}>
-                  <View style={styles.scoreValueWrap}>
-                    <Text style={styles.scoreValue}>{`${score}/${totalQuestions}`}</Text>
-                    {showKiwiPeck ? (
-                      <View style={styles.scoreKiwiWrap}>
-                        <Image
-                          source={KIWI_ANIMATION}
-                          style={styles.scoreKiwi}
-                          resizeMode="contain"
-                        />
-                      </View>
-                    ) : null}
-                  </View>
-                  {showScorePoints ? (
-                    <View style={styles.scorePoints}>
-                      <Ionicons
-                        name="sparkles"
-                        size={14}
-                        color={colors.accent}
-                        style={styles.scorePointsIcon}
-                      />
-                      <Text style={styles.scorePointsText}>
-                        {`+${pointsEarned} ${t('Punkte')}`}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-                {!showKiwiPeck ? (
-                  <View style={styles.trophyWrap}>
-                    {showZeroSparkles ? (
-                      <>
-                        <Sparkle
-                          size={14}
-                          top={6}
-                          left={12}
-                          opacity={0.5}
-                          rotate="18deg"
-                          color={colors.accentWarm}
-                        />
-                        <Sparkle
-                          size={12}
-                          top={32}
-                          left={86}
-                          opacity={0.45}
-                          rotate="-12deg"
-                          color={colors.highlight}
-                        />
-                      </>
-                    ) : null}
-                    <Ionicons name="trophy" size={72} color={colors.highlight} />
-                  </View>
-                ) : null}
-                <View style={styles.rewardSummaryRow}>
-                  <RewardSummary
-                    items={
-                      coinsEarned > 0
-                        ? [
-                            {
-                              tone: 'coins',
-                              label: t('Coins'),
-                              value: `+${coinsEarned}`,
-                            },
-                            { tone: 'xp', label: t('XP'), value: `+${xpEarned}` },
-                          ]
-                        : [{ tone: 'xp', label: t('XP'), value: `+${xpEarned}` }]
-                    }
-                    delay={80}
-                  />
-                </View>
-              </View>
-            ) : (
-              <>
-                {showMultiplayerWaiting ? (
-                  <View style={styles.multiplayerWaitingCard}>
-                    <Text style={styles.multiplayerWaitingTitle}>
-                      {t('Warte auf Spieler')}
-                    </Text>
-                    <Text style={styles.multiplayerWaitingName}>
-                      {waitingPlayersLabel}
-                    </Text>
-                    <View style={styles.multiplayerWaitingLoader}>
-                      <ActivityIndicator size="small" color={colors.accent} />
-                      <Text style={styles.multiplayerWaitingHint}>
-                        {liveMatchLoading ? t('Lade Status ...') : t('Wird geladen...')}
-                      </Text>
-                    </View>
-                  </View>
-                ) : (
-                  <ResultScoreboard
-                    entries={multiplayerEntries}
-                    selectedEntryKey={selectedScorePlayerKey}
-                    onSelectEntry={setSelectedScorePlayerKey}
-                    onOpenProfile={handleOpenScoreProfile}
-                  />
-                )}
-                <View style={styles.multiplayerRewards}>
-                  <RewardSummary
-                    items={[
-                      { tone: 'coins', label: t('Coins'), value: `+${coinsEarned}` },
-                      { tone: 'xp', label: t('XP'), value: `+${xpEarned}` },
-                    ]}
-                    delay={80}
-                  />
-                </View>
-              </>
-            )}
-
-            {showOfflineNote ? (
-              <View style={styles.offlineBanner}>
-                <Text style={styles.offlineBannerTitle}>{t('Offline Modus')}</Text>
-                <Text style={styles.offlineBannerText}>
-                  {t('Dein Score wird synchronisiert, sobald du wieder online bist.')}
+              {!isMultiplayer && feedbackLine ? (
+                <Text style={[styles.feedbackLine, feedbackToneStyle]}>
+                  {feedbackLine}
                 </Text>
-              </View>
-            ) : null}
+              ) : null}
+            </Animated.View>
 
-            <View style={styles.actionsStack}>
+            <Animated.View style={[summaryAnimatedStyle, { width: '100%' }]}>
               {!isMultiplayer ? (
-                <Pressable
-                  onPress={() => {
-                    navigation.replace('Quiz', {
-                      difficulty: difficultyKey,
-                      mode,
-                      questionLimit,
-                      category,
-                    });
-                  }}
-                  style={[
-                    getPrimaryButtonStyle(badge.color),
-                    quickPlayLocked ? styles.primaryButtonDisabled : null,
-                  ]}
-                  disabled={quickPlayLocked}
-                >
-                  <View style={styles.primaryButtonContent}>
-                    <Text style={styles.primaryButtonText}>
-                      {mode === 'quick'
-                        ? t('Nochmal Quick Play')
-                        : t('Naechste Challenge')}
-                    </Text>
-                    {isQuickPlay ? (
-                      <View style={styles.primaryButtonMetaRow}>
-                        <Ionicons name="flash" size={14} color="#0A0A12" />
-                        <Text style={styles.primaryButtonMetaText}>
-                          {t('Energie')} {energyLabel}
+                <View style={styles.scoreSummary}>
+                  <View style={styles.scoreRow}>
+                    <View style={styles.scoreValueWrap}>
+                      <Text style={styles.scoreValue}>{`${score}/${totalQuestions}`}</Text>
+                      {showKiwiPeck ? (
+                        <View style={styles.scoreKiwiWrap}>
+                          <Image
+                            source={KIWI_ANIMATION}
+                            style={styles.scoreKiwi}
+                            resizeMode="contain"
+                          />
+                        </View>
+                      ) : null}
+                    </View>
+                    {showScorePoints ? (
+                      <View style={styles.scorePoints}>
+                        <Ionicons
+                          name="sparkles"
+                          size={14}
+                          color={colors.accent}
+                          style={styles.scorePointsIcon}
+                        />
+                        <Text style={styles.scorePointsText}>
+                          {`+${pointsEarned} ${t('Punkte')}`}
                         </Text>
                       </View>
                     ) : null}
                   </View>
-                </Pressable>
+                  {!showKiwiPeck ? (
+                    <View style={styles.trophyWrap}>
+                      {showZeroSparkles ? (
+                        <>
+                          <Sparkle
+                            size={14}
+                            top={6}
+                            left={12}
+                            opacity={0.5}
+                            rotate="18deg"
+                            color={colors.accentWarm}
+                          />
+                          <Sparkle
+                            size={12}
+                            top={32}
+                            left={86}
+                            opacity={0.45}
+                            rotate="-12deg"
+                            color={colors.highlight}
+                          />
+                        </>
+                      ) : null}
+                      <Ionicons name="trophy" size={72} color={colors.highlight} />
+                    </View>
+                  ) : null}
+                  <View style={styles.rewardSummaryRow}>
+                    <RewardSummary
+                      items={
+                        coinsEarned > 0
+                          ? [
+                              {
+                                tone: 'coins',
+                                label: t('Coins'),
+                                value: `+${coinsEarned}`,
+                              },
+                              { tone: 'xp', label: t('XP'), value: `+${xpEarned}` },
+                            ]
+                          : [{ tone: 'xp', label: t('XP'), value: `+${xpEarned}` }]
+                      }
+                      delay={80}
+                    />
+                  </View>
+                </View>
               ) : (
-                <Pressable
-                  onPress={() =>
-                    navigation.navigate('MultiplayerLobby', {
-                      mode: 'create',
-                      existingMatch: liveMatch ?? fallbackExistingMatch,
-                      keepCompleted: true,
-                    })
-                  }
-                  style={getPrimaryButtonStyle(colors.accent)}
-                >
-                  <Text style={styles.primaryButtonText}>{t('Zurueck zur Lobby')}</Text>
-                </Pressable>
+                <>
+                  {showMultiplayerWaiting ? (
+                    <View style={styles.multiplayerWaitingCard}>
+                      <Text style={styles.multiplayerWaitingTitle}>
+                        {t('Warte auf Spieler')}
+                      </Text>
+                      <Text style={styles.multiplayerWaitingName}>
+                        {waitingPlayersLabel}
+                      </Text>
+                      <View style={styles.multiplayerWaitingLoader}>
+                        <ActivityIndicator size="small" color={colors.accent} />
+                        <Text style={styles.multiplayerWaitingHint}>
+                          {liveMatchLoading ? t('Lade Status ...') : t('Wird geladen...')}
+                        </Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <ResultScoreboard
+                      entries={multiplayerEntries}
+                      selectedEntryKey={selectedScorePlayerKey}
+                      onSelectEntry={setSelectedScorePlayerKey}
+                      onOpenProfile={handleOpenScoreProfile}
+                    />
+                  )}
+                  <View style={styles.multiplayerRewards}>
+                    <RewardSummary
+                      items={[
+                        { tone: 'coins', label: t('Coins'), value: `+${coinsEarned}` },
+                        { tone: 'xp', label: t('XP'), value: `+${xpEarned}` },
+                      ]}
+                      delay={80}
+                    />
+                  </View>
+                </>
               )}
+            </Animated.View>
 
-              <Pressable
-                onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
-                style={styles.tertiaryButton}
-              >
-                <Text style={styles.tertiaryButtonText}>{t('Zurueck zur Basis')}</Text>
-              </Pressable>
-            </View>
+            {showOfflineNote ? (
+              <Animated.View style={[offlineAnimatedStyle, { width: '100%' }]}>
+                <View style={styles.offlineBanner}>
+                  <Text style={styles.offlineBannerTitle}>{t('Offline Modus')}</Text>
+                  <Text style={styles.offlineBannerText}>
+                    {t('Dein Score wird synchronisiert, sobald du wieder online bist.')}
+                  </Text>
+                </View>
+              </Animated.View>
+            ) : null}
+
+            <Animated.View style={[actionsAnimatedStyle, { width: '100%' }]}>
+              <View style={styles.actionsStack}>
+                {!isMultiplayer ? (
+                  <Pressable
+                    onPress={() => {
+                      navigation.replace('Quiz', {
+                        difficulty: difficultyKey,
+                        mode,
+                        questionLimit,
+                        category,
+                      });
+                    }}
+                    style={[
+                      getPrimaryButtonStyle(badge.color),
+                      quickPlayLocked ? styles.primaryButtonDisabled : null,
+                    ]}
+                    disabled={quickPlayLocked}
+                  >
+                    <View style={styles.primaryButtonContent}>
+                      <Text style={styles.primaryButtonText}>
+                        {mode === 'quick'
+                          ? t('Nochmal Quick Play')
+                          : t('Naechste Challenge')}
+                      </Text>
+                      {isQuickPlay ? (
+                        <View style={styles.primaryButtonMetaRow}>
+                          <Ionicons name="flash" size={14} color="#0A0A12" />
+                          <Text style={styles.primaryButtonMetaText}>
+                            {t('Energie')} {energyLabel}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    onPress={() =>
+                      navigation.navigate('MultiplayerLobby', {
+                        mode: 'create',
+                        existingMatch: liveMatch ?? fallbackExistingMatch,
+                        keepCompleted: true,
+                      })
+                    }
+                    style={getPrimaryButtonStyle(colors.accent)}
+                  >
+                    <Text style={styles.primaryButtonText}>{t('Zurueck zur Lobby')}</Text>
+                  </Pressable>
+                )}
+
+                <Pressable
+                  onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
+                  style={styles.tertiaryButton}
+                >
+                  <Text style={styles.tertiaryButtonText}>{t('Zurueck zur Basis')}</Text>
+                </Pressable>
+              </View>
+            </Animated.View>
           </View>
         </View>
 
-        <ResultReviewList
-          items={isMultiplayer ? selectedReviewItems : reviewItems}
-          title={isMultiplayer ? selectedReviewTitle : null}
-          answerLabel={isMultiplayer ? selectedAnswerLabel : null}
-        />
+        <Animated.View style={[reviewAnimatedStyle, { width: '100%' }]}>
+          <ResultReviewList
+            items={isMultiplayer ? selectedReviewItems : reviewItems}
+            title={isMultiplayer ? selectedReviewTitle : null}
+            answerLabel={isMultiplayer ? selectedAnswerLabel : null}
+          />
+        </Animated.View>
       </ScrollView>
 
       <PublicProfileSheet

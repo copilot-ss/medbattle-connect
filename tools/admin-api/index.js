@@ -42,23 +42,38 @@ function requireAuth(req, res, next) {
   if (!auth.startsWith('Bearer ')) return res.status(401).json({ error: 'Missing Bearer token' });
   const token = auth.slice(7);
   // Direct admin token
-  if (token === ADMIN_API_TOKEN) return next();
+  if (token === ADMIN_API_TOKEN) {
+    req.isAdmin = true;
+    return next();
+  }
+
   // Short-lived JWT token
   if (!TOKEN_SIGNING_KEY) return res.status(403).json({ error: 'Invalid token' });
   try {
     const payload = jwt.verify(token, TOKEN_SIGNING_KEY);
-    // Optionally check scope/exp in payload
     req.tokenPayload = payload;
+    req.isAdmin = false;
     return next();
   } catch (err) {
     return res.status(403).json({ error: 'Invalid or expired token' });
   }
 }
 
+function hasScope(req, required) {
+  if (req.isAdmin) return true;
+  if (!req.tokenPayload || !req.tokenPayload.scope) return false;
+  const scope = req.tokenPayload.scope;
+  if (scope === 'all') return true;
+  // allow comma-separated scopes in token
+  const parts = String(scope).split(',').map(s => s.trim());
+  return parts.includes(required) || parts.some(s => s.endsWith(':*') && required.startsWith(s.replace(':*', ':')));
+}
+
 app.get('/health', (req, res) => res.json({ ok: true, env: !!SUPABASE_URL }));
 
 // Read single question
 app.get('/v1/questions/:id', requireAuth, async (req, res) => {
+  if (!hasScope(req, 'questions:read')) return res.status(403).json({ error: 'Insufficient scope' });
   if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
   const id = req.params.id;
   try {
@@ -82,11 +97,13 @@ app.post('/v1/tokens', requireAuth, (req, res) => {
   const { expiresIn = TOKEN_DEFAULT_EXP, scope = 'all' } = req.body || {};
   const payload = { scope };
   const token = jwt.sign(payload, TOKEN_SIGNING_KEY, { expiresIn });
+  console.log(`Issued short token (scope=${scope}) for expiresIn=${expiresIn}s from ${req.ip}`);
   return res.json({ token, expiresIn });
 });
 
 // Upsert questions (array)
 app.post('/v1/questions/upsert', requireAuth, async (req, res) => {
+  if (!hasScope(req, 'questions:write')) return res.status(403).json({ error: 'Insufficient scope' });
   if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
   const { questions } = req.body;
   if (!Array.isArray(questions) || questions.length === 0) {
@@ -112,6 +129,10 @@ app.post('/v1/table', requireAuth, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
   const { table, action, payload, match } = req.body;
   if (!ALLOWED_TABLES.includes(table)) return res.status(403).json({ error: 'Table not allowed' });
+  // require table-level scope for non-admin callers
+  if (!hasScope(req, 'tables:admin') && !hasScope(req, `${table}:write`) && action === 'insert') return res.status(403).json({ error: 'Insufficient scope for insert' });
+  if (!hasScope(req, 'tables:admin') && !hasScope(req, `${table}:read`) && action === 'select') return res.status(403).json({ error: 'Insufficient scope for select' });
+  if (!hasScope(req, 'tables:admin') && !hasScope(req, `${table}:write`) && action === 'update') return res.status(403).json({ error: 'Insufficient scope for update' });
   try {
     if (action === 'select') {
       const { data, error } = await supabase.from(table).select('*').match(payload || {}).limit(100);

@@ -10,7 +10,7 @@ import LeaderboardScreen from '../screens/LeaderboardScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import SwipeToHomeWrapper from '../components/SwipeToHomeWrapper';
 import useFriendRequestMonitor from '../hooks/useFriendRequestMonitor';
-import styles from '../styles/AppNavigator.styles';
+import styles from '../screens/styles/AppNavigator.styles';
 import { colors } from '../styles/theme';
 import { useTranslation } from '../i18n/useTranslation';
 import {

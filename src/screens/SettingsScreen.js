@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import styles from './styles/SettingsScreen.styles';
 import AudioSettingsCard from './settings/AudioSettingsCard';
@@ -10,6 +10,14 @@ import SettingsHeader from './settings/SettingsHeader';
 import SettingsTabs from './settings/SettingsTabs';
 import useSettingsController from './settings/useSettingsController';
 import { useTranslation } from '../i18n/useTranslation';
+
+const ClaimBlurTargetView = (() => {
+  try {
+    return require('expo-blur').BlurTargetView;
+  } catch (_error) {
+    return View;
+  }
+})();
 
 export default function SettingsScreen({
   navigation,
@@ -91,7 +99,9 @@ export default function SettingsScreen({
   const showAudioSection = resolvedTab === 'settings';
   const showProfileSection = resolvedTab === 'profile';
   const showSignOutSection = resolvedTab === 'settings';
+  const headerMovesWithScroll = showProfileSection;
   const headerTitle = title || (resolvedTab === 'profile' ? t('Profil') : t('Einstellungen'));
+  const claimBlurTargetRef = useRef(null);
 
   const handleOpenAvatarEdit = useCallback(() => {
     const parentNavigation = navigation?.getParent?.();
@@ -104,16 +114,18 @@ export default function SettingsScreen({
 
   return (
     <View style={styles.screenRoot}>
-      <View style={styles.container}>
+      <ClaimBlurTargetView ref={claimBlurTargetRef} style={styles.container}>
         <View style={styles.backgroundGlowTop} pointerEvents="none" />
         <View style={styles.backgroundGlowBottom} pointerEvents="none" />
-        <SettingsHeader
-          onClose={showClose ? () => navigation.goBack() : null}
-          showClose={showClose}
-          title={headerTitle}
-        />
+        {!headerMovesWithScroll ? (
+          <SettingsHeader
+            onClose={showClose ? () => navigation.goBack() : null}
+            showClose={showClose}
+            title={headerTitle}
+          />
+        ) : null}
 
-        {showTabRow ? (
+        {showTabRow && !headerMovesWithScroll ? (
           <SettingsTabs activeTab={activeTab} onChange={setActiveTab} />
         ) : null}
 
@@ -122,6 +134,17 @@ export default function SettingsScreen({
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {headerMovesWithScroll ? (
+            <SettingsHeader
+              onClose={showClose ? () => navigation.goBack() : null}
+              showClose={showClose}
+              title={headerTitle}
+            />
+          ) : null}
+          {showTabRow && headerMovesWithScroll ? (
+            <SettingsTabs activeTab={activeTab} onChange={setActiveTab} />
+          ) : null}
+
           {showAudioSection ? (
             <AudioSettingsCard
               soundEnabled={soundEnabled}
@@ -206,11 +229,12 @@ export default function SettingsScreen({
             onOpenLegal={(doc) => navigation.navigate('Legal', { doc })}
           />
         ) : null}
-      </View>
+      </ClaimBlurTargetView>
       <ClaimRewardTopBar
         userLevel={userLevel}
         xp={xp}
         coins={coins}
+        blurTargetRef={claimBlurTargetRef}
         claimRewardAnimation={claimRewardAnimation}
         onClaimRewardAnimationEnd={handleClaimRewardAnimationDone}
       />

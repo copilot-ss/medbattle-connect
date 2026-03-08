@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabaseClient';
 import { runSupabaseRequest } from './supabaseRequest';
 
 const LOBBY_INVITE_RPC_TIMEOUT_MS = 12000;
-export const LOBBY_INVITE_TTL_MS = 60 * 1000;
+const LOBBY_INVITE_TTL_MS = 60 * 1000;
 
 function normalizeText(value) {
   if (typeof value !== 'string') {

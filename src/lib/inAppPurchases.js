@@ -36,8 +36,3 @@ export function getInAppPurchases() {
 
   return cachedModule;
 }
-
-export function isInAppPurchasesAvailable() {
-  const iap = getInAppPurchases();
-  return Boolean(iap && typeof iap.connectAsync === 'function');
-}

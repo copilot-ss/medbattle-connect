@@ -87,13 +87,6 @@ function trackRequestFinish(record, meta, error) {
   }
 }
 
-export function getSupabaseRequestSnapshot() {
-  return {
-    inflight: Array.from(inflightRequests.values()),
-    recent: recentRequests.slice(),
-  };
-}
-
 export async function runSupabaseRequest(requestFn, options = {}) {
   const label = normalizeLabel(options.label);
   const timeoutMs =

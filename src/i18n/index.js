@@ -1,6 +1,6 @@
 import { DEFAULT_LOCALE, translations } from './translations';
 
-export { DEFAULT_LOCALE, translations };
+export { DEFAULT_LOCALE };
 
 let currentLocale = DEFAULT_LOCALE;
 
@@ -8,10 +8,6 @@ export function setLocale(locale) {
   if (locale && typeof locale === 'string') {
     currentLocale = locale.toLowerCase();
   }
-}
-
-export function getLocale() {
-  return currentLocale;
 }
 
 function applyParams(text, params) {

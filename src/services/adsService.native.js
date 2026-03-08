@@ -62,20 +62,6 @@ function sanitizeEnv(value) {
   return trimmed;
 }
 
-export function getBannerAdUnitId() {
-  if (__DEV__) {
-    return TEST_BANNER_ID;
-  }
-
-  const envValue =
-    Platform.OS === 'ios'
-      ? process.env.EXPO_PUBLIC_ADMOB_BANNER_ID_IOS
-      : process.env.EXPO_PUBLIC_ADMOB_BANNER_ID_ANDROID;
-  const normalized = sanitizeEnv(envValue);
-
-  return normalized || null;
-}
-
 export function getRewardedAdUnitId() {
   if (__DEV__) {
     return TEST_REWARDED_ID;

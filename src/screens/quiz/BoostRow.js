@@ -57,7 +57,7 @@ export default function BoostRow({ items }) {
               </View>
             ) : null}
 
-            {Number.isFinite(item.count) && item.count > 0 ? (
+            {!item.hideCount && Number.isFinite(item.count) && item.count > 0 ? (
               <View style={styles.boostCountBadge}>
                 <Text style={styles.boostCountBadgeText}>{item.count}</Text>
               </View>

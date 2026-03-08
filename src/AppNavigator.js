@@ -20,7 +20,7 @@ import ResultScreen from './screens/ResultScreen';
 import UsernameSetupScreen from './screens/UsernameSetupScreen';
 import MainTabs from './navigation/MainTabs';
 import { setGameplayNotificationSuppressed } from './services/notificationsService';
-import styles from './styles/AppNavigator.styles';
+import styles from './screens/styles/AppNavigator.styles';
 
 const Stack = createNativeStackNavigator();
 

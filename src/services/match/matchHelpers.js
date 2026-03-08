@@ -190,31 +190,11 @@ function normalizeMatchRow(row) {
   };
 }
 
-function generateJoinCode() {
-  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-  const digits = '23456789';
-  let code = '';
-
-  for (let i = 0; i < 3; i += 1) {
-    code += letters.charAt(Math.floor(Math.random() * letters.length));
-  }
-
-  for (let i = 0; i < 2; i += 1) {
-    code += digits.charAt(Math.floor(Math.random() * digits.length));
-  }
-
-  return code;
-}
-
 export {
   MATCH_CACHE_TTL,
   LOBBY_IDLE_TIMEOUT_MINUTES,
   MATCH_STATUS,
-  nowIso,
   normalizeDifficulty,
-  sanitizeQuestionsForMatch,
   sanitizeAnswer,
-  normalizeMatchState,
   normalizeMatchRow,
-  generateJoinCode,
 };

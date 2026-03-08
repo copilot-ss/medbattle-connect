@@ -1,4 +1,4 @@
-export const DIFFICULTY_LABELS = {
+const DIFFICULTY_LABELS = {
   leicht: 'Kinder',
   mittel: 'Studenten',
   schwer: 'Doktor',

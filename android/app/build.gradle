@@ -3,6 +3,13 @@ apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
+def reactNativePackagePath = ["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim()
+def reactNativePath = new File(reactNativePackagePath).getParentFile().getAbsoluteFile()
+def hermesCompilerPackagePath = ["node", "--print", "(() => { try { return require.resolve('hermes-compiler/package.json'); } catch (_) { return ''; } })()"].execute(null, rootDir).text.trim()
+def resolvedHermesCommand = reactNativePath.getAbsolutePath() + "/sdks/hermesc/%OS-BIN%/hermesc"
+if (hermesCompilerPackagePath) {
+    resolvedHermesCommand = new File(hermesCompilerPackagePath).getParentFile().getAbsolutePath() + "/hermesc/%OS-BIN%/hermesc"
+}
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -10,9 +17,9 @@ def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
  */
 react {
     entryFile = file(["node", "-e", "require('expo/scripts/resolveAppEntry')", projectRoot, "android", "absolute"].execute(null, rootDir).text.trim())
-    reactNativeDir = new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim()).getParentFile().getAbsoluteFile()
-    hermesCommand = new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath() + "/sdks/hermesc/%OS-BIN%/hermesc"
-    codegenDir = new File(["node", "--print", "require.resolve('@react-native/codegen/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsoluteFile()
+    reactNativeDir = reactNativePath
+    hermesCommand = resolvedHermesCommand
+    codegenDir = new File(["node", "--print", "require.resolve('@react-native/codegen/package.json', { paths: ['${reactNativePackagePath}'] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsoluteFile()
 
     // Use Expo CLI to bundle the app, this ensures the Metro config
     // works correctly with Expo projects.

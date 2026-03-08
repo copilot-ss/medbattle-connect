@@ -1,4 +1,4 @@
-export const BADGES = [
+const BADGES = [
   {
     min: 0,
     max: 49,

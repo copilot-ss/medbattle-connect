@@ -52,6 +52,7 @@ export default function QuizScreen({ navigation, route }) {
 
   const boostItems = useMemo(() => {
     const isBoostDisabled = isAnswerLocked || timedOut || !matchIsActive;
+    const freezeUsed = Boolean(usedBoosts?.freeze_time);
     const items = [
       {
         id: 'joker_5050',
@@ -66,16 +67,19 @@ export default function QuizScreen({ navigation, route }) {
         id: 'freeze_time',
         label: t('Zeit einfrieren'),
         icon: 'snow',
-        count: boostInventory.freeze_time,
-        active: Boolean(usedBoosts?.freeze_time) || isTimerFrozen,
-        disabled:
-          isBoostDisabled || Boolean(usedBoosts?.freeze_time) || isTimerFrozen,
+        count: freezeUsed ? null : boostInventory.freeze_time,
+        hideCount: true,
+        active: freezeUsed || isTimerFrozen,
+        disabled: isBoostDisabled || freezeUsed || isTimerFrozen,
         onPress: handleUseFreezeTime,
       },
     ];
 
     return items.filter((item) => {
-      return item.count > 0 || item.active;
+      if (item.id === 'freeze_time' && freezeUsed && !isTimerFrozen) {
+        return false;
+      }
+      return (Number.isFinite(item.count) && item.count > 0) || item.active;
     });
   }, [
     boostInventory.freeze_time,
