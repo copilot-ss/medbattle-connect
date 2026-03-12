@@ -1,0 +1,12 @@
+name,table_size,index_size,total_size,estimated_row_count,seq_scans
+public.matches,424 kB,352 kB,776 kB,126,9
+public.questions,256 kB,288 kB,544 kB,201,25
+public.question_translations,200 kB,208 kB,408 kB,402,5
+public.client_logs,160 kB,48 kB,208 kB,62,0
+public.scores,56 kB,64 kB,120 kB,72,610
+public.users,48 kB,32 kB,80 kB,7,4933
+public.friendships,16 kB,32 kB,48 kB,1,1
+public.profiles,16 kB,32 kB,48 kB,2,0
+public.lobby_invites,8192 bytes,32 kB,40 kB,0,8
+public.friends_table,8192 bytes,16 kB,24 kB,0,0
+public.match_results,0 bytes,24 kB,24 kB,0,0

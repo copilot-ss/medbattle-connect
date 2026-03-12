@@ -1,15 +1,19 @@
 ﻿# TASKS.md - MedBattle Aufgabenliste
 
 ## Offen
-- Release-Readiness: Play Store-Assets/Content-Rating, OAuth + Gameplay Smoke-Tests, Sentry DSN/Alerts, Device-Smoke-Test mit aktuellem Production-Build, Google Service Account Key fuer Play-Submit in EAS.
+- Release-Readiness: Play Store-Assets/Content-Rating/Data-Safety, OAuth + Gameplay Smoke-Tests, Device-Smoke-Test mit aktuellem Production-Build, Google Service Account Key fuer Play-Submit in EAS.
 
 ## Release-Checklist
-- [ ] Play Store: Store-Assets (siehe STORE_ASSETS.md).
+- [x] Play Store: Store-Assets vorbereitet (siehe `STORE_ASSETS.md`, Stand 2026-03-11).
 - [ ] Play Store: Content Rating ausfÃ¼llen.
+- [ ] Play Store: Data Safety final eintragen und mit `PLAY_DATA_SAFETY_DRAFT.md` abgleichen.
+- [x] Play Data Safety: Code-Abgleich zur Draft-Vorlage abgeschlossen (Avatar-Foto optional, Ads non-personalized, IAP + redigiertes `client_logs` Logging) am 2026-03-09.
 - [x] Play Store: Privacy Policy/AGB + Support-Links hinterlegt (siehe STORE_LISTING.md).
+- [x] Play Store: In-App-Kontoloeschung + oeffentliche Delete-Account-URL bereitgestellt (App + Web + Supabase Functions) am 2026-03-11.
 - [x] App/Web: Datenschutz/AGB + Support-Link per ENV verdrahtet.
 - [x] Versionen: App-Version + Build-Nummern fÃ¼r Android gesetzt.
-- [ ] Supabase Auth: OAuth Redirects + Deep Links getestet (Google/Discord/E-Mail).
+- [x] Android: Security-Hardening gesetzt (Manifest: `allowBackup=false`, `usesCleartextTraffic=false`; riskante Permissions entfernt/blocked).
+- [ ] Supabase Auth: OAuth Redirects + Deep Links getestet (Google/Discord/E-Mail; nativer Standalone-Callback `medbattle://auth/callback` auf Production-Build 26 am 2026-03-10 technisch verifiziert, echter Provider-/Mail-Roundtrip weiterhin offen).
 - [x] App: Deep-Link Schemes konfiguriert (app.json + AndroidManifest).
 - [x] App: OAuth-Redirect-Config vorhanden (authConfig + authOAuth).
 - [x] App: Email Confirm/Reset/Update Redirects auf Deep Links gesetzt.
@@ -18,25 +22,68 @@
 - [x] App: Scan fÃ¼r Service-Role-Key (keiner gefunden; nur SQL Grants in Migrations).
 - [x] Supabase SQL: RLS fÃ¼r alle Tabellen in `supabase/*.sql` aktiv (keine Buckets im Repo).
 - [x] Supabase SQL: Policies fÃ¼r alle Tabellen vorhanden (static check).
-- [x] App: Keine Supabase Storage-Buckets im Code/Migrationen referenziert (static check).
-- [ ] Supabase Security: Security Advisor ohne kritische Findings (HIBP nur Pro-Plan).
+- [x] App: Supabase Storage-Nutzung dokumentiert (`avatars`-Bucket fuer optionale Profilfotos); keine weiteren Buckets referenziert (static check).
+- [x] Supabase Security: keine kritischen Findings im CLI-Inspect/Security-Check (2026-03-08; verbleibend nur ungenutzte Indexe + "never vacuumed"; HIBP nur Pro-Plan).
+- [x] Supabase DB Lint: `supabase db lint --linked` ohne Error-Findings (2026-03-08 nach Migration-Push: nur Warnings in `generate_join_code`).
 - [x] Supabase Performance: DB-Statistiken/Index-Nutzung geprueft (`inspect db-stats`, `inspect index-stats`), notwendige Indexe vorhanden.
 - [x] Supabase SQL: Indexe fÃ¼r Kern-Tabellen vorhanden (static check).
 - [x] Supabase DB: SSL enforced + Backup-Status geprueft (CLI).
-- [ ] Supabase DB: DB-Passwort rotiert.
-- [ ] Offline: Login-Recall, Offline-Quick-Play, Online-Sync getestet (teilweise via adb; Details in RELEASE_TESTS.md).
+- [x] Supabase DB: DB-Passwort rotiert (2026-03-10; per Management API erneuert, lokal sicher im Windows Credential Manager abgelegt, Pooler-Login via `psql`/Docker verifiziert).
+- [ ] Offline: Login-Recall, Offline-Quick-Play, Online-Sync getestet (teilweise via adb; Cold-Start Session-Recall auf Production-Build 26 am 2026-03-10 verifiziert, Details in RELEASE_TESTS.md).
 - [ ] Multiplayer: Create/Join/Resume/Abbruch getestet (teilweise via adb; Details in RELEASE_TESTS.md).
 - [ ] Purchases/Ads: Energie-Flow, Rewarded Ad, Premium-Flow getestet.
-- [ ] Telemetry: Crash/Telemetry aktiv (Sentry/Expo) + Alerts konfiguriert (EXPO_PUBLIC_SENTRY_DSN fehlt weiterhin; EAS `production` Environment ist jetzt fuer App-ENV gesetzt).
-- [x] App: Telemetry-Setup verdrahtet (initTelemetry + sentry-expo Plugin).
-- [ ] Release-Build: EAS Store Build + Device-Smoke-Test (Build `a80f9a26-1f1a-4c1d-8aaf-3f31bd25e9c3` gebaut, versionCode 25, Smoke-Test offen; EAS Submit blockiert ohne Google Service Account JSON).
+- [x] Telemetry: Externer Provider entfernt; Crash-Logging laeuft ueber `client_logs` (kein DSN/Alert-Setup erforderlich).
+- [x] App: Externes Telemetry-Setup entfernt (`sentry-expo` Plugin/Dependency entfernt).
+- [x] App: Client-Error-Logging redigiert sensible Inhalte (E-Mail, Token, Session, API Keys) vor Persistenz.
+- [x] App: Redaction-Smoke lokal bestanden (`privacySanitizer`: E-Mail/Token/JWT werden maskiert; `PASS` am 2026-03-08).
+- [x] Datenschutz: DSAR-Prozess (Auskunft/Loeschung/Berichtigung) inkl. SLA und operativem Ablauf dokumentiert (`DSAR_PROCESS.md`).
+- [x] Ads/Consent: EWR-Consent-Nachweis im Privacy-Text + Code-Stand konsistent dokumentiert (Rewarded Ads non-personalized).
+- [x] Security: Dependency-Vulnerability-Check fuer produktive Dependencies dokumentiert (2026-03-08: `npm audit --omit=dev` => 0 high / 0 moderate / 0 critical).
+- [ ] Release-Build: EAS Store Build + Device-Smoke-Test (Build `7cd7ea48-fde1-4a21-867f-78a43e8b1eef` gebaut, versionCode 26, `FINISHED` am 2026-03-08; Emulator-Teilsmoke am 2026-03-10 dokumentiert, Realgeraet-Smoke + EAS Submit weiterhin offen).
 - [x] QA: Manuelle Release-Checkliste dokumentiert (`RELEASE_TESTS.md`).
 
 ## In Arbeit
-- Device-Smoke-Test fuer Android Production-Build `a80f9a26-1f1a-4c1d-8aaf-3f31bd25e9c3` (AAB, versionCode 25) ausstehend.
+- Device-Smoke-Test fuer Android Production-Build `7cd7ea48-fde1-4a21-867f-78a43e8b1eef` (AAB, versionCode 26) auf Realgeraet ausstehend; Emulator-Teilsmoke am 2026-03-10 in `RELEASE_TESTS.md` dokumentiert.
 
 ## Erledigt
+- [x] AdMob-Setup dokumentiert (2026-03-11): `ADMOB_SETUP.md` beschreibt die letzten zwei technischen Release-Werte fuer Android.
+- [x] Expo-Dependency-Check (2026-03-11): `npx expo install --check` ist clean nach Paketangleichung.
+- [x] Expo Doctor (2026-03-11): `npx expo-doctor` ist clean; der Non-CNG Sync-Check ist bewusst deaktiviert.
+- [x] Closed-Test-Runbook vorbereitet (2026-03-11): `CLOSED_TEST_PLAN.md` mit 12-Tester-/14-Tage-Vorgehen erstellt.
+- [x] Play-App-Content-Draft vorbereitet (2026-03-11): `PLAY_APP_CONTENT_DRAFT.md` fuer Target Audience, App Access, Ads, Health und Account Deletion erstellt.
+- [x] Play-Content-Rating-Draft vorbereitet (2026-03-11): `PLAY_CONTENT_RATING_DRAFT.md` mit empfohlenen IARC-Antworten erstellt.
+- [x] Store-Assets vorbereitet (2026-03-11): Play-Icon, Feature Graphic und vier Android-Screenshots liegen unter `store_assets/`.
+- [x] App-Typecheck (2026-03-11): `npx tsc --noEmit` fuer die App sauber; Supabase Edge Functions sind aus dem App-TS-Check ausgeschlossen.
+- [x] Play-Console-Guide (2026-03-11): manuelle Release-Werte in `PLAY_CONSOLE_RELEASE_GUIDE.md` gebuendelt (Links, Content Rating, Data Safety, Closed Test, Reihenfolge).
+- [x] Release-Checks (2026-03-11): `npm run release:check` hinzugefuegt; validiert Env, Legal-URLs, AdMob/IAP-Konfiguration, Release-Signing und Android-Hardening vor dem AAB-Bau.
+- [x] Android Release-Signing (2026-03-11): lokales Upload-Keystore + `android/keystore.properties` eingerichtet, `bundleRelease` ohne Debug-Signing vorbereitet.
+- [x] Release-Security (2026-03-10): Supabase DB-Passwort rotiert, lokales Abruf-Credential aktualisiert und Auth gegen den Supabase Pooler erfolgreich verifiziert; direkter DB-Host lokal nur per IPv6 erreichbar und daher hier nicht separat pruefbar.
+- [x] Dev-Client Runtime-Fix (2026-03-10): fehlende Native-Dependency `expo-splash-screen` nachgezogen, Debug-APK neu gebaut/installiert (Emulator + Realgeraet), `DevLauncherErrorActivity` damit behoben.
+- [x] UI Dev-Overlay-Haertung (2026-03-10): Close-/Exit-Buttons in Quiz, Einstellungen und Rangliste mit groesserem `__DEV__`-Rechtsabstand versehen, damit Expo-Tools-Taps nicht mehr abfangen.
+- [x] Dev-Client Runtime-Smoke auf Realgeraet (2026-03-09): neues Debug-APK auf `c2ccd135` installiert, `adb reverse tcp:8081` + Dev-Client Start geprueft; keine Logcat-Treffer fuer `ExpoAsset.downloadAsync` / `FilePermissionService$Permission` / `NoClassDefFoundError`.
+- [x] UI Dev-Client Fix (2026-03-09): Quiz-Exit-Button (`X`) in `__DEV__` mit rechtem Offset versehen, damit Expo-Tools-Overlay das Schliessen nicht blockiert.
+- [x] IAP Runtime-Haertung (2026-03-09): `Billing client not ready` in Compat-Layer durch Reconnect+Retry abgefangen (`getProductsAsync`/`requestPurchaseAsync`), Shop-Smoke ohne entsprechenden Warnfehler.
+- [x] Expo SDK 55 Patch-Alignment (2026-03-09): `expo install`-Empfehlungen uebernommen (`expo-dev-client`, `expo-notifications`, `expo-updates`, `expo-image-picker`, `expo-web-browser` etc.) und `expo-web-browser` Plugin in `app.json` ergaenzt; `expo install --check` jetzt clean.
+- [x] Dev-Stability (2026-03-09): `ExpoAsset.downloadAsync` NoClassDef-Fehler (`FilePermissionService$Permission`) im JS abgefangen; Asset-/Font-Preload wird bei Native-Mismatch einmalig deaktiviert und mit Rebuild-Hinweis geloggt.
+- [x] Android Dev-Build Runtime-Recheck (2026-03-08, Emulator): Debug-APK neu installiert, Metro auf IPv4/LAN (`--host lan`) + `adb reverse` stabil; keine Treffer mehr fuer `Cannot find native module 'ExpoIap'`, `ExpoTopicSubscriptionModule fehlt` oder `ExpoAsset.downloadAsync` Klassenfehler.
+- [x] Expo-Dependency-Angleichung (2026-03-08): `expo` auf stabil `~55.0.5` aktualisiert (`expo-modules-core` damit `55.0.14`), inkompatiblen Patch `patches/expo-modules-core+55.0.9.patch` entfernt.
+- [x] Security-Recheck (2026-03-08): `npm audit --omit=dev --json` erneut ausgefuehrt, weiterhin 0 high / 0 moderate / 0 critical.
+- [x] IAP-Config-Guard: fehlende `EXPO_PUBLIC_IAP_*` ENV-Keys werden einmalig gewarnt (Fallback aktiv), damit SKU-Pruefung vor Release nicht uebersehen wird (2026-03-08).
+- [x] Multiplayer-Realtime-Haertung: Auto-Reconnect mit Exponential Backoff fuer `lobby_invites`- und `matches`-Channel bei `CHANNEL_ERROR`/`TIMED_OUT`/`CLOSED` eingebaut (2026-03-08).
+- [x] IAP Release-Prep: `expo-iap` Config-Plugin aktiviert (`app.json`), Shop zeigt Store-Preislabels aus geladenen Produktdaten (Fallback auf Default-Preis), Kauf-/Boost-Fehltexte ohne Encoding-Artefakte bereinigt (2026-03-08).
+- [x] IAP-Haertung: Store-SKU-Verfuegbarkeit wird geprueft (Home/Shop), IAP-Buttons sind bei nicht geladenen Produkten gesperrt, Pending-Kaeufe werden beim Connect nachgezogen (2026-03-08).
+- [x] IAP-Stack auf `expo-iap` migriert (ersetzt `expo-in-app-purchases`), Consumable-Finish fuer Coin-/Boost-Kaeufe auf `true` gesetzt (2026-03-08).
+- [x] Supabase Migrationen remote gepusht (`20260226194000`, `20260226200000`, `20260226210000`, `20260308153000`) und DB-Lint-Error `public.add_friend` behoben.
+- [x] Supabase Function `legal` neu deployt (`--no-verify-jwt`), Privacy-Link live mit Stand 2026-03-08.
+- [x] Datenschutz: DSAR-Runbook erstellt (`DSAR_PROCESS.md`, SLA + operativer Ablauf + SQL-Templates) am 2026-03-08.
+- [x] Datenschutz/Consent-Texte aktualisiert (Web + Supabase Legal Function + In-App Legal Content) am 2026-03-08.
+- [x] Dependency-Hygiene: ungenutzte direkte Pakete entfernt und fehlende Runtime-Dependencies ergänzt (`expo-asset`, `expo-in-app-purchases`, `metro-cache`, `tailwindcss`) am 2026-03-08.
+- [x] Security-Audit bereinigt (`npm audit --omit=dev`): 0 high / 0 moderate / 0 critical.
+- [x] ADB-Smoke auf Emulator `emulator-5554` ausgefuehrt (Deep-Link Schemes ok, Offline/Online Toggle technisch getestet; Details in `RELEASE_TESTS.md`).
+- [x] Android Manifest/App-Config fuer Release gehaertet (Permissions reduziert, `allowBackup=false`, `usesCleartextTraffic=false`, `android.blockedPermissions` gesetzt).
+- [x] Telemetry/Logging Bereinigung umgesetzt (`sentry-expo` entfernt, redigierte `client_logs` beibehalten).
 - [x] EAS Environment `production` mit App-ENV aus `.env` befuellt (`eas env:push production --path .env --force`).
+- [x] Release-Build Android (EAS production) erfolgreich: `7cd7ea48-fde1-4a21-867f-78a43e8b1eef` (`FINISHED`, versionCode 26, AAB erstellt, ohne Sentry).
 - [x] Build-Fix: RN/Gradle Repo-Setup stabilisiert (`react.includeJitpackRepository=false` + scoped JitPack fuer `com.github.*`), JitPack-Timeout fuer BouncyCastle umgangen.
 - [x] Build-Fix: Hermes Compiler-Pfad fuer RN 0.83 angepasst (`android/app/build.gradle` nutzt `hermes-compiler` mit Fallback auf legacy Pfad).
 - [x] Release-Build Android (EAS production) erfolgreich: `a80f9a26-1f1a-4c1d-8aaf-3f31bd25e9c3` (`FINISHED`, versionCode 25, AAB erstellt).
@@ -96,7 +143,7 @@
 - [x] Patch fÃ¼r `expo-modules-core` (FeatureFlags Fallback)
 - [x] Banner-Werbung entfernt; Energie-Dialog mit Kauf oder Rewarded Ad (+5 Energie).
 - [x] Supabase Functions: search_path gesetzt, Security-Warnungen bereinigt.
-- [x] Release: Crash/Telemetry (Sentry) integriert.
+- [x] Release: Sentry wieder entfernt (kein Account), Crash-Logging ueber Supabase `client_logs` beibehalten.
 - [x] Data-Layer: Supabase-Timeouts/Fehlerhandling zentralisieren + Request-Tracking.
 - [x] Offline: lokale Fragenbank erweitern + Sync beim Online-Gehen (Diff/Update-Strategie).
 - [x] Performance: Start-Perf (Assets vorladen, Animationen lazy-load, Rendering reduzieren).

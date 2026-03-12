@@ -285,6 +285,8 @@ export default function useSettingsController({ navigation, route, onClearSessio
   const linkGoogleHint =
     t('Verkn\u00fcpfe Google mit diesem Profil, damit der Google-Login denselben Account nutzt.');
   const streakShieldCount = sanitizeStatNumber(boosts?.streak_shield);
+  const freezeTimeCount = sanitizeStatNumber(boosts?.freeze_time);
+  const jokerCount = sanitizeStatNumber(boosts?.joker_5050);
   const showAudioSection = activeTab === 'settings';
   const showProfileSection = activeTab === 'profile';
   const showSignOutSection = activeTab === 'settings';
@@ -465,6 +467,8 @@ export default function useSettingsController({ navigation, route, onClearSessio
     multiplayerGames,
     xpBoostsUsed,
     streakShieldCount,
+    freezeTimeCount,
+    jokerCount,
     doubleXpExpiresAt,
     titleProgress,
     achievements,

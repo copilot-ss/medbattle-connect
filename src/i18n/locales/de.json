@@ -47,6 +47,7 @@
   "Brauchst du Hilfe?": "Brauchst du Hilfe?",
   "Coins": "Coins",
   "Coins kaufen": "Coins kaufen",
+  "Coins mit Echtgeld": "Coins mit Echtgeld",
   "Coins werden eingelöst...": "Coins werden eingelöst...",
   "600 Coins": "600 Coins",
   "1.500 Coins": "1.500 Coins",
@@ -62,6 +63,7 @@
   "Deutsch": "Deutsch",
   "Direkt starten": "Direkt starten",
   "Du brauchst Energie für ein weiteres Spiel. Wähle Coins, Kauf oder Werbung für Energie.": "Du brauchst Energie für ein weiteres Spiel. Wähle Coins, Kauf oder Werbung für Energie.",
+  "Du brauchst Energie für ein weiteres Spiel. Öffne den Shop oder sieh dir Werbung für Energie an.": "Du brauchst Energie für ein weiteres Spiel. Öffne den Shop oder sieh dir Werbung für Energie an.",
   "E-Mail ändern": "E-Mail ändern",
   "E-Mail-Account erstellen": "E-Mail-Account erstellen",
   "E-Mail bestätigen": "E-Mail bestätigen",
@@ -75,6 +77,7 @@
   "Energie ist bereits voll": "Energie ist bereits voll",
   "Energie aufgefüllt!": "Energie aufgefüllt!",
   "Energie voll (1,99 EUR)": "Energie voll (1,99 EUR)",
+  "Store-Kauf nicht verfügbar": "Store-Kauf nicht verfügbar",
   "Energie vorhanden": "Energie vorhanden",
   "Energie": "Energie",
   "Englisch": "Englisch",
@@ -322,6 +325,7 @@
   "Match konnte nicht geladen werden.": "Match konnte nicht geladen werden.",
   "Lobby nicht gefunden.": "Lobby nicht gefunden.",
   "MedBattle abgeschlossen": "MedBattle abgeschlossen",
+  "Hilfe - hier krachts total !": "Hilfe - hier krachts total !",
   "Mega stark! Du bist im Flow - das war richtig clean gespielt.": "Mega stark! Du bist im Flow - das war richtig clean gespielt.",
   "Medizin": "Medizin",
   "Medizinische Grundlagen und klinische Praxis.": "Medizinische Grundlagen und klinische Praxis.",
@@ -568,6 +572,7 @@
   "mindestens {count} Zeichen": "mindestens {count} Zeichen",
   "name@example.com": "name@example.com",
   "Shop": "Shop",
+  "Shop öffnen": "Shop öffnen",
   "Mehr Energie für längere Sessions.": "Mehr Energie für längere Sessions.",
   "Schneller Mini-Boost.": "Schneller Mini-Boost.",
   "Solider Boost für mehrere Runden.": "Solider Boost für mehrere Runden.",
@@ -577,6 +582,7 @@
   "Max Energie +10": "Max Energie +10",
   "Erhöht dein Energielimit dauerhaft.": "Erhöht dein Energielimit dauerhaft.",
   "Für Power-User: dauerhaft mehr Energie.": "Für Power-User: dauerhaft mehr Energie.",
+  "Im Store kaufen": "Im Store kaufen",
   "Kaufen": "Kaufen",
   "Maximale Energie erreicht.": "Maximale Energie erreicht.",
   "Max Energie +{amount} freigeschaltet!": "Max Energie +{amount} freigeschaltet!",
@@ -616,6 +622,7 @@
   "Belohnung: +{xp} XP, +": "Belohnung: +{xp} XP, +",
   "Belohnung: +{xp} XP, +{coins} Coins": "Belohnung: +{xp} XP, +{coins} Coins",
   "Belohnung konnte nicht abgeholt werden.": "Belohnung konnte nicht abgeholt werden.",
+  "Konto löschen": "Konto löschen",
   "Achievement Quiz 100 Title": "100 Quizzes",
   "Achievement Quiz 100 Hint": "100 Quizzes abgeschlossen",
   "Achievement Quiz 500 Title": "500 Quizzes",
@@ -646,4 +653,10 @@
   "Naechste Challenge": "Nächste Challenge",
   "Zurueck zur Lobby": "Zurück zur Lobby",
   "Zurueck zur Basis": "Zurück zur Basis"
+  ,"Schützt deine Streak einmal.": "Schützt deine Streak einmal."
+  ,"Stoppt den Timer für 5 Sekunden.": "Stoppt den Timer für 5 Sekunden."
+  ,"Entfernt 2 falsche Antworten.": "Entfernt 2 falsche Antworten."
+  ,"Naechstes Quiz": "N\u00e4chstes Quiz"
+  ,"Fertig": "Fertig"
+  ,"Solo-Spiel": "Solo-Spiel"
 }

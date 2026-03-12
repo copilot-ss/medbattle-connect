@@ -10,10 +10,13 @@ Current:
 - store_assets/play_store_icon_512.png (512x512)
 - store_assets/play_store_feature_graphic_1024x500.png (1024x500)
 - store_assets/play_store_screenshot_1.png (1080x2400)
+- store_assets/play_store_screenshot_2.png (1080x2400)
+- store_assets/play_store_screenshot_3.png (1080x2400)
+- store_assets/play_store_screenshot_4.png (1080x2400)
 - Native launcher icons: android/app/src/main/res/mipmap-*
 
 Missing:
-- Additional screenshots
+- Optional: weitere Screenshots, falls du noch mehr App-Bereiche im Store zeigen willst
 
 ## Capture guide
 Android (adb):

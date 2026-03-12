@@ -1,0 +1,11 @@
+name,index,index_size,index_scans
+public.matches,matches_questions_gin,184 kB,0
+public.questions,questions_difficulty_idx,16 kB,0
+public.client_logs,client_logs_created_at_idx,16 kB,0
+public.matches,idx_matches_category,16 kB,0
+public.matches,matches_host_id_idx,16 kB,0
+public.client_logs,client_logs_user_id_idx,16 kB,0
+public.question_translations,idx_question_translations_language,16 kB,1
+public.questions,idx_questions_difficulty_category,16 kB,1
+public.matches,matches_guest_id_idx,16 kB,2
+public.questions,idx_questions_category,16 kB,29

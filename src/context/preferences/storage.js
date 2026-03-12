@@ -86,7 +86,7 @@ export async function loadPreferencesFromStorage() {
         const value = raw ? sanitizeStreakValue(raw) : 0;
         nextStreaks[difficulty] = value;
       } catch (err) {
-        console.warn(`Konnte Streak für ${difficulty} nicht laden:`, err);
+        console.warn(`Konnte Streak fuer ${difficulty} nicht laden:`, err);
       }
     }),
     (async () => {
@@ -354,6 +354,28 @@ export async function persistStreakValue(key, value) {
   try {
     await AsyncStorage.setItem(key, String(value));
   } catch (err) {
-    console.warn(`Konnte Streak für ${key} nicht speichern:`, err);
+    console.warn(`Konnte Streak fuer ${key} nicht speichern:`, err);
+  }
+}
+
+export async function clearAccountPreferencesStorage() {
+  try {
+    await AsyncStorage.multiRemove([
+      AVATAR_STORAGE_KEY,
+      AVATAR_URI_KEY,
+      AVATAR_FRAME_KEY,
+      OWNED_FRAMES_KEY,
+      BOOSTS_STORAGE_KEY,
+      ACHIEVEMENTS_STORAGE_KEY,
+      STREAK_SHIELD_ACTIVE_KEY,
+      DOUBLE_XP_EXPIRES_KEY,
+      USER_STATS_STORAGE_KEY,
+      ENERGY_VALUE_KEY,
+      ENERGY_TIMESTAMP_KEY,
+      ENERGY_BASE_STORAGE_KEY,
+      ...Object.values(STREAK_STORAGE_KEYS),
+    ]);
+  } catch (err) {
+    console.warn('Konnte kontobezogene Einstellungen nicht loeschen:', err);
   }
 }

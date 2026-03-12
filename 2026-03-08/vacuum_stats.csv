@@ -1,0 +1,12 @@
+name,last_vacuum,last_autovacuum,last_analyze,last_autoanalyze,rowcount,dead_rowcount,autovacuum_threshold,expect_autovacuum,autoanalyze_threshold,expect_autoanalyze
+public.client_logs,"","","",2026-02-18 19:56,            56,             0,            61,no,            56,no
+public.matches,"",2026-01-14 17:59,"",2026-02-19 22:15,           120,            68,            74,no,            62,yes
+public.question_translations,"",2026-03-08 14:01,"",2026-03-08 14:01,           402,             0,           130,no,            90,no
+public.questions,"",2026-03-08 14:01,"",2026-03-08 14:01,           201,             0,            90,no,            70,no
+public.scores,"",2026-02-22 03:15,"",2026-02-19 14:32,            72,             0,            64,no,            57,no
+public.users,"",2026-02-21 20:43,"",2026-02-18 21:05,             7,             2,            51,no,            51,no
+public.friends_table,"","","","",            -1,             0,            50,no,            50,no
+public.friendships,"","","","",            -1,             5,            50,no,            50,no
+public.lobby_invites,"","","","",            -1,             0,            50,no,            50,no
+public.match_results,"","","","",            -1,             0,            50,no,            50,no
+public.profiles,"","","","",            -1,            45,            50,no,            50,no

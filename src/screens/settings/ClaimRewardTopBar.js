@@ -13,13 +13,13 @@ const BlurModule = (() => {
 })();
 const NativeBlurView = BlurModule?.BlurView ?? null;
 
-const CLAIM_COUNTER_MIN_DURATION = 1200;
-const CLAIM_COUNTER_MAX_DURATION = 2600;
+const CLAIM_COUNTER_MIN_DURATION = 1600;
+const CLAIM_COUNTER_MAX_DURATION = 3200;
 const CLAIM_OVERLAY_ENTER_MS = 220;
 const CLAIM_OVERLAY_EXIT_MS = 320;
-const CLAIM_END_HOLD_MS = 180;
-const CLAIM_BAR_BASE_HEIGHT = 12;
-const CLAIM_BAR_MAX_HEIGHT = 30;
+const CLAIM_END_HOLD_MS = 420;
+const CLAIM_BAR_BASE_HEIGHT = 18;
+const CLAIM_BAR_MAX_HEIGHT = 42;
 const CLAIM_SECTION_STAGGER_MS = 95;
 
 const formatThousands = (value) => {
@@ -42,8 +42,6 @@ export default function ClaimRewardTopBar({
   const [showClaimOverlay, setShowClaimOverlay] = useState(false);
   const [animatedLevel, setAnimatedLevel] = useState(userLevel);
   const [animatedCoins, setAnimatedCoins] = useState(coins);
-  const [animatedXp, setAnimatedXp] = useState(xp);
-  const [rewardXpGain, setRewardXpGain] = useState(0);
   const [rewardCoinsGain, setRewardCoinsGain] = useState(0);
   const [progressBarHeight, setProgressBarHeight] = useState(CLAIM_BAR_BASE_HEIGHT);
   const overlayOpacityAnim = useRef(new Animated.Value(0)).current;
@@ -51,14 +49,10 @@ export default function ClaimRewardTopBar({
   const cardScaleAnim = useRef(new Animated.Value(0.72)).current;
   const levelAnim = useRef(new Animated.Value(userLevel)).current;
   const coinsAnim = useRef(new Animated.Value(coins)).current;
-  const xpAnim = useRef(new Animated.Value(xp)).current;
   const progressAnim = useRef(
     new Animated.Value(getTitleProgress(xp).progress)
   ).current;
   const progressScaleAnim = useRef(new Animated.Value(1)).current;
-  const badgeScaleAnim = useRef(new Animated.Value(0.86)).current;
-  const headingOpacityAnim = useRef(new Animated.Value(0)).current;
-  const headingTranslateAnim = useRef(new Animated.Value(12)).current;
   const rewardsOpacityAnim = useRef(new Animated.Value(0)).current;
   const rewardsTranslateAnim = useRef(new Animated.Value(14)).current;
   const metaOpacityAnim = useRef(new Animated.Value(0)).current;
@@ -82,27 +76,18 @@ export default function ClaimRewardTopBar({
     }
     setAnimatedLevel(safeLiveLevel);
     setAnimatedCoins(safeLiveCoins);
-    setAnimatedXp(safeLiveXp);
-    setRewardXpGain(0);
     setRewardCoinsGain(0);
     setProgressBarHeight(CLAIM_BAR_BASE_HEIGHT);
     levelAnim.setValue(safeLiveLevel);
     coinsAnim.setValue(safeLiveCoins);
-    xpAnim.setValue(safeLiveXp);
     progressAnim.setValue(safeLiveProgress);
     progressScaleAnim.setValue(1);
-    badgeScaleAnim.setValue(0.86);
-    headingOpacityAnim.setValue(0);
-    headingTranslateAnim.setValue(12);
     rewardsOpacityAnim.setValue(0);
     rewardsTranslateAnim.setValue(14);
     metaOpacityAnim.setValue(0);
     metaTranslateAnim.setValue(16);
   }, [
-    badgeScaleAnim,
     coinsAnim,
-    headingOpacityAnim,
-    headingTranslateAnim,
     levelAnim,
     metaOpacityAnim,
     metaTranslateAnim,
@@ -113,9 +98,7 @@ export default function ClaimRewardTopBar({
     safeLiveCoins,
     safeLiveLevel,
     safeLiveProgress,
-    safeLiveXp,
     showClaimOverlay,
-    xpAnim,
   ]);
 
   useEffect(() => {
@@ -150,7 +133,7 @@ export default function ClaimRewardTopBar({
     const gainMagnitude = rewardXp + Math.abs(toCoins - fromCoins) * 0.4 + levelJump * 900;
     const counterDuration = Math.min(
       CLAIM_COUNTER_MAX_DURATION,
-      Math.max(CLAIM_COUNTER_MIN_DURATION, Math.round(1180 + gainMagnitude * 0.58))
+      Math.max(CLAIM_COUNTER_MIN_DURATION, Math.round(1450 + gainMagnitude * 0.68))
     );
     const peakCardScale = Math.min(
       1.34,
@@ -171,8 +154,6 @@ export default function ClaimRewardTopBar({
     setShowClaimOverlay(true);
     setAnimatedLevel(fromLevel);
     setAnimatedCoins(fromCoins);
-    setAnimatedXp(fromXp);
-    setRewardXpGain(rewardXp);
     setRewardCoinsGain(rewardCoins);
     setProgressBarHeight(nextBarHeight);
     overlayOpacityAnim.setValue(0);
@@ -180,12 +161,8 @@ export default function ClaimRewardTopBar({
     cardScaleAnim.setValue(0.72);
     levelAnim.setValue(fromLevel);
     coinsAnim.setValue(fromCoins);
-    xpAnim.setValue(fromXp);
     progressAnim.setValue(normalizedFromProgress);
     progressScaleAnim.setValue(0.94);
-    badgeScaleAnim.setValue(0.86);
-    headingOpacityAnim.setValue(0);
-    headingTranslateAnim.setValue(12);
     rewardsOpacityAnim.setValue(0);
     rewardsTranslateAnim.setValue(14);
     metaOpacityAnim.setValue(0);
@@ -196,9 +173,6 @@ export default function ClaimRewardTopBar({
     });
     const coinsListenerId = coinsAnim.addListener(({ value }) => {
       setAnimatedCoins(Math.max(0, Math.round(value)));
-    });
-    const xpListenerId = xpAnim.addListener(({ value }) => {
-      setAnimatedXp(Math.max(0, Math.round(value)));
     });
 
     const motion = Animated.sequence([
@@ -241,12 +215,6 @@ export default function ClaimRewardTopBar({
           easing: Easing.out(Easing.cubic),
           useNativeDriver: false,
         }),
-        Animated.timing(xpAnim, {
-          toValue: toXp,
-          duration: counterDuration,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: false,
-        }),
         Animated.timing(progressAnim, {
           toValue: toProgress,
           duration: Math.max(880, Math.round(counterDuration * 0.84)),
@@ -268,20 +236,6 @@ export default function ClaimRewardTopBar({
           }),
         ]),
         Animated.stagger(CLAIM_SECTION_STAGGER_MS, [
-          Animated.parallel([
-            Animated.timing(headingOpacityAnim, {
-              toValue: 1,
-              duration: 220,
-              easing: Easing.out(Easing.cubic),
-              useNativeDriver: true,
-            }),
-            Animated.timing(headingTranslateAnim, {
-              toValue: 0,
-              duration: 280,
-              easing: Easing.out(Easing.cubic),
-              useNativeDriver: true,
-            }),
-          ]),
           Animated.parallel([
             Animated.timing(rewardsOpacityAnim, {
               toValue: 1,
@@ -311,33 +265,6 @@ export default function ClaimRewardTopBar({
             }),
           ]),
         ]),
-        Animated.sequence([
-          Animated.timing(badgeScaleAnim, {
-            toValue: 1.08,
-            duration: 280,
-            easing: Easing.out(Easing.back(1.1)),
-            useNativeDriver: true,
-          }),
-          Animated.timing(badgeScaleAnim, {
-            toValue: 1,
-            duration: 240,
-            easing: Easing.inOut(Easing.quad),
-            useNativeDriver: true,
-          }),
-          Animated.delay(Math.max(180, Math.round(counterDuration * 0.22))),
-          Animated.timing(badgeScaleAnim, {
-            toValue: 1.04,
-            duration: 220,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-          Animated.timing(badgeScaleAnim, {
-            toValue: 1,
-            duration: 220,
-            easing: Easing.inOut(Easing.quad),
-            useNativeDriver: true,
-          }),
-        ]),
       ]),
       Animated.delay(CLAIM_END_HOLD_MS),
       Animated.parallel([
@@ -365,13 +292,11 @@ export default function ClaimRewardTopBar({
     motion.start(({ finished }) => {
       levelAnim.removeListener(levelListenerId);
       coinsAnim.removeListener(coinsListenerId);
-      xpAnim.removeListener(xpListenerId);
       if (!finished) {
         return;
       }
       setAnimatedLevel(toLevel);
       setAnimatedCoins(toCoins);
-      setAnimatedXp(toXp);
       setShowClaimOverlay(false);
       onClaimRewardAnimationEnd?.();
     });
@@ -379,12 +304,8 @@ export default function ClaimRewardTopBar({
     return () => {
       levelAnim.stopAnimation();
       coinsAnim.stopAnimation();
-      xpAnim.stopAnimation();
       progressAnim.stopAnimation();
       progressScaleAnim.stopAnimation();
-      badgeScaleAnim.stopAnimation();
-      headingOpacityAnim.stopAnimation();
-      headingTranslateAnim.stopAnimation();
       rewardsOpacityAnim.stopAnimation();
       rewardsTranslateAnim.stopAnimation();
       metaOpacityAnim.stopAnimation();
@@ -394,7 +315,6 @@ export default function ClaimRewardTopBar({
       cardScaleAnim.stopAnimation();
       levelAnim.removeListener(levelListenerId);
       coinsAnim.removeListener(coinsListenerId);
-      xpAnim.removeListener(xpListenerId);
     };
   }, [
     claimRewardAnimation?.id,
@@ -402,12 +322,9 @@ export default function ClaimRewardTopBar({
     claimRewardAnimation?.fromXp,
     claimRewardAnimation?.toCoins,
     claimRewardAnimation?.toXp,
-    badgeScaleAnim,
     coinsAnim,
     cardOpacityAnim,
     cardScaleAnim,
-    headingOpacityAnim,
-    headingTranslateAnim,
     levelAnim,
     metaOpacityAnim,
     metaTranslateAnim,
@@ -417,9 +334,7 @@ export default function ClaimRewardTopBar({
     progressScaleAnim,
     rewardsOpacityAnim,
     rewardsTranslateAnim,
-    xp,
     coins,
-    xpAnim,
   ]);
 
   if (!showClaimOverlay) {
@@ -459,40 +374,21 @@ export default function ClaimRewardTopBar({
         ]}
       >
         <Animated.View
-          style={[
-            styles.claimCenterBadgeWrap,
-            { transform: [{ scale: badgeScaleAnim }] },
-          ]}
-        >
-          <View style={styles.claimCenterBadge}>
-            <Text style={styles.claimCenterBadgeText}>{t('Abzeichen erhalten')}</Text>
-          </View>
-        </Animated.View>
-
-        <Animated.View
-          style={{
-            opacity: headingOpacityAnim,
-            transform: [{ translateY: headingTranslateAnim }],
-          }}
-        >
-          <Text style={styles.claimCenterHeading}>{t('Belohnung eingesammelt')}</Text>
-        </Animated.View>
-
-        <Animated.View
           style={{
             opacity: rewardsOpacityAnim,
             transform: [{ translateY: rewardsTranslateAnim }],
           }}
         >
-          <View style={styles.claimCenterRewardsRow}>
-            <View style={[styles.claimCenterRewardChip, styles.claimCenterRewardChipXp]}>
-              <Text style={styles.claimCenterRewardChipLabel}>XP</Text>
-              <Text style={styles.claimCenterRewardChipValue}>{`+${formatThousands(rewardXpGain)}`}</Text>
+          <View style={styles.claimCenterHero}>
+            <Text style={styles.claimCenterCoinsLabel}>{t('Coins')}</Text>
+            <View style={styles.claimCenterHeroRow}>
+              <Text style={styles.claimCenterCoinsValue}>{formatThousands(animatedCoins)}</Text>
+              <View style={styles.claimCenterMiniLevelBadge}>
+                <Text style={styles.claimCenterMiniLevelLabel}>{t('Level')}</Text>
+                <Text style={styles.claimCenterMiniLevelValue}>{animatedLevel}</Text>
+              </View>
             </View>
-            <View style={[styles.claimCenterRewardChip, styles.claimCenterRewardChipCoins]}>
-              <Text style={styles.claimCenterRewardChipLabel}>{t('Coins')}</Text>
-              <Text style={styles.claimCenterRewardChipValue}>{`+${formatThousands(rewardCoinsGain)}`}</Text>
-            </View>
+            <Text style={styles.claimCenterCoinsGain}>{`+${formatThousands(rewardCoinsGain)}`}</Text>
           </View>
         </Animated.View>
 
@@ -502,16 +398,7 @@ export default function ClaimRewardTopBar({
             transform: [{ translateY: metaTranslateAnim }],
           }}
         >
-          <View style={styles.claimCenterLevelRow}>
-            <View style={styles.claimCenterLevelCluster}>
-              <Text style={styles.claimCenterLevelLabel}>{t('Level')}</Text>
-              <Text style={styles.claimCenterLevelValue}>{`LV ${animatedLevel}`}</Text>
-            </View>
-            <Text style={styles.claimCenterXpValue}>{`${formatThousands(animatedXp)} XP`}</Text>
-          </View>
-
           <View style={styles.claimCenterProgressWrap}>
-            <Text style={styles.claimCenterProgressHint}>{t('Level-Fortschritt')}</Text>
             <View
               style={[
                 styles.claimCenterProgressTrack,

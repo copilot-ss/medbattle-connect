@@ -1,8 +1,10 @@
+import { IAP_PRODUCT_IDS } from '../../config/iapProductIds';
+
 export const DEFAULT_DIFFICULTY = 'mittel';
 export const QUICK_PLAY_QUESTIONS = 6;
 export const COIN_ENERGY_COST = 75;
 export const COIN_ENERGY_AMOUNT = 5;
-export const BOOST_PRODUCT_ID = 'energy_boost_20';
+export const BOOST_PRODUCT_ID = IAP_PRODUCT_IDS.boostEnergy;
 export const REWARDED_ENERGY = 5;
 export const LOBBY_CAPACITY = 10;
 

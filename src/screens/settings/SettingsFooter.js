@@ -44,6 +44,7 @@ export default function SettingsFooter({
   const hasPrivacyLink = hasNativeLegalScreen;
   const hasTermsLink = hasNativeLegalScreen;
   const hasSupportLink = hasNativeLegalScreen;
+  const hasDeleteAccountLink = hasNativeLegalScreen;
 
   return (
     <View style={styles.fixedFooter}>
@@ -108,9 +109,9 @@ export default function SettingsFooter({
             !hasPrivacyLink ? styles.legalLinkDisabled : null,
           ]}
           accessibilityRole="link"
-          accessibilityLabel="Privacy"
+          accessibilityLabel={t('Datenschutz')}
         >
-          <Text style={styles.legalLinkText}>Privacy</Text>
+          <Text style={styles.legalLinkText}>{t('Datenschutz')}</Text>
         </Pressable>
         <Text style={styles.legalDivider}>|</Text>
         <Pressable
@@ -121,9 +122,9 @@ export default function SettingsFooter({
             !hasTermsLink ? styles.legalLinkDisabled : null,
           ]}
           accessibilityRole="link"
-          accessibilityLabel="Terms"
+          accessibilityLabel={t('AGB')}
         >
-          <Text style={styles.legalLinkText}>Terms</Text>
+          <Text style={styles.legalLinkText}>{t('AGB')}</Text>
         </Pressable>
         <Text style={styles.legalDivider}>|</Text>
         <Pressable
@@ -134,9 +135,22 @@ export default function SettingsFooter({
             !hasSupportLink ? styles.legalLinkDisabled : null,
           ]}
           accessibilityRole="link"
-          accessibilityLabel="Support"
+          accessibilityLabel={t('Support')}
         >
-          <Text style={styles.legalLinkText}>Support</Text>
+          <Text style={styles.legalLinkText}>{t('Support')}</Text>
+        </Pressable>
+        <Text style={styles.legalDivider}>|</Text>
+        <Pressable
+          onPress={() => handleOpenLegal('deleteAccount')}
+          disabled={!hasDeleteAccountLink}
+          style={[
+            styles.legalLink,
+            !hasDeleteAccountLink ? styles.legalLinkDisabled : null,
+          ]}
+          accessibilityRole="link"
+          accessibilityLabel={t('Konto löschen')}
+        >
+          <Text style={styles.legalLinkText}>{t('Konto löschen')}</Text>
         </Pressable>
       </View>
     </View>

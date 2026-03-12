@@ -171,6 +171,7 @@ export default function AvatarEditScreen({ navigation }) {
         title={t('Profilbild')}
         onClose={() => navigation.goBack()}
         showClose
+        actionType="back"
       />
 
       <ScrollView

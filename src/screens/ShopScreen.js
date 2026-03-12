@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
-  Platform,
   ScrollView,
   Text,
   View,
@@ -42,9 +41,34 @@ import {
   PURCHASE_SPIN_CYCLE_MS,
   PURCHASE_SPIN_ROTATIONS_PER_CYCLE,
   formatCountdown,
-  formatThousands,
   sanitizeStatNumber,
 } from './shop/shopConfig';
+
+const extractIapProductId = (product) => {
+  if (!product || typeof product !== 'object') {
+    return null;
+  }
+  const candidate =
+    product.productId ?? product.id ?? product.sku ?? product.product_id;
+  return typeof candidate === 'string' && candidate.trim().length > 0
+    ? candidate.trim()
+    : null;
+};
+
+const extractIapPriceLabel = (product) => {
+  if (!product || typeof product !== 'object') {
+    return null;
+  }
+  const candidate =
+    product.displayPrice ??
+    product.localizedPrice ??
+    product.formattedPrice ??
+    product.priceString;
+  if (typeof candidate === 'string' && candidate.trim().length > 0) {
+    return candidate.trim();
+  }
+  return null;
+};
 
 export default function ShopScreen() {
   const { t } = useTranslation();
@@ -66,7 +90,8 @@ export default function ShopScreen() {
   } = usePreferences();
   const iapModule = useMemo(() => getInAppPurchases(), []);
   const iapAvailable = Boolean(iapModule && typeof iapModule.connectAsync === 'function');
-  const [iapReady, setIapReady] = useState(iapAvailable && Platform.OS !== 'android');
+  const [availableIapProductIds, setAvailableIapProductIds] = useState([]);
+  const [iapPriceLabelsByProductId, setIapPriceLabelsByProductId] = useState({});
   const [shopMessage, setShopMessage] = useState(null);
   const [purchasingId, setPurchasingId] = useState(null);
   const verticalScrollRef = useRef(null);
@@ -81,7 +106,6 @@ export default function ShopScreen() {
   const energyShake = useRef(new Animated.Value(0)).current;
   const purchaseButtonSpin = useRef(new Animated.Value(0)).current;
   const coinsAvailable = sanitizeStatNumber(userStats?.coins);
-  const coinsLabel = formatThousands(coinsAvailable);
   const resolvedEnergyBase =
     Number.isFinite(energyBase) && energyBase > 0
       ? energyBase
@@ -325,7 +349,7 @@ export default function ShopScreen() {
   );
 
   useEffect(() => {
-    if (Platform.OS !== 'android' || !iapAvailable) {
+    if (!iapAvailable) {
       return undefined;
     }
 
@@ -345,15 +369,15 @@ export default function ShopScreen() {
             }
 
             try {
-              await iapModule.finishTransactionAsync(purchase, false);
+              await iapModule.finishTransactionAsync(purchase, true);
               await grantCoins(pack.amount);
             } catch (err) {
-              setShopMessage(t('Kauf fehlgeschlagen. Bitte spÃ¤ter erneut.'));
+              setShopMessage(t('Kauf fehlgeschlagen. Bitte sp\u00e4ter erneut.'));
             }
           }
         } else if (responseCode === iapModule.IAPResponseCode.USER_CANCELED) {
         } else if (errorCode) {
-          setShopMessage(t('Kauf fehlgeschlagen. Bitte spÃ¤ter erneut.'));
+          setShopMessage(t('Kauf fehlgeschlagen. Bitte sp\u00e4ter erneut.'));
         }
 
         setPurchasingId(null);
@@ -363,13 +387,29 @@ export default function ShopScreen() {
     async function initIap() {
       try {
         await iapModule.connectAsync();
-        await iapModule.getProductsAsync(COIN_PACK_PRODUCT_IDS);
+        const response = await iapModule.getProductsAsync(COIN_PACK_PRODUCT_IDS);
+        const products = Array.isArray(response?.results) ? response.results : [];
+        const loadedProductIds = new Set();
+        const priceLabelsByProductId = {};
+        products.forEach((product) => {
+          const productId = extractIapProductId(product);
+          if (!productId) {
+            return;
+          }
+          loadedProductIds.add(productId);
+          const priceLabel = extractIapPriceLabel(product);
+          if (priceLabel) {
+            priceLabelsByProductId[productId] = priceLabel;
+          }
+        });
         if (!cancelled) {
-          setIapReady(true);
+          setAvailableIapProductIds(Array.from(loadedProductIds));
+          setIapPriceLabelsByProductId(priceLabelsByProductId);
         }
       } catch (err) {
         if (!cancelled) {
-          setShopMessage(t('Kauf ist gerade nicht verfÃ¼gbar.'));
+          setAvailableIapProductIds([]);
+          setIapPriceLabelsByProductId({});
         }
       }
     }
@@ -388,7 +428,6 @@ export default function ShopScreen() {
       return;
     }
     if (isEnergyFull || remainingEnergySpace < item.amount) {
-      setShopMessage(t('Energie ist bereits voll.'));
       return;
     }
     if (coinsAvailable < item.price) {
@@ -512,11 +551,18 @@ export default function ShopScreen() {
       return;
     }
     if (isOffline) {
-      setShopMessage(t('Offline: Kauf ist gerade nicht verfÃ¼gbar.'));
+      setShopMessage(t('Offline: Kauf ist gerade nicht verf\u00fcgbar.'));
       return;
     }
-    if (!iapReady || !iapAvailable || !iapModule) {
-      setShopMessage(t('Kauf ist gerade nicht verfÃ¼gbar.'));
+    if (!iapAvailable || !iapModule) {
+      setShopMessage(t('Kauf ist gerade nicht verf\u00fcgbar.'));
+      return;
+    }
+    const hasLoadedIapProducts = availableIapProductIds.length > 0;
+    const productAvailable =
+      !hasLoadedIapProducts || availableIapProductIds.includes(item.productId);
+    if (!productAvailable) {
+      setShopMessage(t('Produkt ist im Store gerade nicht verf\u00fcgbar.'));
       return;
     }
 
@@ -524,10 +570,11 @@ export default function ShopScreen() {
     setPurchasingId(item.id);
 
     try {
+      await iapModule.connectAsync();
       await iapModule.requestPurchaseAsync({ sku: item.productId });
     } catch (err) {
       setPurchasingId(null);
-      setShopMessage(t('Kauf fehlgeschlagen. Bitte spÃ¤ter erneut.'));
+      setShopMessage(t('Kauf fehlgeschlagen. Bitte sp\u00e4ter erneut.'));
     }
   };
 
@@ -560,6 +607,7 @@ export default function ShopScreen() {
 
   const sections = useShopSections({
     showDailySection,
+    iapPriceLabelsByProductId,
     t,
   });
 
@@ -591,9 +639,7 @@ export default function ShopScreen() {
               <View style={styles.headerBadges}>
                 <View style={styles.coinsBadge}>
                   <Text style={styles.coinsEmoji}>{COIN_EMOJI}</Text>
-                  <Text style={styles.coinsText}>
-                    {coinsLabel} {t('Coins')}
-                  </Text>
+                  <Text style={styles.coinsText}>{coinsAvailable}</Text>
                 </View>
                 <Animated.View
                   style={[styles.energyBadge, { transform: [{ translateX: energyShake }] }]}
@@ -622,7 +668,7 @@ export default function ShopScreen() {
           isEnergyFull={isEnergyFull}
           remainingEnergySpace={remainingEnergySpace}
           remainingCap={remainingCap}
-          iapReady={iapReady}
+          availableIapProductIds={availableIapProductIds}
           isOffline={isOffline}
           canClaimDaily={canClaimDaily}
           dailyClaimLoading={dailyClaimLoading}
@@ -641,4 +687,3 @@ export default function ShopScreen() {
     </View>
   );
 }
-

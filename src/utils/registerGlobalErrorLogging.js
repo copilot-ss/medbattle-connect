@@ -9,7 +9,9 @@ export default function registerGlobalErrorLogging() {
 
   const handler = (error, isFatal) => {
     try {
-      console.error('Global JS error', error);
+      if (__DEV__) {
+        console.error('Global JS error', error);
+      }
       logClientError({
         level: isFatal ? 'fatal' : 'error',
         message: error?.message ?? String(error),
@@ -25,7 +27,7 @@ export default function registerGlobalErrorLogging() {
         `${isFatal ? 'Fatal: ' : ''}${displayMessage}`.slice(0, 400)
       );
     } catch (alertErr) {
-      console.warn('Konnte Fehler nicht anzeigen:', alertErr);
+      console.warn('Konnte Fehler nicht anzeigen:', alertErr?.message ?? alertErr);
     }
 
     if (typeof originalHandler === 'function') {

@@ -8,6 +8,7 @@ _eas/
 credentials.json
 credentials/
 android/app/debug.keystore
+android/keystore.properties
 android/app/build/
 android/build/
 android/.gradle/

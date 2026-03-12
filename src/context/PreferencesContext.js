@@ -20,6 +20,7 @@ import {
   sanitizeStringArray,
 } from './preferences/sanitize';
 import {
+  clearAccountPreferencesStorage,
   loadPreferencesFromStorage,
   persistAvatarId,
   persistAvatarFrameId,
@@ -308,6 +309,38 @@ export function PreferencesProvider({ children }) {
     await persistLanguage(normalized);
   }, []);
 
+  const resetAccountData = useCallback(async () => {
+    const nextBoosts = { ...DEFAULT_BOOSTS };
+    const nextStreaks = { ...DEFAULT_STREAKS };
+    const nextUserStats = { ...DEFAULT_USER_STATS };
+    const nextEnergyBase = NEW_ACCOUNT_MAX_ENERGY;
+    const nextEnergy = NEW_ACCOUNT_MAX_ENERGY;
+    const nextTimestamp = Date.now();
+
+    energyNotificationRef.current = null;
+    cancelEnergyFullNotification();
+
+    setAvatarIdState(null);
+    setAvatarUriState(null);
+    setAvatarFrameIdState(null);
+    setOwnedFramesState([]);
+    setBoostsState(nextBoosts);
+    setClaimedAchievementsState([]);
+    setStreakShieldActiveState(false);
+    setDoubleXpExpiresAtState(null);
+    setStreaksState(nextStreaks);
+    setUserStatsState(nextUserStats);
+    setEnergyBaseState(nextEnergyBase);
+    setEnergyState(nextEnergy);
+    setNextEnergyAt(null);
+
+    energyTimestampRef.current = nextTimestamp;
+    energyRef.current = nextEnergy;
+    energyMaxRef.current = nextEnergyBase;
+
+    await clearAccountPreferencesStorage();
+  }, []);
+
   const updateUserStats = useCallback(async (updater) => {
     setUserStatsState((prev) => {
       const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater };
@@ -530,6 +563,7 @@ export function PreferencesProvider({ children }) {
       consumeEnergy,
       boostEnergy,
       addEnergy,
+      resetAccountData,
       loading,
     }),
     [
@@ -537,12 +571,14 @@ export function PreferencesProvider({ children }) {
       boostEnergy,
       consumeEnergy,
       refreshEnergy,
+      resetAccountData,
       setLanguage,
       loading,
       energyBase,
       energy,
       energyMax,
       nextEnergyAt,
+      resetAccountData,
       userStats,
       setSoundEnabled,
       setStreakValue,

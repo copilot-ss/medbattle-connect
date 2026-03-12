@@ -16,6 +16,8 @@ const openMatchesCache = {
 };
 
 const DEFAULT_LANGUAGE = 'de';
+const MATCH_REALTIME_RETRY_BASE_MS = 2000;
+const MATCH_REALTIME_RETRY_MAX_MS = 15000;
 
 function normalizeLanguage(value) {
   if (typeof value !== 'string') {
@@ -513,37 +515,107 @@ export function subscribeToMatch(matchId, handler) {
     return () => {};
   }
 
-  const channel = supabase.channel(`match:${matchId}`);
+  let active = true;
+  let channel = null;
+  let retryTimer = null;
+  let retryAttempt = 0;
 
-  channel.on(
-    'postgres_changes',
-    {
-      event: '*',
-      schema: 'public',
-      table: 'matches',
-      filter: `id=eq.${matchId}`,
-    },
-    (payload) => {
-      if (payload?.new) {
-        handler(normalizeMatchRow(payload.new));
-      }
+  const clearRetry = () => {
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
     }
-  );
+  };
 
-  try {
-    channel.subscribe((status) => {
-      if (status === 'CHANNEL_ERROR') {
-        console.warn(
-          `Match-Realtime konnte nicht abonniert werden (Status: ${status}).`
-        );
+  const cleanupChannel = () => {
+    if (channel) {
+      const currentChannel = channel;
+      channel = null;
+      supabase.removeChannel(currentChannel);
+    }
+  };
+
+  const scheduleRetry = (status, err = null) => {
+    if (!active || retryTimer) {
+      return;
+    }
+
+    const delay = Math.min(
+      MATCH_REALTIME_RETRY_BASE_MS * 2 ** retryAttempt,
+      MATCH_REALTIME_RETRY_MAX_MS
+    );
+    retryAttempt += 1;
+    cleanupChannel();
+
+    const details =
+      err && typeof err.message === 'string' && err.message.trim()
+        ? ` (${err.message})`
+        : '';
+    console.warn(
+      `Match-Realtime fehlerhaft (Status: ${status}). Reconnect in ${Math.round(
+        delay / 1000
+      )}s.${details}`
+    );
+
+    retryTimer = setTimeout(() => {
+      retryTimer = null;
+      if (!active) {
+        return;
       }
-    });
-  } catch (err) {
-    console.warn('Match-Realtime konnte nicht abonniert werden:', err);
-  }
+      subscribeInternal();
+    }, delay);
+  };
+
+  const subscribeInternal = () => {
+    if (!active) {
+      return;
+    }
+
+    cleanupChannel();
+    clearRetry();
+
+    const currentChannel = supabase.channel(`match:${matchId}`);
+    channel = currentChannel;
+    currentChannel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'matches',
+        filter: `id=eq.${matchId}`,
+      },
+      (payload) => {
+        if (payload?.new) {
+          handler(normalizeMatchRow(payload.new));
+        }
+      }
+    );
+
+    try {
+      currentChannel.subscribe((status) => {
+        if (!active || channel !== currentChannel) {
+          return;
+        }
+        if (status === 'SUBSCRIBED') {
+          retryAttempt = 0;
+          return;
+        }
+
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          scheduleRetry(status);
+        }
+      });
+    } catch (err) {
+      scheduleRetry('SUBSCRIBE_THROW', err);
+    }
+  };
+
+  subscribeInternal();
 
   return () => {
-    supabase.removeChannel(channel);
+    active = false;
+    clearRetry();
+    cleanupChannel();
   };
 }
 

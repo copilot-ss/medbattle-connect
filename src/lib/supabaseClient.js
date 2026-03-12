@@ -109,6 +109,9 @@ function createSupabaseStub() {
 
   return {
     auth: authStub,
+    functions: {
+      invoke: async () => ({ data: null, error: missingConfigError() }),
+    },
     from() {
       return new SupabaseQueryStub();
     },

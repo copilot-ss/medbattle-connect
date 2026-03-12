@@ -47,7 +47,7 @@ export default function BoostRow({ items }) {
               {isJoker ? (
                 <Text style={styles.boostJokerGlyph}>{JOKER_GLYPH}</Text>
               ) : (
-                <Ionicons name={item.icon || 'snow'} size={26} color={iconColor} />
+                <Ionicons name={item.icon || 'snow'} size={20} color={iconColor} />
               )}
             </View>
 
@@ -65,7 +65,7 @@ export default function BoostRow({ items }) {
 
             {active ? (
               <View style={styles.boostUsedBadge}>
-                <Ionicons name="checkmark" size={11} color="#0B1020" />
+                <Ionicons name="checkmark" size={9} color="#0B1020" />
               </View>
             ) : null}
           </Pressable>

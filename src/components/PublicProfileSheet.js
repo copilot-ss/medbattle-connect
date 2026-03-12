@@ -236,7 +236,7 @@ export default function PublicProfileSheet({
   const statCards = [
     {
       key: 'rank',
-      label: t('Bestenliste'),
+      label: t('Rang'),
       value: Number.isFinite(rank)
         ? `#${rank}`
         : Number.isFinite(resolvedProfile.points)
@@ -250,7 +250,7 @@ export default function PublicProfileSheet({
     },
     {
       key: 'accuracy',
-      label: t('Trefferquote'),
+      label: t('Quote'),
       value: `${accuracyPercent}%`,
     },
   ];
@@ -377,6 +377,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingTop: 4,
   },
   headerTitle: {
     color: colors.textPrimary,

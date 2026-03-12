@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { CommonActions } from '@react-navigation/native';
 import { usePreferences } from '../context/PreferencesContext';
 import usePremiumStatus from '../hooks/usePremiumStatus';
 import useMultiplayerMatch from '../hooks/useMultiplayerMatch';
@@ -122,6 +123,9 @@ export default function ResultScreen({ route, navigation }) {
     if (isMultiplayer) {
       return null;
     }
+    if (percentage === 0) {
+      return t('Hilfe - hier krachts total !');
+    }
     if (percentage >= 80) {
       return t('Mega stark! Du bist im Flow - das war richtig clean gespielt.');
     }
@@ -145,6 +149,24 @@ export default function ResultScreen({ route, navigation }) {
   const coinsEarned = Number.isFinite(coins) ? coins : 0;
   const xpEarned = Number.isFinite(xp) ? xp : 0;
   const pointsEarned = Number.isFinite(Number(points)) ? Number(points) : 0;
+  const rewardItems = useMemo(
+    () =>
+      coinsEarned > 0
+        ? [
+            {
+              tone: 'coins',
+              label: t('Coins'),
+              value: `+${coinsEarned}`,
+            },
+            {
+              tone: 'xp',
+              label: t('XP'),
+              value: `+${xpEarned}`,
+            },
+          ]
+        : [{ tone: 'xp', label: t('XP'), value: `+${xpEarned}` }],
+    [coinsEarned, t, xpEarned]
+  );
   const showOfflineNote = Boolean(offline || scoreQueued);
   const { openProfile, sheetProps } = usePublicProfileSheet();
   const {
@@ -254,12 +276,41 @@ export default function ResultScreen({ route, navigation }) {
     () => [
       styles.scrollContent,
       {
-        paddingTop: Math.max(insets.top + 16, 24),
+        paddingTop: Math.max(insets.top + 8, 12),
         paddingBottom: Math.max(insets.bottom + 32, 56),
       },
     ],
     [insets.bottom, insets.top]
   );
+  const handleReturnHome = useCallback(() => {
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'MainTabs',
+            state: {
+              index: 0,
+              routes: [{ name: 'Home' }],
+            },
+          },
+        ],
+      })
+    );
+  }, [navigation]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (event) => {
+      const actionType = event?.data?.action?.type ?? null;
+      if (!['GO_BACK', 'POP', 'POP_TO_TOP'].includes(actionType)) {
+        return;
+      }
+      event.preventDefault();
+      handleReturnHome();
+    });
+
+    return unsubscribe;
+  }, [handleReturnHome, navigation]);
 
   return (
     <View style={styles.container}>
@@ -391,47 +442,39 @@ export default function ResultScreen({ route, navigation }) {
                       </View>
                     ) : null}
                   </View>
-                  {!showKiwiPeck ? (
-                    <View style={styles.trophyWrap}>
-                      {showZeroSparkles ? (
-                        <>
-                          <Sparkle
-                            size={14}
-                            top={6}
-                            left={12}
-                            opacity={0.5}
-                            rotate="18deg"
-                            color={colors.accentWarm}
-                          />
-                          <Sparkle
-                            size={12}
-                            top={32}
-                            left={86}
-                            opacity={0.45}
-                            rotate="-12deg"
-                            color={colors.highlight}
-                          />
-                        </>
-                      ) : null}
-                      <Ionicons name="trophy" size={72} color={colors.highlight} />
+                  <View style={styles.trophyRewardRow}>
+                    {!showKiwiPeck ? (
+                      <View style={styles.trophyWrap}>
+                        {showZeroSparkles ? (
+                          <>
+                            <Sparkle
+                              size={14}
+                              top={6}
+                              left={12}
+                              opacity={0.5}
+                              rotate="18deg"
+                              color={colors.accentWarm}
+                            />
+                            <Sparkle
+                              size={12}
+                              top={32}
+                              left={86}
+                              opacity={0.45}
+                              rotate="-12deg"
+                              color={colors.highlight}
+                            />
+                          </>
+                        ) : null}
+                        <Ionicons name="trophy" size={72} color={colors.highlight} />
+                      </View>
+                    ) : null}
+                    <View style={styles.rewardSummaryRowSide}>
+                      <RewardSummary
+                        items={rewardItems}
+                        delay={80}
+                        direction="column"
+                      />
                     </View>
-                  ) : null}
-                  <View style={styles.rewardSummaryRow}>
-                    <RewardSummary
-                      items={
-                        coinsEarned > 0
-                          ? [
-                              {
-                                tone: 'coins',
-                                label: t('Coins'),
-                                value: `+${coinsEarned}`,
-                              },
-                              { tone: 'xp', label: t('XP'), value: `+${xpEarned}` },
-                            ]
-                          : [{ tone: 'xp', label: t('XP'), value: `+${xpEarned}` }]
-                      }
-                      delay={80}
-                    />
                   </View>
                 </View>
               ) : (
@@ -461,10 +504,7 @@ export default function ResultScreen({ route, navigation }) {
                   )}
                   <View style={styles.multiplayerRewards}>
                     <RewardSummary
-                      items={[
-                        { tone: 'coins', label: t('Coins'), value: `+${coinsEarned}` },
-                        { tone: 'xp', label: t('XP'), value: `+${xpEarned}` },
-                      ]}
+                      items={rewardItems}
                       delay={80}
                     />
                   </View>
@@ -496,17 +536,13 @@ export default function ResultScreen({ route, navigation }) {
                       });
                     }}
                     style={[
-                      getPrimaryButtonStyle(badge.color),
+                      getPrimaryButtonStyle(colors.accentGreen),
                       quickPlayLocked ? styles.primaryButtonDisabled : null,
                     ]}
                     disabled={quickPlayLocked}
                   >
                     <View style={styles.primaryButtonContent}>
-                      <Text style={styles.primaryButtonText}>
-                        {mode === 'quick'
-                          ? t('Nochmal Quick Play')
-                          : t('Naechste Challenge')}
-                      </Text>
+                      <Text style={styles.primaryButtonText}>{t('Naechstes Quiz')}</Text>
                       {isQuickPlay ? (
                         <View style={styles.primaryButtonMetaRow}>
                           <Ionicons name="flash" size={14} color="#0A0A12" />
@@ -533,10 +569,10 @@ export default function ResultScreen({ route, navigation }) {
                 )}
 
                 <Pressable
-                  onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
+                  onPress={handleReturnHome}
                   style={styles.tertiaryButton}
                 >
-                  <Text style={styles.tertiaryButtonText}>{t('Zurueck zur Basis')}</Text>
+                  <Text style={styles.tertiaryButtonText}>{t('Fertig')}</Text>
                 </Pressable>
               </View>
             </Animated.View>

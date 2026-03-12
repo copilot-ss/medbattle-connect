@@ -5,9 +5,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: 24,
-    paddingTop: 56,
-    paddingBottom: 0,
   },
   backgroundGlowTop: {
     display: 'none',
@@ -191,6 +188,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 56,
     paddingBottom: 24,
     rowGap: 20,
   },

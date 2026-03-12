@@ -58,6 +58,8 @@ export default function SettingsScreen({
     xp,
     coins,
     streakShieldCount,
+    freezeTimeCount,
+    jokerCount,
     doubleXpExpiresAt,
     titleProgress,
     achievements,
@@ -102,6 +104,8 @@ export default function SettingsScreen({
   const headerMovesWithScroll = showProfileSection;
   const headerTitle = title || (resolvedTab === 'profile' ? t('Profil') : t('Einstellungen'));
   const claimBlurTargetRef = useRef(null);
+  const showHeaderBack = showProfileSection;
+  const showHeaderAction = showClose || showHeaderBack;
 
   const handleOpenAvatarEdit = useCallback(() => {
     const parentNavigation = navigation?.getParent?.();
@@ -112,15 +116,30 @@ export default function SettingsScreen({
     navigation.navigate('AvatarEdit');
   }, [navigation]);
 
+  const handleHeaderBack = useCallback(() => {
+    if (navigation?.canGoBack?.()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate('Home');
+  }, [navigation]);
+
   return (
     <View style={styles.screenRoot}>
-      <ClaimBlurTargetView ref={claimBlurTargetRef} style={styles.container}>
+      <ClaimBlurTargetView
+        ref={claimBlurTargetRef}
+        style={[
+          styles.container,
+          headerMovesWithScroll ? styles.containerProfileTop : null,
+        ]}
+      >
         <View style={styles.backgroundGlowTop} pointerEvents="none" />
         <View style={styles.backgroundGlowBottom} pointerEvents="none" />
         {!headerMovesWithScroll ? (
           <SettingsHeader
-            onClose={showClose ? () => navigation.goBack() : null}
-            showClose={showClose}
+            onClose={showHeaderBack ? handleHeaderBack : showClose ? () => navigation.goBack() : null}
+            showClose={showHeaderAction}
+            actionType={showHeaderBack ? 'back' : 'close'}
             title={headerTitle}
           />
         ) : null}
@@ -131,14 +150,19 @@ export default function SettingsScreen({
 
         <ScrollView
           ref={scrollRef}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            headerMovesWithScroll ? styles.scrollContentProfile : null,
+          ]}
           showsVerticalScrollIndicator={false}
         >
           {headerMovesWithScroll ? (
             <SettingsHeader
-              onClose={showClose ? () => navigation.goBack() : null}
-              showClose={showClose}
+              onClose={showHeaderBack ? handleHeaderBack : showClose ? () => navigation.goBack() : null}
+              showClose={showHeaderAction}
+              actionType={showHeaderBack ? 'back' : 'close'}
               title={headerTitle}
+              containerStyle={styles.headerProfile}
             />
           ) : null}
           {showTabRow && headerMovesWithScroll ? (
@@ -183,6 +207,8 @@ export default function SettingsScreen({
               xp={xp}
               coins={coins}
               streakShieldCount={streakShieldCount}
+              freezeTimeCount={freezeTimeCount}
+              jokerCount={jokerCount}
               doubleXpExpiresAt={doubleXpExpiresAt}
               titleProgress={titleProgress}
               achievements={achievements}

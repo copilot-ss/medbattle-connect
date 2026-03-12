@@ -37,6 +37,8 @@ export default function ProfileSection({
   xp = 0,
   coins = 0,
   streakShieldCount = 0,
+  freezeTimeCount = 0,
+  jokerCount = 0,
   doubleXpExpiresAt = null,
   titleProgress = null,
   achievements = [],
@@ -72,9 +74,49 @@ export default function ProfileSection({
   const resolvedShieldCount = Number.isFinite(streakShieldCount)
     ? Math.max(0, streakShieldCount)
     : 0;
+  const resolvedFreezeCount = Number.isFinite(freezeTimeCount)
+    ? Math.max(0, freezeTimeCount)
+    : 0;
+  const resolvedJokerCount = Number.isFinite(jokerCount)
+    ? Math.max(0, jokerCount)
+    : 0;
   const xpBoostActive =
     Number.isFinite(doubleXpExpiresAt) && doubleXpExpiresAt > Date.now();
-  const xpBoostStatus = xpBoostActive ? t('Aktiv') : t('Nicht aktiv');
+  const inventoryItems = [
+    {
+      key: 'streak_shield',
+      icon: 'shield-checkmark',
+      color: '#f59e0b',
+      label: t('Streak-Schild'),
+      value: `x${resolvedShieldCount}`,
+      visible: resolvedShieldCount > 0,
+    },
+    {
+      key: 'freeze_time',
+      icon: 'snow',
+      color: '#67e8f9',
+      label: t('Zeit einfrieren'),
+      value: `x${resolvedFreezeCount}`,
+      visible: resolvedFreezeCount > 0,
+    },
+    {
+      key: 'joker_5050',
+      icon: 'help-circle',
+      color: '#facc15',
+      label: t('Joker 50/50'),
+      value: `x${resolvedJokerCount}`,
+      visible: resolvedJokerCount > 0,
+    },
+    {
+      key: 'double_xp',
+      icon: 'sparkles',
+      color: XP_BOOST_ICON_COLOR,
+      label: t('Doppel-XP'),
+      value: t('Aktiv'),
+      visible: xpBoostActive,
+      active: true,
+    },
+  ].filter((item) => item.visible);
   const progressTarget = Number.isFinite(resolvedTitleProgress?.progress)
     ? Math.max(0, Math.min(1, resolvedTitleProgress.progress))
     : 0;
@@ -117,12 +159,6 @@ export default function ProfileSection({
             onPress={onEditAvatar}
             onPressIn={handleAvatarPressIn}
             onPressOut={handleAvatarPressOut}
-            style={[
-              styles.avatarFrame,
-              currentAvatar?.color
-                ? { borderColor: currentAvatar.color, shadowColor: currentAvatar.color }
-                : null,
-            ]}
           >
             <Animated.View style={avatarAnimatedStyle}>
               <AvatarView
@@ -131,6 +167,12 @@ export default function ProfileSection({
                 icon={currentAvatar?.icon ?? null}
                 color={currentAvatar?.color ?? null}
                 initials={avatarInitials}
+                frameStyle={[
+                  styles.avatarFrame,
+                  currentAvatar?.color
+                    ? { borderColor: currentAvatar.color, shadowColor: currentAvatar.color }
+                    : null,
+                ]}
                 circleStyle={[
                   styles.avatarCircle,
                   currentAvatar?.color ? { backgroundColor: `${currentAvatar.color}30` } : null,
@@ -200,46 +242,37 @@ export default function ProfileSection({
         </View>
       </Animated.View>
 
-      <Animated.View style={inventoryAnimatedStyle}>
-        <View style={styles.profileInventory}>
-          <Text style={styles.profileInventoryTitle}>{t('Items')}</Text>
-          <View style={styles.profileInventoryRow}>
-            <View style={styles.profileInventoryItem}>
-              <View style={styles.profileInventoryIconWrap}>
-                <Ionicons
-                  name="shield-checkmark"
-                  size={16}
-                  color="#f59e0b"
-                />
-              </View>
-              <View style={styles.profileInventoryText}>
-                <Text style={styles.profileInventoryLabel}>{t('Streak-Schild')}</Text>
-                <Text style={styles.profileInventoryValue}>{`x${resolvedShieldCount}`}</Text>
-              </View>
-            </View>
-            <View style={styles.profileInventoryItem}>
-              <View style={styles.profileInventoryIconWrap}>
-                <Ionicons
-                  name="sparkles"
-                  size={16}
-                  color={XP_BOOST_ICON_COLOR}
-                />
-              </View>
-              <View style={styles.profileInventoryText}>
-                <Text style={styles.profileInventoryLabel}>{t('Doppel-XP')}</Text>
-                <Text
-                  style={[
-                    styles.profileInventoryValue,
-                    xpBoostActive ? styles.profileInventoryValueActive : null,
-                  ]}
-                >
-                  {xpBoostStatus}
-                </Text>
-              </View>
+      {inventoryItems.length ? (
+        <Animated.View style={inventoryAnimatedStyle}>
+          <View style={styles.profileInventory}>
+            <Text style={styles.profileInventoryTitle}>{t('Items')}</Text>
+            <View style={styles.profileInventoryRow}>
+              {inventoryItems.map((item) => (
+                <View key={item.key} style={styles.profileInventoryItem}>
+                  <View style={styles.profileInventoryIconWrap}>
+                    <Ionicons
+                      name={item.icon}
+                      size={16}
+                      color={item.color}
+                    />
+                  </View>
+                  <View style={styles.profileInventoryText}>
+                    <Text style={styles.profileInventoryLabel}>{item.label}</Text>
+                    <Text
+                      style={[
+                        styles.profileInventoryValue,
+                        item.active ? styles.profileInventoryValueActive : null,
+                      ]}
+                    >
+                      {item.value}
+                    </Text>
+                  </View>
+                </View>
+              ))}
             </View>
           </View>
-        </View>
-      </Animated.View>
+        </Animated.View>
+      ) : null}
 
       <Animated.View style={achievementsAnimatedStyle}>
         <View style={styles.profileAchievements}>

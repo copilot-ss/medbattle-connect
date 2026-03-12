@@ -1,0 +1,20 @@
+query,total_exec_time,prop_exec_time,ncalls,sync_io_time
+"SELECT wal->>$5 as type,
+       wal->>$6 as schema,
+       wal->>$7 as table,
+       COALESCE(wal->>$8, $9) as columns,
+       COALESCE(wal->>$10, $11) as record,
+       COALESCE(wal->>$12, $13) as old_record,
+       wal->>$14 as commit_timestamp,
+       subscription_ids,
+       errors
+FROM realtime.list_changes($1, $2, $3, $4)",00:19:21.559783,86.7%,"332,652",00:00:00
+SHOW transaction_read_only,00:00:00.393364,0.0%,"26,816",00:00:00
+"select set_config('search_path', $1, true), set_config($2, $3, true), set_config('role', $4, true), set_config('request.jwt.claims', $5, true), set_config('request.method', $6, true), set_config('request.path', $7, true), set_config('request.headers', $8, true), set_config('request.cookies', $9, true)",00:00:03.502166,0.3%,"19,684",00:00:00
+select setting from pg_config where name = $1,00:00:03.095996,0.2%,"9,006",00:00:00
+"SELECT mfa_amr_claims.authentication_method, mfa_amr_claims.created_at, mfa_amr_claims.id, mfa_amr_claims.session_id, mfa_amr_claims.updated_at FROM mfa_amr_claims AS mfa_amr_claims WHERE session_id = $1",00:00:00.260817,0.0%,"4,134",00:00:00
+"SELECT sessions.aal, sessions.created_at, sessions.factor_id, sessions.id, sessions.ip, sessions.not_after, sessions.oauth_client_id, sessions.refresh_token_counter, sessions.refresh_token_hmac_key, sessions.refreshed_at, sessions.scopes, sessions.tag, sessions.updated_at, sessions.user_agent, sessions.user_id FROM sessions AS sessions WHERE id = $1 LIMIT $2",00:00:00.758341,0.1%,"4,134",00:00:00
+"SELECT identities.created_at, identities.email, identities.id, identities.identity_data, identities.last_sign_in_at, identities.provider, identities.provider_id, identities.updated_at, identities.user_id FROM identities AS identities WHERE user_id = $1",00:00:00.392789,0.0%,"4,051",00:00:00
+"SELECT mfa_factors.created_at, mfa_factors.factor_type, mfa_factors.friendly_name, mfa_factors.id, mfa_factors.last_challenged_at, mfa_factors.last_webauthn_challenge_data, mfa_factors.phone, mfa_factors.secret, mfa_factors.status, mfa_factors.updated_at, mfa_factors.user_id, mfa_factors.web_authn_aaguid, mfa_factors.web_authn_credential FROM mfa_factors AS mfa_factors WHERE user_id = $1",00:00:00.100382,0.0%,"4,051",00:00:00
+"SELECT users.aud, users.banned_until, users.confirmation_sent_at, users.confirmation_token, users.confirmed_at, users.created_at, users.deleted_at, users.email, users.email_change, users.email_change_confirm_status, users.email_change_sent_at, users.email_change_token_current, users.email_change_token_new, users.email_confirmed_at, users.encrypted_password, users.id, users.instance_id, users.invited_at, users.is_anonymous, users.is_sso_user, users.last_sign_in_at, users.phone, users.phone_change, users.phone_change_sent_at, users.phone_change_token, users.phone_confirmed_at, users.raw_app_meta_data, users.raw_user_meta_data, users.reauthentication_sent_at, users.reauthentication_token, users.recovery_sent_at, users.recovery_token, users.role, users.updated_at FROM users AS users WHERE instance_id = $1 and id = $2 LIMIT $3",00:00:00.596673,0.0%,"4,046",00:00:00
+"WITH pgrst_source AS (SELECT ""pgrst_call"".* FROM ""public"".""fetch_friend_requests""() pgrst_call) SELECT $3::bigint AS total_result_set, pg_catalog.count(_postgrest_t) AS page_total, coalesce(json_agg(_postgrest_t), $4) AS body, nullif(current_setting($5, $6), $7) AS response_headers, nullif(current_setting($8, $9), $10) AS response_status, $11 AS response_inserted FROM (SELECT ""record"".* FROM ""pgrst_source"" AS ""record""   LIMIT $1 OFFSET $2) _postgrest_t",00:00:05.56364,0.4%,"2,515",00:00:00

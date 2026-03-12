@@ -52,15 +52,17 @@ export default function QuizScreen({ navigation, route }) {
 
   const boostItems = useMemo(() => {
     const isBoostDisabled = isAnswerLocked || timedOut || !matchIsActive;
+    const jokerUsed = Boolean(usedBoosts?.joker_5050);
     const freezeUsed = Boolean(usedBoosts?.freeze_time);
     const items = [
       {
         id: 'joker_5050',
         label: t('Joker 50/50'),
         icon: 'sparkles',
-        count: boostInventory.joker_5050,
-        active: Boolean(usedBoosts?.joker_5050),
-        disabled: isBoostDisabled || Boolean(usedBoosts?.joker_5050),
+        count: jokerUsed ? null : boostInventory.joker_5050,
+        hideCount: true,
+        active: false,
+        disabled: isBoostDisabled || jokerUsed,
         onPress: handleUseFiftyFifty,
       },
       {
@@ -76,6 +78,9 @@ export default function QuizScreen({ navigation, route }) {
     ];
 
     return items.filter((item) => {
+      if (item.id === 'joker_5050' && jokerUsed) {
+        return false;
+      }
       if (item.id === 'freeze_time' && freezeUsed && !isTimerFrozen) {
         return false;
       }
@@ -135,16 +140,20 @@ export default function QuizScreen({ navigation, route }) {
 
   return (
     <View style={styles.screen}>
-      <QuizHeader
-        difficultyLabel={difficultyLabel}
-        totalQuestions={totalQuestions}
-        questionLimit={questionLimit}
-        activeIndex={activeIndex}
-        onExit={handleExitRequest}
-        showMeta={isMultiplayer}
-        showProgress={!isMultiplayer}
-        categoryLabel={categoryLabel}
-      />
+      <View style={styles.topSection}>
+        <QuizHeader
+          difficultyLabel={difficultyLabel}
+          totalQuestions={totalQuestions}
+          questionLimit={questionLimit}
+          activeIndex={activeIndex}
+          showMeta={isMultiplayer}
+          showProgress={!isMultiplayer}
+          categoryLabel={categoryLabel}
+        />
+
+        <Pressable onPress={handleExitRequest} style={styles.exitButton}>
+          <Text style={styles.exitButtonText}>X</Text>
+        </Pressable>
 
       {isOffline ? (
         <View style={styles.offlineBanner}>
@@ -173,6 +182,7 @@ export default function QuizScreen({ navigation, route }) {
         timedOut={timedOut}
         isFrozen={isTimerFrozen}
       />
+      </View>
 
       <QuestionCard
         activeIndex={activeIndex}

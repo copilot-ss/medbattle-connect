@@ -1,5 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
+const LEGAL_CONTACT_EMAIL = 'medbattle1@gmail.com';
+
 const baseStyles = `
       :root {
         color-scheme: light;
@@ -133,10 +135,10 @@ const privacyHtml = renderPage({
   title: 'Datenschutz - MedBattle',
   heading: 'Datenschutz',
   lead: 'MedBattle ist eine Quiz-App für Medizinwissen. Diese Hinweise erklären, welche Daten wir verarbeiten und warum.',
-  updatedAt: '2026-01-12',
+  updatedAt: '2026-03-10',
   body: `          <h2>Verantwortlicher</h2>
           <p>Verantwortlich für die Datenverarbeitung ist das MedBattle Team.</p>
-          <p>Kontakt: <a href="mailto:babyjeje24@gmail.com">babyjeje24@gmail.com</a></p>
+          <p>Kontakt: <a href="mailto:${LEGAL_CONTACT_EMAIL}">${LEGAL_CONTACT_EMAIL}</a></p>
 
           <h2>Welche Daten wir verarbeiten</h2>
           <ul>
@@ -169,7 +171,7 @@ const privacyHtml = renderPage({
           <ul>
             <li>Supabase (Auth, Datenbank, Storage).</li>
             <li>Google/Discord (OAuth-Login).</li>
-            <li>Sentry oder vergleichbare Telemetrie für Crash-Reports.</li>
+            <li>Interne, redigierte Client-Logs für Crash-Diagnosen.</li>
             <li>Google AdMob für Werbung.</li>
             <li>App-Store Provider für In-App-Käufe (Apple/Google).</li>
           </ul>
@@ -189,11 +191,35 @@ const privacyHtml = renderPage({
           </ul>
           <p>Schreibe uns dazu an die Kontaktadresse oben.</p>
 
-          <h2>Hinweis zur Nutzung</h2>
-          <p>MedBattle ist ein Lernspiel und ersetzt keine medizinische Beratung.</p>
+          <h2>Werbung und Einwilligung (EWR)</h2>
+          <p>
+            Rewarded Ads werden derzeit als nicht personalisierte Werbung angefragt
+            (<code>requestNonPersonalizedAdsOnly: true</code>).
+            Ein externer Telemetry-Provider wird aktuell nicht genutzt.
+          </p>
+          <p>
+            Falls personalisierte Werbung oder weitere Tracking-Dienste eingefuehrt
+            werden, aktualisieren wir diese Datenschutzhinweise und den Consent-Flow
+            vor dem Rollout.
+          </p>
 
-          <h2>Jugendschutz</h2>
-          <p>Die App richtet sich nicht an Kinder unter 13 Jahren. Sollten wir Daten von Kindern erhalten, löschen wir diese.</p>
+          <h2>DSAR-Prozess (Betroffenenrechte)</h2>
+          <p>
+            Anfragen zu Auskunft, Berichtigung oder Loeschung kannst du per E-Mail
+            an <a href="mailto:${LEGAL_CONTACT_EMAIL}">${LEGAL_CONTACT_EMAIL}</a> senden.
+          </p>
+          <p>
+            Eingangsbestaetigung: innerhalb von 72 Stunden. Abschluss: in der Regel
+            innerhalb von 30 Tagen (Art. 12 Abs. 3 DSGVO), bei komplexen Faellen
+            zulaessige Verlaengerung um bis zu 60 Tage.
+          </p>
+          <p>
+            Vor der Bearbeitung kann eine Identitaetspruefung verlangt werden, um
+            Kontodaten vor unbefugtem Zugriff zu schuetzen.
+          </p>
+
+          <h2>Hinweis zur Nutzung</h2>
+          <p>MedBattle ist ein Lernspiel und kein Medizinprodukt. Die App diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.</p>
 
           <h2>Änderungen</h2>
           <p>Wir aktualisieren diese Hinweise bei Bedarf. Die aktuelle Version ist unter dem Link in der App verfügbar.</p>`,
@@ -203,12 +229,12 @@ const termsHtml = renderPage({
   title: 'AGB - MedBattle',
   heading: 'Allgemeine Geschäftsbedingungen (AGB)',
   lead: 'Diese Bedingungen regeln die Nutzung der MedBattle App und der zugehörigen Dienste.',
-  updatedAt: '2026-01-12',
+  updatedAt: '2026-03-10',
   body: `          <h2>Geltungsbereich</h2>
           <p>Mit der Nutzung der App akzeptierst du diese Bedingungen. Sie gelten für alle Funktionen der App.</p>
 
           <h2>Leistungen</h2>
-          <p>MedBattle ist ein Lern- und Quizspiel. Inhalte dienen der Wissensübung und ersetzen keine medizinische Beratung.</p>
+          <p>MedBattle ist ein Lern- und Quizspiel und kein Medizinprodukt. Inhalte dienen der Wissensübung; die App diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.</p>
 
           <h2>Accounts</h2>
           <ul>
@@ -265,7 +291,7 @@ const termsHtml = renderPage({
           <h2>Kontakt</h2>
           <p>
             Fragen zu den AGB kannst du an
-            <a href="mailto:babyjeje24@gmail.com">babyjeje24@gmail.com</a>
+            <a href="mailto:${LEGAL_CONTACT_EMAIL}">${LEGAL_CONTACT_EMAIL}</a>
             senden.
           </p>`,
 });
@@ -274,11 +300,11 @@ const supportHtml = renderPage({
   title: 'Support - MedBattle',
   heading: 'Support',
   lead: 'Wir helfen dir gerne weiter.',
-  updatedAt: '2026-01-12',
+  updatedAt: '2026-03-10',
   body: `          <h2>Kontakt</h2>
           <p>
             Schreibe uns an
-            <a href="mailto:babyjeje24@gmail.com">babyjeje24@gmail.com</a>.
+            <a href="mailto:${LEGAL_CONTACT_EMAIL}">${LEGAL_CONTACT_EMAIL}</a>.
           </p>
           <p>Typische Antwortzeit: 1-3 Werktage.</p>
 
@@ -305,16 +331,62 @@ const supportHtml = renderPage({
           </p>`,
 });
 
+const deleteAccountHtml = renderPage({
+  title: 'Konto loeschen - MedBattle',
+  heading: 'Konto loeschen',
+  lead: 'Hier findest du den offiziellen Loeschpfad fuer MedBattle-Konten.',
+  updatedAt: '2026-03-11',
+  body: `          <h2>Direkt in der App</h2>
+          <p>
+            Wenn du noch Zugriff auf die App hast und angemeldet bist, gehe zu
+            Einstellungen &gt; Konto loeschen und tippe auf
+            <strong>"Konto dauerhaft loeschen"</strong>.
+          </p>
+          <p>
+            Die Loeschung wird nach einer Sicherheitsabfrage direkt ausgefuehrt.
+          </p>
+
+          <h2>Alternative ohne App</h2>
+          <p>
+            Wenn du die App nicht mehr nutzen kannst, sende deine Anfrage an
+            <a href="mailto:${LEGAL_CONTACT_EMAIL}?subject=DSAR%20-%20Loeschung%20-%20%3CAccount-E-Mail%3E">${LEGAL_CONTACT_EMAIL}</a>.
+          </p>
+          <p>
+            Bitte nutze moeglichst die E-Mail-Adresse deines Kontos und nenne
+            deinen Nutzernamen, falls vorhanden.
+          </p>
+
+          <h2>Was geloescht wird</h2>
+          <ul>
+            <li>Dein Auth-Konto und Profilangaben.</li>
+            <li>Spiel- und Fortschrittsdaten, soweit keine gesetzlichen Pflichten entgegenstehen.</li>
+            <li>Optional hochgeladene Avatar-Dateien in unserem Storage.</li>
+          </ul>
+
+          <h2>Wichtige Hinweise</h2>
+          <ul>
+            <li>Kaeufe im App-Store koennen in deiner Store-Historie sichtbar bleiben.</li>
+            <li>Abrechnungs- oder sicherheitsrelevante Daten duerfen wir ggf. zeitweise laenger speichern, wenn wir rechtlich dazu verpflichtet sind.</li>
+            <li>Nach Abschluss ist die Loeschung in der Regel nicht rueckgaengig zu machen.</li>
+          </ul>`,
+});
+
 const documents = {
   privacy: privacyHtml,
   terms: termsHtml,
   support: supportHtml,
+  'delete-account': deleteAccountHtml,
+  deleteaccount: deleteAccountHtml,
 };
 
 serve((request) => {
   const url = new URL(request.url);
   const pathParts = url.pathname.split('/').filter(Boolean);
-  const docFromPath = pathParts.length > 1 ? pathParts[1] : null;
+  const legalIndex = pathParts.lastIndexOf('legal');
+  const docFromPath =
+    legalIndex >= 0 && pathParts.length > legalIndex + 1
+      ? pathParts[legalIndex + 1]
+      : null;
   const doc = (docFromPath || url.searchParams.get('doc') || '').toLowerCase();
   const html = documents[doc as keyof typeof documents];
 

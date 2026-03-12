@@ -12,6 +12,7 @@ import {
 
 export default function useShopSections({
   showDailySection,
+  iapPriceLabelsByProductId,
   t,
 }) {
   return useMemo(
@@ -116,12 +117,12 @@ export default function useShopSections({
       },
       {
         key: 'boosts',
-        title: t('Boosts'),
+        title: t('Items'),
         items: [
           {
             id: 'streak_shield',
             title: t('Streak-Schild'),
-            description: t('Schützt eine Streak, wenn du einmal verlierst.'),
+            description: t('Schützt deine Streak einmal.'),
             price: SHOP_PRICES.boosts.streakShield,
             icon: 'shield-checkmark',
             accent: colors.accentWarm,
@@ -131,7 +132,7 @@ export default function useShopSections({
           {
             id: 'freeze_time',
             title: t('Zeit einfrieren'),
-            description: t('Stoppt den Timer einmal für 5 Sekunden.'),
+            description: t('Stoppt den Timer für 5 Sekunden.'),
             price: SHOP_PRICES.boosts.freezeTime,
             icon: 'time',
             accent: colors.accent,
@@ -151,7 +152,7 @@ export default function useShopSections({
           {
             id: 'joker_5050',
             title: t('Joker 50/50'),
-            description: t('Entfernt zwei falsche Antworten.'),
+            description: t('Entfernt 2 falsche Antworten.'),
             price: SHOP_PRICES.boosts.joker5050,
             icon: 'help-circle',
             accent: colors.highlight,
@@ -162,11 +163,12 @@ export default function useShopSections({
       },
       {
         key: 'coins',
-        title: t('Coins kaufen'),
+        title: t('Coins'),
         items: COIN_PACKS.map((pack) => ({
           id: pack.id,
           title: t(pack.title),
-          priceLabel: pack.priceLabel,
+          priceLabel:
+            iapPriceLabelsByProductId?.[pack.productId] ?? pack.priceLabel,
           savingsPercent: getSavingsPercent(pack),
           coinIconCount: getCoinIconCount(pack.amount),
           icon: 'cash',
@@ -177,6 +179,6 @@ export default function useShopSections({
         })),
       },
     ],
-    [showDailySection, t]
+    [iapPriceLabelsByProductId, showDailySection, t]
   );
 }

@@ -20,8 +20,6 @@ import useHomeBoostActions from './home/useHomeBoostActions';
 import useHomePresence from './home/useHomePresence';
 import useHomeUser from './home/useHomeUser';
 import {
-  COIN_ENERGY_AMOUNT,
-  COIN_ENERGY_COST,
   DEFAULT_DIFFICULTY,
   LOBBY_CAPACITY,
   QUICK_PLAY_QUESTIONS,
@@ -67,17 +65,12 @@ export default function HomeScreen({ navigation, route }) {
   const {
     energyMessage,
     setEnergyMessage,
-    boosting,
     rewarding,
-    coinPurchasing,
     showBoostModal,
     setShowBoostModal,
     isBoostBusy,
     coinsAvailable,
-    isEnergyFull,
-    canBuyWithCoins,
-    handlePurchaseBoost,
-    handleBuyEnergyWithCoins,
+    handleOpenShop,
     watchAdForEnergy,
   } = useHomeBoostActions({
     t,
@@ -230,10 +223,6 @@ export default function HomeScreen({ navigation, route }) {
     }
     setEnergyMessage(null);
     if (!premium && energy <= 0) {
-      if (isOffline && !canBuyWithCoins) {
-        setEnergyMessage(t('Offline: Keine Energie. Geh online, um aufzuladen.'));
-        return;
-      }
       setShowBoostModal(true);
       return;
     }
@@ -249,25 +238,25 @@ export default function HomeScreen({ navigation, route }) {
       <View style={styles.backgroundGlowTop} pointerEvents="none" />
       <View style={styles.backgroundGlowBottom} pointerEvents="none" />
 
-      <HomeHeader
-        coins={coinsAvailable}
-        energy={energy}
-        energyMax={energyMax}
-        avatarInitials={avatarInitials}
-        avatarUri={avatarUri}
-        avatarSource={currentAvatar?.source ?? null}
-        avatarIcon={currentAvatar?.icon ?? null}
-        avatarColor={currentAvatar?.color ?? null}
-        level={userLevel}
-        progress={titleProgress?.progress ?? 0}
-        hasClaimableAchievements={hasClaimableAchievement}
-        onProfilePress={() => navigation.navigate('Profile')}
-      />
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        <HomeHeader
+          coins={coinsAvailable}
+          energy={energy}
+          energyMax={energyMax}
+          avatarInitials={avatarInitials}
+          avatarUri={avatarUri}
+          avatarSource={currentAvatar?.source ?? null}
+          avatarIcon={currentAvatar?.icon ?? null}
+          avatarColor={currentAvatar?.color ?? null}
+          level={userLevel}
+          progress={titleProgress?.progress ?? 0}
+          hasClaimableAchievements={hasClaimableAchievement}
+          onProfilePress={() => navigation.navigate('Profile')}
+        />
+
         <OfflineBanner
           isVisible={isOffline}
           isChecking={isChecking}
@@ -330,15 +319,8 @@ export default function HomeScreen({ navigation, route }) {
         visible={!premium && showBoostModal}
         energyMessage={energyMessage}
         isBoostBusy={isBoostBusy}
-        boosting={boosting}
         rewarding={rewarding}
-        coinPurchasing={coinPurchasing}
-        coinsAvailable={coinsAvailable}
-        coinsCost={COIN_ENERGY_COST}
-        coinsEnergy={COIN_ENERGY_AMOUNT}
-        isEnergyFull={isEnergyFull}
-        onBuyWithCoins={handleBuyEnergyWithCoins}
-        onPurchase={handlePurchaseBoost}
+        onOpenShop={handleOpenShop}
         onWatchAd={watchAdForEnergy}
         onClose={() => setShowBoostModal(false)}
       />

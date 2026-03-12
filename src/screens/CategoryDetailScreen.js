@@ -10,6 +10,7 @@ import { colors } from '../styles/theme';
 import { useTranslation } from '../i18n/useTranslation';
 import ModeCard from './home/ModeCard';
 import styles from './styles/CategoryDetailScreen.styles';
+import homeStyles from './styles/HomeScreen.styles';
 
 const DEFAULT_DIFFICULTY = 'mittel';
 const CATEGORY_QUESTION_LIMIT = 10;
@@ -46,6 +47,13 @@ export default function CategoryDetailScreen({ navigation, route }) {
 
   function handleStartSolo() {
     if (hasLobby) {
+      return;
+    }
+    if (!premium && energy <= 0) {
+      navigation.navigate('MainTabs', {
+        screen: 'Home',
+        params: { showBoostModal: true },
+      });
       return;
     }
     navigation.navigate('Quiz', {
@@ -90,9 +98,9 @@ export default function CategoryDetailScreen({ navigation, route }) {
             <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
           </Pressable>
           <View style={styles.headerSpacer} />
-          <View style={styles.energyPill}>
-            <Ionicons name="flash" size={14} color={colors.highlight} />
-            <Text style={styles.energyText}>{energyLabel}</Text>
+          <View style={[homeStyles.energyTopBadge, styles.energyBadgeReset]}>
+            <Text style={homeStyles.energyTopEmoji}>{'\u26A1'}</Text>
+            <Text style={homeStyles.energyTopBadgeText}>{energyLabel}</Text>
           </View>
         </View>
 
@@ -122,7 +130,7 @@ export default function CategoryDetailScreen({ navigation, route }) {
         <View>
           <View style={styles.modeSection}>
             <ModeCard
-              title={t('Spielen')}
+              title={t('Solo-Spiel')}
               accent={colors.accentWarm}
               onPress={handleStartSolo}
               disabled={hasLobby}

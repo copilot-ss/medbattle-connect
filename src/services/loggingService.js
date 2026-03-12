@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { supabase } from '../lib/supabaseClient';
 import { runSupabaseRequest } from './supabaseRequest';
+import { redactSensitiveText, sanitizeForTelemetry } from '../utils/privacySanitizer';
 
 const LOG_DEDUPE_TTL_MS = 4000;
 const MAX_MESSAGE_LENGTH = 800;
@@ -9,14 +10,7 @@ const MAX_STACK_LENGTH = 2000;
 const recentLogs = new Map();
 
 function sanitizeText(value, maxLength) {
-  if (!value) {
-    return null;
-  }
-  const text = String(value);
-  if (!text.trim()) {
-    return null;
-  }
-  return text.length > maxLength ? text.slice(0, maxLength) : text;
+  return redactSensitiveText(value, { maxLength });
 }
 
 function buildContext(extra) {
@@ -35,7 +29,12 @@ function buildContext(extra) {
     platformVersion: Platform.Version,
     isDevice: Constants?.isDevice ?? null,
     appOwnership: Constants?.appOwnership ?? null,
-    ...extra,
+    ...sanitizeForTelemetry(extra, {
+      maxDepth: 3,
+      maxKeys: 30,
+      maxItems: 12,
+      maxStringLength: 600,
+    }),
   };
 }
 
@@ -68,12 +67,15 @@ export async function logClientError({ level = 'error', message, stack, context 
       { label: 'loggingService.insertClientLog' }
     );
     if (error) {
-      console.warn('Konnte Client-Log nicht speichern:', error.message);
+      console.warn(
+        'Konnte Client-Log nicht speichern:',
+        sanitizeText(error?.message ?? error, 200)
+      );
       return { ok: false, error };
     }
     return { ok: true };
   } catch (err) {
-    console.warn('Konnte Client-Log nicht senden:', err);
+    console.warn('Konnte Client-Log nicht senden:', sanitizeText(err?.message ?? err, 200));
     return { ok: false, error: err };
   }
 }

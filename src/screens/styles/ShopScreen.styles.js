@@ -127,16 +127,16 @@ const styles = StyleSheet.create({
   itemCard: {
     width: '100%',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 10,
-    minHeight: 112,
+    minHeight: 108,
     position: 'relative',
     borderRadius: radii.lg,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     backfaceVisibility: 'hidden',
-    rowGap: 8,
+    rowGap: 6,
   },
   itemCardDaily: {
     minHeight: 102,
@@ -186,7 +186,9 @@ const styles = StyleSheet.create({
     marginLeft: -4,
   },
   itemInfo: {
+    width: '100%',
     alignItems: 'center',
+    minHeight: 18,
   },
   itemTitle: {
     color: colors.textPrimary,
@@ -203,13 +205,13 @@ const styles = StyleSheet.create({
   itemAction: {
     alignItems: 'center',
     width: '100%',
-    marginTop: 'auto',
+    marginTop: 4,
   },
   priceText: {
     color: colors.highlight,
     fontFamily: fonts.bold,
     fontSize: 11,
-    marginBottom: 8,
+    marginBottom: 4,
     textAlign: 'center',
   },
   buyButton: {
@@ -227,7 +229,11 @@ const styles = StyleSheet.create({
     borderColor: colors.borderStrong,
   },
   buyButtonOutside: {
-    marginTop: 8,
+    marginTop: 6,
+  },
+  buyButtonDailyCompact: {
+    height: 26,
+    marginTop: 4,
   },
   buyButtonActive: {
     backgroundColor: colors.accent,

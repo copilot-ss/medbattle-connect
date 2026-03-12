@@ -1,5 +1,9 @@
 import { useMemo } from 'react';
-import { getTitleProgress, getUnlockedAchievements } from '../../services/titleService';
+import {
+  getTitleLevel,
+  getTitleProgress,
+  getUnlockedAchievements,
+} from '../../services/titleService';
 import AVATARS from './avatars';
 
 const sanitizeStatNumber = (value) => {
@@ -8,27 +12,6 @@ const sanitizeStatNumber = (value) => {
     return parsed;
   }
   return 0;
-};
-
-const LEVEL_2_STREAK = 4;
-
-const getLevelFromStreak = (value) => {
-  const safeValue = sanitizeStatNumber(value);
-  if (safeValue < LEVEL_2_STREAK) {
-    return 1;
-  }
-
-  let level = 1;
-  let threshold = LEVEL_2_STREAK;
-  let increment = LEVEL_2_STREAK;
-
-  while (safeValue >= threshold) {
-    level += 1;
-    increment += 1;
-    threshold += increment;
-  }
-
-  return level;
 };
 
 export default function useSettingsStats({
@@ -44,11 +27,6 @@ export default function useSettingsStats({
         0
       ),
     [streaks]
-  );
-
-  const userLevel = useMemo(
-    () => getLevelFromStreak(totalStreak),
-    [totalStreak]
   );
 
   const quizzesCompleted = useMemo(
@@ -69,6 +47,10 @@ export default function useSettingsStats({
   const xp = useMemo(
     () => sanitizeStatNumber(userStats?.xp),
     [userStats?.xp]
+  );
+  const userLevel = useMemo(
+    () => Math.max(1, getTitleLevel(xp)),
+    [xp]
   );
   const coins = useMemo(
     () => sanitizeStatNumber(userStats?.coins),

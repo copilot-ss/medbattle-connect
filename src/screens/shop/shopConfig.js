@@ -1,4 +1,5 @@
 import { calculateCoinReward } from '../../services/quizService';
+import { IAP_PRODUCT_IDS } from '../../config/iapProductIds';
 
 export const COIN_EMOJI = '\uD83E\uDE99';
 export const ENERGY_EMOJI = '\u26A1';
@@ -36,7 +37,7 @@ export const COIN_PACKS = [
     id: 'coins-600',
     title: '500 Coins',
     amount: 500,
-    productId: 'coins_600',
+    productId: IAP_PRODUCT_IDS.coins600,
     priceCents: 199,
     priceLabel: '1,99 \u20AC',
   },
@@ -44,7 +45,7 @@ export const COIN_PACKS = [
     id: 'coins-1500',
     title: '1.300 Coins',
     amount: 1300,
-    productId: 'coins_1500',
+    productId: IAP_PRODUCT_IDS.coins1500,
     priceCents: 399,
     priceLabel: '3,99 \u20AC',
   },
@@ -52,7 +53,7 @@ export const COIN_PACKS = [
     id: 'coins-3200',
     title: '2.700 Coins',
     amount: 2700,
-    productId: 'coins_3200',
+    productId: IAP_PRODUCT_IDS.coins3200,
     priceCents: 699,
     priceLabel: '6,99 \u20AC',
   },
@@ -60,7 +61,7 @@ export const COIN_PACKS = [
     id: 'coins-7500',
     title: '7.000 Coins',
     amount: 7000,
-    productId: 'coins_7500',
+    productId: IAP_PRODUCT_IDS.coins7500,
     priceCents: 1499,
     priceLabel: '14,99 \u20AC',
   },
@@ -68,7 +69,7 @@ export const COIN_PACKS = [
     id: 'coins-16000',
     title: '18.000 Coins',
     amount: 18000,
-    productId: 'coins_16000',
+    productId: IAP_PRODUCT_IDS.coins16000,
     priceCents: 2999,
     priceLabel: '29,99 \u20AC',
   },
@@ -76,7 +77,7 @@ export const COIN_PACKS = [
     id: 'coins-60000',
     title: '45.000 Coins',
     amount: 45000,
-    productId: 'coins_60000',
+    productId: IAP_PRODUCT_IDS.coins60000,
     priceCents: 5999,
     priceLabel: '59,99 \u20AC',
   },

@@ -17,6 +17,8 @@ const Auth = () => {
     import.meta.env?.EXPO_PUBLIC_SUPABASE_URL;
   const privacyUrl = import.meta.env?.VITE_PRIVACY_URL;
   const termsUrl = import.meta.env?.VITE_TERMS_URL;
+  const supportUrl = import.meta.env?.VITE_SUPPORT_URL;
+  const deleteAccountUrl = import.meta.env?.VITE_DELETE_ACCOUNT_URL;
   const legalLinkClass = (url?: string) =>
     `text-primary hover:underline${url ? '' : ' opacity-50 pointer-events-none'}`;
 
@@ -301,6 +303,26 @@ const Auth = () => {
             rel="noreferrer"
           >
             Datenschutz
+          </a>
+          . Hilfe findest du im{' '}
+          <a
+            href={supportUrl || '#'}
+            className={legalLinkClass(supportUrl)}
+            aria-disabled={!supportUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Support
+          </a>
+          . Konto loeschen:{' '}
+          <a
+            href={deleteAccountUrl || '#'}
+            className={legalLinkClass(deleteAccountUrl)}
+            aria-disabled={!deleteAccountUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Delete Account
           </a>
         </p>
       </div>

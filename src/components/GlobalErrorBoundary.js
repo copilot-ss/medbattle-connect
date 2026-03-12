@@ -3,7 +3,6 @@ import { View, Text, ScrollView, StyleSheet, Platform } from 'react-native';
 import { t } from '../i18n';
 import { logClientError } from '../services/loggingService';
 import { formatUserError } from '../utils/formatUserError';
-import { captureException } from '../utils/telemetry';
 
 const SUPABASE_URL_HINT = process.env.EXPO_PUBLIC_SUPABASE_URL;
 
@@ -18,12 +17,9 @@ export default class GlobalErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    console.error('GlobalErrorBoundary caught:', error, info);
-    captureException(error, {
-      level: 'error',
-      tags: { source: 'errorBoundary' },
-      extra: { componentStack: info?.componentStack },
-    });
+    if (__DEV__) {
+      console.error('GlobalErrorBoundary caught:', error, info);
+    }
     logClientError({
       level: 'error',
       message: error?.message ?? String(error),

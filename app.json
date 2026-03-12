@@ -8,11 +8,17 @@
     "jsEngine": "hermes",
     "ios": {
       "bundleIdentifier": "com.sjigalin.medbattle",
-      "buildNumber": "2"
+      "buildNumber": "26"
     },
     "android": {
       "package": "com.sjigalin.medbattle",
-      "versionCode": 2
+      "versionCode": 26,
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
     },
     "updates": {
       "url": "https://u.expo.dev/87da2826-0629-40e0-8f9b-25ee7681af9d",
@@ -22,8 +28,9 @@
     "runtimeVersion": "55.0.0",
     "plugins": [
       "expo-font",
-      "sentry-expo",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-iap",
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {

@@ -52,21 +52,8 @@ const styles = StyleSheet.create({
   headerSpacer: {
     flex: 1,
   },
-  energyPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    height: 40,
-    borderRadius: radii.md,
-    backgroundColor: 'rgba(255, 214, 117, 0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 214, 117, 0.4)',
-  },
-  energyText: {
-    color: colors.highlight,
-    fontFamily: fonts.bold,
-    fontSize: 13,
-    marginLeft: 6,
+  energyBadgeReset: {
+    marginLeft: 0,
   },
   categoryCard: {
     width: '100%',

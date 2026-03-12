@@ -1,0 +1,22 @@
+schemaname,table_name,blocks_read,write_tuples,blocks_write,activity_ratio
+public,questions,36,1243,166.970149253731,4.6:1 (Write-Heavy)
+public,matches,87,232,63.8,0.7:1 (Write-Heavy)
+public,question_translations,4,2006,99.8009950248756,25.0:1 (Write-Heavy)
+public,users,12,305,43.5714285714286,3.6:1 (Write-Heavy)
+auth,users,31,141,20.1428571428571,0.6:1 (Write-Heavy)
+auth,refresh_tokens,37,208,4.37894736842105,1:8.4 (Read-Heavy)
+auth,sessions,22,103,4.12,1:5.3 (Read-Heavy)
+public,scores,16,340,9.44444444444444,0.6:1 (Write-Heavy)
+auth,audit_log_entries,17,195,6.59774436090226,0.4:1 (Write-Heavy)
+auth,identities,17,14,-0,Read-Only
+public,client_logs,7,57,7.125,1.0:1 (Write-Heavy)
+storage,objects,14,21,-0,Read-Only
+supabase_migrations,schema_migrations,11,49,-0,Read-Only
+auth,mfa_amr_claims,10,17,-0,Read-Only
+auth,one_time_tokens,9,5,-0,Read-Only
+auth,schema_migrations,5,3,0.0447761194029851,1:111.7 (Read-Heavy)
+storage,buckets,4,2,-0,Read-Only
+realtime,schema_migrations,3,3,0.046875,1:64.0 (Read-Heavy)
+cron,job,2,1,-0,Read-Only
+public,friendships,2,8,-0,Read-Only
+public,profiles,2,47,-0,Read-Only

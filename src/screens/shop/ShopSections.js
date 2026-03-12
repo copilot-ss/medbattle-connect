@@ -17,7 +17,7 @@ export default function ShopSections({
   isEnergyFull,
   remainingEnergySpace,
   remainingCap,
-  iapReady,
+  availableIapProductIds,
   isOffline,
   canClaimDaily,
   dailyClaimLoading,
@@ -57,7 +57,14 @@ export default function ShopSections({
           const energyLocked =
             isEnergyItem && (isEnergyFull || remainingEnergySpace < item.amount);
           const capLocked = isCapItem && remainingCap < item.amount;
-          const iapLocked = isIapItem && (!iapReady || isOffline);
+          const hasLoadedIapProducts =
+            Array.isArray(availableIapProductIds) && availableIapProductIds.length > 0;
+          const iapProductAvailable =
+            !isIapItem ||
+            !hasLoadedIapProducts ||
+            availableIapProductIds.includes(item.productId);
+          const iapLocked =
+            isIapItem && (isOffline || !iapProductAvailable);
           const dailyLocked = isDailyItem && (!canClaimDaily || dailyClaimLoading);
           const canBuy =
             !isComingSoon &&
@@ -67,6 +74,10 @@ export default function ShopSections({
             !capLocked &&
             !iapLocked &&
             !dailyLocked;
+          const buttonDisabled =
+            isComingSoon ||
+            isBuying ||
+            (isEnergyItem && energyLocked);
           const itemCardSpinStyle = isBuying
             ? {
                 transform: [
@@ -97,6 +108,8 @@ export default function ShopSections({
               ? canClaimDaily
                 ? t('Gratis')
                 : dailyTimerLabel || t('Morgen wieder')
+              : isIapItem && !iapProductAvailable
+                ? t('Nicht verf\u00fcgbar')
               : t('Kaufen');
 
           const handlePress = () => {
@@ -198,10 +211,11 @@ export default function ShopSections({
                 style={[
                   styles.buyButton,
                   styles.buyButtonOutside,
+                  isDailyItem ? styles.buyButtonDailyCompact : null,
                   canBuy ? styles.buyButtonActive : styles.buyButtonDisabled,
                   isDailyItem && canBuy ? styles.buyButtonDailyActive : null,
                 ]}
-                disabled={isComingSoon || isBuying}
+                disabled={buttonDisabled}
                 onPress={handlePress}
               >
                 <Text

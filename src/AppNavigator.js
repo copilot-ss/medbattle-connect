@@ -128,9 +128,24 @@ function AppNavigatorInner() {
               )}
             </Stack.Screen>
             <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
-            <Stack.Screen name="AvatarEdit" component={AvatarEditScreen} />
+            <Stack.Screen
+              name="AvatarEdit"
+              component={AvatarEditScreen}
+              options={{
+                gestureEnabled: true,
+                fullScreenGestureEnabled: true,
+                animation: 'slide_from_right',
+              }}
+            />
             <Stack.Screen name="Friends" component={FriendsScreen} />
-            <Stack.Screen name="Legal" component={LegalScreen} />
+            <Stack.Screen name="Legal">
+              {(props) => (
+                <LegalScreen
+                  {...props}
+                  onClearSession={clearSession}
+                />
+              )}
+            </Stack.Screen>
             <Stack.Screen name="MultiplayerLobby" component={MultiplayerLobbyScreen} />
             <Stack.Screen name="Quiz" component={QuizScreen} />
             <Stack.Screen name="Result" component={ResultScreen} />

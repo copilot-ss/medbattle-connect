@@ -6,15 +6,8 @@ export default function EnergyBoostModal({
   visible,
   energyMessage,
   isBoostBusy,
-  boosting,
   rewarding,
-  coinPurchasing,
-  coinsAvailable = 0,
-  coinsCost = 0,
-  coinsEnergy = 0,
-  isEnergyFull = false,
-  onBuyWithCoins,
-  onPurchase,
+  onOpenShop,
   onWatchAd,
   onClose,
 }) {
@@ -24,52 +17,21 @@ export default function EnergyBoostModal({
     return null;
   }
 
-  const canBuyWithCoins =
-    typeof onBuyWithCoins === 'function' &&
-    coinsCost > 0 &&
-    coinsEnergy > 0 &&
-    coinsAvailable >= coinsCost &&
-    !isEnergyFull;
-  const coinLabel = coinPurchasing
-    ? t('Coins werden eingelöst...')
-    : isEnergyFull
-    ? t('Energie ist bereits voll')
-    : coinsAvailable >= coinsCost
-    ? t('{coins} Coins für +{energy} Energie', {
-        coins: coinsCost,
-        energy: coinsEnergy,
-      })
-    : t('Nicht genug Coins');
-
   return (
     <View style={styles.boostOverlay}>
       <View style={styles.boostCard}>
         <Text style={styles.boostTitle}>{t('Energie auffüllen')}</Text>
         <Text style={styles.boostText}>
-          {t(
-            'Du brauchst Energie für ein weiteres Spiel. Wähle Coins, Kauf oder Werbung für Energie.'
-          )}
+          {t('Du brauchst Energie für ein weiteres Spiel. Öffne den Shop oder sieh dir Werbung für Energie an.')}
         </Text>
         {energyMessage ? <Text style={styles.boostMessage}>{energyMessage}</Text> : null}
         <View style={styles.boostActions}>
           <Pressable
-            onPress={onBuyWithCoins}
-            style={[
-              styles.boostButtonCoin,
-              isBoostBusy || !canBuyWithCoins ? styles.boostButtonDisabled : null,
-            ]}
-            disabled={isBoostBusy || !canBuyWithCoins}
-          >
-            <Text style={styles.boostButtonCoinText}>{coinLabel}</Text>
-          </Pressable>
-          <Pressable
-            onPress={onPurchase}
+            onPress={onOpenShop}
             style={[styles.boostButton, isBoostBusy ? styles.boostButtonDisabled : null]}
             disabled={isBoostBusy}
           >
-            <Text style={styles.boostButtonText}>
-              {boosting ? t('Zahlung läuft...') : t('Energie voll (1,99 EUR)')}
-            </Text>
+            <Text style={styles.boostButtonText}>{t('Shop öffnen')}</Text>
           </Pressable>
           <Pressable
             onPress={onWatchAd}
