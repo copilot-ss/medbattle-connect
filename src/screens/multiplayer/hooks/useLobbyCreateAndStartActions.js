@@ -21,10 +21,8 @@ export default function useLobbyCreateAndStartActions({
   existingMatch,
   attachMatchSubscription,
   refreshMatches,
-  selectedDifficulty,
   selectedCategory,
   questionLimit,
-  setSelectedDifficulty,
   setSelectedCategory,
   setQuestionLimit,
   setMatchesError,
@@ -74,7 +72,6 @@ export default function useLobbyCreateAndStartActions({
       }
 
       const result = await createMatch({
-        difficulty: selectedDifficulty,
         questionLimit,
         category: selectedCategory,
         language,
@@ -88,7 +85,6 @@ export default function useLobbyCreateAndStartActions({
 
       setCurrentMatch(result.match);
       setQuestionLimit(result.match.question_limit ?? questionLimit);
-      setSelectedDifficulty(result.match.difficulty ?? selectedDifficulty);
       setSelectedCategory(result.match.category ?? selectedCategory);
       attachMatchSubscription(result.match.id);
     } catch (err) {
@@ -110,12 +106,10 @@ export default function useLobbyCreateAndStartActions({
     questionLimit,
     refreshMatches,
     selectedCategory,
-    selectedDifficulty,
     setCurrentMatch,
     setMatchesError,
     setQuestionLimit,
     setSelectedCategory,
-    setSelectedDifficulty,
     t,
     userId,
     closingRef,

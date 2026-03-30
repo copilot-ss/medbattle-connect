@@ -88,6 +88,7 @@ export default function useSettingsFriends({
   const [loadingFriendRequests, setLoadingFriendRequests] = useState(false);
   const [refreshingFriends, setRefreshingFriends] = useState(false);
   const [respondingFriendRequestId, setRespondingFriendRequestId] = useState(null);
+  const [removingFriendCode, setRemovingFriendCode] = useState(null);
   const [addingFriend, setAddingFriend] = useState(false);
   const [friendsFeedback, setFriendsFeedback] = useState(null);
   const [sentFriendRequestCode, setSentFriendRequestCode] = useState('');
@@ -425,10 +426,12 @@ export default function useSettingsFriends({
   }, [handleRespondToFriendRequest]);
 
   const handleRemoveFriend = useCallback(async (friend) => {
-    if (!userId || !friend) {
-      return;
+    const friendCode = friend?.code ?? null;
+    if (!userId || !friendCode) {
+      return false;
     }
 
+    setRemovingFriendCode(friendCode);
     try {
       const result = await removeFriend(userId, friend);
 
@@ -440,9 +443,10 @@ export default function useSettingsFriends({
         setFriends((previous) => mergeFriendsList(result.friends, previous));
       } else {
         setFriends((prev) =>
-          prev.filter((item) => item.code !== friend.code)
+          prev.filter((item) => item.code !== friendCode)
         );
       }
+      return true;
     } catch (err) {
       setFriendsFeedback(
         formatUserError(err, {
@@ -450,6 +454,11 @@ export default function useSettingsFriends({
           fallback: t('Freund konnte nicht entfernt werden.'),
         })
       );
+      return false;
+    } finally {
+      setRemovingFriendCode((currentCode) => (
+        currentCode === friendCode ? null : currentCode
+      ));
     }
   }, [t, userId]);
 
@@ -488,6 +497,7 @@ export default function useSettingsFriends({
     friendRequests,
     loadingFriendRequests,
     respondingFriendRequestId,
+    removingFriendCode,
     onAcceptFriendRequest: handleAcceptFriendRequest,
     onDeclineFriendRequest: handleDeclineFriendRequest,
     onlineFriends,

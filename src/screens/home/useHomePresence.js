@@ -31,7 +31,7 @@ export default function useHomePresence({
       channel.track({
         userId,
         code,
-        username: userName || 'MedBattle',
+        username: userName || 'MedQuiz',
         title: userTitle ?? null,
         activity: 'online',
         lobby: null,

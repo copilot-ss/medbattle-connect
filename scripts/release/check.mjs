@@ -104,6 +104,10 @@ const packageJson = readJson('package.json');
 const buildGradle = readText(path.join('android', 'app', 'build.gradle'));
 const androidManifest = readText(path.join('android', 'app', 'src', 'main', 'AndroidManifest.xml'));
 const keystorePropertiesPath = path.join(projectRoot, 'android', 'keystore.properties');
+const gradleVersionCodeMatch = buildGradle.match(/\btrackedAndroidVersionCode\s*=\s*(\d+)/);
+const gradleVersionCode = gradleVersionCodeMatch
+  ? Number.parseInt(gradleVersionCodeMatch[1], 10)
+  : null;
 const results = [];
 const requiredStoreAssets = [
   { path: path.join('store_assets', 'play_store_icon_512.png'), width: 512, height: 512 },
@@ -153,7 +157,6 @@ for (const key of [
   'EXPO_PUBLIC_EMAIL_UPDATE_REDIRECT',
   'EXPO_PUBLIC_PASSWORD_RESET_REDIRECT',
   'EXPO_PUBLIC_ADMOB_APP_ID_ANDROID',
-  'EXPO_PUBLIC_ADMOB_REWARDED_ID_ANDROID',
   'EXPO_PUBLIC_IAP_BOOST_PRODUCT_ID',
   'EXPO_PUBLIC_IAP_COINS_600_PRODUCT_ID',
   'EXPO_PUBLIC_IAP_COINS_1500_PRODUCT_ID',
@@ -202,6 +205,11 @@ if (env.EXPO_PUBLIC_ADMOB_REWARDED_ID_ANDROID) {
   } else {
     pass(results, 'Android Rewarded Ad Unit gesetzt.');
   }
+} else {
+  pass(
+    results,
+    'Android Rewarded Ad Unit fehlt; der Rewarded-Flow bleibt im Release deaktiviert, blockiert den App-Start aber nicht.'
+  );
 }
 
 const iapKeys = [
@@ -225,6 +233,16 @@ if (androidConfig.package && Number.isInteger(androidConfig.versionCode)) {
   pass(results, 'app.json enthaelt Android package + versionCode.');
 } else {
   fail(results, 'app.json enthaelt kein gueltiges Android package/versionCode.');
+}
+
+if (
+  Number.isInteger(androidConfig.versionCode) &&
+  Number.isInteger(gradleVersionCode) &&
+  androidConfig.versionCode === gradleVersionCode
+) {
+  pass(results, 'Android versionCode ist zwischen app.json und build.gradle synchron.');
+} else {
+  fail(results, 'Android versionCode ist zwischen app.json und build.gradle nicht synchron.');
 }
 
 if (packageJson?.scripts?.['release:check']) {

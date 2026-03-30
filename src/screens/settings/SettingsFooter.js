@@ -1,20 +1,12 @@
-import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/SettingsScreen.styles';
 
 export default function SettingsFooter({
-  showResetForm,
-  onToggleResetForm,
-  resetEmail,
-  setResetEmail,
-  loadingReset,
-  onResetPassword,
   signingOut,
   onSignOut,
-  showResetActions = true,
   isGuest = false,
   authResolved = false,
-  onOpenLegal = null,
 }) {
   const { t } = useTranslation();
   const resolvedGuest = authResolved ? isGuest : false;
@@ -33,65 +25,13 @@ export default function SettingsFooter({
   const signOutTextStyle = resolvedGuest
     ? styles.primaryButtonText
     : styles.dangerButtonText;
-  const hasNativeLegalScreen = typeof onOpenLegal === 'function';
-
-  const handleOpenLegal = (doc) => {
-    if (hasNativeLegalScreen) {
-      onOpenLegal(doc);
-    }
-  };
-
-  const hasPrivacyLink = hasNativeLegalScreen;
-  const hasTermsLink = hasNativeLegalScreen;
-  const hasSupportLink = hasNativeLegalScreen;
-  const hasDeleteAccountLink = hasNativeLegalScreen;
 
   return (
-    <View style={styles.fixedFooter}>
-      {showResetActions ? (
-        <Pressable
-          onPress={onToggleResetForm}
-          style={styles.inlineLink}
-          accessibilityRole="button"
-          accessibilityLabel={t('Passwort vergessen')}
-        >
-          <Text style={styles.inlineLinkText}>{t('Passwort vergessen?')}</Text>
-        </Pressable>
-      ) : null}
-
-      {showResetActions && showResetForm ? (
-        <View style={styles.resetContainer}>
-          <TextInput
-            value={resetEmail}
-            onChangeText={setResetEmail}
-            placeholder={t('deine@email.com')}
-            placeholderTextColor="#64748B"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            style={styles.input}
-          />
-          <Pressable
-            onPress={onResetPassword}
-            disabled={loadingReset}
-            style={[
-              styles.actionButton,
-              styles.warningButton,
-              loadingReset ? styles.warningButtonDisabled : null,
-            ]}
-          >
-            {loadingReset ? (
-              <ActivityIndicator color="#0F172A" />
-            ) : (
-              <Text style={styles.warningButtonText}>{t('Link senden')}</Text>
-            )}
-          </Pressable>
-        </View>
-      ) : null}
-
+    <View style={styles.footerStack}>
       <Pressable
         onPress={onSignOut}
         disabled={signingOut}
-        style={signOutButtonStyles}
+        style={[signOutButtonStyles, styles.footerPrimary]}
       >
         {signingOut ? (
           <ActivityIndicator color={resolvedGuest ? '#F8FAFC' : '#0F172A'} />
@@ -99,60 +39,6 @@ export default function SettingsFooter({
           <Text style={signOutTextStyle}>{signOutLabel}</Text>
         )}
       </Pressable>
-
-      <View style={styles.legalRow}>
-        <Pressable
-          onPress={() => handleOpenLegal('privacy')}
-          disabled={!hasPrivacyLink}
-          style={[
-            styles.legalLink,
-            !hasPrivacyLink ? styles.legalLinkDisabled : null,
-          ]}
-          accessibilityRole="link"
-          accessibilityLabel={t('Datenschutz')}
-        >
-          <Text style={styles.legalLinkText}>{t('Datenschutz')}</Text>
-        </Pressable>
-        <Text style={styles.legalDivider}>|</Text>
-        <Pressable
-          onPress={() => handleOpenLegal('terms')}
-          disabled={!hasTermsLink}
-          style={[
-            styles.legalLink,
-            !hasTermsLink ? styles.legalLinkDisabled : null,
-          ]}
-          accessibilityRole="link"
-          accessibilityLabel={t('AGB')}
-        >
-          <Text style={styles.legalLinkText}>{t('AGB')}</Text>
-        </Pressable>
-        <Text style={styles.legalDivider}>|</Text>
-        <Pressable
-          onPress={() => handleOpenLegal('support')}
-          disabled={!hasSupportLink}
-          style={[
-            styles.legalLink,
-            !hasSupportLink ? styles.legalLinkDisabled : null,
-          ]}
-          accessibilityRole="link"
-          accessibilityLabel={t('Support')}
-        >
-          <Text style={styles.legalLinkText}>{t('Support')}</Text>
-        </Pressable>
-        <Text style={styles.legalDivider}>|</Text>
-        <Pressable
-          onPress={() => handleOpenLegal('deleteAccount')}
-          disabled={!hasDeleteAccountLink}
-          style={[
-            styles.legalLink,
-            !hasDeleteAccountLink ? styles.legalLinkDisabled : null,
-          ]}
-          accessibilityRole="link"
-          accessibilityLabel={t('Konto löschen')}
-        >
-          <Text style={styles.legalLinkText}>{t('Konto löschen')}</Text>
-        </Pressable>
-      </View>
     </View>
   );
 }

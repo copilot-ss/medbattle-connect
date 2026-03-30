@@ -6,7 +6,6 @@ export default function LobbyCodeActionsRow({
   currentJoinCode,
   copied,
   onCopyCode,
-  difficultyLabel,
   questionLimit,
   categoryLabel,
 }) {
@@ -27,9 +26,6 @@ export default function LobbyCodeActionsRow({
         </Text>
       </Pressable>
       <View style={styles.codeSettingsWrap}>
-        <Text style={styles.codeSettingText}>
-          {t('Schwierigkeit')}: {difficultyLabel}
-        </Text>
         <Text style={styles.codeSettingText}>
           {t('Fragenanzahl')}: {questionLimit}
         </Text>

@@ -1,7 +1,7 @@
-﻿# AGENTS.md - MedBattle Quiz App
+# AGENTS.md - MedQuiz Quiz App
 
 ## Ziel
-Zentrale Agent-Anleitung für MedBattle.
+Zentrale Agent-Anleitung für MedQuiz.
 Codex soll effizient arbeiten, Token sparen und nur relevante Dateien laden.
 
 ## Regeln

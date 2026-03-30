@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { getSessionUser, supabase } from '../lib/supabaseClient';
 
 export default function useSupabaseUserId() {
   const [userId, setUserId] = useState(null);
@@ -7,38 +7,16 @@ export default function useSupabaseUserId() {
   useEffect(() => {
     let active = true;
 
-    const applySessionFallback = async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        if (!active) {
-          return;
-        }
-        setUserId(data?.session?.user?.id ?? null);
-      } catch (err) {
+    getSessionUser()
+      .then((user) => {
         if (active) {
-          console.warn('Konnte Session nicht abrufen:', err);
-          setUserId(null);
+          setUserId(user?.id ?? null);
         }
-      }
-    };
-
-    supabase.auth
-      .getUser()
-      .then(({ data, error }) => {
-        if (!active) {
-          return;
-        }
-        if (error) {
-          console.warn('Konnte Nutzer nicht abrufen:', error.message);
-          applySessionFallback();
-          return;
-        }
-        setUserId(data?.user?.id ?? null);
       })
       .catch((err) => {
         if (active) {
-          console.warn('Konnte Nutzer nicht abrufen:', err);
-          applySessionFallback();
+          console.warn('Konnte Session nicht abrufen:', err);
+          setUserId(null);
         }
       });
 

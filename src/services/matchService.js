@@ -1,10 +1,10 @@
 import { supabase } from '../lib/supabaseClient';
+import { MULTIPLAYER_DEFAULT_QUESTION_LIMIT } from '../config/quizLimits';
 import { runSupabaseRequest } from './supabaseRequest';
 import {
   LOBBY_IDLE_TIMEOUT_MINUTES,
   MATCH_CACHE_TTL,
   MATCH_STATUS,
-  normalizeDifficulty,
   normalizeMatchRow,
   sanitizeAnswer,
 } from './match/matchHelpers';
@@ -15,7 +15,7 @@ const openMatchesCache = {
   data: null,
 };
 
-const DEFAULT_LANGUAGE = 'de';
+const DEFAULT_LANGUAGE = 'en';
 const MATCH_REALTIME_RETRY_BASE_MS = 2000;
 const MATCH_REALTIME_RETRY_MAX_MS = 15000;
 
@@ -24,6 +24,9 @@ function normalizeLanguage(value) {
     return DEFAULT_LANGUAGE;
   }
   const normalized = value.trim().toLowerCase();
+  if (normalized === 'de') {
+    return 'de';
+  }
   return normalized === 'en' ? 'en' : DEFAULT_LANGUAGE;
 }
 
@@ -125,8 +128,7 @@ export function deriveMatchRole(match, userId) {
 }
 
 export async function createMatch({
-  difficulty = 'mittel',
-  questionLimit = 5,
+  questionLimit = MULTIPLAYER_DEFAULT_QUESTION_LIMIT,
   category = null,
   language,
   fallbackLanguage,
@@ -138,7 +140,6 @@ export async function createMatch({
     return { ok: false, error: new Error('Kein Nutzer angemeldet.') };
   }
 
-  const normalizedDifficulty = normalizeDifficulty(difficulty);
   const normalizedCategory =
     typeof category === 'string' && category.trim() ? category.trim() : null;
   const normalizedLanguage = normalizeLanguage(language);
@@ -150,13 +151,12 @@ export async function createMatch({
       : normalizeLanguageOrNull(fallbackLanguage);
   const limit = Number.isFinite(questionLimit)
     ? Math.max(1, Math.min(questionLimit, 50))
-    : 5;
+    : MULTIPLAYER_DEFAULT_QUESTION_LIMIT;
 
   try {
     await ensureLobbyCleanup({ force: true });
 
     const basePayload = {
-      p_difficulty: normalizedDifficulty,
       p_question_limit: limit,
     };
     const payload = { ...basePayload };
@@ -304,7 +304,11 @@ export async function getMatchById(matchId) {
         supabase.rpc('get_match_by_id', {
           p_match_id: matchId,
         }),
-      { label: 'matchService.getMatchById' }
+      {
+        label: 'matchService.getMatchById',
+        profile: 'lobby',
+        dedupeKey: `match:${matchId}`,
+      }
     );
 
     if (error) {
@@ -325,8 +329,7 @@ export async function getMatchById(matchId) {
 export async function updateMatchSettings({
   matchId,
   userId,
-  difficulty = 'mittel',
-  questionLimit = 5,
+  questionLimit = MULTIPLAYER_DEFAULT_QUESTION_LIMIT,
   language,
   fallbackLanguage,
 } = {}) {
@@ -340,7 +343,6 @@ export async function updateMatchSettings({
     return { ok: false, error: new Error('Kein Nutzer angemeldet.') };
   }
 
-  const normalizedDifficulty = normalizeDifficulty(difficulty);
   const normalizedLanguage = normalizeLanguage(language);
   const normalizedFallbackLanguage =
     fallbackLanguage === undefined
@@ -350,12 +352,11 @@ export async function updateMatchSettings({
       : normalizeLanguageOrNull(fallbackLanguage);
   const limit = Number.isFinite(questionLimit)
     ? Math.max(1, Math.min(questionLimit, 50))
-    : 5;
+    : MULTIPLAYER_DEFAULT_QUESTION_LIMIT;
 
   try {
     const basePayload = {
       p_match_id: matchId,
-      p_difficulty: normalizedDifficulty,
       p_question_limit: limit,
     };
     const payload = { ...basePayload };
@@ -402,24 +403,16 @@ export async function updateMatchSettings({
   }
 }
 
-export async function fetchOpenMatches({
-  difficulty = null,
-  force = false,
-  excludeHostId = null,
-} = {}) {
+export async function fetchOpenMatches({ force = false, excludeHostId = null } = {}) {
   await ensureLobbyCleanup({ force });
 
-  const normalizedDifficulty = difficulty
-    ? normalizeDifficulty(difficulty)
-    : null;
   const normalizedExcludeHostId =
     typeof excludeHostId === 'string' && excludeHostId.trim()
       ? excludeHostId.trim()
       : null;
-  const cachePrefix = normalizedDifficulty ? `waiting:${normalizedDifficulty}` : 'waiting:all';
   const cacheKey = normalizedExcludeHostId
-    ? `${cachePrefix}:exclude:${normalizedExcludeHostId}`
-    : cachePrefix;
+    ? `waiting:all:exclude:${normalizedExcludeHostId}`
+    : 'waiting:all';
   const now = Date.now();
 
   if (
@@ -438,20 +431,20 @@ export async function fetchOpenMatches({
     if (normalizedExcludeHostId) {
       let query = supabase
         .from('matches')
-        .select('id, code, difficulty, question_limit, created_at, host_id, state')
+        .select('id, code, question_limit, created_at, host_id, state')
         .eq('status', MATCH_STATUS.WAITING)
         .is('guest_id', null)
         .neq('host_id', normalizedExcludeHostId)
         .order('created_at', { ascending: true })
         .limit(24);
 
-      if (normalizedDifficulty) {
-        query = query.eq('difficulty', normalizedDifficulty);
-      }
-
       const directResult = await runSupabaseRequest(
         () => query,
-        { label: 'matchService.fetchOpenMatches.direct' }
+        {
+          label: 'matchService.fetchOpenMatches.direct',
+          profile: 'lobby',
+          dedupeKey: cacheKey,
+        }
       );
       data = directResult.data;
       error = directResult.error;
@@ -459,11 +452,12 @@ export async function fetchOpenMatches({
 
     if (!normalizedExcludeHostId || error) {
       const rpcResult = await runSupabaseRequest(
-        () =>
-          supabase.rpc('get_open_matches', {
-            p_difficulty: normalizedDifficulty,
-          }),
-        { label: 'matchService.getOpenMatches' }
+        () => supabase.rpc('get_open_matches'),
+        {
+          label: 'matchService.getOpenMatches',
+          profile: 'lobby',
+          dedupeKey: cacheKey,
+        }
       );
       data = rpcResult.data;
       error = rpcResult.error;
@@ -484,11 +478,10 @@ export async function fetchOpenMatches({
               return {
                 id: row.id,
                 code: row.code,
-                difficulty: row.difficulty ?? null,
                 createdAt: row.created_at ?? null,
                 questionLimit: Number.isFinite(row.question_limit)
                   ? Math.max(1, row.question_limit)
-                  : 5,
+                  : MULTIPLAYER_DEFAULT_QUESTION_LIMIT,
                 hostUsername: row.host_username ?? row?.state?.host?.username ?? null,
                 hostId: row.host_id ?? row?.state?.host?.userId ?? null,
               };
@@ -510,7 +503,7 @@ export async function fetchOpenMatches({
   }
 }
 
-export function subscribeToMatch(matchId, handler) {
+export function subscribeToMatch(matchId, handler, options = {}) {
   if (!matchId) {
     return () => {};
   }
@@ -519,11 +512,44 @@ export function subscribeToMatch(matchId, handler) {
   let channel = null;
   let retryTimer = null;
   let retryAttempt = 0;
+  const onStatus =
+    typeof options?.onStatus === 'function' ? options.onStatus : null;
+
+  const notifyStatus = (status, meta = {}) => {
+    if (!onStatus) {
+      return;
+    }
+    try {
+      onStatus(status, meta);
+    } catch (err) {
+      console.warn('Konnte Match-Realtime-Status nicht weitergeben:', err);
+    }
+  };
 
   const clearRetry = () => {
     if (retryTimer) {
       clearTimeout(retryTimer);
       retryTimer = null;
+    }
+  };
+
+  const emitLatestMatchSnapshot = async (reason = 'snapshot') => {
+    if (!active) {
+      return;
+    }
+
+    try {
+      const result = await getMatchById(matchId);
+      if (!active || !result?.ok || !result.match) {
+        return;
+      }
+      handler(result.match);
+      notifyStatus('SNAPSHOT', {
+        at: Date.now(),
+        reason,
+      });
+    } catch (err) {
+      console.warn('Konnte Match-Snapshot nach Realtime-Subscribe nicht laden:', err);
     }
   };
 
@@ -573,6 +599,7 @@ export function subscribeToMatch(matchId, handler) {
 
     cleanupChannel();
     clearRetry();
+    notifyStatus('SUBSCRIBING', { retryAttempt });
 
     const currentChannel = supabase.channel(`match:${matchId}`);
     channel = currentChannel;
@@ -587,6 +614,7 @@ export function subscribeToMatch(matchId, handler) {
       (payload) => {
         if (payload?.new) {
           handler(normalizeMatchRow(payload.new));
+          notifyStatus('EVENT', { at: Date.now() });
         }
       }
     );
@@ -598,14 +626,18 @@ export function subscribeToMatch(matchId, handler) {
         }
         if (status === 'SUBSCRIBED') {
           retryAttempt = 0;
+          notifyStatus(status, { at: Date.now() });
+          emitLatestMatchSnapshot('subscribed');
           return;
         }
 
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          notifyStatus(status, { at: Date.now() });
           scheduleRetry(status);
         }
       });
     } catch (err) {
+      notifyStatus('SUBSCRIBE_THROW', { at: Date.now(), error: err });
       scheduleRetry('SUBSCRIBE_THROW', err);
     }
   };
@@ -650,7 +682,6 @@ export async function updateMatchProgress({
           p_next_score: nextScoreValue,
           p_answer: nextAnswer,
           p_finished: finished ? true : false,
-          p_expected_updated_at: match.updated_at ?? null,
         }),
       { label: 'matchService.updateMatchProgress' }
     );
@@ -725,7 +756,6 @@ export async function markPlayerFinished({ match, role } = {}) {
       () =>
         supabase.rpc('mark_player_finished', {
           p_match_id: match.id,
-          p_expected_updated_at: match.updated_at ?? null,
         }),
       { label: 'matchService.markPlayerFinished' }
     );

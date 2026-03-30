@@ -1,0 +1,20 @@
+diff --git a/node_modules/react-native-google-mobile-ads/android/build.gradle b/node_modules/react-native-google-mobile-ads/android/build.gradle
+index 8a31e69..ba93da0 100644
+--- a/node_modules/react-native-google-mobile-ads/android/build.gradle
++++ b/node_modules/react-native-google-mobile-ads/android/build.gradle
+@@ -35,7 +35,9 @@ plugins {
+ apply plugin: 'kotlin-android'
+ 
+ def packageJson = PackageJson.getForProject(project)
+-def googleMobileAdsVersion = packageJson['sdkVersions']['android']['googleMobileAds']
++def googleMobileAdsVersion = rootProject.ext.has('googleMobileAdsVersion')
++  ? rootProject.ext.get('googleMobileAdsVersion')
++  : packageJson['sdkVersions']['android']['googleMobileAds']
+ def googleUmpVersion = packageJson['sdkVersions']['android']['googleUmp']
+ def jsonMinSdk = packageJson['sdkVersions']['android']['minSdk']
+ def jsonTargetSdk = packageJson['sdkVersions']['android']['targetSdk']
+@@ -143,4 +145,3 @@ ReactNative.shared.applyPackageVersion()
+ ReactNative.shared.applyDefaultExcludes()
+ ReactNative.module.applyAndroidVersions()
+ ReactNative.module.applyReactNativeDependency("api")
+-

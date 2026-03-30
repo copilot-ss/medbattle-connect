@@ -1,5 +1,9 @@
 import { useCallback, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import {
+  clearLocalActiveSession,
+  releaseActiveSession,
+} from '../../services/activeSessionService';
 import { formatUserError } from '../../utils/formatUserError';
 import { useTranslation } from '../../i18n/useTranslation';
 import { linkOAuth } from '../auth/authOAuth';
@@ -126,10 +130,12 @@ export default function useSettingsAuth({
     try {
       if (authUserId) {
         // Logouts von OAuth-Providern (z.B. Google) schlagen seltener fehl, wenn nur lokale Session gelöscht wird.
+        await releaseActiveSession().catch((releaseError) => {
+          console.warn('Aktive Session konnte vor Logout nicht freigegeben werden:', releaseError);
+        });
         await supabase.auth.signOut({ scope: 'local' });
-        // Fallback: kompletter Logout, falls Remote-Session aktiv ist.
-        await supabase.auth.signOut().catch(() => {});
       }
+      await clearLocalActiveSession();
       if (onClearSession) {
         onClearSession();
       }

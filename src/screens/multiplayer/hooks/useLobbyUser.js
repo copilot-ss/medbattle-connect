@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../../lib/supabaseClient';
+import { getSessionUser } from '../../../lib/supabaseClient';
 import { getFriendCodeForUser } from '../../../services/friendsService';
 import { getStoredGuestName } from '../../../utils/guestProfile';
 
@@ -16,17 +16,10 @@ export default function useLobbyUser() {
       setLoadingUser(true);
 
       try {
-        const { data, error } = await supabase.auth.getUser();
-
+        const authUser = await getSessionUser();
         if (!active) {
           return;
         }
-
-        if (error) {
-          console.warn('Konnte Multiplayer-Nutzer nicht abrufen:', error.message);
-        }
-
-        const authUser = data?.user;
         const resolvedUserId = authUser?.id ?? null;
         const metadata = authUser?.user_metadata ?? {};
         let resolvedUsername =

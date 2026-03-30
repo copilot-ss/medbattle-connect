@@ -1,8 +1,15 @@
 # Play Console Release Guide
 
-Stand: 2026-03-11
+Stand: 2026-03-24
 
 Diese Datei buendelt die Werte, die du manuell in der Play Console brauchst. Sie ersetzt nicht die Pflichtschritte in der Console, reduziert aber Sucharbeit.
+
+## Aktueller Release-Status
+
+- In Play liegt weiterhin nur der hochgeladene Build `31`, der noch nicht aktiv ist.
+- Lokal liegt ein frisches AAB `39` aus dem aktuellen Repo-Stand vor.
+- Dieses AAB enthaelt wieder `x86_64`; fuer einen echten Play-Store-Install auf dem Emulator muss dieser Build jetzt hochgeladen und ausgerollt werden.
+- Reine Supabase-Inhaltsaenderungen wie neue Online-Fragen sind bereits live, aendern aber nichts am noch offenen Play-Rollout des aktuellen App-Builds.
 
 ## Links
 
@@ -16,11 +23,11 @@ Diese Datei buendelt die Werte, die du manuell in der Play Console brauchst. Sie
 
 Short description:
 
-`MedBattle - Medizinwissen im Quiz, Solo oder Multiplayer.`
+`MedQuiz - Medizinwissen im Quiz, Solo oder Multiplayer.`
 
 Pflichthinweis:
 
-`MedBattle dient ausschliesslich Lern- und Quiz-Zwecken. Die App ist kein Medizinprodukt, diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.`
+`MedQuiz dient ausschliesslich Lern- und Quiz-Zwecken. Die App ist kein Medizinprodukt, diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.`
 
 Referenz: `STORE_LISTING.md`
 Store-Assets: `STORE_ASSETS.md`
@@ -81,6 +88,7 @@ Referenz:
 2. reale `EXPO_PUBLIC_ADMOB_APP_ID_ANDROID` setzen
 3. reale `EXPO_PUBLIC_ADMOB_REWARDED_ID_ANDROID` setzen
 4. dann erst `./gradlew.bat bundleRelease`
+5. danach den echten Artefaktstand dokumentieren (`versionCode`, Datum, Testgeraet)
 
 Referenz:
 
@@ -92,4 +100,4 @@ Referenz:
 - Content Rating ausfuellen
 - Data Safety final eintragen
 - Closed Test starten
-- Realgeraet-Smoke + OAuth/Multiplayer/Purchases/Ads manuell bestaetigen
+- Realgeraet-Smoke + OAuth/Multiplayer/Purchases/Ads manuell gegen genau dieses frische Artefakt bestaetigen

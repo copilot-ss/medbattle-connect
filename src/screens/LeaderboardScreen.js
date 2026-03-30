@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -8,13 +8,14 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 
 import AvatarView from '../components/avatar/AvatarView';
 import styles from './styles/LeaderboardScreen.styles';
 import { colors } from '../styles/theme';
 import { fetchLeaderboard } from '../services/quizService';
 import { getTitleProgress } from '../services/titleService';
-import { usePreferences } from '../context/PreferencesContext';
+import { useAvatarPrefs, useStatsPrefs } from '../context/PreferencesContext';
 import useSupabaseUserId from '../hooks/useSupabaseUserId';
 import useCurrentAvatar from '../hooks/useCurrentAvatar';
 import { useTranslation } from '../i18n/useTranslation';
@@ -22,6 +23,30 @@ import PublicProfileSheet from '../components/PublicProfileSheet';
 import usePublicProfileSheet from '../hooks/usePublicProfileSheet';
 import { getAvatarInitials, getAvatarPresetSource } from '../utils/avatarUtils';
 import { buildPublicProfilePayload } from '../utils/publicProfile';
+
+const TOP_RANK_CONFIGS = [
+  {
+    color: '#F4D06A',
+    badgeBackground: '#F4D06A',
+    badgeBorder: '#F7DE8B',
+    cardBackground: 'rgba(244, 208, 106, 0.12)',
+    cardBorder: 'rgba(244, 208, 106, 0.28)',
+  },
+  {
+    color: '#D7DEEE',
+    badgeBackground: '#D7DEEE',
+    badgeBorder: '#E6ECF8',
+    cardBackground: 'rgba(215, 222, 238, 0.1)',
+    cardBorder: 'rgba(215, 222, 238, 0.24)',
+  },
+  {
+    color: '#E3A271',
+    badgeBackground: '#E3A271',
+    badgeBorder: '#EDB487',
+    cardBackground: 'rgba(227, 162, 113, 0.1)',
+    cardBorder: 'rgba(227, 162, 113, 0.24)',
+  },
+];
 
 function formatUserId(value, t) {
   if (!value) {
@@ -37,7 +62,8 @@ function formatUserId(value, t) {
 
 export default function LeaderboardScreen({ navigation, showClose = true }) {
   const { t } = useTranslation();
-  const { avatarId, avatarUri } = usePreferences();
+  const { avatarId, avatarUri } = useAvatarPrefs();
+  const { userStats } = useStatsPrefs();
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -49,6 +75,27 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
     avatarSource: currentAvatarSource,
     avatarIcon: currentAvatarIcon,
   } = useCurrentAvatar(avatarId);
+  const currentUserXp = Number.isFinite(userStats?.xp) ? userStats.xp : null;
+  const leaderboardExtraData = useMemo(
+    () =>
+      [
+        currentUserId ?? '',
+        Number.isFinite(currentUserXp) ? currentUserXp : '',
+        avatarId ?? '',
+        avatarUri ?? '',
+        currentAvatarEntry?.color ?? '',
+        t('Punkte'),
+        t('Praktikant'),
+      ].join('|'),
+    [
+      avatarId,
+      avatarUri,
+      currentAvatarEntry?.color,
+      currentUserId,
+      currentUserXp,
+      t,
+    ]
+  );
 
   const loadLeaderboard = useCallback(
     async (options = {}) => {
@@ -69,6 +116,7 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
         setError(
           t('Rangliste konnte nicht geladen werden. Bitte versuche es später erneut.')
         );
+        setError('Rangliste konnte nicht geladen werden. Bitte versuche es spaeter erneut.');
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -77,27 +125,66 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
     [t]
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      loadLeaderboard();
+    }, [loadLeaderboard])
+  );
+
   useEffect(() => {
-    loadLeaderboard();
-  }, [loadLeaderboard]);
+    if (!currentUserId || !Number.isFinite(currentUserXp)) {
+      return;
+    }
+
+    setEntries((previous) => {
+      if (!Array.isArray(previous) || !previous.length) {
+        return previous;
+      }
+
+      let changed = false;
+      const next = previous.map((entry) => {
+        if (entry?.userId !== currentUserId) {
+          return entry;
+        }
+
+        const entryXp = Number.isFinite(entry?.xp) ? entry.xp : null;
+        if (entryXp === currentUserXp) {
+          return entry;
+        }
+
+        changed = true;
+        return {
+          ...entry,
+          xp: currentUserXp,
+        };
+      });
+
+      return changed ? next : previous;
+    });
+  }, [currentUserId, currentUserXp]);
 
   const refresh = useCallback(() => {
     loadLeaderboard({ force: true });
   }, [loadLeaderboard]);
 
   function renderItem({ item, index }) {
+    const topRankConfig = TOP_RANK_CONFIGS[index] ?? null;
     const highlightColors = [colors.highlight, colors.accent, colors.accentPink];
-    const accent = highlightColors[index] ?? colors.accent;
+    const accent = topRankConfig?.color ?? highlightColors[index] ?? colors.accent;
     const isCurrent = currentUserId && item.userId === currentUserId;
-    const containerBackground =
-      index < 3 ? 'rgba(87, 199, 255, 0.16)' : 'rgba(18, 18, 28, 0.9)';
-    const title = Number.isFinite(item.xp)
-      ? getTitleProgress(item.xp).current.label
+    const containerBackground = topRankConfig?.cardBackground ?? 'rgba(18, 18, 28, 0.9)';
+    const borderColor = isCurrent
+      ? colors.highlight
+      : (topRankConfig?.cardBorder ?? 'rgba(117, 117, 138, 0.45)');
+    const resolvedXp = isCurrent && Number.isFinite(currentUserXp)
+      ? currentUserXp
+      : item.xp;
+    const title = Number.isFinite(resolvedXp)
+      ? t(getTitleProgress(resolvedXp).current.label)
       : '-';
     const name = item.username?.trim()
       ? item.username
       : formatUserId(item.userId, t);
-    const displayName = isCurrent ? `${name} (${t('Du')})` : name;
     const initials = getAvatarInitials(name);
     const avatarUriValue = isCurrent ? avatarUri : item.avatarUrl;
     const avatarSource = isCurrent
@@ -121,25 +208,44 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
                   name,
                   username: item.username ?? null,
                   title,
-                  xp: item.xp,
+                  xp: resolvedXp,
                   rank: index + 1,
                   points: item.points,
                   avatarUrl: item.avatarUrl ?? null,
                   avatarIcon: item.avatarIcon ?? null,
                   avatarColor: item.avatarColor ?? null,
-                  statusLabel: 'Rangliste',
+                  statusLabel: t('Rangliste'),
                 }))
         }
         disabled={isCurrent}
         style={[
           styles.entry,
+          isCurrent && styles.entryCurrent,
           {
             backgroundColor: containerBackground,
-            borderColor: isCurrent ? colors.highlight : 'rgba(117, 117, 138, 0.45)',
+            borderColor,
           },
         ]}
       >
-        <Text style={[styles.entryRank, { color: accent }]}>{index + 1}.</Text>
+        <View style={styles.rankSlot}>
+          {topRankConfig ? (
+            <View
+              style={[
+                styles.rankBadge,
+                {
+                  backgroundColor: topRankConfig.badgeBackground,
+                  borderColor: topRankConfig.badgeBorder,
+                },
+              ]}
+            >
+              <Text style={styles.rankBadgeText}>
+                {index + 1}
+              </Text>
+            </View>
+          ) : (
+            <Text style={[styles.entryRank, { color: accent }]}>{index + 1}.</Text>
+          )}
+        </View>
         <AvatarView
           uri={avatarUriValue}
           source={avatarSource}
@@ -152,11 +258,15 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
           textStyle={styles.entryAvatarText}
         />
         <View style={styles.entryMeta}>
-          <Text style={styles.entryName}>{displayName}</Text>
-          <Text style={styles.entryTitle}>{t('Titel')}: {title}</Text>
+          <Text style={styles.entryName} numberOfLines={1} ellipsizeMode="tail">
+            {name}
+          </Text>
+          <Text style={styles.entryTitle} numberOfLines={1} ellipsizeMode="tail">
+            {title}
+          </Text>
         </View>
         <View style={styles.entryScoreWrap}>
-          <Text style={styles.entryScore}>{item.points}</Text>
+          <Text style={[styles.entryScore, { color: accent }]}>{item.points}</Text>
           <Text style={styles.entryScoreLabel}>{t('Punkte')}</Text>
         </View>
       </Pressable>
@@ -193,7 +303,7 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
         </View>
       ) : error ? (
         <View style={styles.stateContainer}>
-          <Text style={styles.errorMessage}>{t(error)}</Text>
+          <Text style={styles.errorMessage}>{error}</Text>
           <Pressable onPress={() => loadLeaderboard({ force: true })} style={styles.retryButton}>
             <Text style={styles.retryButtonText}>{t('Erneut versuchen')}</Text>
           </Pressable>
@@ -201,6 +311,7 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
       ) : (
         <FlatList
           data={entries}
+          extraData={leaderboardExtraData}
           keyExtractor={(item) => item.id ?? `${item.userId}-${item.points}`}
           renderItem={renderItem}
           refreshControl={

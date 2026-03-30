@@ -1,18 +1,9 @@
-import { useEffect, useMemo } from 'react';
-import { usePreferences } from '../context/PreferencesContext';
-import { DEFAULT_LOCALE, setLocale, t as translate } from './index';
+import { useTranslation as useI18nextTranslation } from 'react-i18next';
+import { APP_DEFAULT_LOCALE, getLocale } from './index';
 
 export function useTranslation() {
-  const { language } = usePreferences();
-  const locale = (language || DEFAULT_LOCALE).toLowerCase();
-
-  useEffect(() => {
-    setLocale(locale);
-  }, [locale]);
-
-  const t = useMemo(() => {
-    return (key, params) => translate(key, params, locale);
-  }, [locale]);
+  const { t } = useI18nextTranslation(undefined, { useSuspense: false });
+  const locale = getLocale() || APP_DEFAULT_LOCALE;
 
   return { t, locale };
 }

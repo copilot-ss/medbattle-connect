@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { supabase } from '../../lib/supabaseClient';
 import {
   AUTH_TIMEOUT_MS,
   IS_EXPO_GO,
@@ -7,6 +8,8 @@ import {
   SUPABASE_URL_HINT,
 } from './authConfig';
 import { t } from '../../i18n';
+
+const AUTH_SESSION_RECOVERY_INTERVAL_MS = 300;
 
 export function validateSupabaseConfig() {
   if (!SUPABASE_URL_HINT || !SUPABASE_ANON_HINT) {
@@ -59,6 +62,56 @@ export function withTimeout(
     promise.finally(() => clearTimeout(timer)),
     timeout,
   ]);
+}
+
+export async function getCurrentAuthSession() {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      return null;
+    }
+    return data?.session ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function isRecoveredSessionUsable(session, previousSession) {
+  const userId = session?.user?.id ?? null;
+  if (!userId || userId === 'guest') {
+    return false;
+  }
+
+  const previousUserId = previousSession?.user?.id ?? null;
+  if (!previousUserId || previousUserId === 'guest') {
+    return true;
+  }
+
+  return userId === previousUserId;
+}
+
+export async function waitForRecoveredAuthSession(
+  previousSession,
+  timeoutMs = AUTH_TIMEOUT_MS
+) {
+  const deadline = Date.now() + Math.max(timeoutMs, AUTH_TIMEOUT_MS);
+
+  while (Date.now() <= deadline) {
+    const session = await getCurrentAuthSession();
+    if (isRecoveredSessionUsable(session, previousSession)) {
+      return session;
+    }
+
+    if (Date.now() + AUTH_SESSION_RECOVERY_INTERVAL_MS > deadline) {
+      break;
+    }
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, AUTH_SESSION_RECOVERY_INTERVAL_MS);
+    });
+  }
+
+  return null;
 }
 
 export function normalizeEmail(value) {

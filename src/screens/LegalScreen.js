@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import { usePreferences } from '../context/PreferencesContext';
-import { supabase } from '../lib/supabaseClient';
+import { getSessionUser } from '../lib/supabaseClient';
 import { deleteCurrentAccount } from '../services/accountDeletionService';
 import { clearActiveLobby } from '../utils/activeLobbyStorage';
 import { clearRememberedSession } from '../utils/authPersistence';
@@ -152,30 +152,30 @@ export default function LegalScreen({ navigation, route, onClearSession = null }
   const supportButtonLabel = isGerman ? 'Support kontaktieren' : 'Contact support';
   const supportEmailLabel = isGerman ? 'Support E-Mail' : 'Support email';
   const deleteRequestButtonLabel = isGerman
-    ? 'Loeschung per E-Mail anfragen'
+    ? 'Löschung per E-Mail anfragen'
     : 'Request deletion by email';
   const deleteRequestEmailLabel = isGerman
-    ? 'Konto per E-Mail loeschen'
+    ? 'Konto per E-Mail löschen'
     : 'Request account deletion by email';
   const deleteActionLabel = isGerman
-    ? 'Konto dauerhaft loeschen'
+    ? 'Konto dauerhaft löschen'
     : 'Delete account permanently';
   const deleteActionLoadingLabel = isGerman
-    ? 'Konto wird geloescht...'
+    ? 'Konto wird gelöscht...'
     : 'Deleting account...';
   const deleteAvailabilityHint = isGerman
-    ? 'Wenn du angemeldet bist, kannst du dein Konto hier direkt dauerhaft loeschen. Alternativ funktioniert auch die oeffentliche Loeschseite per E-Mail.'
+    ? 'Wenn du angemeldet bist, kannst du dein Konto hier direkt dauerhaft löschen. Alternativ funktioniert auch die öffentliche Löschseite per E-Mail.'
     : 'If you are signed in, you can delete your account here directly. You can also use the public deletion page by email as a fallback.';
   const deleteUnavailableHint = isGerman
-    ? 'Aktuell ist kein Cloud-Konto in dieser Sitzung aktiv. Nutze in diesem Fall die E-Mail-Loeschanfrage.'
+    ? 'Aktuell ist kein Cloud-Konto in dieser Sitzung aktiv. Nutze in diesem Fall die E-Mail-Löschanfrage.'
     : 'There is no cloud account active in this session right now. Use the email deletion request in that case.';
   const deleteConfirmTitle = isGerman
-    ? 'Konto wirklich loeschen?'
+    ? 'Konto wirklich löschen?'
     : 'Delete account now?';
   const deleteConfirmMessage = isGerman
-    ? 'Dein Konto und die zugehoerigen Daten werden dauerhaft geloescht. Dieser Schritt kann nicht rueckgaengig gemacht werden.'
+    ? 'Dein Konto und die zugehörigen Daten werden dauerhaft gelöscht. Dieser Schritt kann nicht rückgängig gemacht werden.'
     : 'Your account and associated data will be deleted permanently. This cannot be undone.';
-  const deleteErrorTitle = isGerman ? 'Loeschung fehlgeschlagen' : 'Deletion failed';
+  const deleteErrorTitle = isGerman ? 'Löschung fehlgeschlagen' : 'Deletion failed';
 
   const mountedRef = useRef(true);
   const [deleteAvailable, setDeleteAvailable] = useState(false);
@@ -202,14 +202,11 @@ export default function LegalScreen({ navigation, route, onClearSession = null }
     async function resolveDeleteAvailability() {
       setDeleteAvailabilityResolved(false);
       try {
-        const { data, error } = await supabase.auth.getUser();
+        const user = await getSessionUser();
         if (!active) {
           return;
         }
-        if (error) {
-          console.warn('Konnte Delete-Account-Status nicht laden:', error.message);
-        }
-        setDeleteAvailable(Boolean(data?.user?.id));
+        setDeleteAvailable(Boolean(user?.id));
       } catch (error) {
         if (active) {
           console.warn('Konnte Delete-Account-Status nicht bestimmen:', error);
@@ -243,18 +240,18 @@ export default function LegalScreen({ navigation, route, onClearSession = null }
 
   const handleDeleteAccountRequest = useCallback(async () => {
     const subject = isGerman
-      ? 'DSAR - Loeschung - <Account-E-Mail>'
+      ? 'DSAR - Löschung - <Account-E-Mail>'
       : 'DSAR - Deletion - <account email>';
     const body = isGerman
       ? [
-          'Bitte loescht mein MedBattle-Konto und die zugehoerigen Daten.',
+          'Bitte löscht mein MedQuiz-Konto und die zugehörigen Daten.',
           '',
           'Account-E-Mail:',
           'Nutzername (optional):',
           'Hinweise (optional):',
         ].join('\n')
       : [
-          'Please delete my MedBattle account and the associated data.',
+          'Please delete my MedQuiz account and the associated data.',
           '',
           'Account email:',
           'Username (optional):',
@@ -320,7 +317,7 @@ export default function LegalScreen({ navigation, route, onClearSession = null }
         formatUserError(error, {
           supabaseUrl: SUPABASE_URL_HINT,
           fallback: isGerman
-            ? 'Das Konto konnte nicht geloescht werden. Bitte versuche es erneut oder nutze die E-Mail-Loeschanfrage.'
+            ? 'Das Konto konnte nicht gelöscht werden. Bitte versuche es erneut oder nutze die E-Mail-Löschanfrage.'
             : 'The account could not be deleted. Please try again or use the email deletion request.',
         })
       );
@@ -345,7 +342,7 @@ export default function LegalScreen({ navigation, route, onClearSession = null }
         style: 'cancel',
       },
       {
-        text: isGerman ? 'Loeschen' : 'Delete',
+        text: isGerman ? 'Löschen' : 'Delete',
         style: 'destructive',
         onPress: () => {
           runDeleteAccount();

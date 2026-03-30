@@ -45,21 +45,46 @@ const styles = StyleSheet.create({
   scrollContentProfile: {
     paddingTop: 18,
   },
+  settingsFooterSpacer: {
+    flexGrow: 1,
+    flexBasis: 220,
+    minHeight: 220,
+  },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 32,
   },
   headerProfile: {
     marginBottom: 20,
   },
+  headerSide: {
+    width: 94,
+    minHeight: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  headerSideLeft: {
+    justifyContent: 'flex-start',
+  },
+  headerSideRight: {
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
   headerTitle: {
     flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
     color: colors.textPrimary,
     fontSize: 30,
     fontFamily: fonts.bold,
     letterSpacing: 1,
+    paddingRight: 12,
+  },
+  headerTitleCentered: {
+    textAlign: 'center',
+    paddingHorizontal: 12,
     paddingRight: 12,
   },
   headerTitleWithBack: {
@@ -76,6 +101,14 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   headerBackButton: {
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surfaceAlt,
+  },
+  headerLeadingButton: {
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surfaceAlt,
+  },
+  headerTrailingButton: {
     borderColor: colors.borderStrong,
     backgroundColor: colors.surfaceAlt,
   },
@@ -131,7 +164,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 24,
   },
-  audioCard: {
+  settingsCard: {
     borderColor: 'rgba(87, 199, 255, 0.35)',
   },
   languageCard: {
@@ -593,6 +626,12 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  friendHeadlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 0,
+    columnGap: 8,
+  },
   friendRowLast: {
     borderBottomWidth: 0,
   },
@@ -601,6 +640,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: fonts.bold,
     letterSpacing: 2,
+    flex: 1,
+    minWidth: 0,
   },
   friendTitleText: {
     color: colors.highlight,
@@ -619,6 +660,36 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginRight: 6,
   },
+  friendOnlineIndicator: {
+    marginRight: 0,
+    flexShrink: 0,
+  },
+  friendStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 1,
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  friendStatusBadgeOnline: {
+    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+    borderColor: 'rgba(34, 197, 94, 0.28)',
+  },
+  friendStatusBadgeOffline: {
+    backgroundColor: 'rgba(148, 163, 184, 0.12)',
+    borderColor: 'rgba(148, 163, 184, 0.24)',
+  },
+  friendStatusBadgeLobby: {
+    backgroundColor: 'rgba(96, 165, 250, 0.12)',
+    borderColor: 'rgba(96, 165, 250, 0.24)',
+  },
+  friendStatusBadgeQuiz: {
+    backgroundColor: 'rgba(251, 191, 36, 0.12)',
+    borderColor: 'rgba(251, 191, 36, 0.24)',
+  },
   friendStatusDotOnline: {
     backgroundColor: colors.success,
   },
@@ -635,6 +706,9 @@ const styles = StyleSheet.create({
     color: colors.accentPink,
     fontSize: 12,
     fontFamily: fonts.medium,
+  },
+  friendStatusBadgeText: {
+    flexShrink: 1,
   },
   friendStatusTextOnline: {
     color: '#9BF2C4',
@@ -793,22 +867,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-    columnGap: 8,
-    rowGap: 4,
-    marginTop: 6,
+    columnGap: 6,
+    rowGap: 2,
+    marginTop: 4,
   },
   legalLink: {
-    paddingHorizontal: 6,
-    paddingVertical: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
   },
   legalLinkText: {
     color: '#9EDCFF',
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: fonts.medium,
   },
   legalDivider: {
     color: colors.textMuted,
-    fontSize: 12,
+    fontSize: 11,
   },
   legalLinkDisabled: {
     opacity: 0.4,
@@ -903,6 +977,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: fonts.medium,
     marginTop: 4,
+  },
+  profileQuickAuthButton: {
+    alignSelf: 'flex-start',
+    minWidth: 132,
+    marginTop: 124,
+    marginBottom: 2,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: radii.md,
+  },
+  profileQuickAuthDangerText: {
+    color: colors.textPrimary,
+    fontFamily: fonts.bold,
   },
   profileLevelProgressBlock: {
     marginTop: 8,
@@ -1164,6 +1251,57 @@ const styles = StyleSheet.create({
     color: colors.highlight,
     fontFamily: fonts.bold,
   },
+  helpContainer: {
+    paddingBottom: 18,
+  },
+  helpScrollContent: {
+    paddingBottom: 24,
+    gap: 16,
+  },
+  helpOptionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  helpOptionButtonLast: {
+    borderBottomWidth: 0,
+  },
+  helpOptionContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  helpOptionIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(87, 199, 255, 0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(87, 199, 255, 0.35)',
+  },
+  helpOptionIconWrapDanger: {
+    backgroundColor: 'rgba(239, 68, 68, 0.14)',
+    borderColor: 'rgba(239, 68, 68, 0.34)',
+  },
+  helpOptionLabel: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontFamily: fonts.bold,
+  },
+  helpOptionLabelDanger: {
+    color: '#FFD5DB',
+  },
+  helpResetBlock: {
+    paddingTop: 4,
+    paddingBottom: 16,
+  },
   flameBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1281,9 +1419,16 @@ const styles = StyleSheet.create({
     marginBottom: 0,
     gap: 6,
   },
-  fixedFooter: {
+  footerStack: {
+    marginTop: 0,
     paddingTop: 8,
     paddingBottom: 16,
+  },
+  footerPrimary: {
+    marginTop: 0,
+  },
+  footerSecondary: {
+    marginTop: 240,
     gap: 8,
   },
 });

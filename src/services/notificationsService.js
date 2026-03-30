@@ -104,7 +104,7 @@ const isEnergyFullNow = async () => {
         const parsed = JSON.parse(userStatsRaw);
         energyCapBonus = parseNonNegativeInt(parsed?.energyCapBonus, 0);
       } catch (err) {
-        console.warn('Konnte User-Stats fÃ¼r Notification-Check nicht parsen:', err);
+        console.warn('Konnte User-Stats für Notification-Check nicht parsen:', err);
       }
     }
 
@@ -112,7 +112,7 @@ const isEnergyFullNow = async () => {
     const recalc = recalcEnergy(energyValue, timestamp, maxEnergy);
     return recalc.energy >= maxEnergy;
   } catch (err) {
-    console.warn('Konnte Energie-Status fÃ¼r Notification-Check nicht laden:', err);
+    console.warn('Konnte Energie-Status für Notification-Check nicht laden:', err);
     return true;
   }
 };

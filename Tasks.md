@@ -1,37 +1,54 @@
-﻿# TASKS.md - MedBattle Aufgabenliste
+# TASKS.md - MedQuiz Aufgabenliste
+
+## Aktueller Stand (2026-03-24)
+- Verteilung laeuft aktuell ueber Google Play Closed testing.
+- Neuester hochgeladener Store-Build: `versionCode 31` (`1.0.1`), Upload am `2026-03-17`.
+- Neuester lokal gebauter Store-Build: `versionCode 39` (`1.0.1`), erstellt am `2026-03-24`.
+- Das aktuelle lokale Store-AAB `39` wurde frisch aus dem aktuellen Repo-Stand gebaut; fuer einen echten Store-Install auf Emulator oder Realgeraet muss dieser Build jetzt in Google Play hochgeladen und ausgerollt werden.
+- Das angeschlossene Realgeraet `c2ccd135` zeigt derzeit `versionCode 35` / `versionName 1.0.1`, aber auch dieser installierte APK-Stand liegt hinter den juengsten UI-Aenderungen im Repo.
+- Build `31` ist in Play derzeit noch inaktiv, bis Review und Rollout im Closed-Test-Track abgeschlossen sind.
+- Solange `31` inaktiv bleibt, sehen Tester weiter den zuletzt aktiven Closed-Test-Build.
+- Repo-Stand nach dem Upload:
+  - OAuth-/Deep-Link-Session-Recovery gehaertet, damit bestehende Google-Accounts nach Neuinstallation nicht mehr mit einem falschen Supabase-Timeout aus dem Login fallen.
+  - OAuth-Callback-Verarbeitung dedupliziert, damit Google-Redirect und globaler Deep-Link-Listener nicht parallel `setSession`/`exchangeCodeForSession` auf dieselbe URL feuern.
+  - Rewarded Ads koennen in Closed Tests weiter mit Google-Test-IDs laufen.
+  - Android-Repo ist fuer `armeabi-v7a`, `arm64-v8a` und wieder `x86_64` gebaut; der aktuelle lokale Store-Build `39` ist erstellt, Upload und echter Store-Smoke aber noch offen.
 
 ## Offen
-- Release-Readiness: Play Store-Assets/Content-Rating/Data-Safety, OAuth + Gameplay Smoke-Tests, Device-Smoke-Test mit aktuellem Production-Build, Google Service Account Key fuer Play-Submit in EAS.
+- Aktuellen Store-Build `39` in Google Play hochladen bzw. ausrollen und danach den echten Store-Build auf Emulator und Realgeraet testen.
+- Play Console finalisieren: Content Rating, Data Safety und spaeter produktiven Submit-Flow.
+- End-to-end Smoke offen: echter OAuth-Roundtrip, Offline-Sync, Multiplayer, Rewarded Ad, Premium-/IAP-Flow.
+- Google Service Account Key fuer Play-Submit in EAS hinterlegen.
 
 ## Release-Checklist
 - [x] Play Store: Store-Assets vorbereitet (siehe `STORE_ASSETS.md`, Stand 2026-03-11).
-- [ ] Play Store: Content Rating ausfÃ¼llen.
+- [ ] Play Store: Content Rating ausfÃƒÂ¼llen.
 - [ ] Play Store: Data Safety final eintragen und mit `PLAY_DATA_SAFETY_DRAFT.md` abgleichen.
 - [x] Play Data Safety: Code-Abgleich zur Draft-Vorlage abgeschlossen (Avatar-Foto optional, Ads non-personalized, IAP + redigiertes `client_logs` Logging) am 2026-03-09.
 - [x] Play Store: Privacy Policy/AGB + Support-Links hinterlegt (siehe STORE_LISTING.md).
 - [x] Play Store: In-App-Kontoloeschung + oeffentliche Delete-Account-URL bereitgestellt (App + Web + Supabase Functions) am 2026-03-11.
 - [x] App/Web: Datenschutz/AGB + Support-Link per ENV verdrahtet.
-- [x] Versionen: App-Version + Build-Nummern fÃ¼r Android gesetzt.
+- [x] Versionen: App-Version + Build-Nummern fÃƒÂ¼r Android gesetzt.
 - [x] Android: Security-Hardening gesetzt (Manifest: `allowBackup=false`, `usesCleartextTraffic=false`; riskante Permissions entfernt/blocked).
 - [ ] Supabase Auth: OAuth Redirects + Deep Links getestet (Google/Discord/E-Mail; nativer Standalone-Callback `medbattle://auth/callback` auf Production-Build 26 am 2026-03-10 technisch verifiziert, echter Provider-/Mail-Roundtrip weiterhin offen).
 - [x] App: Deep-Link Schemes konfiguriert (app.json + AndroidManifest).
 - [x] App: OAuth-Redirect-Config vorhanden (authConfig + authOAuth).
 - [x] App: Email Confirm/Reset/Update Redirects auf Deep Links gesetzt.
-- [x] App: Passwort-Reset Flow fÃ¼r Deep Link integriert.
-- [x] Supabase RLS: Policies fÃ¼r alle Tabellen/Buckets geprÃ¼ft (kein Service-Role-Key in App).
-- [x] App: Scan fÃ¼r Service-Role-Key (keiner gefunden; nur SQL Grants in Migrations).
-- [x] Supabase SQL: RLS fÃ¼r alle Tabellen in `supabase/*.sql` aktiv (keine Buckets im Repo).
-- [x] Supabase SQL: Policies fÃ¼r alle Tabellen vorhanden (static check).
+- [x] App: Passwort-Reset Flow fÃƒÂ¼r Deep Link integriert.
+- [x] Supabase RLS: Policies fÃƒÂ¼r alle Tabellen/Buckets geprÃƒÂ¼ft (kein Service-Role-Key in App).
+- [x] App: Scan fÃƒÂ¼r Service-Role-Key (keiner gefunden; nur SQL Grants in Migrations).
+- [x] Supabase SQL: RLS fÃƒÂ¼r alle Tabellen in `supabase/*.sql` aktiv (keine Buckets im Repo).
+- [x] Supabase SQL: Policies fÃƒÂ¼r alle Tabellen vorhanden (static check).
 - [x] App: Supabase Storage-Nutzung dokumentiert (`avatars`-Bucket fuer optionale Profilfotos); keine weiteren Buckets referenziert (static check).
 - [x] Supabase Security: keine kritischen Findings im CLI-Inspect/Security-Check (2026-03-08; verbleibend nur ungenutzte Indexe + "never vacuumed"; HIBP nur Pro-Plan).
 - [x] Supabase DB Lint: `supabase db lint --linked` ohne Error-Findings (2026-03-08 nach Migration-Push: nur Warnings in `generate_join_code`).
 - [x] Supabase Performance: DB-Statistiken/Index-Nutzung geprueft (`inspect db-stats`, `inspect index-stats`), notwendige Indexe vorhanden.
-- [x] Supabase SQL: Indexe fÃ¼r Kern-Tabellen vorhanden (static check).
+- [x] Supabase SQL: Indexe fÃƒÂ¼r Kern-Tabellen vorhanden (static check).
 - [x] Supabase DB: SSL enforced + Backup-Status geprueft (CLI).
 - [x] Supabase DB: DB-Passwort rotiert (2026-03-10; per Management API erneuert, lokal sicher im Windows Credential Manager abgelegt, Pooler-Login via `psql`/Docker verifiziert).
 - [ ] Offline: Login-Recall, Offline-Quick-Play, Online-Sync getestet (teilweise via adb; Cold-Start Session-Recall auf Production-Build 26 am 2026-03-10 verifiziert, Details in RELEASE_TESTS.md).
 - [ ] Multiplayer: Create/Join/Resume/Abbruch getestet (teilweise via adb; Details in RELEASE_TESTS.md).
-- [ ] Purchases/Ads: Energie-Flow, Rewarded Ad, Premium-Flow getestet.
+- [ ] Purchases/Ads: Energie-Flow, Rewarded Ad, Premium-Flow im Closed-Test-Store-Build getestet (Test-Ad-Override fuer Closed Tests ist im Code vorhanden).
 - [x] Telemetry: Externer Provider entfernt; Crash-Logging laeuft ueber `client_logs` (kein DSN/Alert-Setup erforderlich).
 - [x] App: Externes Telemetry-Setup entfernt (`sentry-expo` Plugin/Dependency entfernt).
 - [x] App: Client-Error-Logging redigiert sensible Inhalte (E-Mail, Token, Session, API Keys) vor Persistenz.
@@ -39,13 +56,91 @@
 - [x] Datenschutz: DSAR-Prozess (Auskunft/Loeschung/Berichtigung) inkl. SLA und operativem Ablauf dokumentiert (`DSAR_PROCESS.md`).
 - [x] Ads/Consent: EWR-Consent-Nachweis im Privacy-Text + Code-Stand konsistent dokumentiert (Rewarded Ads non-personalized).
 - [x] Security: Dependency-Vulnerability-Check fuer produktive Dependencies dokumentiert (2026-03-08: `npm audit --omit=dev` => 0 high / 0 moderate / 0 critical).
-- [ ] Release-Build: EAS Store Build + Device-Smoke-Test (Build `7cd7ea48-fde1-4a21-867f-78a43e8b1eef` gebaut, versionCode 26, `FINISHED` am 2026-03-08; Emulator-Teilsmoke am 2026-03-10 dokumentiert, Realgeraet-Smoke + EAS Submit weiterhin offen).
+- [ ] Release-Build: Store-AAB `39` in Google Play hochladen/aktivieren und genau diesen Stand danach auf Emulator und Realgeraet smoke-testen.
 - [x] QA: Manuelle Release-Checkliste dokumentiert (`RELEASE_TESTS.md`).
 
 ## In Arbeit
-- Device-Smoke-Test fuer Android Production-Build `7cd7ea48-fde1-4a21-867f-78a43e8b1eef` (AAB, versionCode 26) auf Realgeraet ausstehend; Emulator-Teilsmoke am 2026-03-10 in `RELEASE_TESTS.md` dokumentiert.
+- Store-Build `39` in Google Play hochladen bzw. aktivieren; danach Auth-, Quiz-, Ads- und Multiplayer-Smoke direkt gegen den echten Store-Stand auf Emulator und Realgeraet dokumentieren.
 
 ## Erledigt
+- [x] Ads-SDK auf aktuellen Android-Stand angehoben (2026-03-30): `react-native-google-mobile-ads` auf `16.3.1` aktualisiert; zusaetzlich nutzt Android per Override jetzt Googles aktuelles `play-services-ads:25.1.0` statt des Paket-Defaults, damit der Rewarded-Ad-Stack auf dem neuesten Stand bleibt.
+- [x] Recharge-Screen visuell geschaerft + Shop-Energie-CTA vereinheitlicht (2026-03-30): Energie-Kaufkarten im Shop zeigen jetzt wieder `Kaufen`/`Buy` statt `Aufladen`/`Charge`; der bestehende Fullscreen-Recharge-Screen bekam nur ein Style-Refresh mit staerkerem Hero-Panel, aufgewertetem Timer und klareren Action-Buttons, ohne neue Inhalte oder neue Aktionen hinzuzufuegen.
+- [x] Energie-Erfolgshinweis auf Header-Animation umgestellt (2026-03-26): der Charge-Screen zeigt nach erfolgreichem Aufladen keine `+Energie`-Textmeldung mehr; stattdessen pulst die Energieanzeige im Home-Header mit Glow und schwebendem `+N`.
+- [x] Home-Energiebadge oeffnet Recharge + Countdown im Modal (2026-03-26): bei leerer Energie ist die Anzeige oben im Home-Header jetzt tappbar und oeffnet denselben Recharge-Screen; der Modal zeigt zusaetzlich einen Live-Countdown bis zur naechsten automatischen Energie und refresht den Energie-Stand beim Ablauf direkt nach.
+- [x] Recharge-Modal als echter Fullscreen-Overlay vereinheitlicht (2026-03-26): der Energie-Screen nutzt jetzt einen nativen Fullscreen-Modal statt nur eines In-Screen-Overlays; dadurch verschwindet die untere Tab-Bar sauber und der Coin-Badge oben rechts ist identisch zum Home-Header.
+- [x] Rewarded-Ad-Trigger im Energie-Screen gefixt (2026-03-26): der Recharge-Flow nutzt fuer Rewarded Ads jetzt den korrekten `RewardedAdEventType.LOADED`-Listener statt des falschen allgemeinen `LOADED`-Events; zusaetzlich faengt der Setup-Pfad synchrone Ad-Fehler sauber ab, damit der Button nicht mehr endlos auf `Werbung laedt...` haengen bleibt.
+- [x] Android-AdMob-Manifest vervollstaendigt (2026-03-26): zusaetzlich zur vorhandenen App-ID-Meta-Data ist jetzt auch die `AD_ID`-Permission im Android-Manifest eingetragen.
+- [x] Energie-Wortwahl aufgeladen/charge vereinheitlicht (2026-03-26): Energie-CTAs nutzen jetzt im Shop `Aufladen` statt `Kaufen`; englische Energy-Texte laufen dafuer auf `Charge`.
+- [x] Energie-Guard fuer Home und Result vereinheitlicht (2026-03-26): der leere-Energie-Screen ist jetzt sprachabhaengig lokalisiert, zeigt Coins oben, kauft `+1 Energie` fuer `15 Coins`, bietet Rewarded Ad weiter an und oeffnet sich nun auch bei `Naechstes Quiz` im Result-Screen statt den Flow nur zu blockieren.
+- [x] Result-Top-GIFs reduziert (2026-03-26): die oberen Score-GIFs fuer normale und perfekte Runden sind entfernt; nur das `0/6`-Blitz-Overlay bleibt im Result-Screen sichtbar.
+- [x] Settings-Header Titel auf eine Zeile fixiert (2026-03-26): der Settings-Titel bricht jetzt auch bei engem Header-Platz nicht mehr um, sondern skaliert innerhalb einer Zeile.
+- [x] Result-Layout + Ranking-Balance geschaerft (2026-03-26): die Mid-Score-Animation verschiebt den Result-Titel nicht mehr nach unten; gute Quiz-Runden geben fuer neue Score-Submits jetzt deutlich mehr Leaderboard-Punkte als schwache Runs.
+- [x] Result-Screen Reward-Format geschaerft (2026-03-26): Coins- und XP-Gewinn zeigen nach dem Quiz jetzt ein fuehrendes `+`, damit Belohnungen sofort als Zuwachs lesbar sind.
+- [x] Settings-Header Hilfe-Icon nach rechts oben verschoben (2026-03-26): das Fragezeichen nutzt jetzt den rechten Header-Action-Slot statt links, waehrend der Titel im Settings-Header zentriert bleibt.
+- [x] Auth/Repo-Cleanup: repo-fremden Ordner `bewerbungs-automation` entfernt und Google-OAuth-Login gegen den Active-Session-Race gehaertet (2026-03-26). Zusaetzlich fuehrt ein fehlender lokaler Active-Session-Token nicht mehr sofort zu einem Fremdgeraet-Logout.
+- [x] Multiplayer-Lobby-/Match-Sync gegen haengende Joiner gehaertet (2026-03-24): `subscribeToMatch` zieht nach erfolgreichem Realtime-Subscribe sofort einen frischen Match-Snapshot, damit langsame Joiner verpasste Start-/Finish-Updates nachladen. Zusaetzlich verifiziert die Lobby wartende Matches kurz getaktet bis zum Start, `useMultiplayerMatch` zieht aktive/incomplete Matches im Hintergrund nach, und ein progressiver Match-State-Guard verhindert, dass ein schon gesehenes `active`-/`completed`-Match durch ein spaeter eintreffendes aelteres `waiting`-Snapshot wieder zurueckfaellt. Abschliessend werden fertige/cancelled Multiplayer-Matches nicht mehr als aktive Lobby mitgenommen oder per Result-CTA wieder in eine beendete Lobby geoeffnet. Damit sollen Quiz-Start, Ergebnis-Waiting und das saubere Schliessen der Lobby nicht mehr auf einem stale Waiting-State haengen bleiben. `npx tsc --noEmit` clean.
+- [x] Fragequalitaet gegen "laengste Antwort = richtig" geschaerft (2026-03-24): neue Supabase-Migration `20260324080000_rebalance_easy_question_option_lengths.sql` live; 19 leichte Online-Fragen in DE/EN sprachlich praezisiert und in den Antwortlaengen neu ausbalanciert. Zusaetzlich priorisiert `quizService` jetzt bei der Frageauswahl zuerst frische, weniger offensichtlich laengenverzerrte Fragen, wenn Alternativen vorhanden sind. Mit dem neuen Audit-Skript `tools/question-quality-audit.js` liegt der Live-Pool nach dem Fix bei `246/881 = 27.92%` eindeutigen "korrekte Antwort ist die laengste" Faellen statt zuvor `263/881 = 29.85%`; der einfache Grundlagenblock liegt nur noch bei `2/80 = 2.5%`.
+- [x] Settings auf schlanken Hilfeflow umgebaut (2026-03-24): Im Settings-Tab bleiben nur noch Push-Benachrichtigungen, Freundesanfragen und Sign-out am unteren Bildschirmrand; links im Header sitzt jetzt ein kleines Fragezeichen, das in einen neuen Help-Screen mit `Passwort vergessen`, `Datenschutz`, `AGB`, `Support` und `Konto loeschen` fuehrt, `npx tsc --noEmit` clean.
+- [x] Leaderboard-Titel fuer den eigenen Eintrag sofort lokal synchronisiert (2026-03-24): `LeaderboardScreen` zieht die frischen Profil-XP des aktuellen Nutzers direkt in den eigenen Ranglisten-Eintrag und gibt `FlatList` die relevanten lokalen Profilwerte als `extraData`, damit Titel-/Avatar-Aenderungen nicht mehr an einem stale Listenrender haengen, `npx tsc --noEmit` clean.
+- [x] Markdown-Dokus auf aktuellen Repo- und Release-Stand gezogen (2026-03-24): `README`, `RELEASE_COMPLIANCE`, `RELEASE_TESTS`, `PLAY_SUBMIT_STEPS`, `PLAY_CONSOLE_RELEASE_GUIDE` und `SUPABASE_SCHEMA` auf `versionCode 39`, aktuelle Store-/Supabase-Realitaet und entfernte Alt-Flows wie `Change email` abgeglichen.
+- [x] Lokaler Android AAB-Rebuild fuer den naechsten Store-Upload erstellt (`versionCode 39`, `android/app/build/outputs/bundle/release/app-release.aab`) am 2026-03-24.
+- [x] E-Mail-Aendern aus dem Profilbereich entfernt (2026-03-24): das `Change email`-/`E-Mail aendern`-Formular wird im Profil nicht mehr gerendert; der Profilscreen reicht die betreffenden Props nicht mehr in die Profilsektion durch, `npx tsc --noEmit` clean.
+- [x] Leaderboard-Titel auf denselben Nutzerstand wie das Profil gezogen (2026-03-24): Der eigene Ranglisten-Eintrag nutzt jetzt lokale/frische XP aus den Stats statt nur den potenziell aelteren Serverwert; die Titelanzeige im Leaderboard laeuft zudem ueber dieselbe Uebersetzungslogik wie im Profil, `npx tsc --noEmit` clean.
+- [x] Level-Kurve frueher und progressiv gemacht + Profil-Logout aus dem Profilkopf entfernt (2026-03-24): Level 2 startet jetzt schon bei `240 XP` und weitere Level brauchen danach schrittweise mehr XP; Titelstufen bleiben separat erhalten, der Profil-Fortschrittsbalken zeigt echten Level-Fortschritt und der Sign-out-/Sign-in-Button ist aus dem Profilblock entfernt, `npx tsc --noEmit` clean.
+- [x] Leaderboard-Empty-State gegen falsche Leere gehaertet (2026-03-24): `fetchLeaderboard` verschluckt RPC-Fehler nicht mehr still als leeres Array, prueft einen Tabellen-Fallback und zeigt bei echtem Ladeproblem im Screen einen Fehlerzustand statt `Noch keine Eintraege vorhanden.`, `npx tsc --noEmit` clean.
+- [x] Lokaler Android AAB-Rebuild fuer den naechsten Store-Upload erstellt (`versionCode 38`, `android/app/build/outputs/bundle/release/app-release.aab`) am 2026-03-24.
+- [x] Einfacheren Online-Grundlagenpack ausgerollt (2026-03-24): neue Supabase-Migration `20260324043000_add_easier_online_foundation_pack.sql` remote gepusht; 20 bewusst leichtere DE/EN-Onlinefragen mit klaren Erklaerungen live, je 2 neue Fragen fuer alle 10 Kategorien (`online-einfach-grundlagen-*`), `npx tsc --noEmit` clean.
+- [x] Zweiten einfachen Online-Grundlagenpack ausgerollt (2026-03-24): neue Supabase-Migration `20260324050000_add_more_easier_online_foundation_pack.sql` remote gepusht; weitere 20 bewusst leichtere DE/EN-Onlinefragen mit klaren Erklaerungen live, erneut je 2 neue Fragen fuer alle 10 Kategorien (`online-einfach-grundlagen-plus-*`), Gesamtpool jetzt 841 Fragen, `npx tsc --noEmit` clean.
+- [x] Dritten einfachen Online-Grundlagenpack ausgerollt (2026-03-24): neue Supabase-Migration `20260324060000_add_more_easier_online_foundation_pack_3.sql` remote gepusht; weitere 20 bewusst leichtere DE/EN-Onlinefragen mit klaren Erklaerungen live, erneut je 2 neue Fragen fuer alle 10 Kategorien (`online-einfach-grundlagen-extra-*`), Gesamtpool jetzt 861 Fragen, `npx tsc --noEmit` clean.
+- [x] Vierten einfachen Online-Grundlagenpack ausgerollt (2026-03-24): neue Supabase-Migration `20260324070000_add_more_easier_online_foundation_pack_4.sql` remote gepusht; weitere 20 bewusst leichtere DE/EN-Onlinefragen mit klaren Erklaerungen live, erneut je 2 neue Fragen fuer alle 10 Kategorien (`online-einfach-grundlagen-basis-*`), Gesamtpool jetzt 881 Fragen, `npx tsc --noEmit` clean.
+- [x] Weitere Online-Fragen fuer die kleineren Pools ausgerollt (2026-03-24): neue Supabase-Migration `20260324033000_expand_more_lowest_online_pools.sql` remote gepusht; 25 weitere praezise DE/EN-Onlinefragen mit Erklaerungen fuer Chirurgie, Genetik, Immunologie, Pharmakologie und Physiologie live, Gesamtpool jetzt 801 Fragen.
+- [x] Android-ABI-Fix + frischer Store-Build `36` (2026-03-24): `x86_64` in `android/gradle.properties` wieder aktiviert, Debug-Build startet auf `emulator-5554` ohne `libreactnative.so`/DSO-Crash, neues Release-AAB `android/app/build/outputs/bundle/release/app-release.aab` mit `versionCode 36` lokal gebaut.
+- [x] Single-Session-Login pro Account durchgesetzt (2026-03-24): neue Supabase-Migration `20260324023000_enforce_single_active_app_session.sql` live; Login-Flows claimen jetzt eine aktive Geraete-Session, Resume/Cold-Start/Intervall pruefen auf Uebernahme durch ein anderes Geraet und melden das verdraengte Geraet lokal ab, `supabase db push --linked` erfolgreich und `npx tsc --noEmit` clean.
+- [x] Repo-Markdown auf aktuellen Stand gezogen (2026-03-24): `README`, `PLANNING`, `STORE_LISTING`, `SUPABASE_SCHEMA`, `PLAY_SUBMIT_STEPS` und `PLAY_CONSOLE_RELEASE_GUIDE` auf aktuellen Stack-, Release- und Store-Status ueberarbeitet.
+- [x] Profil-Logout deutlich tiefer gesetzt (2026-03-24): der Sign-out-/Sign-in-Button im Profilkopf sitzt jetzt mit groesserem vertikalem Abstand sichtbar weiter unten, `npx tsc --noEmit` clean.
+- [x] Result-Overlay vereinheitlicht (2026-03-24): jeder Score-Screen zeigt jetzt denselben Header mit `MedQuiz abgeschlossen`; darunter steht immer ein passender Untertitel, auch fuer mittlere Scores, 0er-Runden und Multiplayer-Waiting/Win/Loss, `npx tsc --noEmit` clean.
+- [x] Leaderboard auf kumulative Gesamtpunkte umgestellt (2026-03-24): neue Supabase-Migration `20260324013000_make_leaderboard_points_cumulative.sql` live; `submit_score` erhoeht jetzt persistierte Nutzer-Gesamtpunkte, `get_leaderboard` und `fetch_public_profile` ranken nach dieser Summe statt nach dem besten Einzelrun, `supabase db push --linked` erfolgreich und `npx tsc --noEmit` clean.
+- [x] Leaderboard-Aktualisierung nach Quiz geschaerft (2026-03-24): Score-Submits und Offline-Flushes invalidieren jetzt den Ranglisten-Cache sofort; Leaderboard- und Profil-Rang laden bei Screen-Fokus neu statt nur beim ersten Mount, damit neue Punkte nach einem Quiz sichtbar schneller auftauchen, `npx tsc --noEmit` clean.
+- [x] Frage-Erklaerungen global nachgeschaerft (2026-03-24): generische Alt-Erklaerungen im Onlinepool per Supabase-Migration `20260324001500_strengthen_generic_question_explanations.sql` ersetzt; `170` schwache Standardschablonen auf `0` reduziert und der App-Fallback in `quizService.js` so gehaertet, dass fehlende Erklaerungen nicht mehr nur die richtige Antwort wiederholen, `npx tsc --noEmit` clean.
+- [x] Weitere praezise Online-Fragen mit starken Erklaerungen ausgerollt (2026-03-23): neue Supabase-Migration `20260323235930_expand_more_precise_explained_online_pools.sql` remote gepusht; 50 weitere DE/EN-Onlinefragen fuer Anatomie, Biochemie, Mikrobiologie, Pathologie und Radiologie live, Gesamtpool jetzt 776 Fragen.
+- [x] Weitere erklaerte Online-Fragen fuer duenne Kernkategorien ausgerollt (2026-03-23): neue Supabase-Migration `20260323235800_expand_more_explained_online_pools_2.sql` remote gepusht; 50 weitere praezise DE/EN-Onlinefragen fuer Genetik, Immunologie, Physiologie, Pharmakologie und Chirurgie live, Gesamtpool jetzt 726 Fragen.
+- [x] Online-Fragenpool mit staerkeren Erklaerungen weiter vergroessert (2026-03-23): neue Supabase-Migration `20260323235000_expand_explained_online_pools.sql` vorbereitet und remote ausgerollt; 50 weitere praezise DE/EN-Onlinefragen fuer Anatomie, Biochemie, Mikrobiologie, Pathologie und Radiologie live, Gesamtpool jetzt 676 Fragen.
+- [x] Quick-Play-Result-CTA vereinfacht (2026-03-23): im Score-Screen zeigt der Button jetzt nur noch `Naechstes Quiz` ohne Energie-Meta-Anzeige; Quick-Play-Lock bei leerer Energie bleibt intern erhalten, `npx tsc --noEmit` clean.
+- [x] Direkt-Logout im Profilkopf (2026-03-23): Sign out/Sign in ist jetzt direkt im Profilbereich beim Avatar erreichbar und nutzt denselben bestehenden Auth-Handler; Settings-Footer bleibt als Fallback erhalten, `npx tsc --noEmit` clean.
+- [x] Quiz-/Result-i18n gefixt (2026-03-23): fehlender Locale-Key fuer `Ergebnis wird vorbereitet ...` in DE/EN ergaenzt; Result-, Lobby- und Leaderboard-Profile uebergeben Sprachlabels jetzt uebersetzt statt hart auf Deutsch; Quiz-/Result-Bereich ohne fehlende i18n-Keys, `npx tsc --noEmit` clean.
+- [x] Online-Fragenpool weiter vergroessert (2026-03-23): zwei weitere Supabase-Migrationen (`20260323223000`, `20260323224500`) remote ausgerollt; 50 neue praezise DE/EN-Onlinefragen fuer Genetik, Chirurgie, Pathologie, Immunologie und Pharmakologie live, Gesamtpool jetzt 626 Fragen.
+- [x] Performance-Quick-Wins umgesetzt (2026-03-23): Supabase-Requests haben jetzt Timeout-Profile, zentrale In-Flight-Deduplizierung und ein Request-basiertes Online-Health-Signal; Quiz-Load vermeidet doppelte Options-Shuffles und wiederholte AsyncStorage-Hot-Reads; Home/Quiz/Result nutzen selektivere Preferences-Hooks; Lobby-/Result-Waiting pollen nur noch als Realtime-Fallback, `npx tsc --noEmit` clean.
+- [x] Weitere Online-Kategoriepools vertieft (2026-03-23): neue Supabase-Migration fuer Immunologie, Pharmakologie, Mikrobiologie, Biochemie und Radiologie remote ausgerollt; 60 weitere praezise DE/EN-Onlinefragen live, Gesamtpool jetzt 576 Fragen.
+- [x] Fragenpfad beschleunigt + kleinste Online-Kategoriepools erweitert (2026-03-23): `get_questions` auf indexierte `random_weight`-Selektion umgestellt, App dedupliziert parallele Fragen-Requests und cached kuerzlich gespielte IDs im Speicher; zusaetzlich 48 neue praezise DE/EN-Onlinefragen fuer Biochemie, Genetik, Radiologie und Chirurgie remote ausgerollt, `npx tsc --noEmit` weiterhin clean.
+- [x] Weitere Online-Kategoriepools ausgebaut (2026-03-23): dritte breite Supabase-Inhaltswelle fuer Biochemie, Genetik, Radiologie, Chirurgie, Mikrobiologie und Pathologie remote ausgerollt; 60 neue praezise DE/EN-Fragen live, `npx tsc --noEmit` weiterhin clean.
+- [x] Immunologie-Onlinepool vertieft (2026-03-23): dritte Supabase-Inhaltswelle nur fuer Immunologie remote ausgerollt; 20 neue praezise DE/EN-Fragen live, `Immunologie` damit auf 43 Onlinefragen, `npx tsc --noEmit` weiterhin clean.
+- [x] Offline-Fragenbank geschaerft (2026-03-23): alle 10 App-Kategorien haben jetzt mindestens 10 praezise DE/EN-Offlinefragen; Offline-Kategorien fuellen nicht mehr mit Fremdkategorien auf.
+- [x] Online-Fragenpool erweitert (2026-03-23): neue Supabase-Migration fuer den praezisen DE/EN-Kategorie-Pack angelegt; Quiz-Service zieht groessere Fragepools und meidet kuerzlich gespielte IDs besser.
+- [x] Duenne Online-Kategorien ausgebaut + Typecheck gefixt (2026-03-23): zweite Supabase-Inhaltswelle fuer Biochemie, Immunologie, Genetik, Radiologie und Chirurgie remote ausgerollt; `npx tsc --noEmit` wieder clean.
+- [x] Lokaler Android AAB-Rebuild fuer den naechsten Store-Upload erstellt (`versionCode 35`, `android/app/build/outputs/bundle/release/app-release.aab`) am 2026-03-23.
+- [x] i18n auf Framework umgestellt (2026-03-22): `i18next` + `react-i18next` + `expo-localization` initialisiert, App folgt damit sauber der Systemsprache statt eines eigenen String-Adapters.
+- [x] i18n-Cleanup (2026-03-22): alter `translations.js`-Zwischenschritt entfernt; Sprachressourcen haengen jetzt direkt an der zentralen `i18next`-Initialisierung.
+- [x] Realgeraet-Update lokales Release-APK (2026-03-22): aktuelles Release `versionCode 33` per `adb install -r` auf `c2ccd135` aktualisiert.
+- [x] Audio/Vibration-Cleanup (2026-03-22): ungenutzte Sound-/Vibrations-Preferences, Settings-UI und alte Uebersetzungskeys entfernt; Settings behalten nur noch Push und Freundesanfragen.
+- [x] Lokaler Android AAB-Rebuild fuer den naechsten Store-Upload erstellt (`versionCode 32`, `android/app/build/outputs/bundle/release/app-release.aab`) am 2026-03-19.
+- [x] Lokaler Android AAB-Rebuild fuer Store-Upload erstellt (`versionCode 31`, `android/app/build/outputs/bundle/release/app-release.aab`) und am 2026-03-17 in Google Play Closed testing hochgeladen.
+- [x] Auth-Callback-Haertung (2026-03-17): OAuth-/Deep-Link-Flow wartet nach `setSession`-/Exchange-Timeout auf eine spaet ankommende Supabase-Session, statt bestehende Nutzer nach Neuinstallation falsch in den Fehlerpfad zu schicken.
+- [x] Auth-Callback-Deduplizierung (2026-03-19): dieselbe OAuth-Redirect-URL wird pro App-Lauf nur einmal verarbeitet, damit Google-Login und globaler Link-Listener nicht konkurrierend dieselbe Session setzen.
+- [x] Rewarded Ads in Closed Tests (2026-03-17): Test-Ad-IDs koennen jetzt auch in Release-/Closed-Test-Builds per `EXPO_PUBLIC_ADMOB_USE_TEST_IDS=true` erzwungen werden.
+- [x] Home Energie-Dialog reduziert (2026-03-17): leerer Energie-Dialog zeigt nur noch `0` + Blitz, Coin-Kauf, `Werbung +5` und `Spaeter`.
+- [x] Legacy-Fragenpool weiter geschaerft: weitere Altfragen praezisiert und alte EN-Uebersetzungen mit kaputten Begriffen bzw. falschen Antworten korrigiert (`20260314234500`, 2026-03-14).
+- [x] Legacy-Fragenpool geschaerft: aeltere Kernfragen (`leicht-*` sowie ausgewaehlte Herz/Lunge/Neuro/Haema/Oph-Slugs) praezisiert und generische Erklaerungen durch fachlich konkrete Begruendungen ersetzt (`20260314233000`, 2026-03-14).
+- [x] Supabase DB: Fragen-/Schema-Migrationen (`20260314162000`, `20260314163000`, `20260314180000`, `20260314190000`, `20260314210000`, `20260314213000`, `20260314220000`) remote gepusht; aktuelles Remote-Schema/Funktionsset laeuft ohne das alte Feld (2026-03-14).
+- [x] Fragewortlaut geschaerft: kuratierte Fragenstems und Antwortoptionen in drei Wellen (`20260314223000`, `20260314224500`, `20260314230000`) konkretisiert und remote ausgerollt (2026-03-14).
+- [x] Legacy-Auswahlstufen vollstaendig aus der App-Runtime entfernt: Quiz-/Lobby-APIs, Offline-Seeds, Typen und aktuelle Schema-Dateien laufen ohne dieses Feld (2026-03-14).
+- [x] Fragenbestand erweitert: vier kuratierte Fragenpakete (`20260314163000`, `20260314180000`, `20260314190000`, `20260314220000`) mit insgesamt 79 neuen DE/EN-Medizinfragen samt verknuepften Erklaerungen im Repo und Remote hinterlegt (2026-03-14).
+- [x] Supabase DB: offene Migrationen (`20260311123000`, `20260311143000`, `20260311160000`, `20260314110000`) remote gepusht, nachdem das verknuepfte DB-Passwort lokal aktualisiert wurde (2026-03-14).
+- [x] Android Release: R8-Minify/Obfuscation und Resource-Shrinking fuer Release-Builds aktiviert; lokales `assembleRelease` mit aktivem R8/Shrinker erfolgreich (2026-03-14).
+- [x] Gameplay: alte Auswahlstufen aus Quiz-/Kategorie-/Multiplayer-Flow entfernt; Fragen, Rewards und Streaks werden einheitlich behandelt, Supabase-Migration dafuer im Repo angelegt (2026-03-14).
+- [x] Realgeraet-Retest lokales Release-APK (2026-03-13): `app-release.apk` auf `c2ccd135` installiert; Cold Start, Quick Play `1/6 -> Result`, `Naechstes Quiz`, `Fertig`, Exit-Confirm, Deep-Link Cold Starts und Offline-Launch + `Online gehen` CTA erfolgreich.
+- [x] Quick-Play-Haertung (2026-03-13): Timer-/Answer-Lifecycle gegen stale Callbacks abgesichert, Solo-Fragensatz pro Run eingefroren und Quiz/Result-Navigation auf frische Routen (`push`/`replace`) umgestellt; `npx tsc --noEmit` danach clean.
+- [x] Lokaler Android Release-Build (2026-03-13): `android/gradlew assembleRelease` erfolgreich, neues APK `android/app/build/outputs/apk/release/app-release.apk` mit `versionCode 26` erzeugt.
+- [x] Expo Updates Release-Kanal gefixt (2026-03-13): `expo-channel-name=production` in `app.json` und Android-Manifest/String-Ressourcen eingebettet, damit Production-Builds Updates ueber EAS Update korrekt anfragen.
 - [x] AdMob-Setup dokumentiert (2026-03-11): `ADMOB_SETUP.md` beschreibt die letzten zwei technischen Release-Werte fuer Android.
 - [x] Expo-Dependency-Check (2026-03-11): `npx expo install --check` ist clean nach Paketangleichung.
 - [x] Expo Doctor (2026-03-11): `npx expo-doctor` ist clean; der Non-CNG Sync-Check ist bewusst deaktiviert.
@@ -77,7 +172,7 @@
 - [x] Supabase Function `legal` neu deployt (`--no-verify-jwt`), Privacy-Link live mit Stand 2026-03-08.
 - [x] Datenschutz: DSAR-Runbook erstellt (`DSAR_PROCESS.md`, SLA + operativer Ablauf + SQL-Templates) am 2026-03-08.
 - [x] Datenschutz/Consent-Texte aktualisiert (Web + Supabase Legal Function + In-App Legal Content) am 2026-03-08.
-- [x] Dependency-Hygiene: ungenutzte direkte Pakete entfernt und fehlende Runtime-Dependencies ergänzt (`expo-asset`, `expo-in-app-purchases`, `metro-cache`, `tailwindcss`) am 2026-03-08.
+- [x] Dependency-Hygiene: ungenutzte direkte Pakete entfernt und fehlende Runtime-Dependencies ergÃ¤nzt (`expo-asset`, `expo-in-app-purchases`, `metro-cache`, `tailwindcss`) am 2026-03-08.
 - [x] Security-Audit bereinigt (`npm audit --omit=dev`): 0 high / 0 moderate / 0 critical.
 - [x] ADB-Smoke auf Emulator `emulator-5554` ausgefuehrt (Deep-Link Schemes ok, Offline/Online Toggle technisch getestet; Details in `RELEASE_TESTS.md`).
 - [x] Android Manifest/App-Config fuer Release gehaertet (Permissions reduziert, `allowBackup=false`, `usesCleartextTraffic=false`, `android.blockedPermissions` gesetzt).
@@ -89,7 +184,7 @@
 - [x] Release-Build Android (EAS production) erfolgreich: `a80f9a26-1f1a-4c1d-8aaf-3f31bd25e9c3` (`FINISHED`, versionCode 25, AAB erstellt).
 - [x] DB: Migration erstellt, die fehlende Frage-Erklaerungen in `questions`/`question_translations` auffuellt und fuer neue Eintraege per Trigger erzwingt.
 - [x] Quiz: Fehlende Frage-Erklaerungen werden im Client automatisch mit Fallback-Text ergaenzt.
-- [x] UI: Schwierigkeitsnamen auf Kinder / Studenten / Doktor umgestellt (statt leicht / mittel / schwer).
+- [x] UI: alte Stufennamen auf Kinder / Studenten / Doktor umgestellt.
 - [x] Release-Build Android (EAS production) erfolgreich: `75e9ace1-34fc-4560-9d44-a421560aa71c` (`FINISHED`, versionCode 19, AAB erstellt).
 - [x] Build-Fix abgeschlossen: veralteten `expo-dev-launcher` Patch entfernt (`patches/expo-dev-launcher+55.0.7.patch`), Dex duplicate `LegacyArchitecture` behoben.
 - [x] Build-Diagnose: Ursache fuer EAS Android Release-Fehler identifiziert (duplicate `LegacyArchitecture` aus `expo-dev-launcher` Patch).
@@ -99,12 +194,12 @@
 - [x] EAS Build-Fix: npm Peer-Resolution stabilisiert (`.npmrc` mit `legacy-peer-deps=true` + lockfile refresh).
 - [x] EAS Build-Fix: `babel-preset-expo` ergaenzt (Bundle-Fehler behoben).
 - [x] Patches auf aktuelle Versionen migriert (`expo-dev-launcher@55.0.7`, `expo-modules-core@55.0.9`, `react-native-gesture-handler@2.30.0`).
-- [x] DB: Kategorien bereinigt (FuÃŸball + Polizei-Spanisch entfernt), auf 10 Home-Kategorien verteilt und auf exakt 50 Fragen pro Kategorie normalisiert.
-- [x] DB: App-Kategorien auf mindestens 50 Fragen aufgefÃ¼llt (Migration `20260224120000_ensure_min_50_questions_per_app_category.sql`).
-- [x] DB: Pro App-Kategorie und Schwierigkeit mindestens 10 Fragen sichergestellt (Migration `20260225120000_ensure_min_10_questions_per_difficulty_per_category.sql`).
-- [x] Profil: Abzeichen-Claim mit temporÃ¤rer XP/Coins-Header-Animation umgesetzt.
-- [x] Kategorien: FuÃŸball-Quiz entfernt (UI, Offline-Seeds und Kategorie-Filter).
-- [x] Refactor: groÃŸe Screens (Settings/Multiplayer) in kleinere Hooks/Components splitten.
+- [x] DB: Kategorien bereinigt (FuÃƒÅ¸ball + Polizei-Spanisch entfernt), auf 10 Home-Kategorien verteilt und auf exakt 50 Fragen pro Kategorie normalisiert.
+- [x] DB: App-Kategorien auf mindestens 50 Fragen aufgefÃƒÂ¼llt (Migration `20260224120000_ensure_min_50_questions_per_app_category.sql`).
+- [x] DB: Altbestand pro App-Kategorie gleichmaessig aufgefuellt (Migration vom 2026-02-25).
+- [x] Profil: Abzeichen-Claim mit temporÃƒÂ¤rer XP/Coins-Header-Animation umgesetzt.
+- [x] Kategorien: FuÃƒÅ¸ball-Quiz entfernt (UI, Offline-Seeds und Kategorie-Filter).
+- [x] Refactor: groÃƒÅ¸e Screens (Settings/Multiplayer) in kleinere Hooks/Components splitten.
 - [x] Refactor: Multiplayer-Lobby UI weiter modularisiert (Join-Liste/Code-Form + Code/Freunde-Bereiche ausgelagert).
 - [x] Refactor: `useLobbyMatchActions` in Create/Start-, Join- und Leave-Hooks aufgeteilt.
 - [x] Refactor: `useLobbyParticipants` aufgeteilt (Seen-Tracking Hook + Participant-Builder Utils).
@@ -113,11 +208,11 @@
 - [x] Refactor: `ResultScreen` stark verkleinert (Multiplayer-/Review-Logik + Score-Animationen in Hooks ausgelagert).
 - [x] Refactor: `ShopScreen` stark verkleinert (Konfiguration/Formatter + Sections-Builder + Section-Rendering ausgelagert).
 - [x] Refactor: `HomeScreen` stark verkleinert (Active-Lobby-Recovery + Boost/IAP/Ad-Flow in Hooks ausgelagert).
-- [x] DB-Refactor: Indexe fÃ¼r Fragen/Leaderboard + updated_at Trigger fÃ¼r users/questions.
+- [x] DB-Refactor: Indexe fÃƒÂ¼r Fragen/Leaderboard + updated_at Trigger fÃƒÂ¼r users/questions.
 - [x] Supabase Local Auth: Passwort-Policy in `supabase/config.toml` gesetzt.
-- [x] Alternative Passwort-Policy im Client erzwungen (min. 12 Zeichen, GroÃŸ/Klein, Zahl, Sonderzeichen).
+- [x] Alternative Passwort-Policy im Client erzwungen (min. 12 Zeichen, GroÃƒÅ¸/Klein, Zahl, Sonderzeichen).
 - [x] Offline/Connectivity UX: Status-Banner + Retry-Action (Home/Quiz) + Offline-Quick-Play.
-- [x] Freunde-PrÃ¤senz: Offline/Online/Lobby Status + Lobby-Count in der Freunde-Liste.
+- [x] Freunde-PrÃƒÂ¤senz: Offline/Online/Lobby Status + Lobby-Count in der Freunde-Liste.
 - [x] Android Debug Build lokal gebaut (SoLoader MergedSoMapping).
 - [x] APK installiert und Start verifiziert (kein Crash/White-Screen).
 - [x] Patch `expo-modules-core`: FeatureFlags-Fallback + backingMap-Feld-Fallback.
@@ -128,7 +223,7 @@
 - [x] Grundstruktur React Native + Expo
 - [x] Supabase Verbindung
 - [x] Quiz mit Fragen und Ergebnis
-- [x] Supabase CLI eingerichtet und mit Projekt `uxlwbzgohgxbnhcjiimh` verknÃ¼pft
+- [x] Supabase CLI eingerichtet und mit Projekt `uxlwbzgohgxbnhcjiimh` verknÃƒÂ¼pft
 - [x] Supabase Auth (Google OAuth)
 - [x] Supabase Auth (Discord OAuth UI)
 - [x] Supabase Auth (E-Mail)
@@ -137,10 +232,10 @@
 - [x] Premium-Modus ohne Werbung
 - [x] Highscore / Rangliste
 - [x] Multiplayer-Duelle (Realtime)
-- [x] Android Manifest Merge Fix fÃ¼r AdMob (`AD_ID`)
-- [x] `.easignore` zur Build-GrÃ¶ÃŸenreduktion
-- [x] `eas.json` KanÃ¤le (development/preview/production)
-- [x] Patch fÃ¼r `expo-modules-core` (FeatureFlags Fallback)
+- [x] Android Manifest Merge Fix fÃƒÂ¼r AdMob (`AD_ID`)
+- [x] `.easignore` zur Build-GrÃƒÂ¶ÃƒÅ¸enreduktion
+- [x] `eas.json` KanÃƒÂ¤le (development/preview/production)
+- [x] Patch fÃƒÂ¼r `expo-modules-core` (FeatureFlags Fallback)
 - [x] Banner-Werbung entfernt; Energie-Dialog mit Kauf oder Rewarded Ad (+5 Energie).
 - [x] Supabase Functions: search_path gesetzt, Security-Warnungen bereinigt.
 - [x] Release: Sentry wieder entfernt (kein Account), Crash-Logging ueber Supabase `client_logs` beibehalten.
@@ -148,7 +243,7 @@
 - [x] Offline: lokale Fragenbank erweitern + Sync beim Online-Gehen (Diff/Update-Strategie).
 - [x] Performance: Start-Perf (Assets vorladen, Animationen lazy-load, Rendering reduzieren).
 - [x] DB: Score-Retention (z.B. Top-N pro User) als Maintenance-Job definieren.
-- [x] Multiplayer: Reconnect/Resume Flow fÃ¼r unterbrochene Lobbys testen und absichern.
+- [x] Multiplayer: Reconnect/Resume Flow fÃƒÂ¼r unterbrochene Lobbys testen und absichern.
 
 
 

@@ -1,4 +1,4 @@
-MedBattle Admin API
+MedQuiz Admin API
 ===================
 
 Purpose

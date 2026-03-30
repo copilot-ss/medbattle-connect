@@ -3,7 +3,11 @@ import { useConnectivity } from '../context/ConnectivityContext';
 import { usePreferences } from '../context/PreferencesContext';
 import useSupabaseUserId from './useSupabaseUserId';
 import { flushQueuedScores, syncQuestionCache } from '../services/quizService';
-import { fetchUserProgress, flushQueuedProgress } from '../services/userProgressService';
+import {
+  fetchUserProgress,
+  flushQueuedProgress,
+  hasFreshUserProgress,
+} from '../services/userProgressService';
 
 function sanitizeStatNumber(value) {
   const parsed = Number.parseInt(value, 10);
@@ -30,7 +34,16 @@ export default function useOfflineSync() {
 
     syncingRef.current = true;
     Promise.all([flushQueuedScores(userId), flushQueuedProgress(userId)])
-      .then(async () => {
+      .then(async ([scoreResult, progressResult]) => {
+        const shouldRefreshProgress =
+          Boolean(scoreResult?.didWork) ||
+          Boolean(progressResult?.didWork) ||
+          !hasFreshUserProgress(userId);
+
+        if (!shouldRefreshProgress) {
+          return;
+        }
+
         const progress = await fetchUserProgress(userId, { force: true });
         if (progress?.ok && progress.progress) {
           updateUserStats((current) => ({

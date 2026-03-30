@@ -1,4 +1,4 @@
-Flaticon avatar stickers used in MedBattle profile picker:
+Flaticon avatar stickers used in MedQuiz profile picker:
 
 1) Doctor sticker (male avatar)
    File: flaticon_arzt_6181883.png

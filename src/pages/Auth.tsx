@@ -118,9 +118,9 @@ const Auth = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary neon-glow mb-4">
-            <span className="text-4xl">MB</span>
+            <span className="text-4xl">MQ</span>
           </div>
-          <h1 className="text-3xl font-bold gradient-text" style={{ fontFamily: "'Orbitron', sans-serif" }}>MedBattle</h1>
+          <h1 className="text-3xl font-bold gradient-text" style={{ fontFamily: "'Orbitron', sans-serif" }}>MedQuiz</h1>
           <p className="text-muted-foreground mt-2">Medical Quiz Arena</p>
         </div>
 

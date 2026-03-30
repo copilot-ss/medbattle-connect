@@ -24,7 +24,6 @@ export default function LobbyContent({
   openMatches,
   onRefreshMatches,
   onJoinQuick,
-  difficultyLabel,
   onCreateMatch,
   userId,
   currentJoinCode,
@@ -43,7 +42,6 @@ export default function LobbyContent({
   onOpenSettings,
   copied,
   onCopyCode,
-  settingsDifficultyLabel,
   settingsQuestionLimit,
   settingsCategoryLabel,
   friendsLoading,
@@ -80,7 +78,6 @@ export default function LobbyContent({
           openMatches={openMatches}
           onRefreshMatches={onRefreshMatches}
           onJoinQuick={onJoinQuick}
-          difficultyLabel={difficultyLabel}
         />
       ) : null}
 
@@ -111,7 +108,6 @@ export default function LobbyContent({
           currentJoinCode={currentJoinCode}
           copied={copied}
           onCopyCode={onCopyCode}
-          difficultyLabel={settingsDifficultyLabel}
           questionLimit={settingsQuestionLimit}
           categoryLabel={settingsCategoryLabel}
           friendsLoading={friendsLoading}

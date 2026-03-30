@@ -14,6 +14,7 @@ export default function useCountdownTimer(durationMs, { onExpire } = {}) {
   const timeoutRef = useRef(null);
   const expiredRef = useRef(false);
   const timeLeftRef = useRef(durationMs);
+  const sessionRef = useRef(0);
 
   useEffect(() => {
     timeLeftRef.current = timeLeftMs;
@@ -30,13 +31,14 @@ export default function useCountdownTimer(durationMs, { onExpire } = {}) {
     }
   }, []);
 
-  const handleExpire = useCallback(() => {
-    if (expiredRef.current) {
+  const handleExpire = useCallback((sessionId) => {
+    if (sessionId !== sessionRef.current || expiredRef.current) {
       return;
     }
     expiredRef.current = true;
     clearTimers();
     setRunning(false);
+    timeLeftRef.current = 0;
     setTimeLeftMs(0);
     if (typeof onExpire === 'function') {
       onExpire();
@@ -45,25 +47,43 @@ export default function useCountdownTimer(durationMs, { onExpire } = {}) {
 
   const scheduleTimers = useCallback(
     (remainingMs) => {
+      const safeRemainingMs =
+        Number.isFinite(remainingMs) && remainingMs > 0 ? remainingMs : 0;
+      sessionRef.current += 1;
+      const sessionId = sessionRef.current;
       clearTimers();
       expiredRef.current = false;
+      timeLeftRef.current = safeRemainingMs;
       setRunning(true);
-      setTimeLeftMs(remainingMs);
+      setTimeLeftMs(safeRemainingMs);
+
+      if (safeRemainingMs <= 0) {
+        handleExpire(sessionId);
+        return;
+      }
 
       intervalRef.current = setInterval(() => {
+        if (sessionId !== sessionRef.current) {
+          return;
+        }
         setTimeLeftMs((prev) => {
+          if (sessionId !== sessionRef.current) {
+            return prev;
+          }
           const next = prev - 100;
           if (next <= 0) {
-            handleExpire();
+            timeLeftRef.current = 0;
+            handleExpire(sessionId);
             return 0;
           }
+          timeLeftRef.current = next;
           return next;
         });
       }, 100);
 
       timeoutRef.current = setTimeout(() => {
-        handleExpire();
-      }, remainingMs);
+        handleExpire(sessionId);
+      }, safeRemainingMs);
     },
     [clearTimers, handleExpire]
   );
@@ -75,14 +95,17 @@ export default function useCountdownTimer(durationMs, { onExpire } = {}) {
   const resume = useCallback(() => {
     const remaining = timeLeftRef.current;
     if (!Number.isFinite(remaining) || remaining <= 0) {
-      handleExpire();
+      sessionRef.current += 1;
+      handleExpire(sessionRef.current);
       return;
     }
     scheduleTimers(remaining);
   }, [handleExpire, scheduleTimers]);
 
   const stop = useCallback(() => {
+    sessionRef.current += 1;
     clearTimers();
+    expiredRef.current = false;
     setRunning(false);
   }, [clearTimers]);
 

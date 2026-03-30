@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { ConnectivityProvider } from './context/ConnectivityContext';
 import { PreferencesProvider } from './context/PreferencesContext';
+import useAuthCallbackLinking from './hooks/useAuthCallbackLinking';
 import useAuthSession from './hooks/useAuthSession';
 import useLobbyInviteMonitor from './hooks/useLobbyInviteMonitor';
 import useOfflineSync from './hooks/useOfflineSync';
@@ -17,6 +18,7 @@ import LegalScreen from './screens/LegalScreen';
 import MultiplayerLobbyScreen from './screens/MultiplayerLobbyScreen';
 import QuizScreen from './screens/QuizScreen';
 import ResultScreen from './screens/ResultScreen';
+import SettingsHelpScreen from './screens/SettingsHelpScreen';
 import UsernameSetupScreen from './screens/UsernameSetupScreen';
 import MainTabs from './navigation/MainTabs';
 import { setGameplayNotificationSuppressed } from './services/notificationsService';
@@ -59,8 +61,6 @@ function AppNavigatorInner() {
     }
     navigation.navigate('MultiplayerLobby', {
       existingMatch: match,
-      keepCompleted: true,
-      difficulty: match?.difficulty ?? 'mittel',
       mode: 'join',
     });
   }, []);
@@ -76,6 +76,7 @@ function AppNavigatorInner() {
   } = useLobbyInviteMonitor({
     onInviteAccepted: handleInviteAccepted,
   });
+  useAuthCallbackLinking({ navigationRef });
 
   const handleNavigationStateChange = useCallback((state) => {
     const activeRouteName = getActiveRouteName(state);
@@ -146,6 +147,7 @@ function AppNavigatorInner() {
                 />
               )}
             </Stack.Screen>
+            <Stack.Screen name="SettingsHelp" component={SettingsHelpScreen} />
             <Stack.Screen name="MultiplayerLobby" component={MultiplayerLobbyScreen} />
             <Stack.Screen name="Quiz" component={QuizScreen} />
             <Stack.Screen name="Result" component={ResultScreen} />

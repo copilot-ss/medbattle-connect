@@ -11,4 +11,7 @@
 -keep class com.swmansion.reanimated.** { *; }
 -keep class com.facebook.react.turbomodule.** { *; }
 
+# Preserve Kotlin metadata consumed by some Android libraries at runtime.
+-keep class kotlin.Metadata { *; }
+
 # Add any project specific keep options here:

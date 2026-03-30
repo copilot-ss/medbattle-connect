@@ -1,5 +1,6 @@
 import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '../../lib/supabaseClient';
+import { claimActiveSessionOrThrow } from '../../services/activeSessionService';
 import { formatUserError } from '../../utils/formatUserError';
 import { t } from '../../i18n';
 import {
@@ -8,10 +9,21 @@ import {
   SUPABASE_URL_HINT,
 } from './authConfig';
 import {
+  getCurrentAuthSession,
   parseSupabaseParams,
   validateSupabaseConfig,
+  waitForRecoveredAuthSession,
   withTimeout,
 } from './authUtils';
+import { runSingleAuthCallback } from './authCallbackCoordinator';
+
+async function ensureRecoveredSession(previousSession) {
+  const recoveredSession = await waitForRecoveredAuthSession(previousSession);
+  if (!recoveredSession?.user?.id) {
+    throw new Error(t('Nach OAuth wurde keine Session wiederhergestellt.'));
+  }
+  return recoveredSession;
+}
 
 async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
   try {
@@ -26,7 +38,13 @@ async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
     setLoading(true);
 
     if (mode === 'signIn') {
-      await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+      await withTimeout(
+        supabase.auth.signOut({ scope: 'local' }),
+        AUTH_TIMEOUT_MS,
+        t('Supabase nicht erreichbar. Bitte Verbindung oder Supabase-URL prüfen.')
+      ).catch((err) => {
+        console.warn('Lokale Supabase-Session konnte vor OAuth nicht entfernt werden:', err);
+      });
     }
 
     if (mode === 'link' && typeof supabase.auth.linkIdentity !== 'function') {
@@ -73,42 +91,75 @@ async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
       throw new Error(`${t('OAuth nicht abgeschlossen')}${detail}.`);
     }
 
-    const params = parseSupabaseParams(result.url);
-    const callbackError = params.error_description ?? params.error;
-    if (callbackError) {
-      throw new Error(callbackError);
+    const callbackHandled = await runSingleAuthCallback(result.url, async () => {
+      const params = parseSupabaseParams(result.url);
+      const callbackError = params.error_description ?? params.error;
+      if (callbackError) {
+        throw new Error(callbackError);
+      }
+
+      const code = params.code ?? params.auth_code ?? params.authCode;
+      const accessToken = params.access_token;
+      const refreshToken = params.refresh_token;
+      const previousSession = await getCurrentAuthSession();
+
+      if (code) {
+        try {
+          const { error: exchangeError } = await withTimeout(
+            supabase.auth.exchangeCodeForSession(code),
+            AUTH_TIMEOUT_MS,
+            t('Supabase nicht erreichbar (Code-Austausch).')
+          );
+          if (exchangeError) {
+            throw exchangeError;
+          }
+        } catch (err) {
+          const recoveredSession = await waitForRecoveredAuthSession(previousSession);
+          if (!recoveredSession) {
+            throw err;
+          }
+        }
+        await ensureRecoveredSession(previousSession);
+        return true;
+      }
+
+      if (accessToken && refreshToken) {
+        try {
+          const { error: sessionError } = await withTimeout(
+            supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            }),
+            AUTH_TIMEOUT_MS,
+            t('Supabase nicht erreichbar (Token setzen).')
+          );
+          if (sessionError) {
+            throw sessionError;
+          }
+        } catch (err) {
+          const recoveredSession = await waitForRecoveredAuthSession(previousSession);
+          if (!recoveredSession) {
+            throw err;
+          }
+        }
+        await ensureRecoveredSession(previousSession);
+        return true;
+      }
+
+      return false;
+    });
+
+    if (!callbackHandled) {
+      throw new Error(t('Nach OAuth wurde kein Code oder Token geliefert.'));
     }
 
-    const code = params.code ?? params.auth_code ?? params.authCode;
-    const accessToken = params.access_token;
-    const refreshToken = params.refresh_token;
-
-    if (code) {
-      const { error: exchangeError } = await withTimeout(
-        supabase.auth.exchangeCodeForSession({
-          authCode: code,
-        }),
-        AUTH_TIMEOUT_MS,
-        t('Supabase nicht erreichbar (Code-Austausch).')
-      );
-      if (exchangeError) throw exchangeError;
-      return { ok: true };
+    if (mode === 'signIn') {
+      await claimActiveSessionOrThrow({
+        dedupeKey: `oauth:${provider}`,
+      });
     }
 
-    if (accessToken && refreshToken) {
-      const { error: sessionError } = await withTimeout(
-        supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        }),
-        AUTH_TIMEOUT_MS,
-        t('Supabase nicht erreichbar (Token setzen).')
-      );
-      if (sessionError) throw sessionError;
-      return { ok: true };
-    }
-
-    throw new Error(t('Nach OAuth wurde kein Code oder Token geliefert.'));
+    return { ok: true };
   } catch (err) {
     const hint =
       SUPABASE_URL_HINT && SUPABASE_URL_HINT.includes('127.0.0.1')

@@ -62,8 +62,24 @@ function sanitizeEnv(value) {
   return trimmed;
 }
 
-export function getRewardedAdUnitId() {
+function isTruthyEnv(value) {
+  const normalized = sanitizeEnv(value).toLowerCase();
+  return normalized === '1'
+    || normalized === 'true'
+    || normalized === 'yes'
+    || normalized === 'on';
+}
+
+function shouldUseTestAdIds() {
   if (__DEV__) {
+    return true;
+  }
+
+  return isTruthyEnv(process.env.EXPO_PUBLIC_ADMOB_USE_TEST_IDS);
+}
+
+export function getRewardedAdUnitId() {
+  if (shouldUseTestAdIds()) {
     return TEST_REWARDED_ID;
   }
 

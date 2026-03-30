@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, Text, View } from 'react-native';
 import { useTranslation } from '../../i18n/useTranslation';
-import { getTitleLevel, getTitleProgress } from '../../services/titleService';
+import { getLevelProgress, getTitleLevel } from '../../services/titleService';
 import styles from '../styles/SettingsScreen.styles';
 
 const BlurModule = (() => {
@@ -21,6 +21,7 @@ const CLAIM_END_HOLD_MS = 420;
 const CLAIM_BAR_BASE_HEIGHT = 18;
 const CLAIM_BAR_MAX_HEIGHT = 42;
 const CLAIM_SECTION_STAGGER_MS = 95;
+const COIN_EMOJI = '\u{1FA99}';
 
 const formatThousands = (value) => {
   const numeric = Number.parseInt(value, 10);
@@ -50,7 +51,7 @@ export default function ClaimRewardTopBar({
   const levelAnim = useRef(new Animated.Value(userLevel)).current;
   const coinsAnim = useRef(new Animated.Value(coins)).current;
   const progressAnim = useRef(
-    new Animated.Value(getTitleProgress(xp).progress)
+    new Animated.Value(getLevelProgress(xp).progress)
   ).current;
   const progressScaleAnim = useRef(new Animated.Value(1)).current;
   const rewardsOpacityAnim = useRef(new Animated.Value(0)).current;
@@ -61,7 +62,7 @@ export default function ClaimRewardTopBar({
   const safeLiveLevel = Number.isFinite(userLevel) ? Math.max(1, userLevel) : 1;
   const safeLiveCoins = Number.isFinite(coins) ? Math.max(0, coins) : 0;
   const safeLiveXp = Number.isFinite(xp) ? Math.max(0, xp) : 0;
-  const safeLiveProgress = getTitleProgress(safeLiveXp).progress;
+  const safeLiveProgress = getLevelProgress(safeLiveXp).progress;
   const progressWidth = progressAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0%', '100%'],
@@ -124,8 +125,8 @@ export default function ClaimRewardTopBar({
     const toLevel = Math.max(1, getTitleLevel(toXp));
     const rewardXp = Math.max(0, toXp - fromXp);
     const rewardCoins = Math.max(0, toCoins - fromCoins);
-    const fromProgress = getTitleProgress(fromXp).progress;
-    const toProgress = getTitleProgress(toXp).progress;
+    const fromProgress = getLevelProgress(fromXp).progress;
+    const toProgress = getLevelProgress(toXp).progress;
     const levelJump = Math.max(0, toLevel - fromLevel);
     const normalizedFromProgress =
       levelJump > 0 && toProgress < fromProgress ? 0 : fromProgress;
@@ -380,7 +381,7 @@ export default function ClaimRewardTopBar({
           }}
         >
           <View style={styles.claimCenterHero}>
-            <Text style={styles.claimCenterCoinsLabel}>{t('Coins')}</Text>
+            <Text style={styles.claimCenterCoinsLabel}>{COIN_EMOJI}</Text>
             <View style={styles.claimCenterHeroRow}>
               <Text style={styles.claimCenterCoinsValue}>{formatThousands(animatedCoins)}</Text>
               <View style={styles.claimCenterMiniLevelBadge}>
@@ -388,7 +389,9 @@ export default function ClaimRewardTopBar({
                 <Text style={styles.claimCenterMiniLevelValue}>{animatedLevel}</Text>
               </View>
             </View>
-            <Text style={styles.claimCenterCoinsGain}>{`+${formatThousands(rewardCoinsGain)}`}</Text>
+            <Text style={styles.claimCenterCoinsGain}>
+              {`+${formatThousands(rewardCoinsGain)} ${COIN_EMOJI}`}
+            </Text>
           </View>
         </Animated.View>
 

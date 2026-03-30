@@ -1,8 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
+import { getSupabaseRequestHealthSnapshot } from '../services/supabaseRequest';
 
 const CHECK_TIMEOUT_MS = 6000;
 const CHECK_COOLDOWN_MS = 12000;
+const RECENT_SUPABASE_SUCCESS_MS = 15000;
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 
 const ConnectivityContext = createContext({
@@ -45,22 +47,47 @@ export function ConnectivityProvider({ children }) {
   const [isChecking, setIsChecking] = useState(false);
   const lastCheckedRef = useRef(0);
   const appStateRef = useRef(AppState.currentState);
+  const inFlightCheckRef = useRef(null);
+
+  const applyOnlineState = useCallback((nextValue) => {
+    setIsOnline((current) => (current === nextValue ? current : nextValue));
+    return nextValue;
+  }, []);
 
   const checkOnline = useCallback(
     async ({ force = false } = {}) => {
       const now = Date.now();
+      const health = getSupabaseRequestHealthSnapshot();
+
+      if (
+        health.lastSuccessfulAt &&
+        now - health.lastSuccessfulAt < RECENT_SUPABASE_SUCCESS_MS
+      ) {
+        lastCheckedRef.current = now;
+        setIsChecking(false);
+        return applyOnlineState(true);
+      }
+
+      if (inFlightCheckRef.current) {
+        return inFlightCheckRef.current;
+      }
+
       if (!force && now - lastCheckedRef.current < CHECK_COOLDOWN_MS) {
         return isOnline;
       }
 
       lastCheckedRef.current = now;
-      setIsChecking(true);
-      const reachable = await pingSupabase();
-      setIsOnline(reachable);
-      setIsChecking(false);
-      return reachable;
+      setIsChecking((current) => (current ? current : true));
+      const checkPromise = pingSupabase()
+        .then((reachable) => applyOnlineState(reachable))
+        .finally(() => {
+          inFlightCheckRef.current = null;
+          setIsChecking(false);
+        });
+      inFlightCheckRef.current = checkPromise;
+      return checkPromise;
     },
-    [isOnline]
+    [applyOnlineState, isOnline]
   );
 
   useEffect(() => {

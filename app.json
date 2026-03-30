@@ -1,18 +1,23 @@
 {
   "expo": {
-    "name": "MedBattle",
+    "name": "MedQuiz",
     "slug": "medbattle",
     "scheme": "medbattle",
     "owner": "sjigalin",
+    "icon": "./assets/branding/app-icon.png",
     "version": "1.0.1",
     "jsEngine": "hermes",
     "ios": {
       "bundleIdentifier": "com.sjigalin.medbattle",
-      "buildNumber": "26"
+      "buildNumber": "27"
     },
     "android": {
       "package": "com.sjigalin.medbattle",
-      "versionCode": 26,
+      "versionCode": 40,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/branding/adaptive-icon-foreground.png",
+        "backgroundColor": "#082b39"
+      },
       "allowBackup": false,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
@@ -22,6 +27,9 @@
     },
     "updates": {
       "url": "https://u.expo.dev/87da2826-0629-40e0-8f9b-25ee7681af9d",
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      },
       "checkAutomatically": "ON_LOAD",
       "fallbackToCacheTimeout": 0
     },

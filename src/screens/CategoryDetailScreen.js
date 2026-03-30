@@ -6,14 +6,12 @@ import usePremiumStatus from '../hooks/usePremiumStatus';
 import { calculateCoinReward } from '../services/quizService';
 import { calculateXpGain } from '../services/titleService';
 import { getCategoryMeta } from '../data/categoryMeta';
+import { CATEGORY_QUESTION_LIMIT } from '../config/quizLimits';
 import { colors } from '../styles/theme';
 import { useTranslation } from '../i18n/useTranslation';
 import ModeCard from './home/ModeCard';
 import styles from './styles/CategoryDetailScreen.styles';
 import homeStyles from './styles/HomeScreen.styles';
-
-const DEFAULT_DIFFICULTY = 'mittel';
-const CATEGORY_QUESTION_LIMIT = 10;
 
 export default function CategoryDetailScreen({ navigation, route }) {
   const { t } = useTranslation();
@@ -26,7 +24,6 @@ export default function CategoryDetailScreen({ navigation, route }) {
   const categoryDescription = categoryMeta?.description
     ? t(categoryMeta.description)
     : '';
-  const categoryDifficulty = DEFAULT_DIFFICULTY;
   const { isOnline } = useConnectivity();
   const { energy, energyMax } = usePreferences();
   const { premium } = usePremiumStatus();
@@ -36,12 +33,10 @@ export default function CategoryDetailScreen({ navigation, route }) {
   const rewardCoins = calculateCoinReward({
     correct: CATEGORY_QUESTION_LIMIT,
     total: CATEGORY_QUESTION_LIMIT,
-    difficulty: categoryDifficulty,
   });
   const rewardXp = calculateXpGain({
     correct: CATEGORY_QUESTION_LIMIT,
     total: CATEGORY_QUESTION_LIMIT,
-    difficulty: categoryDifficulty,
     isMultiplayer: false,
   });
 
@@ -56,25 +51,16 @@ export default function CategoryDetailScreen({ navigation, route }) {
       });
       return;
     }
-    navigation.navigate('Quiz', {
-      difficulty: categoryDifficulty,
+    navigation.push('Quiz', {
       mode: 'category',
       category: categoryLabel,
+      questionLimit: CATEGORY_QUESTION_LIMIT,
     });
   }
 
   function handlePlayWithFriends() {
     navigation.navigate('MultiplayerLobby', {
-      difficulty: categoryDifficulty,
       mode: 'create',
-      category: categoryLabel,
-    });
-  }
-
-  function handleJoinLobby() {
-    navigation.navigate('MultiplayerLobby', {
-      difficulty: categoryDifficulty,
-      mode: 'join',
       category: categoryLabel,
     });
   }
@@ -140,12 +126,6 @@ export default function CategoryDetailScreen({ navigation, route }) {
               accent={colors.accentGreen}
               onPress={handlePlayWithFriends}
               disabled={isOffline || hasLobby}
-            />
-            <ModeCard
-              title={t('Lobby beitreten')}
-              accent={colors.accent}
-              onPress={handleJoinLobby}
-              disabled={isOffline}
             />
           </View>
           {isOffline ? (

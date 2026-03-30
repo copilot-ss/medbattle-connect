@@ -1,4 +1,4 @@
-# PLAY_DATA_SAFETY_DRAFT.md - MedBattle
+# PLAY_DATA_SAFETY_DRAFT.md - MedQuiz
 
 Stand: 2026-03-11
 

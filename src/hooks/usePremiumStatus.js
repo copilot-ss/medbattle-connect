@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { getSessionUser, supabase } from '../lib/supabaseClient';
 
 const PREMIUM_CACHE_TTL = 60 * 1000;
 const premiumCache = {
@@ -75,8 +75,12 @@ export default function usePremiumStatus() {
       let user = userOverride;
 
       if (!user) {
-        const { data } = await supabase.auth.getUser();
-        user = data?.user ?? null;
+        try {
+          user = await getSessionUser();
+        } catch (error) {
+          console.warn('Konnte Premium-Session nicht abrufen:', error);
+          user = null;
+        }
       }
 
       const nextPremium = await fetchPremiumForUser(user);

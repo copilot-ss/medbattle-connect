@@ -1,10 +1,8 @@
-import { IAP_PRODUCT_IDS } from '../../config/iapProductIds';
+import { QUICK_PLAY_QUESTION_LIMIT } from '../../config/quizLimits';
 
-export const DEFAULT_DIFFICULTY = 'mittel';
-export const QUICK_PLAY_QUESTIONS = 6;
-export const COIN_ENERGY_COST = 75;
-export const COIN_ENERGY_AMOUNT = 5;
-export const BOOST_PRODUCT_ID = IAP_PRODUCT_IDS.boostEnergy;
+export const QUICK_PLAY_QUESTIONS = QUICK_PLAY_QUESTION_LIMIT;
+export const COIN_ENERGY_COST = 15;
+export const COIN_ENERGY_AMOUNT = 1;
 export const REWARDED_ENERGY = 5;
 export const LOBBY_CAPACITY = 10;
 

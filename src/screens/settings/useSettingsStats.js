@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import {
+  getLevelProgress,
   getTitleLevel,
   getTitleProgress,
   getUnlockedAchievements,
@@ -84,9 +85,13 @@ export default function useSettingsStats({
     () => getTitleProgress(xp),
     [xp]
   );
+  const levelProgress = useMemo(
+    () => getLevelProgress(xp),
+    [xp]
+  );
 
   const userTitle = useMemo(
-    () => titleProgress.current?.label ?? 'Med Rookie',
+    () => titleProgress.current?.label ?? 'Praktikant',
     [titleProgress]
   );
 
@@ -142,6 +147,7 @@ export default function useSettingsStats({
     multiplayerGames,
     xpBoostsUsed,
     titleProgress,
+    levelProgress,
     unlockedAchievements,
     levelBadgeHeat,
     avatarInitials,

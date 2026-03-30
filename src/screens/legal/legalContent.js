@@ -6,12 +6,12 @@ const LEGAL_DOCS_DE = {
     title: 'Datenschutz',
     updatedAt: '2026-03-10',
     intro:
-      'MedBattle ist eine Quiz-App für Medizinwissen. Diese Hinweise erklären, welche Daten wir verarbeiten und warum.',
+      'MedQuiz ist eine Quiz-App für Medizinwissen. Diese Hinweise erklären, welche Daten wir verarbeiten und warum.',
     sections: [
       {
         heading: 'Verantwortlicher',
         paragraphs: [
-          'Verantwortlich für die Datenverarbeitung ist das MedBattle Team.',
+          'Verantwortlich für die Datenverarbeitung ist das MedQuiz Team.',
           `Kontakt: ${LEGAL_CONTACT_EMAIL}`,
         ],
       },
@@ -87,7 +87,7 @@ const LEGAL_DOCS_DE = {
       {
         heading: 'Hinweise',
         paragraphs: [
-          'MedBattle ist ein Lernspiel und kein Medizinprodukt. Die App diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.',
+          'MedQuiz ist ein Lernspiel und kein Medizinprodukt. Die App diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.',
           'Wir aktualisieren diese Hinweise bei Bedarf.',
         ],
       },
@@ -98,13 +98,13 @@ const LEGAL_DOCS_DE = {
     title: 'AGB',
     updatedAt: '2026-03-10',
     intro:
-      'Diese Bedingungen regeln die Nutzung der MedBattle App und der zugehörigen Dienste.',
+      'Diese Bedingungen regeln die Nutzung der MedQuiz App und der zugehörigen Dienste.',
     sections: [
       {
         heading: 'Geltungsbereich und Leistungen',
         paragraphs: [
           'Mit der Nutzung der App akzeptierst du diese Bedingungen.',
-          'MedBattle ist ein Lern- und Quizspiel und kein Medizinprodukt. Die App diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.',
+          'MedQuiz ist ein Lern- und Quizspiel und kein Medizinprodukt. Die App diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.',
         ],
       },
       {
@@ -182,7 +182,7 @@ const LEGAL_DOCS_DE = {
     title: 'Konto löschen',
     updatedAt: '2026-03-11',
     intro:
-      'Hier kannst du dein MedBattle-Konto direkt löschen oder alternativ eine Löschanfrage senden.',
+      'Hier kannst du dein MedQuiz-Konto direkt löschen oder alternativ eine Löschanfrage senden.',
     sections: [
       {
         heading: 'Direkt in der App',
@@ -224,12 +224,12 @@ const LEGAL_DOCS_EN = {
     title: 'Privacy Policy',
     updatedAt: '2026-03-10',
     intro:
-      'MedBattle is a quiz app for medical knowledge. This notice explains what data we process and why.',
+      'MedQuiz is a quiz app for medical knowledge. This notice explains what data we process and why.',
     sections: [
       {
         heading: 'Responsible Party',
         paragraphs: [
-          'The MedBattle team is responsible for data processing.',
+          'The MedQuiz team is responsible for data processing.',
           `Contact: ${LEGAL_CONTACT_EMAIL}`,
         ],
       },
@@ -305,7 +305,7 @@ const LEGAL_DOCS_EN = {
       {
         heading: 'Notes',
         paragraphs: [
-          'MedBattle is a learning game and not a medical device. It does not diagnose, treat, cure, or prevent any disease and does not replace medical advice.',
+          'MedQuiz is a learning game and not a medical device. It does not diagnose, treat, cure, or prevent any disease and does not replace medical advice.',
           'We update this notice when needed.',
         ],
       },
@@ -315,13 +315,13 @@ const LEGAL_DOCS_EN = {
     id: 'terms',
     title: 'Terms of Service',
     updatedAt: '2026-03-10',
-    intro: 'These terms govern the use of the MedBattle app and related services.',
+    intro: 'These terms govern the use of the MedQuiz app and related services.',
     sections: [
       {
         heading: 'Scope and Services',
         paragraphs: [
           'By using the app, you accept these terms.',
-          'MedBattle is a learning and quiz game and not a medical device. It does not diagnose, treat, cure, or prevent any disease and does not replace medical advice.',
+          'MedQuiz is a learning and quiz game and not a medical device. It does not diagnose, treat, cure, or prevent any disease and does not replace medical advice.',
         ],
       },
       {
@@ -399,7 +399,7 @@ const LEGAL_DOCS_EN = {
     title: 'Delete Account',
     updatedAt: '2026-03-11',
     intro:
-      'Here you can delete your MedBattle account directly or use a deletion request as a fallback.',
+      'Here you can delete your MedQuiz account directly or use a deletion request as a fallback.',
     sections: [
       {
         heading: 'Directly in the app',

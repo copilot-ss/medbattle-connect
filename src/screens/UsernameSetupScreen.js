@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
-import { supabase } from '../lib/supabaseClient';
-import { fetchUserProfile, sanitizeUsername, updateUsername } from '../services/userService';
+import { getSessionUser } from '../lib/supabaseClient';
+import {
+  fetchUserProfile,
+  sanitizeUsername,
+  updateUsername,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+} from '../services/userService';
 import { formatUserError } from '../utils/formatUserError';
 import { useTranslation } from '../i18n/useTranslation';
 import styles from './styles/UsernameSetupScreen.styles';
@@ -22,18 +28,16 @@ export default function UsernameSetupScreen({ navigation }) {
 
     async function loadProfile() {
       try {
-        const { data, error } = await supabase.auth.getUser();
+        const authUser = await getSessionUser();
 
         if (!active) {
           return;
         }
 
-        if (error || !data?.user) {
+        if (!authUser) {
           navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
           return;
         }
-
-        const authUser = data.user;
 
         if (authUser.user_metadata?.username) {
           navigation.reset({
@@ -48,7 +52,7 @@ export default function UsernameSetupScreen({ navigation }) {
         const { ok, profile } = await fetchUserProfile(authUser.id);
         const baseSuggestion =
           profile?.username ??
-          sanitizeUsername(authUser?.email?.split?.('@')?.[0], 'medbattle');
+          sanitizeUsername(authUser?.email?.split?.('@')?.[0], 'medquiz');
 
         if (active) {
           setUsername(baseSuggestion || '');
@@ -78,8 +82,13 @@ export default function UsernameSetupScreen({ navigation }) {
 
     const candidate = sanitizeUsername(username, '').trim();
 
-    if (!candidate || candidate.length < 3) {
-      setMessage(t('Bitte mind. 3 Zeichen, nur Buchstaben/Zahlen/_ und Umlaute.'));
+    if (!candidate || candidate.length < USERNAME_MIN_LENGTH) {
+      setMessage(
+        t('Bitte {min} bis {max} Zeichen, nur Buchstaben/Zahlen/_ und Umlaute.', {
+          min: USERNAME_MIN_LENGTH,
+          max: USERNAME_MAX_LENGTH,
+        })
+      );
       return;
     }
 
@@ -125,6 +134,7 @@ export default function UsernameSetupScreen({ navigation }) {
         onChangeText={setUsername}
         autoCapitalize="none"
         autoCorrect={false}
+        maxLength={USERNAME_MAX_LENGTH}
         placeholder={t('dein_name')}
         placeholderTextColor="#94A3B8"
         style={styles.input}

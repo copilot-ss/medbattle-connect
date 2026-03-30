@@ -1,28 +1,60 @@
-import { DEFAULT_LOCALE, translations } from './translations';
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import { getDefaultAppLocale, normalizeSupportedLocale } from './deviceLocale';
+import de from './locales/de.json';
+import en from './locales/en.json';
 
-export { DEFAULT_LOCALE };
+export const DEFAULT_LOCALE = 'en';
+export const APP_DEFAULT_LOCALE = getDefaultAppLocale();
 
-let currentLocale = DEFAULT_LOCALE;
+const translations = {
+  de,
+  en,
+};
 
-export function setLocale(locale) {
-  if (locale && typeof locale === 'string') {
-    currentLocale = locale.toLowerCase();
-  }
+const resources = Object.entries(translations).reduce((acc, [locale, dictionary]) => {
+  acc[locale] = { translation: dictionary };
+  return acc;
+}, {});
+
+if (!i18n.isInitialized) {
+  i18n.use(initReactI18next).init({
+    initImmediate: false,
+    resources,
+    lng: APP_DEFAULT_LOCALE,
+    fallbackLng: DEFAULT_LOCALE,
+    supportedLngs: Object.keys(translations),
+    defaultNS: 'translation',
+    ns: ['translation'],
+    keySeparator: false,
+    nsSeparator: false,
+    interpolation: {
+      escapeValue: false,
+      prefix: '{',
+      suffix: '}',
+    },
+    react: {
+      useSuspense: false,
+    },
+    returnNull: false,
+  });
 }
 
-function applyParams(text, params) {
-  if (!params) {
-    return text;
+export function getLocale() {
+  return normalizeSupportedLocale(i18n.resolvedLanguage || i18n.language || APP_DEFAULT_LOCALE);
+}
+
+export function setLocale(locale) {
+  const nextLocale = normalizeSupportedLocale(locale);
+  if (getLocale() !== nextLocale) {
+    void i18n.changeLanguage(nextLocale);
   }
-  return Object.entries(params).reduce((result, [key, value]) => {
-    return result.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
-  }, text);
+  return nextLocale;
 }
 
 export function t(key, params, localeOverride) {
-  const locale = (localeOverride || currentLocale || DEFAULT_LOCALE).toLowerCase();
-  const dictionary = translations[locale] || {};
-  const fallbackDictionary = translations[DEFAULT_LOCALE] || {};
-  const resolved = dictionary[key] ?? fallbackDictionary[key] ?? key;
-  return applyParams(resolved, params);
+  const locale = localeOverride ? normalizeSupportedLocale(localeOverride) : getLocale();
+  return i18n.getFixedT(locale)(key, params);
 }
+
+export default i18n;

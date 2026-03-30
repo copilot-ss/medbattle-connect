@@ -64,7 +64,11 @@ export default function useLobbyLeaveActions({
     setClosingLobby(true);
     setMatchesError(null);
 
-    const activeLobby = currentMatch
+    const shouldKeepActiveLobby =
+      currentMatch &&
+      (currentMatch.status === 'waiting' || currentMatch.status === 'active');
+
+    const activeLobby = shouldKeepActiveLobby
       ? {
           code: currentMatch.code ?? null,
           players: currentMatch.state
@@ -76,6 +80,10 @@ export default function useLobbyLeaveActions({
           existingMatch: currentMatch,
         }
       : null;
+
+    if (!shouldKeepActiveLobby) {
+      clearActiveLobby();
+    }
 
     skipAutoCloseRef.current = true;
     navigation.navigate('MainTabs', {

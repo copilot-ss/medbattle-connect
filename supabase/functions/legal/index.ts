@@ -117,7 +117,7 @@ ${baseStyles}
     <main class="page">
       <div class="container">
         <header>
-          <p class="eyebrow">MedBattle</p>
+          <p class="eyebrow">MedQuiz</p>
           <h1>${heading}</h1>
           <p class="lead">${lead}</p>
           <p class="meta">Stand: ${updatedAt}</p>
@@ -132,12 +132,12 @@ ${body}
 </html>`;
 
 const privacyHtml = renderPage({
-  title: 'Datenschutz - MedBattle',
+  title: 'Datenschutz - MedQuiz',
   heading: 'Datenschutz',
-  lead: 'MedBattle ist eine Quiz-App für Medizinwissen. Diese Hinweise erklären, welche Daten wir verarbeiten und warum.',
+  lead: 'MedQuiz ist eine Quiz-App für Medizinwissen. Diese Hinweise erklären, welche Daten wir verarbeiten und warum.',
   updatedAt: '2026-03-10',
   body: `          <h2>Verantwortlicher</h2>
-          <p>Verantwortlich für die Datenverarbeitung ist das MedBattle Team.</p>
+          <p>Verantwortlich für die Datenverarbeitung ist das MedQuiz Team.</p>
           <p>Kontakt: <a href="mailto:${LEGAL_CONTACT_EMAIL}">${LEGAL_CONTACT_EMAIL}</a></p>
 
           <h2>Welche Daten wir verarbeiten</h2>
@@ -219,22 +219,22 @@ const privacyHtml = renderPage({
           </p>
 
           <h2>Hinweis zur Nutzung</h2>
-          <p>MedBattle ist ein Lernspiel und kein Medizinprodukt. Die App diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.</p>
+          <p>MedQuiz ist ein Lernspiel und kein Medizinprodukt. Die App diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.</p>
 
           <h2>Änderungen</h2>
           <p>Wir aktualisieren diese Hinweise bei Bedarf. Die aktuelle Version ist unter dem Link in der App verfügbar.</p>`,
 });
 
 const termsHtml = renderPage({
-  title: 'AGB - MedBattle',
+  title: 'AGB - MedQuiz',
   heading: 'Allgemeine Geschäftsbedingungen (AGB)',
-  lead: 'Diese Bedingungen regeln die Nutzung der MedBattle App und der zugehörigen Dienste.',
+  lead: 'Diese Bedingungen regeln die Nutzung der MedQuiz App und der zugehörigen Dienste.',
   updatedAt: '2026-03-10',
   body: `          <h2>Geltungsbereich</h2>
           <p>Mit der Nutzung der App akzeptierst du diese Bedingungen. Sie gelten für alle Funktionen der App.</p>
 
           <h2>Leistungen</h2>
-          <p>MedBattle ist ein Lern- und Quizspiel und kein Medizinprodukt. Inhalte dienen der Wissensübung; die App diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.</p>
+          <p>MedQuiz ist ein Lern- und Quizspiel und kein Medizinprodukt. Inhalte dienen der Wissensübung; die App diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.</p>
 
           <h2>Accounts</h2>
           <ul>
@@ -297,7 +297,7 @@ const termsHtml = renderPage({
 });
 
 const supportHtml = renderPage({
-  title: 'Support - MedBattle',
+  title: 'Support - MedQuiz',
   heading: 'Support',
   lead: 'Wir helfen dir gerne weiter.',
   updatedAt: '2026-03-10',
@@ -332,9 +332,9 @@ const supportHtml = renderPage({
 });
 
 const deleteAccountHtml = renderPage({
-  title: 'Konto loeschen - MedBattle',
+  title: 'Konto loeschen - MedQuiz',
   heading: 'Konto loeschen',
-  lead: 'Hier findest du den offiziellen Loeschpfad fuer MedBattle-Konten.',
+  lead: 'Hier findest du den offiziellen Loeschpfad fuer MedQuiz-Konten.',
   updatedAt: '2026-03-11',
   body: `          <h2>Direkt in der App</h2>
           <p>

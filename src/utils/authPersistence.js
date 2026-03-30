@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const REMEMBER_ME_KEY = 'medbattle_remember_me';
 const REMEMBERED_SESSION_KEY = 'medbattle_remembered_session';
+const ACTIVE_SESSION_TOKEN_KEY = 'medbattle_active_session_token';
 
 export async function loadRememberMe() {
   try {
@@ -47,11 +48,13 @@ export async function loadRememberedSession() {
     if (!raw) {
       return null;
     }
+
     const parsed = JSON.parse(raw);
     if (!parsed?.access_token || !parsed?.refresh_token) {
       await AsyncStorage.removeItem(REMEMBERED_SESSION_KEY);
       return null;
     }
+
     return parsed;
   } catch (err) {
     console.warn('Konnte gemerkte Session nicht laden:', err);
@@ -63,6 +66,48 @@ export async function clearRememberedSession() {
   try {
     await AsyncStorage.removeItem(REMEMBERED_SESSION_KEY);
   } catch (err) {
-    console.warn('Konnte gemerkte Session nicht löschen:', err);
+    console.warn('Konnte gemerkte Session nicht loeschen:', err);
+  }
+}
+
+export async function saveActiveSessionToken(token) {
+  const normalizedToken = typeof token === 'string' ? token.trim() : '';
+  if (!normalizedToken) {
+    await clearActiveSessionToken();
+    return;
+  }
+
+  try {
+    await AsyncStorage.setItem(ACTIVE_SESSION_TOKEN_KEY, normalizedToken);
+  } catch (err) {
+    console.warn('Konnte aktiven Session-Token nicht speichern:', err);
+  }
+}
+
+export async function loadActiveSessionToken() {
+  try {
+    const raw = await AsyncStorage.getItem(ACTIVE_SESSION_TOKEN_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const normalizedToken = raw.trim();
+    if (!normalizedToken) {
+      await AsyncStorage.removeItem(ACTIVE_SESSION_TOKEN_KEY);
+      return null;
+    }
+
+    return normalizedToken;
+  } catch (err) {
+    console.warn('Konnte aktiven Session-Token nicht laden:', err);
+    return null;
+  }
+}
+
+export async function clearActiveSessionToken() {
+  try {
+    await AsyncStorage.removeItem(ACTIVE_SESSION_TOKEN_KEY);
+  } catch (err) {
+    console.warn('Konnte aktiven Session-Token nicht loeschen:', err);
   }
 }

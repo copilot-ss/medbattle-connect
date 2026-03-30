@@ -17,16 +17,10 @@ import useSettingsUser from './useSettingsUser';
 
 export default function useSettingsController({ navigation, route, onClearSession }) {
   const {
-    soundEnabled,
-    setSoundEnabled,
-    vibrationEnabled,
-    setVibrationEnabled,
     pushEnabled,
     setPushEnabled,
     friendRequestsEnabled,
     setFriendRequestsEnabled,
-    language,
-    setLanguage,
     avatarId,
     setAvatarId,
     avatarUri,
@@ -75,6 +69,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     multiplayerGames,
     xpBoostsUsed,
     titleProgress,
+    levelProgress,
   } = useSettingsStats({
     streaks,
     userStats,
@@ -94,6 +89,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     friendRequests,
     loadingFriendRequests,
     respondingFriendRequestId,
+    removingFriendCode,
     onAcceptFriendRequest: handleAcceptFriendRequest,
     onDeclineFriendRequest: handleDeclineFriendRequest,
     onlineFriends,
@@ -245,14 +241,6 @@ export default function useSettingsController({ navigation, route, onClearSessio
     handleLinkGoogle,
   } = useSettingsAuth({ navigation, onClearSession, authUserId, isGuest });
 
-  const soundStatus = useMemo(
-    () => (soundEnabled ? t('Sound aktiv') : t('Sound stumm')),
-    [soundEnabled, t]
-  );
-  const vibrationStatus = useMemo(
-    () => (vibrationEnabled ? t('Vibration aktiv') : t('Vibration aus')),
-    [vibrationEnabled, t]
-  );
   const pushStatus = useMemo(
     () => (pushEnabled ? t('Push an') : t('Push aus')),
     [pushEnabled, t]
@@ -287,7 +275,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
   const streakShieldCount = sanitizeStatNumber(boosts?.streak_shield);
   const freezeTimeCount = sanitizeStatNumber(boosts?.freeze_time);
   const jokerCount = sanitizeStatNumber(boosts?.joker_5050);
-  const showAudioSection = activeTab === 'settings';
+  const showSettingsSection = activeTab === 'settings';
   const showProfileSection = activeTab === 'profile';
   const showSignOutSection = activeTab === 'settings';
 
@@ -300,18 +288,6 @@ export default function useSettingsController({ navigation, route, onClearSessio
     navigation.setParams({ focus: null });
   }, [route?.params?.focus, navigation]);
 
-  const handleSoundToggle = useCallback((value) => {
-    setSoundEnabled(value).catch((err) => {
-      console.warn('Konnte Sound-Einstellung nicht speichern:', err);
-    });
-  }, [setSoundEnabled]);
-
-  const handleVibrationToggle = useCallback((value) => {
-    setVibrationEnabled(value).catch((err) => {
-      console.warn('Konnte Vibrations-Einstellung nicht speichern:', err);
-    });
-  }, [setVibrationEnabled]);
-
   const handlePushToggle = useCallback((value) => {
     setPushEnabled(value).catch((err) => {
       console.warn('Konnte Push-Einstellung nicht speichern:', err);
@@ -323,12 +299,6 @@ export default function useSettingsController({ navigation, route, onClearSessio
       console.warn('Konnte Freundesanfragen-Einstellung nicht speichern:', err);
     });
   }, [setFriendRequestsEnabled]);
-
-  const handleLanguageChange = useCallback((value) => {
-    setLanguage(value).catch((err) => {
-      console.warn('Konnte Sprache nicht speichern:', err);
-    });
-  }, [setLanguage]);
 
   useEffect(() => {
     if (avatarUri || !avatarId || !currentAvatar?.id || avatarId === currentAvatar.id) {
@@ -400,7 +370,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
         friendInputRef.current?.focus?.();
       }, 100);
       cleanupFns.push(() => clearTimeout(timer));
-    } else if (focusTarget === 'audio') {
+    } else if (focusTarget === 'settings') {
       setActiveTab('settings');
     } else if (focusTarget === 'logout') {
       setActiveTab('profile');
@@ -408,7 +378,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     }
 
     if (scrollRef.current) {
-      const y = focusTarget === 'audio' ? 0 : undefined;
+      const y = focusTarget === 'settings' ? 0 : undefined;
       if (typeof y === 'number') {
         scrollRef.current.scrollTo({ y, animated: true });
       } else {
@@ -429,24 +399,16 @@ export default function useSettingsController({ navigation, route, onClearSessio
     // tabs/sections
     activeTab,
     setActiveTab,
-    showAudioSection,
+    showSettingsSection,
     showProfileSection,
     showSignOutSection,
     // preference toggles
-    soundEnabled,
-    vibrationEnabled,
     pushEnabled,
     friendRequestsEnabled,
-    language,
-    soundStatus,
-    vibrationStatus,
     pushStatus,
     friendRequestsStatus,
-    handleSoundToggle,
-    handleVibrationToggle,
     handlePushToggle,
     handleFriendRequestsToggle,
-    handleLanguageChange,
     // user/profile
     userName,
     userLevel,
@@ -471,6 +433,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     jokerCount,
     doubleXpExpiresAt,
     titleProgress,
+    levelProgress,
     achievements,
     claimingAchievement,
     handleClaimAchievement,
@@ -505,6 +468,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     friendRequests,
     loadingFriendRequests,
     respondingFriendRequestId,
+    removingFriendCode,
     onAcceptFriendRequest: handleAcceptFriendRequest,
     onDeclineFriendRequest: handleDeclineFriendRequest,
     onlineFriends,

@@ -1,48 +1,51 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { fetchLeaderboard } from '../../services/quizService';
 
 export default function useLeaderboardRank(userId) {
   const [rank, setRank] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
 
-    async function loadRank() {
-      if (!userId) {
-        if (!cancelled) {
-          setRank(null);
+      async function loadRank() {
+        if (!userId) {
+          if (!cancelled) {
+            setRank(null);
+          }
+          return;
         }
-        return;
+
+        setLoading(true);
+        try {
+          const board = await fetchLeaderboard(300, { force: true });
+          const index = Array.isArray(board)
+            ? board.findIndex((entry) => entry.userId === userId)
+            : -1;
+          if (!cancelled) {
+            setRank(index >= 0 ? index + 1 : null);
+          }
+        } catch (err) {
+          if (!cancelled) {
+            setRank(null);
+          }
+          console.warn('Konnte Leaderboard-Rang nicht laden:', err);
+        } finally {
+          if (!cancelled) {
+            setLoading(false);
+          }
+        }
       }
 
-      setLoading(true);
-      try {
-        const board = await fetchLeaderboard(300, { force: true });
-        const index = Array.isArray(board)
-          ? board.findIndex((entry) => entry.userId === userId)
-          : -1;
-        if (!cancelled) {
-          setRank(index >= 0 ? index + 1 : null);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setRank(null);
-        }
-        console.warn('Konnte Leaderboard-Rang nicht laden:', err);
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
+      loadRank();
 
-    loadRank();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
+      return () => {
+        cancelled = true;
+      };
+    }, [userId])
+  );
 
   return { rank, loading };
 }

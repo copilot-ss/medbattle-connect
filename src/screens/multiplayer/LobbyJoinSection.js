@@ -15,7 +15,6 @@ export default function LobbyJoinSection({
   openMatches,
   onRefreshMatches,
   onJoinQuick,
-  difficultyLabel,
 }) {
   if (isCreateOnly) {
     return null;
@@ -28,7 +27,6 @@ export default function LobbyJoinSection({
         openMatches={openMatches}
         onRefreshMatches={onRefreshMatches}
         onJoinQuick={onJoinQuick}
-        difficultyLabel={difficultyLabel}
       />
       <LobbyJoinCodeForm
         joinCode={joinCode}

@@ -1,7 +1,6 @@
 import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/MultiplayerLobbyScreen.styles';
-import { DIFFICULTY_ACCENTS, DIFFICULTY_LABELS } from './lobbyConstants';
 import LobbyEmptyState from './LobbyEmptyState';
 
 export default function LobbyOpenMatchesList({
@@ -9,7 +8,6 @@ export default function LobbyOpenMatchesList({
   openMatches,
   onRefreshMatches,
   onJoinQuick,
-  difficultyLabel,
 }) {
   const { t } = useTranslation();
 
@@ -39,10 +37,6 @@ export default function LobbyOpenMatchesList({
               <View style={styles.matchInfo}>
                 <Text style={styles.matchCode}>{item.code}</Text>
                 <Text style={styles.matchMeta}>
-                  <Text style={{ color: DIFFICULTY_ACCENTS[item.difficulty] ?? '#94A3B8' }}>
-                    {t(DIFFICULTY_LABELS[item.difficulty] ?? difficultyLabel)}
-                  </Text>
-                  {' - '}
                   {item.questionLimit} {t('Fragen')}
                 </Text>
                 {item.hostUsername ? (

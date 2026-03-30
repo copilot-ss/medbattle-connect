@@ -1,5 +1,6 @@
 const TEST_APP_ID_ANDROID = 'ca-app-pub-3940256099942544~3347511713';
 const TEST_APP_ID_IOS = 'ca-app-pub-3940256099942544~1458002511';
+const SUPPORTED_LOCALES = ['de', 'en'];
 
 function sanitizeEnv(value) {
   if (typeof value !== 'string') {
@@ -30,18 +31,46 @@ function isReleaseLikeConfig() {
   return sanitizeEnv(process.env.NODE_ENV) === 'production';
 }
 
-function withAdMobPlugin(config) {
+function hasPlugin(config, pluginName) {
   const existingPlugins = Array.isArray(config.plugins) ? config.plugins : [];
-  const hasAdMob = existingPlugins.some((plugin) => {
+  return existingPlugins.some((plugin) => {
     if (Array.isArray(plugin)) {
-      return plugin[0] === 'react-native-google-mobile-ads';
+      return plugin[0] === pluginName;
     }
-    return plugin === 'react-native-google-mobile-ads';
+    return plugin === pluginName;
   });
+}
 
-  if (hasAdMob) {
+function withLocalizationPlugin(config) {
+  if (hasPlugin(config, 'expo-localization')) {
     return config;
   }
+
+  const existingPlugins = Array.isArray(config.plugins) ? config.plugins : [];
+
+  return {
+    ...config,
+    plugins: [
+      ...existingPlugins,
+      [
+        'expo-localization',
+        {
+          supportedLocales: {
+            android: SUPPORTED_LOCALES,
+            ios: SUPPORTED_LOCALES,
+          },
+        },
+      ],
+    ],
+  };
+}
+
+function withAdMobPlugin(config) {
+  if (hasPlugin(config, 'react-native-google-mobile-ads')) {
+    return config;
+  }
+
+  const existingPlugins = Array.isArray(config.plugins) ? config.plugins : [];
 
   const releaseLikeConfig = isReleaseLikeConfig();
   const androidAppId =
@@ -61,5 +90,5 @@ function withAdMobPlugin(config) {
 }
 
 module.exports = ({ config }) => {
-  return withAdMobPlugin(config);
+  return withAdMobPlugin(withLocalizationPlugin(config));
 };

@@ -14,8 +14,7 @@ import LobbyLeaveConfirmModal from './multiplayer/LobbyLeaveConfirmModal';
 import LobbyContent from './multiplayer/LobbyContent';
 import LobbySettingsModal from './multiplayer/LobbySettingsModal';
 import {
-  DIFFICULTY_ACCENTS,
-  DIFFICULTY_LABELS,
+  DEFAULT_QUESTION_LIMIT,
   MAX_PLAYERS,
   MAX_QUESTION_LIMIT,
   MIN_QUESTION_LIMIT,
@@ -60,16 +59,14 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     [avatarUri, activeAvatarIconBase]
   );
   const userTitle = useMemo(
-    () => t(getTitleProgress(userStats?.xp).current?.label ?? 'Med Rookie'),
+    () => t(getTitleProgress(userStats?.xp).current?.label ?? 'Praktikant'),
     [userStats?.xp, t]
   );
   const {
     existingMatch,
     allowCompletedLobby,
     suppressActiveNavigation,
-    initialDifficulty,
     initialCategory,
-    difficulty,
     isCreateOnly,
     isJoinOnly,
   } = parseLobbyRouteConfig(route);
@@ -160,7 +157,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         clearStartCountdownTimers();
 
         navigation.replace('Quiz', {
-          difficulty: match.difficulty ?? difficulty,
           mode: 'multiplayer',
           matchId: match.id,
           joinCode: match.code,
@@ -170,22 +166,17 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       }, START_COUNTDOWN_NAVIGATE_DELAY_MS);
       countdownTimeoutsRef.current.push(navigateTimeoutId);
     },
-    [clearStartCountdownTimers, difficulty, navigation]
+    [clearStartCountdownTimers, navigation]
   );
 
   const { userId, userCode, username, loadingUser } = useLobbyUser();
   const { friends, friendsLoading } = useLobbyFriends(userId);
 
-  const difficultyLabel = useMemo(
-    () => DIFFICULTY_LABELS[difficulty] ?? DIFFICULTY_LABELS.mittel,
-    [difficulty]
-  );
   const {
     openMatches,
     matchesLoading,
     refreshMatches,
   } = useLobbyOpenMatches({
-    difficulty,
     isCreateOnly,
     userId,
     setMatchesError,
@@ -202,7 +193,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   } = useLobbyMatchState({
     navigation,
     userId,
-    difficulty,
     existingMatch,
     isCreateOnly,
     allowCompletedLobby,
@@ -212,6 +202,14 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     setMatchesError,
     closingRef,
   });
+  const multiplayerAccessError = useMemo(() => {
+    if (loadingUser || userId || currentMatch || existingMatch) {
+      return null;
+    }
+
+    return new Error(t('Bitte melde dich an, um Multiplayer zu nutzen.'));
+  }, [currentMatch, existingMatch, loadingUser, t, userId]);
+  const resolvedMatchesError = matchesError ?? multiplayerAccessError;
 
   useEffect(() => {
     if (currentMatch?.status === 'active') {
@@ -236,22 +234,17 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     );
   }, [currentMatch, userId]);
   const {
-    selectedDifficulty,
-    setSelectedDifficulty,
     selectedCategory,
     setSelectedCategory,
     questionLimit,
     setQuestionLimit,
     updatingSettings,
     showSettingsModal,
-    draftDifficulty,
     draftQuestionLimit,
-    setDraftDifficulty,
     adjustDraftQuestionLimit,
     handleOpenSettings,
     handleApplySettings,
   } = useLobbyHostSettings({
-    initialDifficulty,
     initialCategory,
     currentMatch,
     isHostWaiting,
@@ -261,15 +254,11 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     setMatchesError,
     t,
   });
-  const settingsDifficultyLabel = useMemo(
-    () => t(DIFFICULTY_LABELS[selectedDifficulty] ?? DIFFICULTY_LABELS.mittel),
-    [selectedDifficulty, t]
-  );
   const settingsQuestionLimit = useMemo(
     () =>
       Number.isFinite(questionLimit) && questionLimit > 0
         ? questionLimit
-        : 5,
+        : DEFAULT_QUESTION_LIMIT,
     [questionLimit]
   );
   const settingsCategoryLabel = useMemo(
@@ -334,10 +323,8 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     existingMatch,
     attachMatchSubscription,
     refreshMatches,
-    selectedDifficulty,
     selectedCategory,
     questionLimit,
-    setSelectedDifficulty,
     setSelectedCategory,
     setQuestionLimit,
     setMatchesError,
@@ -421,7 +408,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
 
       <LobbyContent
         loadingUser={loadingUser}
-        matchesError={matchesError}
+        matchesError={resolvedMatchesError}
         creating={creating}
         isCreateOnly={isCreateOnly}
         isJoinOnly={isJoinOnly}
@@ -437,7 +424,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         openMatches={visibleOpenMatches}
         onRefreshMatches={handleRefreshOpenMatches}
         onJoinQuick={handleJoinQuick}
-        difficultyLabel={difficultyLabel}
         onCreateMatch={handleCreateMatch}
         userId={userId}
         currentJoinCode={currentJoinCode}
@@ -456,7 +442,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
         onOpenSettings={handleOpenSettings}
         copied={copied}
         onCopyCode={handleCopyCode}
-        settingsDifficultyLabel={settingsDifficultyLabel}
         settingsQuestionLimit={settingsQuestionLimit}
         settingsCategoryLabel={settingsCategoryLabel}
         friendsLoading={friendsLoading}
@@ -480,13 +465,9 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       />
       <LobbySettingsModal
         visible={showSettingsModal}
-        labels={DIFFICULTY_LABELS}
-        accents={DIFFICULTY_ACCENTS}
-        difficulty={draftDifficulty}
         questionLimit={draftQuestionLimit}
         min={MIN_QUESTION_LIMIT}
         max={MAX_QUESTION_LIMIT}
-        onChangeDifficulty={setDraftDifficulty}
         onDecrement={() => adjustDraftQuestionLimit(-1)}
         onIncrement={() => adjustDraftQuestionLimit(1)}
         onApply={handleApplySettings}

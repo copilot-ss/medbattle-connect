@@ -97,8 +97,57 @@ def hasReleaseSigningConfig = releaseStoreFile?.exists() && releaseStorePassword
 def isReleaseTaskRequested = gradle.startParameter.taskNames.any { taskName ->
     taskName?.toLowerCase()?.contains("release")
 }
+def isLocalBundleReleaseRequested = gradle.startParameter.taskNames.any { taskName ->
+    def normalized = taskName?.toLowerCase()
+    if (!normalized) {
+        return false
+    }
+
+    return normalized == "bundlerelease" ||
+        normalized == ":app:bundlerelease" ||
+        (normalized.startsWith("bundle") && normalized.endsWith("release")) ||
+        (normalized.contains(":bundle") && normalized.endsWith("release"))
+}
+def isEasBuild = ["EAS_BUILD", "EAS_BUILD_PLATFORM", "EAS_BUILD_PROFILE"].any { key ->
+    def value = System.getenv(key)
+    value != null && value.toString().trim()
+}
 def googleTestAdmobAppId = "ca-app-pub-3940256099942544~3347511713"
 def androidAdmobAppId = readRepoEnvValue(["EXPO_PUBLIC_ADMOB_APP_ID_ANDROID"])
+def trackedAndroidVersionCode = 40
+def appBuildGradleFile = project.file("build.gradle")
+def appConfigFile = new File(projectRoot, "app.json")
+def parseVersionCode = { String text, String pattern ->
+    def matcher = text =~ pattern
+    return matcher.find() ? matcher.group(1).toInteger() : null
+}
+def buildGradleText = appBuildGradleFile.getText("UTF-8")
+def configuredAndroidVersionCode = parseVersionCode(buildGradleText, /trackedAndroidVersionCode\s*=\s*(\d+)/) ?: trackedAndroidVersionCode
+def resolvedAndroidVersionCode = configuredAndroidVersionCode
+
+if (isLocalBundleReleaseRequested && !isEasBuild) {
+    def appConfigText = appConfigFile.exists() ? appConfigFile.getText("UTF-8") : ""
+    def configuredAppJsonVersionCode = parseVersionCode(appConfigText, /"versionCode"\s*:\s*(\d+)/) ?: configuredAndroidVersionCode
+    resolvedAndroidVersionCode = Math.max(configuredAndroidVersionCode, configuredAppJsonVersionCode) + 1
+
+    def updatedBuildGradleText = buildGradleText.replaceFirst(
+        /trackedAndroidVersionCode\s*=\s*\d+/,
+        "trackedAndroidVersionCode = ${resolvedAndroidVersionCode}"
+    )
+    if (updatedBuildGradleText == buildGradleText) {
+        throw new GradleException("Could not auto-increment android/app/build.gradle versionCode before bundleRelease.")
+    }
+    appBuildGradleFile.setText(updatedBuildGradleText, "UTF-8")
+
+    if (appConfigText) {
+        def updatedAppConfigText = appConfigText.replaceFirst(/"versionCode"\s*:\s*\d+/, "\"versionCode\": ${resolvedAndroidVersionCode}")
+        if (updatedAppConfigText != appConfigText) {
+            appConfigFile.setText(updatedAppConfigText, "UTF-8")
+        }
+    }
+
+    logger.lifecycle("Auto-incremented local Android versionCode to ${resolvedAndroidVersionCode} for bundleRelease.")
+}
 
 if (isReleaseTaskRequested && !hasReleaseSigningConfig) {
     throw new GradleException(
@@ -201,7 +250,7 @@ android {
         applicationId 'com.sjigalin.medbattle'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 26
+        versionCode resolvedAndroidVersionCode
         versionName "1.0.1"
 
         def admobAppId = androidAdmobAppId ?: googleTestAdmobAppId
@@ -277,6 +326,7 @@ android {
 
 dependencies {
     implementation "io.github.hyochan.openiap:openiap-google:1.3.28"
+    implementation "com.google.android.play:app-update:2.1.0"
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 

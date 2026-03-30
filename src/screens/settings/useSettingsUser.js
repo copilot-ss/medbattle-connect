@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { getSessionUser, supabase } from '../../lib/supabaseClient';
 import { fetchUserProfile } from '../../services/userService';
 import { getFriendCodeForUser, getOrCreateGuestId } from '../../services/friendsService';
 import { getStoredGuestName, loadGuestMode } from '../../utils/guestProfile';
@@ -17,18 +17,20 @@ export default function useSettingsUser() {
   useEffect(() => {
     let active = true;
 
-    async function resolveUser() {
-      const { data, error } = await supabase.auth.getUser();
-
-      if (!active) {
-        return;
+    async function resolveUser(userOverride) {
+      let user = userOverride;
+      if (user === undefined) {
+        try {
+          user = await getSessionUser();
+        } catch (error) {
+          if (!active) {
+            return;
+          }
+          console.warn('Konnte Nutzer nicht abrufen:', error.message);
+          user = null;
+        }
       }
 
-      if (error) {
-        console.warn('Konnte Nutzer nicht abrufen:', error.message);
-      }
-
-      const user = data?.user ?? null;
       const id = user?.id ?? null;
       const guestId = await getOrCreateGuestId();
       const guestName = await getStoredGuestName();
@@ -75,8 +77,8 @@ export default function useSettingsUser() {
 
     resolveUser();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
-      resolveUser();
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      resolveUser(session?.user ?? null);
     });
 
     return () => {

@@ -3,13 +3,12 @@
   Animated,
   Pressable,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
 import AvatarView from '../../components/avatar/AvatarView';
-import { getTitleProgress } from '../../services/titleService';
+import { getLevelProgress, getTitleProgress } from '../../services/titleService';
 import styles from '../styles/SettingsScreen.styles';
 import useProfileSectionAnimations from './useProfileSectionAnimations';
 
@@ -41,18 +40,12 @@ export default function ProfileSection({
   jokerCount = 0,
   doubleXpExpiresAt = null,
   titleProgress = null,
+  levelProgress = null,
   achievements = [],
   claimingAchievement = null,
   onClaimAchievement,
   leaderboardRank = null,
   loadingRank = false,
-  newEmail,
-  setNewEmail,
-  emailCtaLabel,
-  emailCtaHint,
-  loadingEmail,
-  onEmailUpdate,
-  showEmailActions = true,
   showLinkGoogle = false,
   linkGoogleLabel,
   linkGoogleHint,
@@ -63,11 +56,12 @@ export default function ProfileSection({
   const levelLabel = t('Level {level}', { level: userLevel });
   const streakSuffix = totalStreak > 0 ? ` x${totalStreak}` : '';
   const xpCoinsLabel = t('XP {xp} | Coins {coins}', { xp, coins });
-  const fallbackTitle = t('Med Rookie');
+  const fallbackTitle = t('Praktikant');
   const googleHintFallback = t('Google mit diesem Profil verknüpfen.');
   const googleLabelFallback = t('Google verbinden');
   const safeXp = Number.isFinite(xp) ? Math.max(0, Math.round(xp)) : 0;
   const resolvedTitleProgress = titleProgress ?? getTitleProgress(safeXp);
+  const resolvedLevelProgress = levelProgress ?? getLevelProgress(safeXp);
   const resolvedTitle = resolvedTitleProgress?.current?.label
     ? t(resolvedTitleProgress.current.label)
     : fallbackTitle;
@@ -80,6 +74,7 @@ export default function ProfileSection({
   const resolvedJokerCount = Number.isFinite(jokerCount)
     ? Math.max(0, jokerCount)
     : 0;
+  const profileAccentColor = currentAvatar?.color ?? '#FF7FA8';
   const xpBoostActive =
     Number.isFinite(doubleXpExpiresAt) && doubleXpExpiresAt > Date.now();
   const inventoryItems = [
@@ -117,15 +112,15 @@ export default function ProfileSection({
       active: true,
     },
   ].filter((item) => item.visible);
-  const progressTarget = Number.isFinite(resolvedTitleProgress?.progress)
-    ? Math.max(0, Math.min(1, resolvedTitleProgress.progress))
+  const progressTarget = Number.isFinite(resolvedLevelProgress?.progress)
+    ? Math.max(0, Math.min(1, resolvedLevelProgress.progress))
     : 0;
   const progressPercent = Math.round(progressTarget * 100);
-  const currentTierMinXp = Number.isFinite(resolvedTitleProgress?.current?.minXp)
-    ? resolvedTitleProgress.current.minXp
+  const currentTierMinXp = Number.isFinite(resolvedLevelProgress?.current?.minXp)
+    ? resolvedLevelProgress.current.minXp
     : 0;
-  const nextTierMinXp = Number.isFinite(resolvedTitleProgress?.next?.minXp)
-    ? resolvedTitleProgress.next.minXp
+  const nextTierMinXp = Number.isFinite(resolvedLevelProgress?.next?.minXp)
+    ? resolvedLevelProgress.next.minXp
     : null;
   const tierXpProgress = Math.max(0, safeXp - currentTierMinXp);
   const tierXpTotal = nextTierMinXp != null
@@ -134,8 +129,8 @@ export default function ProfileSection({
   const progressHint = nextTierMinXp != null
     ? `${formatThousands(tierXpProgress)} / ${formatThousands(tierXpTotal)} XP`
     : t('Max-Level erreicht');
-  const nextTitleLabel = resolvedTitleProgress?.next?.label
-    ? t(resolvedTitleProgress.next.label)
+  const nextLevelLabel = Number.isFinite(resolvedLevelProgress?.next?.level)
+    ? t('Level {level}', { level: resolvedLevelProgress.next.level })
     : null;
   const {
     heroAnimatedStyle,
@@ -210,14 +205,18 @@ export default function ProfileSection({
             <Animated.View
               style={[
                 styles.profileLevelProgressFill,
+                {
+                  backgroundColor: profileAccentColor,
+                  shadowColor: profileAccentColor,
+                },
                 { width: progressWidth },
               ]}
             />
           </View>
           <View style={styles.profileLevelProgressMetaRow}>
             <Text style={styles.profileLevelProgressMeta}>{progressHint}</Text>
-            {nextTitleLabel ? (
-              <Text style={styles.profileLevelProgressMeta}>{`-> ${nextTitleLabel}`}</Text>
+            {nextLevelLabel ? (
+              <Text style={styles.profileLevelProgressMeta}>{nextLevelLabel}</Text>
             ) : null}
           </View>
         </View>
@@ -380,38 +379,8 @@ export default function ProfileSection({
         </View>
       </Animated.View>
 
-      {showEmailActions || showLinkGoogle ? (
+      {showLinkGoogle ? (
         <Animated.View style={accountAnimatedStyle}>
-          {showEmailActions ? (
-            <View style={styles.fieldGroup}>
-              <TextInput
-                value={newEmail}
-                onChangeText={setNewEmail}
-                placeholder={t('name@example.com')}
-                placeholderTextColor="#64748B"
-                autoCapitalize="none"
-                keyboardType="email-address"
-                style={styles.input}
-              />
-              <Text style={styles.helperText}>{emailCtaHint}</Text>
-              <Pressable
-                onPress={onEmailUpdate}
-                disabled={loadingEmail}
-                style={[
-                  styles.actionButton,
-                  styles.primaryButton,
-                  loadingEmail ? styles.disabledButton : null,
-                ]}
-              >
-                {loadingEmail ? (
-                  <ActivityIndicator color="#F8FAFC" />
-                ) : (
-                  <Text style={styles.primaryButtonText}>{emailCtaLabel}</Text>
-                )}
-              </Pressable>
-            </View>
-          ) : null}
-
           {showLinkGoogle ? (
             <View style={styles.fieldGroup}>
               <Text style={styles.helperText}>

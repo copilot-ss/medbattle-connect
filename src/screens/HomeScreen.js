@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Text, View, ScrollView } from 'react-native';
 import styles from './styles/HomeScreen.styles';
 import { useConnectivity } from '../context/ConnectivityContext';
-import { usePreferences } from '../context/PreferencesContext';
+import {
+  useAvatarPrefs,
+  useEnergyPrefs,
+  useStatsPrefs,
+} from '../context/PreferencesContext';
 import useSupabaseUserId from '../hooks/useSupabaseUserId';
 import usePremiumStatus from '../hooks/usePremiumStatus';
 import { calculateCoinReward } from '../services/quizService';
@@ -13,6 +17,7 @@ import CategoryTile from './home/CategoryTile';
 import EnergyBoostModal from './home/EnergyBoostModal';
 import FeaturedQuizCard from './home/FeaturedQuizCard';
 import HomeHeader from './home/HomeHeader';
+import ModeCard from './home/ModeCard';
 import OfflineBanner from './home/OfflineBanner';
 import StreakCard from './home/StreakCard';
 import useHomeActiveLobby from './home/useHomeActiveLobby';
@@ -20,13 +25,15 @@ import useHomeBoostActions from './home/useHomeBoostActions';
 import useHomePresence from './home/useHomePresence';
 import useHomeUser from './home/useHomeUser';
 import {
-  DEFAULT_DIFFICULTY,
+  COIN_ENERGY_AMOUNT,
+  COIN_ENERGY_COST,
   LOBBY_CAPACITY,
   QUICK_PLAY_QUESTIONS,
   sanitizeStatNumber,
 } from './home/homeConfig';
 import useSettingsStats from './settings/useSettingsStats';
 import { useTranslation } from '../i18n/useTranslation';
+import { colors } from '../styles/theme';
 
 const doctorAnimation = require('../../assets/animations/doctor/doctor.json');
 
@@ -38,22 +45,17 @@ export default function HomeScreen({ navigation, route }) {
   const isOffline = isOnline === false;
   const userId = useSupabaseUserId();
   const { userName } = useHomeUser();
+  const { energy, energyMax, nextEnergyAt, addEnergy, refreshEnergy } = useEnergyPrefs();
   const {
-    energy,
-    energyMax,
-    boostEnergy,
-    addEnergy,
-    refreshEnergy,
     streaks,
     userStats,
-    avatarId,
-    avatarUri,
     updateUserStats,
     boosts,
     claimedAchievements,
     streakShieldActive,
     setStreakShieldActive,
-  } = usePreferences();
+  } = useStatsPrefs();
+  const { avatarId, avatarUri } = useAvatarPrefs();
   const { premium } = usePremiumStatus();
   const [showAnimation, setShowAnimation] = useState(false);
   const { activeLobby, hasLobby, hasActiveLobby } = useHomeActiveLobby({
@@ -68,9 +70,10 @@ export default function HomeScreen({ navigation, route }) {
     rewarding,
     showBoostModal,
     setShowBoostModal,
+    energyGainFx,
     isBoostBusy,
     coinsAvailable,
-    handleOpenShop,
+    handleBuyEnergyWithCoins,
     watchAdForEnergy,
   } = useHomeBoostActions({
     t,
@@ -82,7 +85,6 @@ export default function HomeScreen({ navigation, route }) {
     userStats,
     userId,
     addEnergy,
-    boostEnergy,
     updateUserStats,
   });
   const {
@@ -184,7 +186,6 @@ export default function HomeScreen({ navigation, route }) {
   const quickPlayCoinReward = calculateCoinReward({
     correct: QUICK_PLAY_QUESTIONS,
     total: QUICK_PLAY_QUESTIONS,
-    difficulty: DEFAULT_DIFFICULTY,
   });
   const quickPlaySubtitle = `+${quickPlayCoinReward}`;
   const categoryTiles = useMemo(
@@ -217,6 +218,15 @@ export default function HomeScreen({ navigation, route }) {
     });
   }
 
+  function handleJoinLobby() {
+    if (isOffline || hasLobby) {
+      return;
+    }
+    navigation.navigate('MultiplayerLobby', {
+      mode: 'join',
+    });
+  }
+
   async function startQuickPlay() {
     if (isBoostBusy || hasLobby) {
       return;
@@ -226,12 +236,28 @@ export default function HomeScreen({ navigation, route }) {
       setShowBoostModal(true);
       return;
     }
-    navigation.navigate('Quiz', {
-      difficulty: DEFAULT_DIFFICULTY,
+    const parentNavigation =
+      typeof navigation.getParent === 'function' ? navigation.getParent() : null;
+    const openQuiz =
+      parentNavigation && typeof parentNavigation.push === 'function'
+        ? parentNavigation.push.bind(parentNavigation)
+        : typeof navigation.push === 'function'
+        ? navigation.push.bind(navigation)
+        : navigation.navigate.bind(navigation);
+    openQuiz('Quiz', {
       mode: 'quick',
       questionLimit: QUICK_PLAY_QUESTIONS,
     });
   }
+
+  const handleOpenEnergyBoost = useCallback(() => {
+    if (premium || energy > 0 || isBoostBusy) {
+      return;
+    }
+
+    setEnergyMessage(null);
+    setShowBoostModal(true);
+  }, [energy, isBoostBusy, premium, setEnergyMessage, setShowBoostModal]);
 
   return (
     <View style={styles.container}>
@@ -246,6 +272,7 @@ export default function HomeScreen({ navigation, route }) {
           coins={coinsAvailable}
           energy={energy}
           energyMax={energyMax}
+          energyGainFx={energyGainFx}
           avatarInitials={avatarInitials}
           avatarUri={avatarUri}
           avatarSource={currentAvatar?.source ?? null}
@@ -255,6 +282,7 @@ export default function HomeScreen({ navigation, route }) {
           progress={titleProgress?.progress ?? 0}
           hasClaimableAchievements={hasClaimableAchievement}
           onProfilePress={() => navigation.navigate('Profile')}
+          onEnergyPress={!premium && energy <= 0 ? handleOpenEnergyBoost : null}
         />
 
         <OfflineBanner
@@ -312,16 +340,30 @@ export default function HomeScreen({ navigation, route }) {
               />
             ))}
           </View>
+          <View style={styles.categoryFooterAction}>
+            <ModeCard
+              title={t('Lobby beitreten')}
+              accent={colors.accent}
+              onPress={handleJoinLobby}
+              disabled={isOffline || hasLobby}
+            />
+          </View>
         </View>
       </ScrollView>
 
       <EnergyBoostModal
         visible={!premium && showBoostModal}
+        energy={energy}
+        nextEnergyAt={nextEnergyAt}
+        coinsAvailable={coinsAvailable}
         energyMessage={energyMessage}
         isBoostBusy={isBoostBusy}
         rewarding={rewarding}
-        onOpenShop={handleOpenShop}
+        coinCost={COIN_ENERGY_COST}
+        coinEnergyAmount={COIN_ENERGY_AMOUNT}
+        onBuyWithCoins={handleBuyEnergyWithCoins}
         onWatchAd={watchAdForEnergy}
+        onRefreshEnergy={refreshEnergy}
         onClose={() => setShowBoostModal(false)}
       />
     </View>

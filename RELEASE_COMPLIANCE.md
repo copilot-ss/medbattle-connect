@@ -1,24 +1,29 @@
 # RELEASE_COMPLIANCE.md - Go/No-Go Snapshot
 
-Stand: 2026-03-11
-Basis: `TASKS.md` (Release-Checklist)
+Stand: 2026-03-24
+Basis: `TASKS.md`, `RELEASE_TESTS.md`
 
 ## Entscheidung
 - Aktuell: `NO-GO`
 
-## Aktuelle Security Befunde
-- Dependency-Scan (2026-03-11, `npm audit --omit=dev`): `0 high`, `0 moderate`, `0 critical`.
-- Supabase Security / Inspect (letzter dokumentierter Check 2026-03-08): keine kritischen Findings.
-- Supabase DB Lint (letzter dokumentierter Check 2026-03-08): keine Error-Findings; nur Warnings in `public.generate_join_code`.
-- Recheck `supabase db lint --linked` am 2026-03-11 in dieser Umgebung blockiert: verknuepftes DB-Passwort lokal nicht mehr gueltig.
-- Repo-Release-Check (2026-03-11, `npm run release:check`): nur noch `EXPO_PUBLIC_ADMOB_APP_ID_ANDROID` und `EXPO_PUBLIC_ADMOB_REWARDED_ID_ANDROID` fehlen fuer einen sauberen Release-Build.
-- App-Typecheck (2026-03-11, `npx tsc --noEmit`): clean, nachdem Supabase Edge Functions aus dem App-TS-Check ausgeschlossen wurden.
-- Expo Dependency Check (2026-03-11, `npx expo install --check`): clean.
-- Expo Doctor (2026-03-11, `npx expo-doctor`): clean; der nicht passende Non-CNG Sync-Check ist bewusst deaktiviert, weil das Projekt native Android-Dateien manuell pflegt.
+## Snapshot
+- Neuester in Google Play hochgeladener Store-Build bleibt `versionCode 31` (`1.0.1`, Upload `2026-03-17`); dieser Build ist weiterhin nicht aktiv.
+- Vorhandenes lokales Store-AAB ist `versionCode 39` vom `2026-03-24`.
+- Das angeschlossene Realgeraet `c2ccd135` meldet derzeit `versionCode 35`, `versionName 1.0.1`.
+- Das aktuelle Store-AAB ist frisch aus dem aktuellen Repo-Stand gebaut und enthaelt wieder `x86_64`, damit Google Play spaeter auch den Emulator bedienen kann. Offen bleiben Upload/Rollout und der echte Store-Smoke auf Emulator und Realgeraet.
+- Reine Supabase-Inhaltsaenderungen wie neue Online-Fragen oder Erklaerungen sind bereits live; fuer den eigentlichen Store-/Device-Stand zaehlt aber weiterhin nur das ausgerollte App-Artefakt.
+
+## Aktuelle Security- und Qualitaetslage
+- Dependency-Scan (`npm audit --omit=dev`, zuletzt dokumentiert `2026-03-08`): `0 high`, `0 moderate`, `0 critical`.
+- Supabase Security / Inspect (letzter dokumentierter Check `2026-03-08`): keine kritischen Findings.
+- Supabase DB Lint (letzter erfolgreicher linked-Check `2026-03-08`): keine Error-Findings; nur Warnings in `public.generate_join_code`.
+- Repo-Release-Check (`npm run release:check`, `2026-03-23`): erfolgreich.
+- App-Typecheck (`npx tsc --noEmit`, `2026-03-24`): clean.
+- Aktuelle Supabase-Inhalts- und RPC-Aenderungen sind remote live; fuer Store-/Device-Qualitaet entscheidend offen bleibt vor allem der frische App-Build aus dem aktuellen Repo plus Realgeraet-Smoke.
 
 ## Must-Pass Gates
-- [ ] Play Store Assets final (`STORE_ASSETS.md`)
-- [ ] Play Store Content Rating ausgefuellt
+- [x] Play Store Assets vorbereitet (`STORE_ASSETS.md`)
+- [ ] Play Store Content Rating final in Play Console eingetragen
 - [ ] Play Data Safety final in Play Console eingetragen
 - [ ] OAuth Redirects + Deep Links end-to-end getestet (Google, Discord, E-Mail)
 - [x] Supabase Security Advisor ohne kritische Findings
@@ -31,28 +36,28 @@ Basis: `TASKS.md` (Release-Checklist)
 - [ ] Offline-Flows getestet (Login-Recall, Offline-Quick-Play, Online-Sync)
 - [ ] Multiplayer-Flows getestet (Create, Join, Resume, Abbruch)
 - [ ] Purchases/Ads-Flow getestet
-- [ ] Device-Smoke-Test mit aktuellem Production-Build (`7cd7ea48-fde1-4a21-867f-78a43e8b1eef`)
-- [ ] Play-Submit-Credentials in EAS vorhanden (Google Service Account JSON)
+- [x] Frisches Release-Artefakt aus aktuellem Repo gebaut (Store-AAB `39`)
+- [ ] Device-Smoke-Test mit genau diesem aktuellen Release-Artefakt dokumentiert
+- [ ] Google Play Submit Service Account in EAS hinterlegt
 
-## Bereits Repo-Seitig Erfuellt
+## Repo-Seitig Bereits Erfuellt
 - [x] Privacy, Terms, Support und Delete-Account Links hinterlegt
-- [x] App-Version und lokaler Android `versionCode` auf Release-Stand 26 angeglichen
+- [x] App-Version / Android `versionCode` auf `39` gesetzt
 - [x] Deep-Link Schemes + OAuth Redirect Config vorhanden
-- [x] Passwort-Reset Deep Link Flow integriert
+- [x] Passwort-Reset Deep-Link-Flow integriert
 - [x] RLS, Policies und Storage-Nutzung geprueft
-- [x] Android Release-Hardening: `allowBackup=false`, `usesCleartextTraffic=false`, riskante Permissions entfernt
+- [x] Android Release-Hardening gesetzt (`allowBackup=false`, `usesCleartextTraffic=false`, riskante Permissions entfernt)
 - [x] Telemetry entfernt; Crash-Logs laufen ueber redigierte `client_logs`
-- [x] Store Listing um Health-/Medical-Hinweis ergaenzt
-- [x] Data-Safety-Draft auf aktuellen Konto-, Ads-, IAP- und Logging-Stand gebracht
-- [x] Android Production Store-Build erfolgreich dokumentiert (`versionCode 26`)
-- [x] Repo-Release-Check vorhanden (`npm run release:check` fuer Env, Signing und Android-Hardening)
+- [x] Store Listing / Data-Safety-Drafts dokumentiert
+- [x] Lokales Store-AAB `39` vorhanden
+- [x] Lokales Realgeraet `c2ccd135` sieht derzeit `versionCode 35`
 
 ## Konkrete Reihenfolge bis GO
-1. In Play Console manuell abschliessen: Store Assets, Content Rating, Data Safety, Target audience / app content.
-2. OAuth-, Offline-, Multiplayer- und Purchases/Ads-Flows auf echten Geraeten end-to-end testen.
-3. Device-Smoke-Test auf Realgeraet mit dem aktuellen Production-Build abschliessen.
-4. Google Play Submit Service Account in EAS hinterlegen.
-5. Danach erst `GO`.
+1. Das vorhandene Store-AAB `39` in Google Play hochladen bzw. im Closed-Test-Track ausrollen.
+2. Genau diesen Store-Build auf Emulator und Realgeraet installieren und smoke-testen: Start, Login, Quiz, Result, Offline-CTA, Ads/IAP, Logout/Reopen.
+3. OAuth-, Offline-, Multiplayer- und Purchases/Ads-Flows auf echten Geraeten end-to-end dokumentieren.
+4. In Play Console manuell abschliessen: Content Rating, Data Safety, App Content / Target Audience.
+5. Google Play Submit Service Account in EAS hinterlegen und erst danach auf `GO` umstellen.
 
 ## Go-Kriterium
-- `GO` erst dann, wenn alle Punkte unter `Must-Pass Gates` auf `[x]` stehen.
+- `GO` erst dann, wenn alle Punkte unter `Must-Pass Gates` auf `[x]` stehen und der getestete Realgeraet-Stand exakt dem zu veroeffentlichenden Artefakt entspricht.

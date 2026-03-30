@@ -19,7 +19,7 @@ export default function LobbyInviteOverlay({
 
   const senderName = invite.senderUsername ?? invite.senderCode ?? t('Freund');
   const secondsText = Number.isFinite(remainingSeconds)
-    ? t('Laeuft ab in {seconds}s', {
+    ? t('Läuft ab in {seconds}s', {
       seconds: Math.max(0, remainingSeconds),
     })
     : null;
@@ -30,7 +30,7 @@ export default function LobbyInviteOverlay({
       <View style={styles.card}>
         <Text style={styles.title}>{t('Lobby Einladung')}</Text>
         <Text style={styles.message}>
-          {t('{name} laedt dich in eine Lobby ein.', { name: senderName })}
+          {t('{name} lädt dich in eine Lobby ein.', { name: senderName })}
         </Text>
         <View style={styles.metaRow}>
           <Text style={styles.matchCode}>

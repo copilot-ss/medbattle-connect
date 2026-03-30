@@ -356,7 +356,7 @@ export default function useResultMultiplayerData({
       avatarUrl: entry.avatarUrl ?? null,
       avatarIcon: entry.avatarIcon ?? null,
       avatarColor: entry.avatarColor ?? null,
-      statusLabel: 'Lobby Ergebnis',
+      statusLabel: t('Lobby Ergebnis'),
     }));
   }, [openProfile, t]);
 

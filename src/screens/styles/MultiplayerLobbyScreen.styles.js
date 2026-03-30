@@ -132,29 +132,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: fonts.regular,
   },
-  difficultyChips: {
-    flexDirection: 'row',
-    columnGap: 10,
-  },
-  difficultyChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt,
-  },
-  difficultyChipActive: {
-    borderColor: 'rgba(87, 199, 255, 0.65)',
-    backgroundColor: 'rgba(87, 199, 255, 0.18)',
-  },
-  difficultyChipText: {
-    color: colors.textSecondary,
-    fontFamily: fonts.medium,
-  },
-  difficultyChipTextActive: {
-    color: '#CBEAFF',
-  },
   questionStepper: {
     flexDirection: 'row',
     alignItems: 'center',

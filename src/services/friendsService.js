@@ -497,7 +497,7 @@ export async function addFriend(userId, code) {
   const normalizedCode = normalizeCode(code ?? '');
 
   if (!normalizedCode) {
-    return { ok: false, error: new Error('Bitte gÃƒÂ¼ltigen Code angeben.') };
+    return { ok: false, error: new Error('Bitte gültigen Code angeben.') };
   }
 
   try {
@@ -567,7 +567,7 @@ export async function removeFriend(userId, friend) {
   const guestMode = isGuestId(resolvedUserId);
 
   if (!friend?.code) {
-    return { ok: false, error: new Error('Ungueltiger Freund.') };
+    return { ok: false, error: new Error('Ungültiger Freund.') };
   }
 
   const normalizedCode = normalizeCode(friend.code);
@@ -616,11 +616,11 @@ export async function respondFriendRequest(userId, requestId, action) {
   const guestMode = isGuestId(resolvedUserId);
 
   if (guestMode) {
-    return { ok: false, error: new Error('Gastmodus unterstÃƒÂ¼tzt keine Anfragen.') };
+    return { ok: false, error: new Error('Gastmodus unterstützt keine Anfragen.') };
   }
 
   if (!requestId) {
-    return { ok: false, error: new Error('UngÃƒÂ¼ltige Anfrage.') };
+    return { ok: false, error: new Error('Ungültige Anfrage.') };
   }
 
   const normalizedAction = action === 'accept' ? 'accept' : 'decline';
@@ -652,7 +652,7 @@ export async function respondFriendRequest(userId, requestId, action) {
 
 export async function migrateLocalFriends(fromUserId, toUserId) {
   if (!toUserId) {
-    return { ok: false, error: new Error('Kein Zielnutzer ÃƒÂ¼bergeben.') };
+    return { ok: false, error: new Error('Kein Zielnutzer übergeben.') };
   }
 
   const sourceId = fromUserId || (await getOrCreateGuestId());

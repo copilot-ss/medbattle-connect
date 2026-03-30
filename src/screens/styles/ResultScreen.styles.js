@@ -186,30 +186,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(87, 199, 255, 0.4)',
   },
-  scoreTopAnimationWrap: {
-    width: '100%',
-    alignSelf: 'stretch',
-    alignItems: 'center',
-    marginHorizontal: -24,
-    marginBottom: 12,
-  },
-  scoreTopAnimation: {
-    width: '100%',
-    height: 96,
-  },
-  perfectTopAnimationWrap: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 220,
-    overflow: 'hidden',
-    zIndex: 0,
-  },
-  perfectTopAnimation: {
-    width: '100%',
-    height: '100%',
-  },
   zeroTopAnimationWrap: {
     position: 'absolute',
     top: 0,
@@ -506,19 +482,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: fonts.bold,
   },
-  primaryButtonContent: {
-    alignItems: 'center',
-    gap: 6,
-  },
-  primaryButtonMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  primaryButtonMetaText: {
-    color: '#0A0A12',
-    fontSize: 13,
-    fontFamily: fonts.bold,
+  primaryButtonTextLarge: {
+    fontSize: 22,
   },
   primaryButtonDisabled: {
     opacity: 0.6,

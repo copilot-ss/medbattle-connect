@@ -11,7 +11,12 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { CommonActions } from '@react-navigation/native';
-import { usePreferences } from '../context/PreferencesContext';
+import {
+  useAvatarPrefs,
+  useEnergyPrefs,
+  useStatsPrefs,
+} from '../context/PreferencesContext';
+import { useConnectivity } from '../context/ConnectivityContext';
 import usePremiumStatus from '../hooks/usePremiumStatus';
 import useMultiplayerMatch from '../hooks/useMultiplayerMatch';
 import useCurrentAvatar from '../hooks/useCurrentAvatar';
@@ -24,8 +29,12 @@ import useResultMultiplayerData from './result/hooks/useResultMultiplayerData';
 import useResultScoreAnimations from './result/hooks/useResultScoreAnimations';
 import useResultEntranceAnimations from './result/hooks/useResultEntranceAnimations';
 import { useTranslation } from '../i18n/useTranslation';
+import EnergyBoostModal from './home/EnergyBoostModal';
+import useHomeBoostActions from './home/useHomeBoostActions';
+import { COIN_ENERGY_AMOUNT, COIN_ENERGY_COST } from './home/homeConfig';
 import PublicProfileSheet from '../components/PublicProfileSheet';
 import usePublicProfileSheet from '../hooks/usePublicProfileSheet';
+import { clearActiveLobby } from '../utils/activeLobbyStorage';
 import styles, {
   getLargeGlowStyle,
   getPrimaryButtonStyle,
@@ -34,8 +43,18 @@ import styles, {
 const KIWI_ANIMATION = require('../../assets/animations/kiwi.gif');
 const ZERO_GHOST_ANIMATION = require('../../assets/animations/score/zero.gif');
 const ZERO_SCORE_SKY_ANIMATION = require('../../assets/animations/score/zero_clouds.gif');
-const PERFECT_SCORE_ANIMATION = require('../../assets/animations/score/perfect.gif');
-const MID_SCORE_ANIMATION = require('../../assets/animations/score/mid.gif');
+
+function sanitizeStatNumber(value) {
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isFinite(parsed) && parsed >= 0) {
+    return parsed;
+  }
+  return 0;
+}
+
+function formatCount(value) {
+  return sanitizeStatNumber(value).toLocaleString();
+}
 
 export default function ResultScreen({ route, navigation }) {
   const { t } = useTranslation();
@@ -47,7 +66,6 @@ export default function ResultScreen({ route, navigation }) {
     coins = 0,
     xp = 0,
     userId = null,
-    difficultyKey = 'mittel',
     questionLimit = total,
     category = null,
     isMultiplayer = false,
@@ -64,7 +82,11 @@ export default function ResultScreen({ route, navigation }) {
     scoreQueued = false,
     answerHistory = [],
   } = route.params ?? {};
-  const { energy, energyMax, avatarId, avatarUri } = usePreferences();
+  const { isOnline } = useConnectivity();
+  const isOffline = isOnline === false;
+  const { energy, energyMax, nextEnergyAt, addEnergy, refreshEnergy } = useEnergyPrefs();
+  const { avatarId, avatarUri } = useAvatarPrefs();
+  const { userStats, updateUserStats } = useStatsPrefs();
   const { premium } = usePremiumStatus();
   const {
     loading: liveMatchLoading,
@@ -73,6 +95,7 @@ export default function ResultScreen({ route, navigation }) {
     questions: liveQuestions,
     player: livePlayerState,
     opponent: liveOpponentState,
+    realtimeStatus: liveRealtimeStatus,
     refetch: refetchLiveMatch,
   } = useMultiplayerMatch(
     isMultiplayer ? matchId : null,
@@ -93,9 +116,7 @@ export default function ResultScreen({ route, navigation }) {
   );
 
   const totalQuestions = total || questionLimit || 0;
-  const isQuickPlay = mode === 'quick';
-  const quickPlayLocked = isQuickPlay && !premium && energy <= 0;
-  const energyLabel = premium ? `${energyMax}/${energyMax}` : `${energy}/${energyMax}`;
+  const soloQuizLocked = !isMultiplayer && !premium && energy <= 0;
   const percentage = useMemo(() => {
     if (!totalQuestions) {
       return 0;
@@ -103,74 +124,58 @@ export default function ResultScreen({ route, navigation }) {
     return Math.round((score / totalQuestions) * 100);
   }, [score, totalQuestions]);
   const badge = useMemo(() => findBadge(percentage), [percentage]);
-  const isPerfectScore =
-    !isMultiplayer && totalQuestions > 0 && score === totalQuestions;
   const showZeroScoreAnimation =
     !isMultiplayer && totalQuestions > 0 && score === 0;
-  const hideMidScoreAnimation =
-    !isMultiplayer && totalQuestions === 6 && score === 1;
-  const showMidScoreAnimation =
-    !isMultiplayer &&
-    totalQuestions > 0 &&
-    score > 0 &&
-    score < totalQuestions &&
-    !hideMidScoreAnimation;
   const showKiwiPeck = false;
   const showZeroFullScreen = showKiwiPeck;
   const showZeroSparkles = showZeroScoreAnimation && !showKiwiPeck;
   const showScorePoints = !showZeroScoreAnimation;
-  const feedbackLine = useMemo(() => {
-    if (isMultiplayer) {
-      return null;
-    }
-    if (percentage === 0) {
-      return t('Hilfe - hier krachts total !');
-    }
-    if (percentage >= 80) {
-      return t('Mega stark! Du bist im Flow - das war richtig clean gespielt.');
-    }
-    if (percentage < 50) {
-      return t("War nix. Ziemlich schwach - reiss dich zusammen und versuch's nochmal.");
-    }
-    return null;
-  }, [isMultiplayer, percentage, t]);
-  const feedbackToneStyle = useMemo(() => {
-    if (!feedbackLine) {
-      return null;
-    }
-    if (percentage < 50) {
-      return styles.feedbackLineLow;
-    }
-    if (percentage >= 80) {
-      return styles.feedbackLineHigh;
-    }
-    return null;
-  }, [feedbackLine, percentage]);
   const coinsEarned = Number.isFinite(coins) ? coins : 0;
   const xpEarned = Number.isFinite(xp) ? xp : 0;
   const pointsEarned = Number.isFinite(Number(points)) ? Number(points) : 0;
   const rewardItems = useMemo(
     () =>
-      coinsEarned > 0
-        ? [
-            {
-              tone: 'coins',
-              label: t('Coins'),
-              value: `+${coinsEarned}`,
-            },
-            {
-              tone: 'xp',
-              label: t('XP'),
-              value: `+${xpEarned}`,
-            },
-          ]
-        : [{ tone: 'xp', label: t('XP'), value: `+${xpEarned}` }],
+      [
+        {
+          tone: 'coins',
+          label: t('Coins'),
+          value: coinsEarned,
+        },
+        {
+          tone: 'xp',
+          label: t('XP'),
+          value: xpEarned,
+        },
+      ].filter((item) => item.tone === 'xp' || item.value > 0),
     [coinsEarned, t, xpEarned]
   );
   const showOfflineNote = Boolean(offline || scoreQueued);
+  const {
+    energyMessage,
+    rewarding,
+    showBoostModal,
+    setShowBoostModal,
+    isBoostBusy,
+    coinsAvailable,
+    handleBuyEnergyWithCoins,
+    watchAdForEnergy,
+  } = useHomeBoostActions({
+    t,
+    navigation,
+    shouldOpenBoostModal: false,
+    isOffline,
+    energy,
+    energyMax,
+    userStats,
+    userId,
+    addEnergy,
+    updateUserStats,
+  });
   const { openProfile, sheetProps } = usePublicProfileSheet();
   const {
     reviewItems,
+    resolvedPlayerState,
+    resolvedOpponentState,
     showMultiplayerWaiting,
     waitingPlayersLabel,
     multiplayerEntries,
@@ -205,9 +210,114 @@ export default function ResultScreen({ route, navigation }) {
     openProfile,
     t,
   });
+  const feedbackLine = useMemo(() => {
+    if (isMultiplayer) {
+      const selfMultiplayerScore = Number.isFinite(resolvedPlayerState?.score)
+        ? resolvedPlayerState.score
+        : score;
+      const opponentMultiplayerScore = Number.isFinite(resolvedOpponentState?.score)
+        ? resolvedOpponentState.score
+        : Number.isFinite(opponentScore)
+          ? opponentScore
+          : null;
+
+      if (showMultiplayerWaiting) {
+        return t('Du bist durch. Wir warten noch auf {players}.', {
+          players: waitingPlayersLabel,
+        });
+      }
+      if (!Number.isFinite(opponentMultiplayerScore)) {
+        return t('Ergebnis steht. Schau dir die Antworten in Ruhe an.');
+      }
+      if (selfMultiplayerScore > opponentMultiplayerScore) {
+        return t('Starke Runde. Du hast dieses Match vorne beendet.');
+      }
+      if (selfMultiplayerScore < opponentMultiplayerScore) {
+        return t('Knapp verloren. Hol dir direkt die nächste Runde.');
+      }
+      return t('Unentschieden. Diese Runde war komplett ausgeglichen.');
+    }
+    if (percentage === 0) {
+      return t('Hilfe - hier krachts total !');
+    }
+    if (percentage === 100) {
+      return t('Perfekt gespielt. Alle Fragen richtig - kompletter Sweep.');
+    }
+    if (percentage >= 80) {
+      return t('Mega stark! Du bist im Flow - das war richtig clean gespielt.');
+    }
+    if (percentage >= 50) {
+      return t('Solide Runde. Da ist schon richtig Momentum drin.');
+    }
+    if (percentage < 50) {
+      return t("War nix. Ziemlich schwach - reiss dich zusammen und versuch's nochmal.");
+    }
+    return t('Solide Runde. Da ist schon richtig Momentum drin.');
+  }, [
+    isMultiplayer,
+    opponentScore,
+    percentage,
+    resolvedOpponentState?.score,
+    resolvedPlayerState?.score,
+    score,
+    showMultiplayerWaiting,
+    t,
+    waitingPlayersLabel,
+  ]);
+  const feedbackToneStyle = useMemo(() => {
+    if (!feedbackLine) {
+      return null;
+    }
+    if (isMultiplayer) {
+      const selfMultiplayerScore = Number.isFinite(resolvedPlayerState?.score)
+        ? resolvedPlayerState.score
+        : score;
+      const opponentMultiplayerScore = Number.isFinite(resolvedOpponentState?.score)
+        ? resolvedOpponentState.score
+        : Number.isFinite(opponentScore)
+          ? opponentScore
+          : null;
+
+      if (
+        !showMultiplayerWaiting &&
+        Number.isFinite(opponentMultiplayerScore) &&
+        selfMultiplayerScore > opponentMultiplayerScore
+      ) {
+        return styles.feedbackLineHigh;
+      }
+      if (
+        !showMultiplayerWaiting &&
+        Number.isFinite(opponentMultiplayerScore) &&
+        selfMultiplayerScore < opponentMultiplayerScore
+      ) {
+        return styles.feedbackLineLow;
+      }
+      return null;
+    }
+    if (percentage < 50) {
+      return styles.feedbackLineLow;
+    }
+    if (percentage >= 80) {
+      return styles.feedbackLineHigh;
+    }
+    return null;
+  }, [
+    feedbackLine,
+    isMultiplayer,
+    opponentScore,
+    percentage,
+    resolvedOpponentState?.score,
+    resolvedPlayerState?.score,
+    score,
+    showMultiplayerWaiting,
+  ]);
 
   useEffect(() => {
-    if (!isMultiplayer || !showMultiplayerWaiting) {
+    if (
+      !isMultiplayer ||
+      !showMultiplayerWaiting ||
+      liveRealtimeStatus !== 'fallback'
+    ) {
       return undefined;
     }
 
@@ -233,13 +343,13 @@ export default function ResultScreen({ route, navigation }) {
       cancelled = true;
       clearInterval(intervalId);
     };
-  }, [isMultiplayer, refetchLiveMatch, showMultiplayerWaiting]);
-  const {
-    perfectScoreAnimatedStyle,
-    showPerfectTopAnimation,
-    showZeroGhostOverlay,
-  } = useResultScoreAnimations({
-    isPerfectScore,
+  }, [
+    isMultiplayer,
+    liveRealtimeStatus,
+    refetchLiveMatch,
+    showMultiplayerWaiting,
+  ]);
+  const { showZeroGhostOverlay } = useResultScoreAnimations({
     showZeroScoreAnimation,
   });
   const entranceTriggerKey = useMemo(
@@ -283,6 +393,9 @@ export default function ResultScreen({ route, navigation }) {
     [insets.bottom, insets.top]
   );
   const handleReturnHome = useCallback(() => {
+    if (isMultiplayer && !showMultiplayerWaiting) {
+      clearActiveLobby();
+    }
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
@@ -297,7 +410,15 @@ export default function ResultScreen({ route, navigation }) {
         ],
       })
     );
-  }, [navigation]);
+  }, [isMultiplayer, navigation, showMultiplayerWaiting]);
+
+  useEffect(() => {
+    if (!isMultiplayer || showMultiplayerWaiting) {
+      return;
+    }
+
+    clearActiveLobby();
+  }, [isMultiplayer, showMultiplayerWaiting]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (event) => {
@@ -354,15 +475,6 @@ export default function ResultScreen({ route, navigation }) {
         </>
       ) : null}
 
-      {showPerfectTopAnimation ? (
-        <View style={styles.perfectTopAnimationWrap} pointerEvents="none">
-          <Animated.Image
-            source={PERFECT_SCORE_ANIMATION}
-            style={[styles.perfectTopAnimation, perfectScoreAnimatedStyle]}
-            resizeMode="cover"
-          />
-        </View>
-      ) : null}
       {showZeroGhostOverlay ? (
         <View style={styles.zeroGhostOverlay} pointerEvents="none">
           <Image
@@ -381,31 +493,15 @@ export default function ResultScreen({ route, navigation }) {
           />
         </View>
       ) : null}
-
       <ScrollView
         contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}
       >
-        {showMidScoreAnimation ? (
-          <View style={styles.scoreTopAnimationWrap}>
-            <Image
-              source={MID_SCORE_ANIMATION}
-              style={styles.scoreTopAnimation}
-              resizeMode="cover"
-            />
-          </View>
-        ) : null}
         <View style={styles.cardWrap}>
           <View style={styles.card}>
             <Animated.View style={[headerAnimatedStyle, { width: '100%' }]}>
-              <Text style={styles.heading}>
-                {isMultiplayer
-                  ? t('Lobby Ergebnis')
-                  : percentage >= 95
-                  ? t('Legendary Win!')
-                  : t('MedBattle abgeschlossen')}
-              </Text>
-              {!isMultiplayer && feedbackLine ? (
+              <Text style={styles.heading}>{t('MedQuiz abgeschlossen')}</Text>
+              {feedbackLine ? (
                 <Text style={[styles.feedbackLine, feedbackToneStyle]}>
                   {feedbackLine}
                 </Text>
@@ -468,13 +564,13 @@ export default function ResultScreen({ route, navigation }) {
                         <Ionicons name="trophy" size={72} color={colors.highlight} />
                       </View>
                     ) : null}
-                    <View style={styles.rewardSummaryRowSide}>
-                      <RewardSummary
-                        items={rewardItems}
-                        delay={80}
-                        direction="column"
-                      />
-                    </View>
+                  </View>
+                  <View style={styles.rewardSummaryRowSide}>
+                    <RewardSummary
+                      items={rewardItems}
+                      delay={80}
+                      direction="column"
+                    />
                   </View>
                 </View>
               ) : (
@@ -528,8 +624,12 @@ export default function ResultScreen({ route, navigation }) {
                 {!isMultiplayer ? (
                   <Pressable
                     onPress={() => {
+                      if (soloQuizLocked) {
+                        setShowBoostModal(true);
+                        return;
+                      }
+
                       navigation.replace('Quiz', {
-                        difficulty: difficultyKey,
                         mode,
                         questionLimit,
                         category,
@@ -537,34 +637,34 @@ export default function ResultScreen({ route, navigation }) {
                     }}
                     style={[
                       getPrimaryButtonStyle(colors.accentGreen),
-                      quickPlayLocked ? styles.primaryButtonDisabled : null,
+                      isBoostBusy ? styles.primaryButtonDisabled : null,
                     ]}
-                    disabled={quickPlayLocked}
+                    disabled={isBoostBusy}
                   >
-                    <View style={styles.primaryButtonContent}>
-                      <Text style={styles.primaryButtonText}>{t('Naechstes Quiz')}</Text>
-                      {isQuickPlay ? (
-                        <View style={styles.primaryButtonMetaRow}>
-                          <Ionicons name="flash" size={14} color="#0A0A12" />
-                          <Text style={styles.primaryButtonMetaText}>
-                            {t('Energie')} {energyLabel}
-                          </Text>
-                        </View>
-                      ) : null}
-                    </View>
+                    <Text style={[styles.primaryButtonText, styles.primaryButtonTextLarge]}>
+                      {t('Nächstes Quiz')}
+                    </Text>
                   </Pressable>
                 ) : (
                   <Pressable
-                    onPress={() =>
+                    onPress={() => {
+                      if (showMultiplayerWaiting) {
+                        navigation.navigate('MultiplayerLobby', {
+                          mode: 'create',
+                          existingMatch: liveMatch ?? fallbackExistingMatch,
+                        });
+                        return;
+                      }
+
                       navigation.navigate('MultiplayerLobby', {
                         mode: 'create',
-                        existingMatch: liveMatch ?? fallbackExistingMatch,
-                        keepCompleted: true,
-                      })
-                    }
+                      });
+                    }}
                     style={getPrimaryButtonStyle(colors.accent)}
                   >
-                    <Text style={styles.primaryButtonText}>{t('Zurueck zur Lobby')}</Text>
+                    <Text style={styles.primaryButtonText}>
+                      {showMultiplayerWaiting ? t('Zurück zur Lobby') : t('Multiplayer')}
+                    </Text>
                   </Pressable>
                 )}
 
@@ -590,6 +690,22 @@ export default function ResultScreen({ route, navigation }) {
 
       <PublicProfileSheet
         {...sheetProps}
+      />
+
+      <EnergyBoostModal
+        visible={!premium && showBoostModal}
+        energy={energy}
+        nextEnergyAt={nextEnergyAt}
+        coinsAvailable={coinsAvailable}
+        energyMessage={energyMessage}
+        isBoostBusy={isBoostBusy}
+        rewarding={rewarding}
+        coinCost={COIN_ENERGY_COST}
+        coinEnergyAmount={COIN_ENERGY_AMOUNT}
+        onBuyWithCoins={handleBuyEnergyWithCoins}
+        onWatchAd={watchAdForEnergy}
+        onRefreshEnergy={refreshEnergy}
+        onClose={() => setShowBoostModal(false)}
       />
 
       {badge.spotlight ? <View style={styles.spotlight} /> : null}

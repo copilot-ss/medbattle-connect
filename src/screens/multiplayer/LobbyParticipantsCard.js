@@ -33,7 +33,6 @@ export default function LobbyParticipantsCard({
   currentJoinCode,
   copied,
   onCopyCode,
-  difficultyLabel,
   questionLimit,
   categoryLabel,
   friendsLoading,
@@ -184,7 +183,6 @@ export default function LobbyParticipantsCard({
         currentJoinCode={currentJoinCode}
         copied={copied}
         onCopyCode={onCopyCode}
-        difficultyLabel={difficultyLabel}
         questionLimit={questionLimit}
         categoryLabel={categoryLabel}
       />

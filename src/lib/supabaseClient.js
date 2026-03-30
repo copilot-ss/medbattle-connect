@@ -1,6 +1,8 @@
 import 'react-native-get-random-values';
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppState } from 'react-native';
+import { processLock } from '@supabase/auth-js';
 import Constants from 'expo-constants';
 import { createClient } from '@supabase/supabase-js';
 
@@ -62,6 +64,13 @@ function sanitizeEnv(value) {
 const SUPABASE_URL = resolveLocalhostToLan(sanitizeEnv(process.env.EXPO_PUBLIC_SUPABASE_URL));
 const SUPABASE_ANON_KEY = sanitizeEnv(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
 const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+let authAppStateSubscription = null;
+const SESSION_USER_CACHE_TTL_MS = 750;
+const sessionUserCache = {
+  user: null,
+  expiresAt: 0,
+  inFlight: null,
+};
 
 if (!hasSupabaseConfig) {
   console.warn(
@@ -161,6 +170,76 @@ export const supabase = hasSupabaseConfig
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false, // RN/Expo
+        lock: processLock,
       },
     })
   : createSupabaseStub();
+
+function primeSessionUserCache(user, ttlMs = SESSION_USER_CACHE_TTL_MS) {
+  sessionUserCache.user = user ?? null;
+  sessionUserCache.expiresAt = Date.now() + ttlMs;
+}
+
+if (hasSupabaseConfig && typeof supabase.auth.onAuthStateChange === 'function') {
+  supabase.auth.onAuthStateChange((_event, session) => {
+    primeSessionUserCache(session?.user ?? null);
+  });
+}
+
+export async function getSessionUser({ allowCached = true } = {}) {
+  if (allowCached && sessionUserCache.expiresAt > Date.now()) {
+    return sessionUserCache.user ?? null;
+  }
+
+  if (sessionUserCache.inFlight) {
+    return sessionUserCache.inFlight;
+  }
+
+  sessionUserCache.inFlight = (async () => {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      throw error;
+    }
+
+    const user = data?.session?.user ?? null;
+    primeSessionUserCache(user);
+    return user;
+  })();
+
+  try {
+    return await sessionUserCache.inFlight;
+  } finally {
+    sessionUserCache.inFlight = null;
+  }
+}
+
+export function registerSupabaseAuthAppState() {
+  if (!hasSupabaseConfig) {
+    return () => {};
+  }
+
+  if (
+    typeof supabase.auth.startAutoRefresh !== 'function' ||
+    typeof supabase.auth.stopAutoRefresh !== 'function'
+  ) {
+    return () => {};
+  }
+
+  authAppStateSubscription?.remove?.();
+
+  const syncAutoRefresh = (nextState) => {
+    if (nextState === 'active') {
+      supabase.auth.startAutoRefresh();
+      return;
+    }
+    supabase.auth.stopAutoRefresh();
+  };
+
+  syncAutoRefresh(AppState.currentState);
+  authAppStateSubscription = AppState.addEventListener('change', syncAutoRefresh);
+
+  return () => {
+    authAppStateSubscription?.remove?.();
+    authAppStateSubscription = null;
+  };
+}

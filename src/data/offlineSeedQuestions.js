@@ -1,3 +1,5 @@
+import PRECISE_OFFLINE_CATEGORY_PACK from './offlinePreciseCategoryPack';
+
 const OFFLINE_SEED_QUESTIONS = [
   {
     id: 'seed-leicht-001',
@@ -841,4 +843,5 @@ const OFFLINE_SEED_QUESTIONS = [
   },
 ];
 
-export default OFFLINE_SEED_QUESTIONS;
+export default [...OFFLINE_SEED_QUESTIONS, ...PRECISE_OFFLINE_CATEGORY_PACK];
+

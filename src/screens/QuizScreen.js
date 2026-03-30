@@ -24,7 +24,6 @@ export default function QuizScreen({ navigation, route }) {
     answer,
     category,
     currentQuestion,
-    difficultyLabel,
     handleExitCancel,
     handleExitConfirm,
     handleExitRequest,
@@ -39,6 +38,7 @@ export default function QuizScreen({ navigation, route }) {
     selectedOption,
     showExitConfirm,
     showLoading,
+    isFinalizing,
     timeLeftMs,
     timedOut,
     totalQuestions,
@@ -112,6 +112,15 @@ export default function QuizScreen({ navigation, route }) {
     );
   }
 
+  if (isFinalizing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.accent} />
+        <Text style={styles.loadingText}>{t('Ergebnis wird vorbereitet ...')}</Text>
+      </View>
+    );
+  }
+
   if (resolvedError || !hasQuestions) {
     return (
       <View style={styles.errorContainer}>
@@ -129,7 +138,12 @@ export default function QuizScreen({ navigation, route }) {
   }
 
   if (!currentQuestion) {
-    return null;
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.accent} />
+        <Text style={styles.loadingText}>{t('Ergebnis wird vorbereitet ...')}</Text>
+      </View>
+    );
   }
 
   const categoryLabel = isQuickPlay
@@ -142,7 +156,6 @@ export default function QuizScreen({ navigation, route }) {
     <View style={styles.screen}>
       <View style={styles.topSection}>
         <QuizHeader
-          difficultyLabel={difficultyLabel}
           totalQuestions={totalQuestions}
           questionLimit={questionLimit}
           activeIndex={activeIndex}

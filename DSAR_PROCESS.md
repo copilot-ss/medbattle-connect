@@ -1,4 +1,4 @@
-# DSAR_PROCESS.md - MedBattle
+# DSAR_PROCESS.md - MedQuiz
 
 Stand: 2026-03-08
 

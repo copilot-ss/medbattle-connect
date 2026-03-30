@@ -27,13 +27,13 @@ Empfehlung:
 
 Begruendung:
 
-- MedBattle dient Lern- und Quiz-Zwecken.
+- MedQuiz dient Lern- und Quiz-Zwecken.
 - Kein Medizinprodukt
 - Keine Diagnose, Behandlung, Heilung oder Praevention
 
 Store-/Legal-Hinweis:
 
-`MedBattle dient ausschliesslich Lern- und Quiz-Zwecken. Die App ist kein Medizinprodukt, diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.`
+`MedQuiz dient ausschliesslich Lern- und Quiz-Zwecken. Die App ist kein Medizinprodukt, diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.`
 
 ## User Interaction
 

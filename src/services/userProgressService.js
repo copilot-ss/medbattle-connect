@@ -12,6 +12,18 @@ const progressCache = {
 const PENDING_PROGRESS_KEY = 'medbattle_pending_progress';
 const MAX_PENDING_PROGRESS = 50;
 
+export function hasFreshUserProgress(userId, maxAgeMs = PROGRESS_CACHE_TTL) {
+  if (!userId || userId === 'guest') {
+    return false;
+  }
+
+  if (progressCache.userId !== userId || !progressCache.fetchedAt) {
+    return false;
+  }
+
+  return Date.now() - progressCache.fetchedAt < maxAgeMs;
+}
+
 function sanitizeStatNumber(value) {
   const parsed = Number.parseInt(value, 10);
   if (Number.isFinite(parsed) && parsed >= 0) {
@@ -96,7 +108,11 @@ export async function fetchUserProgress(userId, { force = false } = {}) {
           .select('xp, quizzes, correct, questions, coins')
           .eq('id', userId)
           .maybeSingle(),
-      { label: 'userProgressService.fetchUserProgress' }
+      {
+        label: 'userProgressService.fetchUserProgress',
+        profile: force ? 'background' : 'ui',
+        dedupeKey: `progress:${userId}`,
+      }
     );
 
     if (error) {
@@ -211,7 +227,7 @@ export async function flushQueuedProgress(userId) {
 
   const pending = await readPendingProgress();
   if (!pending.length) {
-    return { ok: true, flushed: 0 };
+    return { ok: true, flushed: 0, hadPending: false, didWork: false };
   }
 
   const remaining = [];
@@ -239,14 +255,32 @@ export async function flushQueuedProgress(userId) {
   });
 
   if (!matched) {
-    return { ok: true, flushed: 0, remaining: pending.length };
+    return {
+      ok: true,
+      flushed: 0,
+      remaining: pending.length,
+      hadPending: true,
+      didWork: false,
+    };
   }
 
   const result = await incrementUserProgress(userId, aggregate);
   if (!result.ok) {
-    return { ok: false, remaining: pending.length, error: result.error };
+    return {
+      ok: false,
+      remaining: pending.length,
+      error: result.error,
+      hadPending: true,
+      didWork: true,
+    };
   }
 
   await writePendingProgress(remaining);
-  return { ok: true, flushed: matched, remaining: remaining.length };
+  return {
+    ok: true,
+    flushed: matched,
+    remaining: remaining.length,
+    hadPending: true,
+    didWork: matched > 0,
+  };
 }

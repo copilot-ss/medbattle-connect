@@ -1,16 +1,10 @@
-export const DIFFICULTY_LABELS = {
-  leicht: 'Kinder',
-  mittel: 'Studenten',
-  schwer: 'Doktor',
-};
+import {
+  MULTIPLAYER_DEFAULT_QUESTION_LIMIT,
+  MULTIPLAYER_MAX_QUESTION_LIMIT,
+  MULTIPLAYER_MIN_QUESTION_LIMIT,
+} from '../../config/quizLimits';
 
-export const DIFFICULTY_ACCENTS = {
-  leicht: '#22C55E',
-  mittel: '#FACC15',
-  schwer: '#EF4444',
-};
-
-export const MIN_QUESTION_LIMIT = 3;
-export const MAX_QUESTION_LIMIT = 20;
+export const MIN_QUESTION_LIMIT = MULTIPLAYER_MIN_QUESTION_LIMIT;
+export const MAX_QUESTION_LIMIT = MULTIPLAYER_MAX_QUESTION_LIMIT;
 export const MAX_PLAYERS = 10;
-export const DEFAULT_QUESTION_LIMIT = 5;
+export const DEFAULT_QUESTION_LIMIT = MULTIPLAYER_DEFAULT_QUESTION_LIMIT;

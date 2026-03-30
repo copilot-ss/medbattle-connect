@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TextInput, Pressable, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, TextInput, Pressable, ActivityIndicator } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 
 import { supabase } from '../lib/supabaseClient';
+import { claimActiveSessionOrThrow } from '../services/activeSessionService';
 import { loadRememberMe, saveRememberMe } from '../utils/authPersistence';
 import { formatUserError } from '../utils/formatUserError';
 import {
@@ -15,7 +16,6 @@ import {
 import { loginOAuth } from './auth/authOAuth';
 import {
   normalizeEmail,
-  parseSupabaseParams,
   validatePasswordStrength,
   validateSupabaseConfig,
   withTimeout,
@@ -27,14 +27,16 @@ export default function AuthScreen({ route, navigation, onGuest }) {
   const { t } = useTranslation();
   const initialMode = route?.params?.mode ?? 'signIn';
   const initialEmail = route?.params?.emailPreset ?? '';
+  const initialMessage = route?.params?.authMessage ?? null;
+  const initialRecoveryAccessToken = route?.params?.recoveryAccessToken ?? null;
   const [mode, setMode] = useState(initialMode);
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [resetPassword, setResetPassword] = useState('');
   const [resetPasswordConfirm, setResetPasswordConfirm] = useState('');
-  const [recoveryAccessToken, setRecoveryAccessToken] = useState(null);
+  const [recoveryAccessToken, setRecoveryAccessToken] = useState(initialRecoveryAccessToken);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useState(initialMessage);
   const [rememberMe, setRememberMe] = useState(true);
 
   const isSignUp = mode === 'signUp';
@@ -64,7 +66,20 @@ export default function AuthScreen({ route, navigation, onGuest }) {
     if (route?.params?.emailPreset) {
       setEmail(route.params.emailPreset);
     }
-  }, [route?.params?.mode, route?.params?.emailPreset]);
+    if (route?.params?.authMessage !== undefined) {
+      setMessage(route.params.authMessage ?? null);
+    }
+    if (route?.params?.recoveryAccessToken !== undefined) {
+      setRecoveryAccessToken(route.params.recoveryAccessToken ?? null);
+      setResetPassword('');
+      setResetPasswordConfirm('');
+    }
+  }, [
+    route?.params?.authMessage,
+    route?.params?.emailPreset,
+    route?.params?.mode,
+    route?.params?.recoveryAccessToken,
+  ]);
 
   useEffect(() => {
     let active = true;
@@ -78,124 +93,6 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
     return () => {
       active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    async function syncSessionFromLink(queryParams) {
-      const accessToken = queryParams?.access_token;
-      const refreshToken = queryParams?.refresh_token;
-
-      if (!accessToken || !refreshToken) {
-        return;
-      }
-
-      try {
-        await withTimeout(
-          supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          }),
-          AUTH_TIMEOUT_MS,
-          'Supabase nicht erreichbar (Session setzen).'
-        );
-      } catch (err) {
-        console.warn('Konnte Sitzung nach Auth-Link nicht setzen:', err);
-      }
-    }
-
-    function handleAuthLink(url) {
-      if (!url) {
-        return;
-      }
-
-      const queryParams = parseSupabaseParams(url);
-      const type = queryParams?.type ?? queryParams?.event;
-      const callbackError = queryParams?.error_description ?? queryParams?.error;
-
-      if (callbackError) {
-        if (active) {
-          setMessage(
-            t(
-              formatUserError(new Error(callbackError), {
-                supabaseUrl: SUPABASE_URL_HINT,
-                fallback: 'Link konnte nicht verarbeitet werden.',
-              })
-            )
-          );
-        }
-        return;
-      }
-
-      if (type === 'signup') {
-        syncSessionFromLink(queryParams);
-        if (!active) {
-          return;
-        }
-        setMode('signIn');
-        setMessage(
-          t(
-            'Deine E-Mail wurde bestätigt. Du kannst dieses Fenster schließen und dich jetzt anmelden.'
-          )
-        );
-        return;
-      }
-
-      if (type === 'recovery') {
-        const accessToken = queryParams?.access_token;
-        if (!accessToken) {
-          if (active) {
-            setMessage(t('Passwort-Reset-Link ungültig. Bitte neu anfordern.'));
-          }
-          return;
-        }
-
-        if (!active) {
-          return;
-        }
-
-        setRecoveryAccessToken(accessToken);
-        setResetPassword('');
-        setResetPasswordConfirm('');
-        setMode('recovery');
-        setMessage(t('Bitte neues Passwort setzen.'));
-        return;
-      }
-
-      if (type === 'email_change') {
-        syncSessionFromLink(queryParams);
-        if (!active) {
-          return;
-        }
-        setMode('signIn');
-        setMessage(t('E-Mail aktualisiert. Bitte melde dich neu an.'));
-      }
-    }
-
-    async function checkInitialUrl() {
-      try {
-        const initial = await Linking.getInitialURL();
-        if (initial) {
-          handleAuthLink(initial);
-        }
-      } catch (err) {
-        console.warn('Konnte Initial-URL nicht verarbeiten:', err);
-      }
-    }
-
-    const subscription = Linking.addEventListener('url', (event) => {
-      if (event?.url) {
-        handleAuthLink(event.url);
-      }
-    });
-
-    checkInitialUrl();
-
-    return () => {
-      active = false;
-      subscription?.remove?.();
     };
   }, []);
 
@@ -242,13 +139,19 @@ export default function AuthScreen({ route, navigation, onGuest }) {
           throw error;
         }
 
+        if (data?.session) {
+          await claimActiveSessionOrThrow({
+            dedupeKey: `auth:${trimmedEmail}:signup`,
+          });
+        }
+
         if (!data.session) {
           setMessage(
             t('Account erstellt. Bitte bestätige deine E-Mail, bevor du dich einloggst.')
           );
         }
       } else {
-        const { error } = await withTimeout(
+        const { data, error } = await withTimeout(
           supabase.auth.signInWithPassword({
             email: trimmedEmail,
             password,
@@ -259,6 +162,12 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
         if (error) {
           throw error;
+        }
+
+        if (data?.session) {
+          await claimActiveSessionOrThrow({
+            dedupeKey: `auth:${trimmedEmail}:signin`,
+          });
         }
       }
 
@@ -393,7 +302,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
       <View style={styles.backgroundGlowTop} pointerEvents="none" />
       <View style={styles.backgroundGlowBottom} pointerEvents="none" />
       <View style={styles.panel}>
-        <Text style={styles.brand}>MedBattle</Text>
+        <Text style={styles.brand}>MedQuiz</Text>
 
         {!isRecovery ? (
           <View style={styles.inputGroup}>
@@ -520,4 +429,3 @@ export default function AuthScreen({ route, navigation, onGuest }) {
     </View>
   );
 }
-

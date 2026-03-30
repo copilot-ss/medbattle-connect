@@ -1,4 +1,4 @@
-# RELEASE_TESTS.md - MedBattle Release Checks
+# RELEASE_TESTS.md - MedQuiz Release Checks
 
 Kurze manuelle Checkliste fuer die offenen Release-Tasks.
 
@@ -12,9 +12,9 @@ Kurze manuelle Checkliste fuer die offenen Release-Tasks.
 - Discord OAuth: Login, Rueckkehr in App, Session gesetzt.
 - E-Mail Sign-Up: Bestaetigungs-Mail, Link oeffnet App (Deep Link), danach Login ok.
 - Passwort-Reset: Link oeffnet App (Deep Link), Passwort aendern, Login ok.
-- E-Mail-Update (Settings): Bestaetigungs-Link oeffnet App, neue Mail aktiv.
+- E-Mail-Update-Flow ist aktuell kein Release-Gate mehr, weil die entsprechende Profil-UI entfernt wurde.
 - [x] Standalone-Callback technisch auf Production Build 26 verifiziert (2026-03-10, `emulator-5554`): `medbattle://auth/callback?code=TEST` wird an `com.sjigalin.medbattle/.MainActivity` geliefert.
-- [ ] Echter Provider-/Mail-Roundtrip bleibt offen: Google, Discord, E-Mail-Confirm, Passwort-Reset und E-Mail-Update wurden damit noch nicht end-to-end bestaetigt.
+- [ ] Echter Provider-/Mail-Roundtrip bleibt offen: Google, Discord, E-Mail-Confirm und Passwort-Reset wurden damit noch nicht end-to-end bestaetigt.
 
 ### Android Deep-Link Smoke (adb)
 - `adb shell am start -W -a android.intent.action.VIEW -d "medbattle://auth/callback?code=TEST"`
@@ -59,6 +59,84 @@ Note: Offline Quick-Play/Sync and Multiplayer flows still need manual in-app che
 - [x] Offline-Toggle technisch geprueft: `svc wifi disable` + `svc data disable` -> `ping 8.8.8.8` mit 100% packet loss.
 - [ ] Online-Restore auf dem Emulator nicht bestaetigt; `ping 8.8.8.8` blieb nach `svc wifi/data enable` ohne Antwort.
 Note: Der Emulator zeigte zwischendurch `System UI isn't responding`; die App selbst blieb dabei als resumed sichtbar, daher kein sauberer Ersatz fuer den offenen Realgeraet-Smoke.
+
+## Device Smoke (2026-03-13, Realgeraet, EAS Build 26 vor Fix)
+- [x] Device connected: `c2ccd135`.
+- [x] Installierter Stand verifiziert: `com.sjigalin.medbattle` `versionCode 26`, `versionName 1.0.1`.
+- [x] Cold Start per Launcher erfolgreich; `MainActivity` bleibt resumed und fokussiert.
+- [x] Deep-Link-Scheme Smoke: `medbattle://auth/callback?code=TEST` liefert an `com.sjigalin.medbattle/.MainActivity`.
+- [x] Deep-Link-Scheme Smoke: `exp+medbattle://auth/callback?code=TEST` liefert an `com.sjigalin.medbattle/.MainActivity`.
+- [x] Online/Offline Toggle technisch verifiziert: `svc wifi disable` + `svc data disable` -> `ping 8.8.8.8` meldet `Network is unreachable`; nach Re-Enable antwortet `8.8.8.8` wieder.
+- [x] Production-Build landet auf dem Home-Screen; `Schnelles Spiel` oeffnet den Quiz-Screen auf dem Realgeraet.
+- [x] Screenshot-basierter Quiz-Run ohne `uiautomator dump` bis zur letzten Frage belastbar durchgeklickt; der RN-Timer bleibt dabei stabil.
+- [ ] Nach der letzten Quiz-Antwort springt der Production-Build auf dem Realgeraet sofort zurueck auf den Home-Screen statt einen Result-/Review-Screen zu zeigen. Das Verhalten ist damit auch ohne `uiautomator dump` reproduzierbar und kein Dump-Artefakt.
+- [ ] Zweiter Repro ohne `uiautomator`: Quick Play kann bereits mit `0.0s` / `Zeit abgelaufen!` auf `Frage 1/6` starten und springt danach direkt auf `Frage 3/6`. Gefiltertes `logcat --pid` zeigt dazu keinen offensichtlichen JS-/Native-Crash.
+- [ ] Der installierte Build 26 zeigt beim Cold Start weiterhin `expo-updates`: `Remote update request not successful: "channel-name": Required.` Der Config-Fix ist erst im Code, aber noch nicht auf diesem Geraet neu gebaut/installiert.
+
+## Release Rebuild / Verification (2026-03-13, lokal)
+- [x] Quiz-/Timer-/Navigation-Fix im Code umgesetzt: stale Timer-/Answer-Callbacks invalidiert, Solo-Fragensatz pro Run eingefroren, Result-Screen per `navigation.replace(...)` und Quiz-Starts per frischer Route aufgerufen.
+- [x] App-Typecheck nach dem Fix: `npx tsc --noEmit` erfolgreich.
+- [x] Release-Bundle lokal reproduziert: `android/gradlew :app:createBundleReleaseJsAndAssets --stacktrace --info` erfolgreich.
+- [x] Voller Android-Release-Build lokal erfolgreich: `android/gradlew assembleRelease` erzeugt `android/app/build/outputs/apk/release/app-release.apk` (`versionCode 26`, `versionName 1.0.1`).
+- [x] APK-Inhalt geprueft: `aapt dump xmltree ... app-release.apk AndroidManifest.xml` zeigt `expo.modules.updates.UPDATES_CONFIGURATION_REQUEST_HEADERS_KEY` und `com.google.android.gms.ads.APPLICATION_ID` im Release-Artefakt.
+- [x] Frisches lokales Release-APK auf `c2ccd135` installiert (`adb install -r`); installierter Stand erneut verifiziert als `com.sjigalin.medbattle` `versionCode 26`, `versionName 1.0.1`.
+- [x] Startup-Retest mit dem frischen APK: der alte `expo-updates` Fehler `Remote update request not successful: "channel-name": Required.` taucht im Realgeraet-Logcat nicht mehr auf.
+- [x] Quick Play auf dem frischen APK laeuft auf dem Realgeraet stabil von `Frage 1/6` bis zum Result-Screen; kein `1/6 -> 3/6` Sprung und kein Rueckfall auf den Home-Screen nach der letzten Antwort.
+- [x] Result-Actions verifiziert: `Naechstes Quiz` startet wieder bei `Frage 1/6`, `Fertig` fuehrt zurueck in den Home-Screen.
+- [x] Quiz-Exit-Flow verifiziert: `X` -> `Quiz beenden?` -> `Beenden` fuehrt zurueck in den Home-Screen.
+- [x] Deep-Link Cold Start mit dem frischen APK verifiziert: `medbattle://auth/callback?...` und `exp+medbattle://auth/callback?...` liefern beide `Status: ok`, `LaunchState: COLD`, `Activity: com.sjigalin.medbattle/.MainActivity`.
+- [x] Offline/Online-Flow im frischen APK verifiziert: Offline-Launch zeigt den Banner, `Online gehen` blendet den Offline-Hinweis nach Netz-Restore wieder aus.
+
+## Closed Testing / Store Build 31 (2026-03-17)
+- [x] Lokales Release-AAB gebaut: `android/app/build/outputs/bundle/release/app-release.aab`.
+- [x] Store-Artefakt verifiziert: `versionCode 31`, `versionName 1.0.1`.
+- [x] AAB in Google Play Closed testing hochgeladen.
+- [ ] Build `31` ist in Play noch inaktiv, bis Review und Rollout abgeschlossen sind.
+- [ ] Solange `31` inaktiv ist, liefern Closed Tests weiter den zuletzt aktiven Build aus; Device-Smoke gegen `31` ist daher noch offen.
+- [x] Code-Stand fuer diesen Release-Zyklus gehaertet: OAuth-Session-Recovery nach Deep-Link/Google-Login verbessert.
+- [x] Code-Stand fuer diesen Release-Zyklus gehaertet: Rewarded Ads koennen in Closed Tests mit Google-Test-Ad-IDs laufen.
+- [ ] Nach Aktivierung von `31` auf Realgeraet pruefen: Neuinstallation, Google-Login mit bestehendem Account, Quick Play `1/6 -> Result`, Energie-Dialog, Rewarded Ad, Logout/Reopen.
+- [ ] Repo-Aenderung nach dem Upload: Android ist inzwischen auf `armeabi-v7a` und `arm64-v8a` reduziert; dafuer ist ein neuer Build nach `31` erforderlich.
+
+## Local Rebuild / Store Build 32 (2026-03-19)
+- [x] Lokales Release-AAB gebaut: `android/app/build/outputs/bundle/release/app-release.aab`.
+- [x] Store-Artefakt verifiziert: `versionCode 32`, `versionName 1.0.1`.
+- [x] Lokaler Build nutzt weiterhin reale Android-ABIs `armeabi-v7a` und `arm64-v8a`.
+- [x] Code-Stand fuer diesen Release-Zyklus gehaertet: OAuth-Callback-URL wird pro App-Lauf nur einmal verarbeitet, damit Google-Redirect und globaler Deep-Link-Listener nicht parallel dieselbe Supabase-Session setzen.
+- [ ] AAB `32` in Google Play hochladen.
+- [ ] Nach Upload/Verteilung von `32` auf Realgeraet pruefen: Neuinstallation, Google-Login mit bestehendem Account, Quick Play `1/6 -> Result`, Energie-Dialog, Rewarded Ad, Logout/Reopen.
+
+## Local Rebuild / Store Build 35 (2026-03-23)
+- [x] Repo-Release-Check vor dem Build erfolgreich (`npm run release:check`).
+- [x] Lokales Release-AAB gebaut: `android/app/build/outputs/bundle/release/app-release.aab`.
+- [x] Store-Artefakt verifiziert: `versionCode 35`, `versionName 1.0.1`.
+- [x] Lokaler Build nutzt weiterhin reale Android-ABIs `armeabi-v7a` und `arm64-v8a`.
+- [ ] AAB `35` in Google Play hochladen.
+- [ ] Nach Upload/Verteilung von `35` auf Realgeraet pruefen: Neuinstallation, Google-Login mit bestehendem Account, Quick Play `1/6 -> Result`, Energie-Dialog, Rewarded Ad, Logout/Reopen.
+
+## Emulator ABI Fix / Store Build 36 (2026-03-24)
+- [x] `android/gradle.properties` auf `armeabi-v7a,arm64-v8a,x86_64` erweitert, damit der Emulator wieder eine passende Native-ABI bekommt.
+- [x] Frischer Debug-Build auf `emulator-5554` installiert; alter Startcrash `couldn't find DSO to load: libreactnative.so` ist danach nicht mehr reproduzierbar.
+- [x] Lokales Release-AAB gebaut: `android/app/build/outputs/bundle/release/app-release.aab`.
+- [x] Store-Artefakt verifiziert: `versionCode 36`, `versionName 1.0.1`.
+- [x] Release-Build erzeugt wieder `x86_64`-Native-Libs (`android/app/build/intermediates/merged_native_libs/release/.../lib/x86_64/`).
+- [ ] AAB `36` in Google Play hochladen.
+- [ ] Nach Upload/Rollout von `36` den Play-Store-Install auf `emulator-5554` und dem Realgeraet `c2ccd135` pruefen.
+
+## Local Rebuild / Store Build 39 (2026-03-24)
+- [x] Lokales Release-AAB gebaut: `android/app/build/outputs/bundle/release/app-release.aab`.
+- [x] Store-Artefakt verifiziert: `versionCode 39`, `versionName 1.0.1`.
+- [x] Aktueller Repo-Stand ist damit als frisches Store-AAB lokal vorhanden.
+- [x] ABI-Stand bleibt fuer `armeabi-v7a`, `arm64-v8a` und `x86_64` geeignet.
+- [ ] AAB `39` in Google Play hochladen.
+- [ ] Nach Upload/Rollout von `39` den echten Store-Build auf `emulator-5554` und `c2ccd135` smoke-testen.
+
+## Aktueller Artefakt-Stand (2026-03-24)
+- [x] Das angeschlossene Realgeraet `c2ccd135` meldet aktuell `versionCode 35`, `versionName 1.0.1`.
+- [x] Lokales Release-APK vorhanden: `android/app/build/outputs/apk/release/app-release.apk`.
+- [x] Lokales Store-AAB vorhanden: `android/app/build/outputs/bundle/release/app-release.aab`.
+- [x] Der aktuelle Repo-Stand ist als frisches Store-AAB `39` gebaut.
+- [ ] Vor dem naechsten belastbaren Store-Smoke muss dieses AAB `39` erst in Google Play hochgeladen und ausgerollt werden.
 
 ## Store Listing Links (Play Console)
 - Privacy Policy: https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=privacy

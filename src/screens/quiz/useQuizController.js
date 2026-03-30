@@ -2,7 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BackHandler } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useConnectivity } from '../../context/ConnectivityContext';
-import { usePreferences } from '../../context/PreferencesContext';
+import {
+  useEnergyPrefs,
+  useStatsPrefs,
+} from '../../context/PreferencesContext';
 import { DEFAULT_BOOSTS } from '../../context/preferences/constants';
 import usePremiumStatus from '../../hooks/usePremiumStatus';
 import useCountdownTimer from '../../hooks/useCountdownTimer';
@@ -10,12 +13,15 @@ import useSupabaseUserId from '../../hooks/useSupabaseUserId';
 import useMultiplayerMatch from '../../hooks/useMultiplayerMatch';
 import { calculateCoinReward, calculateMatchPoints, submitScore } from '../../services/quizService';
 import { calculateXpGain } from '../../services/titleService';
+import {
+  MULTIPLAYER_DEFAULT_QUESTION_LIMIT,
+  SOLO_QUESTION_LIMIT,
+} from '../../config/quizLimits';
 import { syncUserProgressDelta } from '../../services/userProgressService';
 import useQuizConfig, { TIMER_DURATION } from './hooks/useQuizConfig';
 import useSoloQuestionLoader from './hooks/useSoloQuestionLoader';
 import useQuizInteractionHandlers from './hooks/useQuizInteractionHandlers';
 
-const DEFAULT_SOLO_QUESTION_LIMIT = 6;
 const BOOST_FREEZE_DURATION_MS = 5 * 1000;
 const DOUBLE_XP_MULTIPLIER = 2;
 const sanitizeStatNumber = (value) => {
@@ -31,6 +37,8 @@ export default function useQuizController({ navigation, route }) {
   const [score, setScore] = useState(0);
   const [timedOut, setTimedOut] = useState(false);
   const [answerHistory, setAnswerHistory] = useState([]);
+  const [isFinalizing, setIsFinalizing] = useState(false);
+  const [soloQuestionsSnapshot, setSoloQuestionsSnapshot] = useState([]);
   const answerRef = useRef(null);
   const timeLeftRef = useRef(TIMER_DURATION);
   const answerHistoryRef = useRef([]);
@@ -42,10 +50,11 @@ export default function useQuizController({ navigation, route }) {
   const questionIdRef = useRef(null);
   const matchActiveRef = useRef(true);
   const exitConfirmRef = useRef(false);
+  const finalizeInFlightRef = useRef(false);
+  const { consumeEnergy } = useEnergyPrefs();
   const {
     setStreakValue,
     updateUserStats,
-    consumeEnergy,
     boosts,
     consumeBoost,
     streakShieldActive,
@@ -53,7 +62,7 @@ export default function useQuizController({ navigation, route }) {
     doubleXpExpiresAt,
     setDoubleXpExpiresAt,
     streaks,
-  } = usePreferences();
+  } = useStatsPrefs();
   const { premium } = usePremiumStatus();
   const energyChargedRef = useRef(false);
   const { isOnline } = useConnectivity();
@@ -76,8 +85,6 @@ export default function useQuizController({ navigation, route }) {
     mode,
     isQuickPlay,
     isMultiplayer,
-    normalizedDifficulty,
-    difficultyLabel,
     requestedQuestionLimit,
     category,
     preloadedMatch,
@@ -97,7 +104,6 @@ export default function useQuizController({ navigation, route }) {
     recordAnswer: recordMatchAnswer,
     surrender: surrenderMatch,
   } = useMultiplayerMatch(matchId, userId, {
-    expectedDifficulty: normalizedDifficulty,
     initialMatch: preloadedMatch,
   });
 
@@ -106,12 +112,12 @@ export default function useQuizController({ navigation, route }) {
       if (Array.isArray(matchQuestions) && matchQuestions.length) {
         return matchQuestions.length;
       }
-      return 5;
+      return MULTIPLAYER_DEFAULT_QUESTION_LIMIT;
     }
     if (requestedQuestionLimit) {
       return requestedQuestionLimit;
     }
-    return DEFAULT_SOLO_QUESTION_LIMIT;
+    return SOLO_QUESTION_LIMIT;
   }, [isMultiplayer, matchQuestions, requestedQuestionLimit]);
 
   const isOffline = isOnline === false;
@@ -122,7 +128,6 @@ export default function useQuizController({ navigation, route }) {
     reset: resetSoloQuestions,
   } = useSoloQuestionLoader({
     isEnabled: !isMultiplayer,
-    normalizedDifficulty,
     questionLimit,
     category,
     isOffline,
@@ -132,6 +137,8 @@ export default function useQuizController({ navigation, route }) {
     ? Array.isArray(matchQuestions)
       ? matchQuestions
       : []
+    : soloQuestionsSnapshot.length
+    ? soloQuestionsSnapshot
     : soloQuestions;
   const totalQuestions = activeQuestions.length;
   const activeIndex = isMultiplayer ? matchPlayerState?.index ?? 0 : index;
@@ -236,6 +243,13 @@ export default function useQuizController({ navigation, route }) {
         wasSurrender = false,
       } = {}
     ) => {
+      if (finalizeInFlightRef.current) {
+        return;
+      }
+      finalizeInFlightRef.current = true;
+      setIsFinalizing(true);
+      stopTimer();
+      clearFreezeTimeout();
       const effectiveTotal = Math.max(1, total);
       const resolvedScore = Number.isFinite(finalScoreValue)
         ? finalScoreValue
@@ -243,12 +257,10 @@ export default function useQuizController({ navigation, route }) {
       const earnedPoints = calculateMatchPoints({
         correct: resolvedScore,
         total: effectiveTotal,
-        difficulty: normalizedDifficulty,
       });
       const baseXp = calculateXpGain({
         correct: resolvedScore,
         total: effectiveTotal,
-        difficulty: normalizedDifficulty,
         isMultiplayer,
       });
       const doubleXpEnabled = isDoubleXpActive();
@@ -260,7 +272,6 @@ export default function useQuizController({ navigation, route }) {
         ? calculateCoinReward({
             correct: resolvedScore,
             total: effectiveTotal,
-            difficulty: normalizedDifficulty,
             isMultiplayer,
           })
         : 0;
@@ -274,7 +285,6 @@ export default function useQuizController({ navigation, route }) {
           const result = await submitScore(
             userId,
             earnedPoints,
-            normalizedDifficulty,
             { offline: isOffline }
           );
           scoreQueued = Boolean(result?.queued);
@@ -293,18 +303,10 @@ export default function useQuizController({ navigation, route }) {
         const mistakes = totalQuestions - resolvedScore;
         let nextStreakValue = null;
         if (!isMultiplayer) {
-          const shouldIncrease = isQuickPlay
-            ? mistakes === 0
-            : normalizedDifficulty === 'leicht'
-            ? true
-            : normalizedDifficulty === 'mittel'
-            ? mistakes <= 1
-            : mistakes === 0;
+          const shouldIncrease = mistakes <= 1;
 
           try {
-            const currentStreak = sanitizeStatNumber(
-              streaks?.[normalizedDifficulty]
-            );
+            const currentStreak = sanitizeStatNumber(streaks?.standard);
             const shieldArmed =
               streakShieldActive &&
               boostInventory.streak_shield > 0 &&
@@ -314,7 +316,7 @@ export default function useQuizController({ navigation, route }) {
               ? await consumeBoost('streak_shield')
               : false;
 
-            nextStreakValue = await setStreakValue(normalizedDifficulty, (current) => {
+            nextStreakValue = await setStreakValue('standard', (current) => {
               const safeCurrent = Number.isFinite(current) ? current : 0;
               if (shieldConsumed) {
                 return safeCurrent;
@@ -386,15 +388,13 @@ export default function useQuizController({ navigation, route }) {
           }
         : null;
 
-      navigation.navigate('Result', {
+      navigation.replace('Result', {
         score: resolvedScore,
         total: effectiveTotal,
         points: earnedPoints,
         coins: coinsEarned,
         xp: xpEarned,
         userId,
-        difficulty: difficultyLabel,
-        difficultyKey: normalizedDifficulty,
         questionLimit,
         category,
         answerHistory: answerHistoryRef.current,
@@ -416,8 +416,8 @@ export default function useQuizController({ navigation, route }) {
       activeScore,
       boostInventory.streak_shield,
       category,
+      clearFreezeTimeout,
       consumeBoost,
-      difficultyLabel,
       isDoubleXpActive,
       initialJoinCode,
       isMultiplayer,
@@ -434,7 +434,7 @@ export default function useQuizController({ navigation, route }) {
       matchRole,
       matchId,
       navigation,
-      normalizedDifficulty,
+      stopTimer,
       questionLimit,
       resolvedMatchStatus,
       setStreakValue,
@@ -612,11 +612,25 @@ export default function useQuizController({ navigation, route }) {
   }, [clearFreezeTimeout]);
 
   useEffect(() => {
+    if (isMultiplayer) {
+      setSoloQuestionsSnapshot([]);
+      return;
+    }
+    if (!soloQuestionsSnapshot.length && Array.isArray(soloQuestions) && soloQuestions.length) {
+      setSoloQuestionsSnapshot(soloQuestions);
+    }
+  }, [isMultiplayer, soloQuestions, soloQuestionsSnapshot.length]);
+
+  useEffect(() => {
     setIndex(0);
     setScore(0);
     setTimedOut(false);
+    setIsFinalizing(false);
+    finalizeInFlightRef.current = false;
+    timeLeftRef.current = TIMER_DURATION;
     answerHistoryRef.current = [];
     setAnswerHistory([]);
+    setSoloQuestionsSnapshot([]);
     resetQuestionState();
     setHiddenOptions([]);
     setUsedBoosts({});
@@ -625,8 +639,8 @@ export default function useQuizController({ navigation, route }) {
     clearFreezeTimeout();
   }, [
     clearFreezeTimeout,
+    category,
     isMultiplayer,
-    normalizedDifficulty,
     questionLimit,
     mode,
     resetQuestionState,
@@ -659,6 +673,24 @@ export default function useQuizController({ navigation, route }) {
   }, [answer]);
 
   useEffect(() => {
+    if (!hasQuestions || showLoading || resolvedError) {
+      return;
+    }
+    if (activeIndex < totalQuestions) {
+      return;
+    }
+    finalizeQuiz(activeScore, { total: totalQuestions, submit: true });
+  }, [
+    activeIndex,
+    activeScore,
+    finalizeQuiz,
+    hasQuestions,
+    resolvedError,
+    showLoading,
+    totalQuestions,
+  ]);
+
+  useEffect(() => {
     const questionKey = currentQuestion?.id ?? `${activeIndex}`;
     const keepLocalFreeze =
       freezeActiveRef.current &&
@@ -676,6 +708,7 @@ export default function useQuizController({ navigation, route }) {
       return;
     }
 
+    timeLeftRef.current = TIMER_DURATION;
     setTimedOut(false);
     resetTimer();
   }, [activeIndex, currentQuestion?.id, matchIsActive, resetTimer, showExitConfirm, stopTimer]);
@@ -690,7 +723,6 @@ export default function useQuizController({ navigation, route }) {
     activeIndex,
     currentQuestion,
     category,
-    difficultyLabel,
     handleExitCancel,
     handleExitConfirm,
     handleExitRequest,
@@ -710,6 +742,7 @@ export default function useQuizController({ navigation, route }) {
     selectedOption,
     showExitConfirm,
     showLoading,
+    isFinalizing,
     timeLeftMs,
     timedOut,
     boostInventory,

@@ -125,7 +125,7 @@ export default function useFriendsPresence({
             .track({
               userId,
               code: friendCode,
-              username: userName || 'MedBattle',
+              username: userName || 'MedQuiz',
               title: userTitle ?? null,
               activity: 'online',
               avatarId:

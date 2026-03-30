@@ -1,14 +1,12 @@
 import { calculateCoinReward } from '../../services/quizService';
 import { IAP_PRODUCT_IDS } from '../../config/iapProductIds';
+import { SOLO_QUESTION_LIMIT } from '../../config/quizLimits';
 
 export const COIN_EMOJI = '\uD83E\uDE99';
 export const ENERGY_EMOJI = '\u26A1';
-const PERFECT_SOLO_QUESTION_LIMIT = 6;
-const PERFECT_SOLO_DIFFICULTY = 'mittel';
 const ENERGY_PRICE_PER_UNIT = calculateCoinReward({
-  correct: PERFECT_SOLO_QUESTION_LIMIT,
-  total: PERFECT_SOLO_QUESTION_LIMIT,
-  difficulty: PERFECT_SOLO_DIFFICULTY,
+  correct: SOLO_QUESTION_LIMIT,
+  total: SOLO_QUESTION_LIMIT,
   isMultiplayer: false,
 });
 const roundToFive = (value) => Math.max(5, Math.round(value / 5) * 5);

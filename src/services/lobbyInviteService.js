@@ -59,7 +59,7 @@ export async function sendLobbyInvite({ matchId, recipientCode } = {}) {
 
   const normalizedRecipientCode = normalizeCode(recipientCode);
   if (!normalizedRecipientCode) {
-    return { ok: false, error: new Error('Empfaenger-Code fehlt.') };
+    return { ok: false, error: new Error('Empfänger-Code fehlt.') };
   }
 
   try {
@@ -122,7 +122,7 @@ export async function respondLobbyInvite({ inviteId, action } = {}) {
 
   const normalizedAction = normalizeText(action)?.toLowerCase() ?? null;
   if (normalizedAction !== 'accept' && normalizedAction !== 'decline') {
-    return { ok: false, error: new Error('Ungueltige Aktion.') };
+    return { ok: false, error: new Error('Ungültige Aktion.') };
   }
 
   try {

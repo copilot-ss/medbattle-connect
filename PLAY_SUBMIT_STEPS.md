@@ -1,9 +1,15 @@
-# PLAY_SUBMIT_STEPS.md - MedBattle
+# PLAY_SUBMIT_STEPS.md - MedQuiz
 
-Stand: 2026-03-08
+Stand: 2026-03-24
 
 ## Ziel
-Google Play Submit in EAS vorbereiten und den aktuellen Android Build einreichen.
+Google Play Submit in EAS vorbereiten und das naechste frische Android-Release-Artefakt einreichen.
+
+## Aktueller Status
+- In Google Play liegt bisher nur der hochgeladene Store-Build `31`; dieser ist weiterhin nicht aktiv.
+- Lokal existiert ein frisches Store-AAB `39` vom `2026-03-24`.
+- Dieses AAB ist aus dem aktuellen Repo-Stand gebaut und enthaelt wieder `x86_64`, damit Google Play dem Emulator spaeter wieder eine passende Variante ausliefern kann.
+- Der Play Submit Service Account ist weiterhin offen und blockiert einen sauberen CLI-Submit.
 
 ## Voraussetzungen
 - Google Play Console App ist angelegt.
@@ -38,30 +44,39 @@ Hinweis zu Kosten: Das Anlegen eines Service Accounts und JSON-Keys kostet in de
 - Wenn ein Service Account verwendet wird, die Rechte so klein wie moeglich halten.
 
 ## Schritte
-1. Service Account Key in EAS hinterlegen (interaktiv):
+1. Falls seit `versionCode 39` wieder App-Code geaendert wurde: aktuelles Release-Artefakt neu bauen
+```bash
+npm run release:check
+cd android
+./gradlew.bat bundleRelease
+```
+Reine Supabase-Inhaltsaenderungen wie neue Online-Fragen brauchen dagegen keinen neuen AAB-Build.
+
+2. Service Account Key in EAS hinterlegen (interaktiv):
 ```bash
 npx eas credentials -p android
 ```
 
-2. Im Menu den Play-Submit Service Account setzen (bestehenden JSON Key hochladen).
+3. Im Menu den Play-Submit Service Account setzen (bestehenden JSON Key hochladen).
 
-3. Kontrolle, dass der Key gesetzt ist:
+4. Kontrolle, dass der Key gesetzt ist:
 ```bash
 npx eas credentials -p android
 ```
 Erwartung: Play Submit Service Account ist nicht mehr `None assigned yet`.
 
-4. Neuesten Production-Build submitten:
+5. Neuesten Production-Build submitten:
 ```bash
 npx eas submit -p android --latest --profile production
 ```
 
-5. Optional auf Abschluss warten:
+6. Optional auf Abschluss warten:
 ```bash
 npx eas submit -p android --latest --profile production --wait
 ```
 
 ## Hinweise
+- Ohne frischen Build aus dem aktuellen Repo wuerde ein Submit nicht den juengsten Code-Stand veroeffentlichen.
 - `--non-interactive` kann den Service Account Key nicht neu anlegen.
 - Solange der Key nicht in EAS gesetzt ist, bleibt Submit blockiert.
 - Die erste Play-Store-Einreichung muss weiterhin manuell ueber das Web-UI erfolgen.

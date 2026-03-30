@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { startTransition, useCallback, useEffect, useState } from 'react';
 import { usePreferences } from '../../../context/PreferencesContext';
 import { fetchQuestions } from '../../../services/quizService';
 import { t } from '../../../i18n';
-import { ALLOWED_DIFFICULTIES } from './useQuizConfig';
 
 function shuffleOptions(options) {
   const array = Array.isArray(options) ? [...options] : [];
@@ -11,10 +10,6 @@ function shuffleOptions(options) {
     [array[i], array[j]] = [array[j], array[i]];
   }
   return array;
-}
-
-function normalizeDifficulty(value) {
-  return ALLOWED_DIFFICULTIES.includes(value) ? value : 'mittel';
 }
 
 function prepareQuestions(questions) {
@@ -35,12 +30,10 @@ function prepareQuestions(questions) {
 
 export default function useSoloQuestionLoader({
   isEnabled,
-  normalizedDifficulty,
   questionLimit,
   category,
   isOffline = false,
 }) {
-  const safeDifficulty = normalizeDifficulty(normalizedDifficulty);
   const safeCategory =
     typeof category === 'string' && category.trim() ? category.trim() : null;
   const { language } = usePreferences();
@@ -66,10 +59,9 @@ export default function useSoloQuestionLoader({
 
     async function loadQuestions() {
       setLoading(true);
-      setQuestions([]);
 
       try {
-        const data = await fetchQuestions(safeDifficulty, questionLimit, safeCategory, {
+        const data = await fetchQuestions(questionLimit, safeCategory, {
           offline: isOffline,
           language,
           fallbackLanguage: language === 'de' ? 'de' : null,
@@ -85,20 +77,26 @@ export default function useSoloQuestionLoader({
                   })
                 : t('Keine Fragen verfügbar. Bitte versuche es gleich nochmal.')
             );
-            setQuestions([]);
+            startTransition(() => {
+              setQuestions([]);
+            });
             setLoading(false);
             return;
           }
 
-          setError(null);
-          setQuestions(prepared);
+          startTransition(() => {
+            setError(null);
+            setQuestions(prepared);
+          });
           setLoading(false);
         }
       } catch (err) {
         console.error('Fehler beim Laden der Fragen', err);
         if (!cancelled) {
           setError(t('Die Fragen konnten nicht geladen werden. Bitte versuche es später erneut.'));
-          setQuestions([]);
+          startTransition(() => {
+            setQuestions([]);
+          });
           setLoading(false);
         }
       }
@@ -109,7 +107,7 @@ export default function useSoloQuestionLoader({
     return () => {
       cancelled = true;
     };
-  }, [isEnabled, isOffline, language, questionLimit, safeCategory, safeDifficulty]);
+  }, [isEnabled, isOffline, language, questionLimit, safeCategory]);
 
   return {
     questions,

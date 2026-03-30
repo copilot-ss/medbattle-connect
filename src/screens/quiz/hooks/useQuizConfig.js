@@ -1,10 +1,3 @@
-const DIFFICULTY_LABELS = {
-  leicht: 'Kinder',
-  mittel: 'Studenten',
-  schwer: 'Doktor',
-};
-
-export const ALLOWED_DIFFICULTIES = ['leicht', 'mittel', 'schwer'];
 export const TIMER_DURATION = 15000;
 
 export default function useQuizConfig(route) {
@@ -15,14 +8,6 @@ export default function useQuizConfig(route) {
   const mode = typeof route?.params?.mode === 'string' ? route.params.mode : 'standard';
   const isQuickPlay = mode === 'quick';
   const isMultiplayer = Boolean(matchId);
-  const difficultyParam =
-    typeof route?.params?.difficulty === 'string' ? route.params.difficulty : 'mittel';
-  const normalizedDifficulty = ALLOWED_DIFFICULTIES.includes(difficultyParam)
-    ? difficultyParam
-    : 'mittel';
-  const difficultyLabel = isQuickPlay
-    ? 'Quick Play'
-    : DIFFICULTY_LABELS[normalizedDifficulty] ?? DIFFICULTY_LABELS.mittel;
   const requestedQuestionLimit =
     typeof route?.params?.questionLimit === 'number' && Number.isFinite(route.params.questionLimit)
       ? Math.max(1, Math.floor(route.params.questionLimit))
@@ -45,8 +30,6 @@ export default function useQuizConfig(route) {
     mode,
     isQuickPlay,
     isMultiplayer,
-    normalizedDifficulty,
-    difficultyLabel,
     requestedQuestionLimit,
     category: normalizedCategory,
     preloadedMatch,

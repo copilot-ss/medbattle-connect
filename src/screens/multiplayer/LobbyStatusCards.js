@@ -12,7 +12,9 @@ export default function LobbyStatusCards({
   const { t } = useTranslation();
   const showProfileLoading = Boolean(loadingUser);
   const showMatchesError = Boolean(matchesError);
-  const showCreateOnlyLoading = Boolean(isCreateOnly && !currentMatch);
+  const showCreateOnlyLoading = Boolean(
+    isCreateOnly && !currentMatch && !showProfileLoading && !showMatchesError && creating
+  );
 
   return (
     <>
@@ -35,9 +37,7 @@ export default function LobbyStatusCards({
       {showCreateOnlyLoading ? (
         <View style={styles.loadingBox}>
           <ActivityIndicator size="small" color="#60A5FA" />
-          <Text style={styles.loadingText}>
-            {creating ? t('Lobby wird erstellt ...') : t('Starte Lobby ...')}
-          </Text>
+          <Text style={styles.loadingText}>{t('Lobby wird erstellt ...')}</Text>
         </View>
       ) : null}
     </>

@@ -7,7 +7,6 @@ import {
 } from '../lobbyConstants';
 
 export default function useLobbyHostSettings({
-  initialDifficulty,
   initialCategory,
   currentMatch,
   isHostWaiting,
@@ -17,12 +16,10 @@ export default function useLobbyHostSettings({
   setMatchesError,
   t,
 }) {
-  const [selectedDifficulty, setSelectedDifficulty] = useState(initialDifficulty);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [questionLimit, setQuestionLimit] = useState(DEFAULT_QUESTION_LIMIT);
   const [updatingSettings, setUpdatingSettings] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [draftDifficulty, setDraftDifficulty] = useState(initialDifficulty);
   const [draftQuestionLimit, setDraftQuestionLimit] = useState(DEFAULT_QUESTION_LIMIT);
   const hostSettingsVersionRef = useRef(0);
 
@@ -43,17 +40,10 @@ export default function useLobbyHostSettings({
     ) {
       setQuestionLimit(currentMatch.question_limit);
     }
-
-    if (
-      currentMatch.difficulty &&
-      currentMatch.difficulty !== selectedDifficulty
-    ) {
-      setSelectedDifficulty(currentMatch.difficulty);
-    }
-  }, [currentMatch, questionLimit, selectedDifficulty]);
+  }, [currentMatch, questionLimit]);
 
   const pushHostSettings = useCallback(
-    async (nextDifficulty, nextQuestionLimit) => {
+    async (nextQuestionLimit) => {
       if (!isHostWaiting || !currentMatch || updatingSettings) {
         return;
       }
@@ -67,7 +57,6 @@ export default function useLobbyHostSettings({
         const result = await updateMatchSettings({
           matchId: currentMatch.id,
           userId,
-          difficulty: nextDifficulty,
           questionLimit: nextQuestionLimit,
           language,
           fallbackLanguage: language === 'de' ? 'de' : null,
@@ -80,7 +69,6 @@ export default function useLobbyHostSettings({
         if (requestVersion === hostSettingsVersionRef.current) {
           setCurrentMatch(result.match);
           setQuestionLimit(result.match.question_limit ?? nextQuestionLimit);
-          setSelectedDifficulty(result.match.difficulty ?? nextDifficulty);
           setSelectedCategory(result.match.category ?? selectedCategory);
         }
       } catch (err) {
@@ -110,10 +98,9 @@ export default function useLobbyHostSettings({
       return;
     }
 
-    setDraftDifficulty(selectedDifficulty);
     setDraftQuestionLimit(questionLimit);
     setShowSettingsModal(true);
-  }, [isHostWaiting, questionLimit, selectedDifficulty]);
+  }, [isHostWaiting, questionLimit]);
 
   const handleApplySettings = useCallback(() => {
     setShowSettingsModal(false);
@@ -122,22 +109,17 @@ export default function useLobbyHostSettings({
       return;
     }
 
-    if (
-      draftDifficulty === selectedDifficulty &&
-      draftQuestionLimit === questionLimit
-    ) {
+    if (draftQuestionLimit === questionLimit) {
       return;
     }
 
-    pushHostSettings(draftDifficulty, draftQuestionLimit);
+    pushHostSettings(draftQuestionLimit);
   }, [
     currentMatch,
-    draftDifficulty,
     draftQuestionLimit,
     isHostWaiting,
     pushHostSettings,
     questionLimit,
-    selectedDifficulty,
   ]);
 
   const adjustDraftQuestionLimit = useCallback((delta) => {
@@ -154,17 +136,13 @@ export default function useLobbyHostSettings({
   }, []);
 
   return {
-    selectedDifficulty,
-    setSelectedDifficulty,
     selectedCategory,
     setSelectedCategory,
     questionLimit,
     setQuestionLimit,
     updatingSettings,
     showSettingsModal,
-    draftDifficulty,
     draftQuestionLimit,
-    setDraftDifficulty,
     adjustDraftQuestionLimit,
     handleOpenSettings,
     handleApplySettings,

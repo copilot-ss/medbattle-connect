@@ -71,7 +71,7 @@ export function RewardSummary({ items = [], delay = 0, direction = 'row' }) {
       {safeItems.map((item, index) => {
         const isXp = item.tone === 'xp';
         const key = item.key ?? `${item.tone}-${index}`;
-        const rewardText = isXp ? `${item.value}XP` : `${item.value} ${COIN_EMOJI}`;
+        const rewardText = isXp ? `+${item.value}XP` : `+${item.value} ${COIN_EMOJI}`;
 
         return (
           <View

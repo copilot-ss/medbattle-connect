@@ -9,6 +9,9 @@ import {
   subscribeToMatch,
   updateMatchProgress,
 } from '../services/matchService';
+import { resolveProgressiveMatch } from '../services/match/matchHelpers';
+
+const MATCH_STATE_SYNC_INTERVAL_MS = 2500;
 
 function ensurePlayerState(match, role) {
   if (!match || !match.state) {
@@ -59,7 +62,6 @@ function ensurePlayerState(match, role) {
 }
 
 export default function useMultiplayerMatch(matchId, userId, options = {}) {
-  const expectedDifficulty = options.expectedDifficulty ?? null;
   const initialMatchOption = options.initialMatch ?? null;
   const { isOnline } = useConnectivity();
   const isOffline = isOnline === false;
@@ -83,6 +85,9 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
     match: initialMatch,
     error: null,
   }));
+  const [realtimeStatus, setRealtimeStatus] = useState(() =>
+    isOffline ? 'offline' : 'idle'
+  );
   const lastLoadedIdRef = useRef(initialMatch?.id ?? null);
 
   const loadMatch = useCallback(
@@ -137,24 +142,14 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
         return;
       }
 
-      if (
-        expectedDifficulty &&
-        match.difficulty &&
-        expectedDifficulty !== match.difficulty
-      ) {
-        console.warn(
-          `Unerwartete Schwierigkeit im Match. Erwartet: ${expectedDifficulty}, erhalten: ${match.difficulty}`
-        );
-      }
-
       lastLoadedIdRef.current = match.id;
-      setState({
+      setState((prev) => ({
         loading: false,
-        match,
+        match: resolveProgressiveMatch(prev.match, match),
         error: null,
-      });
+      }));
     },
-    [expectedDifficulty, isOffline, matchId, userId]
+    [isOffline, matchId, userId]
   );
 
   useEffect(() => {
@@ -174,7 +169,7 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
 
       return {
         loading: !initialMatchHasQuestions,
-        match: initialMatch,
+        match: resolveProgressiveMatch(prev.match, initialMatch),
         error: null,
       };
     });
@@ -234,26 +229,54 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
 
   useEffect(() => {
     if (!matchId || !userId || isOffline) {
+      setRealtimeStatus(isOffline ? 'offline' : 'idle');
       return () => {};
     }
 
-    const unsubscribe = subscribeToMatch(matchId, (updated) => {
-      if (!updated) {
-        return;
+    setRealtimeStatus('subscribing');
+
+    const unsubscribe = subscribeToMatch(
+      matchId,
+      (updated) => {
+        if (!updated) {
+          return;
+        }
+
+        const role = deriveMatchRole(updated, userId);
+
+        if (!role) {
+          return;
+        }
+
+        setState((prev) => ({
+          loading: false,
+          match: resolveProgressiveMatch(prev.match, updated),
+          error: null,
+        }));
+      },
+      {
+        onStatus: (status) => {
+          if (status === 'SUBSCRIBED' || status === 'EVENT') {
+            setRealtimeStatus('ready');
+            return;
+          }
+
+          if (
+            status === 'CHANNEL_ERROR' ||
+            status === 'TIMED_OUT' ||
+            status === 'CLOSED' ||
+            status === 'SUBSCRIBE_THROW'
+          ) {
+            setRealtimeStatus('fallback');
+            return;
+          }
+
+          if (status === 'SUBSCRIBING') {
+            setRealtimeStatus('subscribing');
+          }
+        },
       }
-
-      const role = deriveMatchRole(updated, userId);
-
-      if (!role) {
-        return;
-      }
-
-      setState((prev) => ({
-        loading: false,
-        match: updated,
-        error: null,
-      }));
-    });
+    );
 
     return () => {
       unsubscribe();
@@ -272,6 +295,43 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
       console.warn('Match konnte nach Reconnect nicht geladen werden:', err);
     });
   }, [isOnline, loadMatch, matchId, userId]);
+
+  useEffect(() => {
+    if (
+      !matchId ||
+      !userId ||
+      !state.match?.id ||
+      isOffline ||
+      state.match.status === 'completed' ||
+      state.match.status === 'cancelled' ||
+      (realtimeStatus === 'ready' && state.match.status !== 'active')
+    ) {
+      return;
+    }
+
+    let active = true;
+    const intervalId = setInterval(() => {
+      loadMatch({ skipIfSame: false, silent: true }).catch((err) => {
+        if (!active) {
+          return;
+        }
+        console.warn('Konnte aktiven Match-Status nicht nachziehen:', err);
+      });
+    }, realtimeStatus === 'ready' ? MATCH_STATE_SYNC_INTERVAL_MS : 1800);
+
+    return () => {
+      active = false;
+      clearInterval(intervalId);
+    };
+  }, [
+    isOffline,
+    loadMatch,
+    matchId,
+    realtimeStatus,
+    state.match?.id,
+    state.match?.status,
+    userId,
+  ]);
 
   const role = useMemo(
     () => deriveMatchRole(state.match, userId),
@@ -329,13 +389,13 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
         },
       });
 
-      if (response.ok && response.match) {
-        setState({
-          loading: false,
-          match: response.match,
-          error: null,
-        });
-      } else if (!response.ok) {
+    if (response.ok && response.match) {
+      setState((prev) => ({
+        loading: false,
+        match: resolveProgressiveMatch(prev.match, response.match),
+        error: null,
+      }));
+    } else if (!response.ok) {
         setState((prev) => ({
           ...prev,
           error: response.error ?? new Error('Match konnte nicht aktualisiert werden.'),
@@ -371,11 +431,11 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
     });
 
     if (response.ok && response.match) {
-      setState({
+      setState((prev) => ({
         loading: false,
-        match: response.match,
+        match: resolveProgressiveMatch(prev.match, response.match),
         error: null,
-      });
+      }));
     }
 
     return response;
@@ -392,11 +452,11 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
     });
 
     if (response.ok && response.match) {
-      setState({
+      setState((prev) => ({
         loading: false,
-        match: response.match,
+        match: resolveProgressiveMatch(prev.match, response.match),
         error: null,
-      });
+      }));
     }
 
     return response;
@@ -417,6 +477,8 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
     joinCode: state.match?.code ?? null,
     player: playerState,
     opponent: opponentState,
+    realtimeStatus,
+    realtimeReady: realtimeStatus === 'ready',
     recordAnswer,
     finishMatch,
     surrender,

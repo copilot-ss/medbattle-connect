@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import {
   DEFAULT_STREAKS,
   DEFAULT_BOOSTS,
@@ -9,9 +10,7 @@ import {
   MAX_ENERGY_CAP_BONUS,
   NEW_ACCOUNT_MAX_ENERGY,
   PUSH_STORAGE_KEY,
-  SOUND_STORAGE_KEY,
   STREAK_STORAGE_KEYS,
-  VIBRATION_STORAGE_KEY,
 } from './preferences/constants';
 import { recalcEnergy } from './preferences/energyUtils';
 import {
@@ -30,23 +29,24 @@ import {
   persistClaimedAchievements,
   persistDoubleXpExpiresAt,
   persistEnergy,
-  persistLanguage,
   persistOwnedFrames,
   persistStreakShieldActive,
   persistStreakValue,
   persistUserStats,
 } from './preferences/storage';
-import { DEFAULT_LOCALE, setLocale, t as translate } from '../i18n';
+import { APP_DEFAULT_LOCALE, setLocale, t as translate } from '../i18n';
+import { getDefaultAppLocale } from '../i18n/deviceLocale';
 import {
   cancelEnergyFullNotification,
   scheduleEnergyFullNotification,
 } from '../services/notificationsService';
 
 const PreferencesContext = createContext(null);
+const EnergyPreferencesContext = createContext(null);
+const StatsPreferencesContext = createContext(null);
+const AvatarPreferencesContext = createContext(null);
 
 export function PreferencesProvider({ children }) {
-  const [soundEnabled, setSoundEnabledState] = useState(true);
-  const [vibrationEnabled, setVibrationEnabledState] = useState(true);
   const [pushEnabled, setPushEnabledState] = useState(true);
   const [friendRequestsEnabled, setFriendRequestsEnabledState] = useState(true);
   const [avatarId, setAvatarIdState] = useState(null);
@@ -57,7 +57,7 @@ export function PreferencesProvider({ children }) {
   const [claimedAchievements, setClaimedAchievementsState] = useState([]);
   const [streakShieldActive, setStreakShieldActiveState] = useState(false);
   const [doubleXpExpiresAt, setDoubleXpExpiresAtState] = useState(null);
-  const [language, setLanguageState] = useState(DEFAULT_LOCALE);
+  const [language, setLanguageState] = useState(APP_DEFAULT_LOCALE);
   const [streaks, setStreaksState] = useState(DEFAULT_STREAKS);
   const [userStats, setUserStatsState] = useState(DEFAULT_USER_STATS);
   const [energyBase, setEnergyBaseState] = useState(NEW_ACCOUNT_MAX_ENERGY);
@@ -73,10 +73,30 @@ export function PreferencesProvider({ children }) {
     MAX_ENERGY_CAP_BONUS
   );
   const energyMax = energyBase + energyCapBonus;
+  const syncDeviceLanguage = useCallback(() => {
+    const nextLanguage = getDefaultAppLocale();
+    setLanguageState((current) => (current === nextLanguage ? current : nextLanguage));
+    setLocale(nextLanguage);
+    return nextLanguage;
+  }, []);
   const locale = useMemo(
-    () => (language || DEFAULT_LOCALE).toLowerCase(),
+    () => (language || APP_DEFAULT_LOCALE).toLowerCase(),
     [language]
   );
+
+  useEffect(() => {
+    syncDeviceLanguage();
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        syncDeviceLanguage();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [syncDeviceLanguage]);
 
   useEffect(() => {
     let active = true;
@@ -89,8 +109,6 @@ export function PreferencesProvider({ children }) {
           return;
         }
 
-        setSoundEnabledState(loaded.soundEnabled);
-        setVibrationEnabledState(loaded.vibrationEnabled);
         setPushEnabledState(loaded.pushEnabled);
         setFriendRequestsEnabledState(loaded.friendRequestsEnabled);
         setAvatarIdState(loaded.avatarId);
@@ -101,8 +119,6 @@ export function PreferencesProvider({ children }) {
         setClaimedAchievementsState(loaded.claimedAchievements);
         setStreakShieldActiveState(Boolean(loaded.streakShieldActive));
         setDoubleXpExpiresAtState(loaded.doubleXpExpiresAt ?? null);
-        setLanguageState(loaded.language);
-        setLocale(loaded.language);
         setStreaksState(loaded.streaks);
         setUserStatsState(loaded.userStats);
         setEnergyBaseState(loaded.energyBase ?? NEW_ACCOUNT_MAX_ENERGY);
@@ -115,6 +131,7 @@ export function PreferencesProvider({ children }) {
         }
       } finally {
         if (active) {
+          syncDeviceLanguage();
           setLoading(false);
         }
       }
@@ -125,13 +142,7 @@ export function PreferencesProvider({ children }) {
     return () => {
       active = false;
     };
-  }, []);
-
-  const setSoundEnabled = useCallback(async (value) => {
-    const normalized = Boolean(value);
-    setSoundEnabledState(normalized);
-    await persistBooleanValue(SOUND_STORAGE_KEY, normalized);
-  }, []);
+  }, [syncDeviceLanguage]);
 
   useEffect(() => {
     energyRef.current = energy;
@@ -140,12 +151,6 @@ export function PreferencesProvider({ children }) {
   useEffect(() => {
     energyMaxRef.current = energyMax;
   }, [energyMax]);
-
-  const setVibrationEnabled = useCallback(async (value) => {
-    const normalized = Boolean(value);
-    setVibrationEnabledState(normalized);
-    await persistBooleanValue(VIBRATION_STORAGE_KEY, normalized);
-  }, []);
 
   const setPushEnabled = useCallback(async (value) => {
     const normalized = Boolean(value);
@@ -302,13 +307,6 @@ export function PreferencesProvider({ children }) {
     [boosts, updateBoosts]
   );
 
-  const setLanguage = useCallback(async (value) => {
-    const normalized = typeof value === 'string' && value.toLowerCase() === 'en' ? 'en' : DEFAULT_LOCALE;
-    setLanguageState(normalized);
-    setLocale(normalized);
-    await persistLanguage(normalized);
-  }, []);
-
   const resetAccountData = useCallback(async () => {
     const nextBoosts = { ...DEFAULT_BOOSTS };
     const nextStreaks = { ...DEFAULT_STREAKS };
@@ -369,8 +367,8 @@ export function PreferencesProvider({ children }) {
     );
     energyTimestampRef.current = recalc.ts;
     energyRef.current = recalc.energy;
-    setEnergyState(recalc.energy);
-    setNextEnergyAt(recalc.nextAt);
+    setEnergyState((current) => (current === recalc.energy ? current : recalc.energy));
+    setNextEnergyAt((current) => (current === recalc.nextAt ? current : recalc.nextAt));
   }, []);
 
   const boostEnergy = useCallback(async () => {
@@ -496,8 +494,12 @@ export function PreferencesProvider({ children }) {
     });
   }, [energy, energyMax, nextEnergyAt, pushEnabled, loading, locale]);
 
-  const setStreakValue = useCallback(async (difficulty, updater) => {
-    const key = STREAK_STORAGE_KEYS[difficulty];
+  const setStreakValue = useCallback(async (streakKey, updater) => {
+    const normalizedStreakKey =
+      typeof streakKey === 'string' && STREAK_STORAGE_KEYS[streakKey]
+        ? streakKey
+        : 'standard';
+    const key = STREAK_STORAGE_KEYS[normalizedStreakKey];
     if (!key) {
       return 0;
     }
@@ -505,13 +507,13 @@ export function PreferencesProvider({ children }) {
     let nextValue = 0;
 
     setStreaksState((prev) => {
-      const current = sanitizeStreakValue(prev[difficulty]);
+      const current = sanitizeStreakValue(prev[normalizedStreakKey]);
       const candidate =
         typeof updater === 'function' ? updater(current) : sanitizeStreakValue(updater);
       nextValue = sanitizeStreakValue(candidate);
       return {
         ...prev,
-        [difficulty]: nextValue,
+        [normalizedStreakKey]: nextValue,
       };
     });
 
@@ -522,10 +524,6 @@ export function PreferencesProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      soundEnabled,
-      setSoundEnabled,
-      vibrationEnabled,
-      setVibrationEnabled,
       pushEnabled,
       setPushEnabled,
       friendRequestsEnabled,
@@ -550,7 +548,6 @@ export function PreferencesProvider({ children }) {
       doubleXpExpiresAt,
       setDoubleXpExpiresAt,
       language,
-      setLanguage,
       streaks,
       setStreakValue,
       userStats,
@@ -572,7 +569,6 @@ export function PreferencesProvider({ children }) {
       consumeEnergy,
       refreshEnergy,
       resetAccountData,
-      setLanguage,
       loading,
       energyBase,
       energy,
@@ -580,9 +576,7 @@ export function PreferencesProvider({ children }) {
       nextEnergyAt,
       resetAccountData,
       userStats,
-      setSoundEnabled,
       setStreakValue,
-      setVibrationEnabled,
       setPushEnabled,
       setFriendRequestsEnabled,
       setAvatarId,
@@ -590,8 +584,6 @@ export function PreferencesProvider({ children }) {
       setAvatarFrameId,
       setOwnedFrames,
       updateUserStats,
-      soundEnabled,
-      vibrationEnabled,
       pushEnabled,
       friendRequestsEnabled,
       avatarId,
@@ -614,7 +606,108 @@ export function PreferencesProvider({ children }) {
     ]
   );
 
-  return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
+  const energyValue = useMemo(
+    () => ({
+      energyBase,
+      energy,
+      energyMax,
+      nextEnergyAt,
+      refreshEnergy,
+      consumeEnergy,
+      boostEnergy,
+      addEnergy,
+      loading,
+    }),
+    [
+      addEnergy,
+      boostEnergy,
+      consumeEnergy,
+      energy,
+      energyBase,
+      energyMax,
+      loading,
+      nextEnergyAt,
+      refreshEnergy,
+    ]
+  );
+
+  const statsValue = useMemo(
+    () => ({
+      boosts,
+      updateBoosts,
+      grantBoost,
+      consumeBoost,
+      claimedAchievements,
+      setClaimedAchievements,
+      claimAchievement,
+      streakShieldActive,
+      setStreakShieldActive,
+      doubleXpExpiresAt,
+      setDoubleXpExpiresAt,
+      streaks,
+      setStreakValue,
+      userStats,
+      updateUserStats,
+      language,
+      loading,
+    }),
+    [
+      boosts,
+      claimAchievement,
+      claimedAchievements,
+      consumeBoost,
+      doubleXpExpiresAt,
+      grantBoost,
+      language,
+      loading,
+      setClaimedAchievements,
+      setDoubleXpExpiresAt,
+      setStreakShieldActive,
+      setStreakValue,
+      streakShieldActive,
+      streaks,
+      updateBoosts,
+      updateUserStats,
+      userStats,
+    ]
+  );
+
+  const avatarValue = useMemo(
+    () => ({
+      avatarId,
+      setAvatarId,
+      avatarUri,
+      setAvatarUri,
+      avatarFrameId,
+      setAvatarFrameId,
+      ownedFrames,
+      setOwnedFrames,
+      loading,
+    }),
+    [
+      avatarFrameId,
+      avatarId,
+      avatarUri,
+      loading,
+      ownedFrames,
+      setAvatarFrameId,
+      setAvatarId,
+      setAvatarUri,
+      setOwnedFrames,
+    ]
+  );
+
+  return (
+    <PreferencesContext.Provider value={value}>
+      <AvatarPreferencesContext.Provider value={avatarValue}>
+        <StatsPreferencesContext.Provider value={statsValue}>
+          <EnergyPreferencesContext.Provider value={energyValue}>
+            {children}
+          </EnergyPreferencesContext.Provider>
+        </StatsPreferencesContext.Provider>
+      </AvatarPreferencesContext.Provider>
+    </PreferencesContext.Provider>
+  );
 }
 
 export function usePreferences() {
@@ -623,4 +716,24 @@ export function usePreferences() {
     throw new Error('usePreferences muss innerhalb von PreferencesProvider verwendet werden.');
   }
   return context;
+}
+
+function useNamedPreferencesContext(context, hookName) {
+  const value = useContext(context);
+  if (!value) {
+    throw new Error(`${hookName} muss innerhalb von PreferencesProvider verwendet werden.`);
+  }
+  return value;
+}
+
+export function useEnergyPrefs() {
+  return useNamedPreferencesContext(EnergyPreferencesContext, 'useEnergyPrefs');
+}
+
+export function useStatsPrefs() {
+  return useNamedPreferencesContext(StatsPreferencesContext, 'useStatsPrefs');
+}
+
+export function useAvatarPrefs() {
+  return useNamedPreferencesContext(AvatarPreferencesContext, 'useAvatarPrefs');
 }

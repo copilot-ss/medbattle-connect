@@ -27,6 +27,7 @@ export function buildPublicProfilePayload({
   isOnline = null,
   activity = null,
   statusLabel = null,
+  canRemoveFriend = false,
 } = {}) {
   const resolvedUserId = resolveString(userId);
   const resolvedFriendCode = resolveString(friendCode)
@@ -47,5 +48,6 @@ export function buildPublicProfilePayload({
     isOnline: typeof isOnline === 'boolean' ? isOnline : null,
     activity: resolveString(activity),
     statusLabel: resolveString(statusLabel),
+    canRemoveFriend: canRemoveFriend === true,
   };
 }

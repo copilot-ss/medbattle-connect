@@ -18,6 +18,11 @@ const NETWORK_ERROR_PATTERNS = [
   /ehostunreach/i,
 ];
 
+function translateToString(value: string) {
+  const translated = t(value);
+  return typeof translated === 'string' ? translated : value;
+}
+
 function scrubUrls(message: string) {
   return message.replace(/\bhttps?:\/\/\S+/gi, 'Server');
 }
@@ -35,7 +40,7 @@ function extractHost(value?: string | null) {
 }
 
 export function formatUserError(error: unknown, options: FormatUserErrorOptions = {}) {
-  const fallback = t(options.fallback ?? 'Unbekannter Fehler.');
+  const fallback = translateToString(options.fallback ?? 'Unbekannter Fehler.');
   const rawMessage =
     typeof error === 'string'
       ? error
@@ -48,7 +53,7 @@ export function formatUserError(error: unknown, options: FormatUserErrorOptions 
   }
 
   if (NETWORK_ERROR_PATTERNS.some((pattern) => pattern.test(rawMessage))) {
-    return t('Server nicht erreichbar. Bitte Verbindung prüfen.');
+    return translateToString('Server nicht erreichbar. Bitte Verbindung pruefen.');
   }
 
   let cleaned = String(rawMessage);
@@ -65,5 +70,5 @@ export function formatUserError(error: unknown, options: FormatUserErrorOptions 
 
   cleaned = scrubUrls(cleaned);
 
-  return t(cleaned);
+  return translateToString(cleaned);
 }

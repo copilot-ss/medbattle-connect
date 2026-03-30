@@ -6,11 +6,13 @@ import {
   getMatchById,
   subscribeToMatch,
 } from '../../../services/matchService';
+import { resolveProgressiveMatch } from '../../../services/match/matchHelpers';
+
+const LOBBY_MATCH_SYNC_INTERVAL_MS = 2500;
 
 export default function useLobbyMatchState({
   navigation,
   userId,
-  difficulty,
   existingMatch,
   isCreateOnly,
   allowCompletedLobby = false,
@@ -21,6 +23,7 @@ export default function useLobbyMatchState({
   closingRef,
 }) {
   const [currentMatch, setCurrentMatch] = useState(null);
+  const [realtimeStatus, setRealtimeStatus] = useState('idle');
   const subscriptionRef = useRef(null);
   const handledActiveMatchIdRef = useRef(null);
   const { isOnline } = useConnectivity();
@@ -33,9 +36,35 @@ export default function useLobbyMatchState({
       subscriptionRef.current = null;
     }
 
-    subscriptionRef.current = subscribeToMatch(matchId, (updated) => {
-      setCurrentMatch(updated);
-    });
+    setRealtimeStatus('subscribing');
+    subscriptionRef.current = subscribeToMatch(
+      matchId,
+      (updated) => {
+        setCurrentMatch((prev) => resolveProgressiveMatch(prev, updated));
+      },
+      {
+        onStatus: (status) => {
+          if (status === 'SUBSCRIBED' || status === 'EVENT') {
+            setRealtimeStatus('ready');
+            return;
+          }
+
+          if (
+            status === 'CHANNEL_ERROR' ||
+            status === 'TIMED_OUT' ||
+            status === 'CLOSED' ||
+            status === 'SUBSCRIBE_THROW'
+          ) {
+            setRealtimeStatus('fallback');
+            return;
+          }
+
+          if (status === 'SUBSCRIBING') {
+            setRealtimeStatus('subscribing');
+          }
+        },
+      }
+    );
   }, []);
 
   useEffect(() => () => {
@@ -79,7 +108,6 @@ export default function useLobbyMatchState({
       }
 
       navigation.replace('Quiz', {
-        difficulty: currentMatch.difficulty ?? difficulty,
         mode: 'multiplayer',
         matchId: currentMatch.id,
         joinCode: currentMatch.code,
@@ -88,7 +116,6 @@ export default function useLobbyMatchState({
     }
   }, [
     currentMatch,
-    difficulty,
     navigation,
     onMatchActive,
     suppressActiveNavigation,
@@ -96,23 +123,31 @@ export default function useLobbyMatchState({
   ]);
 
   useEffect(() => {
-    if (!currentMatch || currentMatch.status !== 'waiting' || isOffline) {
+    if (
+      !currentMatch ||
+      currentMatch.status !== 'waiting' ||
+      isOffline
+    ) {
       return undefined;
     }
 
+    let active = true;
     const intervalId = setInterval(async () => {
       try {
         const result = await getMatchById(currentMatch.id);
-        if (result.ok && result.match) {
-          setCurrentMatch(result.match);
+        if (active && result.ok && result.match) {
+          setCurrentMatch((prev) => resolveProgressiveMatch(prev, result.match));
         }
       } catch (err) {
         console.warn('Konnte Lobby-Status nicht aktualisieren:', err);
       }
-    }, 4000);
+    }, realtimeStatus === 'ready' ? LOBBY_MATCH_SYNC_INTERVAL_MS : 1800);
 
-    return () => clearInterval(intervalId);
-  }, [currentMatch, isOffline]);
+    return () => {
+      active = false;
+      clearInterval(intervalId);
+    };
+  }, [currentMatch, isOffline, realtimeStatus]);
 
   useEffect(() => {
     const wasOffline = lastOnlineRef.current === false && isOnline === true;
@@ -130,7 +165,7 @@ export default function useLobbyMatchState({
     getMatchById(currentMatch.id)
       .then((result) => {
         if (result.ok && result.match) {
-          setCurrentMatch(result.match);
+          setCurrentMatch((prev) => resolveProgressiveMatch(prev, result.match));
         }
       })
       .catch((err) => {
@@ -145,7 +180,7 @@ export default function useLobbyMatchState({
     if (currentMatch || !existingMatch) {
       return;
     }
-    setCurrentMatch(existingMatch);
+    setCurrentMatch((prev) => resolveProgressiveMatch(prev, existingMatch));
     if (existingMatch.id) {
       attachMatchSubscription(existingMatch.id);
     }

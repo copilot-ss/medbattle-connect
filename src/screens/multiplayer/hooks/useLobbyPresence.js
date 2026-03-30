@@ -74,7 +74,7 @@ export default function useLobbyPresence({
           const normalizedEntry = {
             userId: meta.userId,
             code,
-            username: meta.username ?? 'MedBattle',
+            username: meta.username ?? 'MedQuiz',
             title: meta.title ?? null,
             avatarId:
               typeof meta.avatarId === 'string' && meta.avatarId.trim()
@@ -143,7 +143,7 @@ export default function useLobbyPresence({
           .track({
             userId,
             code: userCode,
-            username: username ?? 'MedBattle',
+            username: username ?? 'MedQuiz',
             title: userTitle,
             activity: 'lobby',
             avatarId: avatarId ?? null,
@@ -180,7 +180,7 @@ export default function useLobbyPresence({
       return;
     }
 
-    const resolvedUsername = username ?? 'MedBattle';
+    const resolvedUsername = username ?? 'MedQuiz';
     const nextPayload = {
       userId,
       code: userCode,

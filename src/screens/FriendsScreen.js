@@ -13,7 +13,12 @@ import usePublicProfileSheet from '../hooks/usePublicProfileSheet';
 export default function FriendsScreen({ navigation, route, showClose = true }) {
   const { t } = useTranslation();
   const [showAddSheet, setShowAddSheet] = useState(false);
-  const { openProfile, sheetProps } = usePublicProfileSheet();
+  const {
+    openProfile,
+    closeProfile,
+    selectedProfile,
+    sheetProps,
+  } = usePublicProfileSheet();
   const {
     scrollRef,
     friendCode,
@@ -29,6 +34,7 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
     friendRequests,
     loadingFriendRequests,
     respondingFriendRequestId,
+    removingFriendCode,
     onAcceptFriendRequest,
     onDeclineFriendRequest,
     onlineFriends,
@@ -39,6 +45,18 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
     refreshingFriends,
     onRefreshFriends,
   } = useSettingsController({ navigation, route });
+
+  const handleRemoveFriendFromProfile = useCallback(async () => {
+    const friendCodeToRemove = selectedProfile?.friendCode ?? null;
+    if (!friendCodeToRemove) {
+      return;
+    }
+
+    const removed = await onRemoveFriend({ code: friendCodeToRemove });
+    if (removed) {
+      closeProfile();
+    }
+  }, [closeProfile, onRemoveFriend, selectedProfile?.friendCode]);
 
   useFocusEffect(
     useCallback(() => {
@@ -107,7 +125,6 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
           onAcceptFriendRequest={onAcceptFriendRequest}
           onDeclineFriendRequest={onDeclineFriendRequest}
           onlineFriends={onlineFriends}
-          onRemoveFriend={onRemoveFriend}
           onOpenProfile={openProfile}
           onOpenAdd={handleOpenAdd}
           showAddButton
@@ -131,6 +148,16 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
       />
       <PublicProfileSheet
         {...sheetProps}
+        footerActionLabel={selectedProfile?.canRemoveFriend ? t('Entfernen') : null}
+        onFooterAction={selectedProfile?.canRemoveFriend ? handleRemoveFriendFromProfile : null}
+        footerActionLoading={
+          selectedProfile?.canRemoveFriend
+          && removingFriendCode === selectedProfile?.friendCode
+        }
+        footerActionDisabled={
+          selectedProfile?.canRemoveFriend
+          && removingFriendCode === selectedProfile?.friendCode
+        }
       />
     </View>
   );

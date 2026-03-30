@@ -1,4 +1,4 @@
-# STORE_ASSETS.md - MedBattle Store Assets
+# STORE_ASSETS.md - MedQuiz Store Assets
 
 ## Play Store (Android)
 Required:
@@ -13,6 +13,10 @@ Current:
 - store_assets/play_store_screenshot_2.png (1080x2400)
 - store_assets/play_store_screenshot_3.png (1080x2400)
 - store_assets/play_store_screenshot_4.png (1080x2400)
+- store_assets/play_store_7in_tablet_screenshot_1.png (1600x2560)
+- store_assets/play_store_7in_tablet_screenshot_2.png (1600x2560)
+- store_assets/play_store_10in_tablet_screenshot_1.png (1920x3072)
+- store_assets/play_store_10in_tablet_screenshot_2.png (1920x3072)
 - Native launcher icons: android/app/src/main/res/mipmap-*
 
 Missing:
@@ -20,12 +24,13 @@ Missing:
 
 ## Capture guide
 Android (adb):
-- `adb shell screencap -p /sdcard/medbattle_01.png`
-- `adb pull /sdcard/medbattle_01.png store_assets/play_store_screenshot_2.png`
+- `adb shell screencap -p /sdcard/MedQuiz_01.png`
+- `adb pull /sdcard/MedQuiz_01.png store_assets/play_store_screenshot_2.png`
 
 Notes:
 - Use real in-app screens for final submission.
 - Android-only release: iOS assets are not required.
+- Tablet screenshots can be regenerated with `scripts/assets/generate-play-tablet-screenshots.ps1`.
 
 ## Notes
 - Store icons are generated from `assets/icons_profile/caduceus_1839855.png`.

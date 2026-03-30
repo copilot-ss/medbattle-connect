@@ -136,10 +136,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     marginBottom: 14,
   },
+  entryCurrent: {
+    borderWidth: 2.5,
+  },
+  rankSlot: {
+    width: 52,
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   entryRank: {
-    width: 46,
     fontSize: 18,
     fontFamily: fonts.bold,
+    textAlign: 'center',
+  },
+  rankBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rankBadgeText: {
+    fontSize: 15,
+    fontFamily: fonts.bold,
+    color: '#081019',
   },
   entryAvatar: {
     width: 42,
@@ -150,7 +172,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.4)',
-    marginRight: 12,
+    marginRight: 14,
     overflow: 'hidden',
   },
   entryAvatarImage: {
@@ -164,12 +186,14 @@ const styles = StyleSheet.create({
   },
   entryMeta: {
     flex: 1,
+    minWidth: 0,
     marginRight: 14,
   },
   entryName: {
     fontSize: 16,
     fontFamily: fonts.medium,
     color: colors.textPrimary,
+    flexShrink: 1,
   },
   entryTitle: {
     fontSize: 12,

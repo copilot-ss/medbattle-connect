@@ -2,7 +2,7 @@ const BADGES = [
   {
     min: 0,
     max: 49,
-    title: 'MedBattle Complete',
+    title: 'MedQuiz Complete',
     subtitle: '',
     color: '#F97316',
     glow: '#FB923C',

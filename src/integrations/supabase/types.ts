@@ -126,7 +126,6 @@ export type Database = {
         Row: {
           code: string | null
           created_at: string | null
-          difficulty: string | null
           finished_at: string | null
           guest_id: string | null
           host_id: string | null
@@ -145,7 +144,6 @@ export type Database = {
         Insert: {
           code?: string | null
           created_at?: string | null
-          difficulty?: string | null
           finished_at?: string | null
           guest_id?: string | null
           host_id?: string | null
@@ -164,7 +162,6 @@ export type Database = {
         Update: {
           code?: string | null
           created_at?: string | null
-          difficulty?: string | null
           finished_at?: string | null
           guest_id?: string | null
           host_id?: string | null
@@ -240,7 +237,6 @@ export type Database = {
           category: string
           correct_answer: string
           created_at: string | null
-          difficulty: string | null
           id: string
           options: Json
           question: string
@@ -251,7 +247,6 @@ export type Database = {
           category: string
           correct_answer: string
           created_at?: string | null
-          difficulty?: string | null
           id?: string
           options: Json
           question: string
@@ -262,7 +257,6 @@ export type Database = {
           category?: string
           correct_answer?: string
           created_at?: string | null
-          difficulty?: string | null
           id?: string
           options?: Json
           question?: string
@@ -274,7 +268,6 @@ export type Database = {
       scores: {
         Row: {
           created_at: string | null
-          difficulty: string | null
           duration_seconds: number | null
           id: string
           points: number
@@ -282,7 +275,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          difficulty?: string | null
           duration_seconds?: number | null
           id?: string
           points: number
@@ -290,7 +282,6 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          difficulty?: string | null
           duration_seconds?: number | null
           id?: string
           points?: number

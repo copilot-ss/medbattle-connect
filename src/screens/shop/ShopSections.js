@@ -110,7 +110,9 @@ export default function ShopSections({
                 : dailyTimerLabel || t('Morgen wieder')
               : isIapItem && !iapProductAvailable
                 ? t('Nicht verf\u00fcgbar')
-              : t('Kaufen');
+              : isEnergyItem
+                ? t('Kaufen')
+                : t('Kaufen');
 
           const handlePress = () => {
             if (isComingSoon || isBuying) {

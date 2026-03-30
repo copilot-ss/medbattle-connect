@@ -1,8 +1,10 @@
-import { supabase } from '../lib/supabaseClient';
+import { getSessionUser, supabase } from '../lib/supabaseClient';
 import { runSupabaseRequest } from './supabaseRequest';
 
 const FRIEND_CODE_USER_ID_CACHE_MS = 2 * 60 * 1000;
 const friendCodeUserIdCache = new Map();
+export const USERNAME_MIN_LENGTH = 3;
+export const USERNAME_MAX_LENGTH = 16;
 
 export function sanitizeUsername(value, fallback) {
   if (!value) {
@@ -12,7 +14,7 @@ export function sanitizeUsername(value, fallback) {
   const normalized = String(value)
     .toLowerCase()
     .replace(/[^a-z0-9_\u00e4\u00f6\u00fc\u00df]/g, '')
-    .slice(0, 24);
+    .slice(0, USERNAME_MAX_LENGTH);
 
   return normalized || fallback;
 }
@@ -50,15 +52,8 @@ async function resolveFriendUserIdByCode(friendCode) {
     return cached.userId;
   }
 
-  const authResult = await runSupabaseRequest(
-    () => supabase.auth.getUser(),
-    { label: 'userService.resolveFriendUserIdByCode.auth.getUser' }
-  );
-  if (authResult.error) {
-    throw authResult.error;
-  }
-
-  const authUserId = authResult.data?.user?.id ?? null;
+  const authUser = await getSessionUser();
+  const authUserId = authUser?.id ?? null;
   if (!authUserId) {
     return null;
   }
@@ -535,13 +530,8 @@ export async function updateUsername(userId, nextUsername) {
     let emailForUpsert = null;
 
     try {
-      const { data: authData, error: authError } = await runSupabaseRequest(
-        () => supabase.auth.getUser(),
-        { label: 'userService.auth.getUser' }
-      );
-      if (!authError) {
-        emailForUpsert = authData?.user?.email ?? null;
-      }
+      const authUser = await getSessionUser();
+      emailForUpsert = authUser?.email ?? null;
     } catch {
       emailForUpsert = null;
     }

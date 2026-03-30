@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import useSupabaseUserId from '../../hooks/useSupabaseUserId';
-import { supabase } from '../../lib/supabaseClient';
+import { getSessionUser, supabase } from '../../lib/supabaseClient';
 import { getFriendCodeForUser } from '../../services/friendsService';
 
 export default function useQuizPresence() {
@@ -22,13 +22,13 @@ export default function useQuizPresence() {
     let channel = null;
 
     async function attachPresence() {
-      let username = 'MedBattle';
+      let username = 'MedQuiz';
       try {
-        const { data } = await supabase.auth.getUser();
+        const user = await getSessionUser();
         if (cancelled) {
           return;
         }
-        const metadata = data?.user?.user_metadata ?? {};
+        const metadata = user?.user_metadata ?? {};
         const candidate =
           metadata.username ?? metadata.full_name ?? metadata.display_name;
         if (typeof candidate === 'string' && candidate.trim()) {

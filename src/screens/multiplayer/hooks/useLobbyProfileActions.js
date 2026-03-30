@@ -26,7 +26,7 @@ export default function useLobbyProfileActions({
         avatarUrl: participant.avatarUrl ?? null,
         avatarIcon: participant.avatarIcon ?? null,
         avatarColor: participant.avatarColor ?? null,
-        statusLabel: 'Lobby',
+        statusLabel: t('Lobby'),
       }),
       lobbyParticipantKey: participant.key ?? null,
     });

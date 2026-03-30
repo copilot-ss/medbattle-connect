@@ -27,6 +27,11 @@ export default function useQuizInteractionHandlers({
   const [isAnswerLocked, setIsAnswerLocked] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const feedbackTimerRef = useRef(null);
+  const questionCycleRef = useRef(0);
+  const finalizeRequestedRef = useRef(false);
+  const mountedRef = useRef(true);
+  const answeredQuestionKeyRef = useRef(null);
+  const processedQuestionKeyRef = useRef(null);
 
   const clearFeedbackTimer = useCallback(() => {
     if (feedbackTimerRef.current) {
@@ -36,12 +41,16 @@ export default function useQuizInteractionHandlers({
   }, []);
 
   const resetQuestionState = useCallback(() => {
+    questionCycleRef.current += 1;
+    finalizeRequestedRef.current = false;
+    answeredQuestionKeyRef.current = null;
+    processedQuestionKeyRef.current = null;
     clearFeedbackTimer();
     stopTimer();
     setSelectedOption(null);
     setIsAnswerLocked(false);
     setTimedOut(false);
-  }, [clearFeedbackTimer, stopTimer]);
+  }, [clearFeedbackTimer, stopTimer, setTimedOut]);
 
   const handleExitRequest = useCallback(() => {
     resetQuestionState();
@@ -74,11 +83,39 @@ export default function useQuizInteractionHandlers({
     resetToHome();
   }, [
     isMultiplayer,
-    navigation,
     resetQuestionState,
     resetToHome,
     surrenderMatch,
   ]);
+
+  const unlockQuestionForRetry = useCallback(
+    ({ questionKey, questionId, questionCycle }) => {
+      if (answeredQuestionKeyRef.current === questionKey) {
+        answeredQuestionKeyRef.current = null;
+      }
+      if (processedQuestionKeyRef.current === questionKey) {
+        processedQuestionKeyRef.current = null;
+      }
+      finalizeRequestedRef.current = false;
+
+      if (!mountedRef.current) {
+        return;
+      }
+
+      setTimedOut(false);
+      setSelectedOption(null);
+      setIsAnswerLocked(false);
+
+      if (
+        questionCycle === questionCycleRef.current &&
+        currentQuestion?.id === questionId &&
+        matchIsActive
+      ) {
+        resetTimer();
+      }
+    },
+    [currentQuestion?.id, matchIsActive, resetTimer, setTimedOut]
+  );
 
   const answer = useCallback(
     async (option, { timedOut: timedOutTrigger = false } = {}) => {
@@ -96,6 +133,16 @@ export default function useQuizInteractionHandlers({
       const soloBaseScore = score;
       const matchBaseScore = activeScore;
       const elapsedMs = Math.max(0, TIMER_DURATION - timeLeftRef.current);
+      const questionCycle = questionCycleRef.current;
+      const questionKey = questionSnapshot.id ?? `${currentQuestionIndex}`;
+
+      if (
+        answeredQuestionKeyRef.current === questionKey ||
+        processedQuestionKeyRef.current === questionKey
+      ) {
+        return;
+      }
+      answeredQuestionKeyRef.current = questionKey;
 
       setTimedOut(timedOutTrigger);
 
@@ -108,7 +155,9 @@ export default function useQuizInteractionHandlers({
           index: currentQuestionIndex,
           questionId: questionSnapshot.id ?? `${currentQuestionIndex}`,
           question: questionSnapshot.question ?? '',
-          options: Array.isArray(questionSnapshot.options) ? questionSnapshot.options : [],
+          options: Array.isArray(questionSnapshot.options)
+            ? questionSnapshot.options
+            : [],
           correctAnswer: questionSnapshot.correct_answer ?? null,
           selectedOption: timedOutTrigger ? null : option,
           isCorrect,
@@ -131,6 +180,20 @@ export default function useQuizInteractionHandlers({
 
       feedbackTimerRef.current = setTimeout(() => {
         const processAnswer = async () => {
+          if (
+            !mountedRef.current ||
+            questionCycle !== questionCycleRef.current
+          ) {
+            feedbackTimerRef.current = null;
+            return;
+          }
+
+          if (processedQuestionKeyRef.current === questionKey) {
+            feedbackTimerRef.current = null;
+            return;
+          }
+          processedQuestionKeyRef.current = questionKey;
+
           feedbackTimerRef.current = null;
           setSelectedOption(null);
 
@@ -145,14 +208,20 @@ export default function useQuizInteractionHandlers({
               });
 
               if (!result.ok) {
+                unlockQuestionForRetry({
+                  questionKey,
+                  questionId: questionSnapshot.id,
+                  questionCycle,
+                });
                 console.warn(
-                  'Antwort konnte nicht an den Server übermittelt werden:',
+                  'Antwort konnte nicht an den Server uebermittelt werden:',
                   result.error?.message ?? result.error ?? 'Unbekannter Fehler'
                 );
+                return;
               }
             } else {
               console.warn(
-                'Match-Frage ohne gültige ID, Antwort wurde nicht synchronisiert.'
+                'Match-Frage ohne gueltige ID, Antwort wurde nicht synchronisiert.'
               );
             }
           }
@@ -160,11 +229,16 @@ export default function useQuizInteractionHandlers({
           const nextIndex = currentQuestionIndex + 1;
 
           if (nextIndex < totalQuestions) {
+            questionCycleRef.current += 1;
             setIsAnswerLocked(false);
             if (!isMultiplayer) {
               setIndex(nextIndex);
             }
           } else {
+            if (finalizeRequestedRef.current) {
+              return;
+            }
+            finalizeRequestedRef.current = true;
             const finalValue = isMultiplayer ? nextMatchScore : nextSoloScore;
             finalizeQuiz(finalValue, { submit: true });
           }
@@ -172,7 +246,11 @@ export default function useQuizInteractionHandlers({
 
         processAnswer().catch((err) => {
           console.error('Antwort konnte nicht verarbeitet werden:', err);
-          setIsAnswerLocked(false);
+          unlockQuestionForRetry({
+            questionKey,
+            questionId: questionSnapshot.id ?? null,
+            questionCycle,
+          });
         });
       }, feedbackDelayMs);
     },
@@ -185,20 +263,34 @@ export default function useQuizInteractionHandlers({
       isAnswerLocked,
       isMultiplayer,
       matchIsActive,
+      onRecordAnswer,
       recordMatchAnswer,
       score,
+      setIndex,
+      setScore,
+      setTimedOut,
       stopTimer,
       timeLeftRef,
       totalQuestions,
-      onRecordAnswer,
+      unlockQuestionForRetry,
     ]
   );
 
   useEffect(() => {
+    mountedRef.current = true;
+
     return () => {
+      mountedRef.current = false;
       clearFeedbackTimer();
     };
   }, [clearFeedbackTimer]);
+
+  useEffect(() => {
+    answeredQuestionKeyRef.current = null;
+    processedQuestionKeyRef.current = null;
+    questionCycleRef.current += 1;
+    finalizeRequestedRef.current = false;
+  }, [activeIndex, currentQuestion?.id]);
 
   return {
     answer,

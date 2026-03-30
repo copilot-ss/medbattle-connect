@@ -16,7 +16,6 @@ export default function FriendsSection({
   onAcceptFriendRequest,
   onDeclineFriendRequest,
   onlineFriends,
-  onRemoveFriend,
   onOpenProfile,
   onOpenAdd,
   showAddButton = false,
@@ -135,26 +134,6 @@ export default function FriendsSection({
     return entry.isOnline ? t('Online') : t('Offline');
   };
 
-  const resolveDotStyle = (entry) => {
-    if (entry.lobby) {
-      return styles.friendStatusDotLobby;
-    }
-    if (entry.activity === 'quiz') {
-      return styles.friendStatusDotQuiz;
-    }
-    return entry.isOnline ? styles.friendStatusDotOnline : styles.friendStatusDotOffline;
-  };
-
-  const resolveStatusTextStyle = (entry) => {
-    if (entry.lobby) {
-      return styles.friendStatusTextLobby;
-    }
-    if (entry.activity === 'quiz') {
-      return styles.friendStatusTextQuiz;
-    }
-    return entry.isOnline ? styles.friendStatusTextOnline : styles.friendStatusTextOffline;
-  };
-
   const requests = Array.isArray(friendRequests) ? friendRequests : [];
   const showRequestsSection = loadingFriendRequests || requests.length > 0;
 
@@ -215,6 +194,7 @@ export default function FriendsSection({
                       avatarUrl: friend.avatarUrl ?? null,
                       avatarIcon: friend.avatarIcon ?? null,
                       avatarColor: friend.avatarColor ?? null,
+                      canRemoveFriend: true,
                     }))
                   }
                   disabled={!onOpenProfile}
@@ -232,33 +212,27 @@ export default function FriendsSection({
                       textStyle={styles.friendAvatarText}
                     />
                     <View style={styles.friendIdentityMeta}>
-                      <Text style={styles.friendCodeText} numberOfLines={1}>
-                        {friend.name || t('Freund')}
-                      </Text>
+                      <View style={styles.friendHeadlineRow}>
+                        <Text style={styles.friendCodeText} numberOfLines={1}>
+                          {friend.name || t('Freund')}
+                        </Text>
+                        {friend.isOnline ? (
+                          <View
+                            style={[
+                              styles.friendStatusDot,
+                              styles.friendStatusDotOnline,
+                              styles.friendOnlineIndicator,
+                            ]}
+                          />
+                        ) : null}
+                      </View>
                       {friend.title ? (
                         <Text style={styles.friendTitleText} numberOfLines={1}>
                           {t(friend.title)}
                         </Text>
                       ) : null}
-                      <View style={styles.friendStatusRow}>
-                        <View style={[styles.friendStatusDot, resolveDotStyle(friend)]} />
-                        <Text
-                          style={[
-                            styles.friendStatusText,
-                            resolveStatusTextStyle(friend),
-                          ]}
-                        >
-                          {formatStatus(friend)}
-                        </Text>
-                      </View>
                     </View>
                   </View>
-                </Pressable>
-                <Pressable
-                  onPress={() => onRemoveFriend({ code: friend.code })}
-                  style={styles.friendRemoveButton}
-                >
-                  <Text style={styles.friendRemoveText}>{t('Entfernen')}</Text>
                 </Pressable>
               </View>
             );
@@ -342,20 +316,39 @@ export default function FriendsSection({
                             textStyle={styles.friendAvatarText}
                           />
                           <View style={styles.friendIdentityMeta}>
-                            <Text style={styles.friendCodeText} numberOfLines={1}>
-                              {requesterName}
-                            </Text>
+                            <View style={styles.friendHeadlineRow}>
+                              <Text style={styles.friendCodeText} numberOfLines={1}>
+                                {requesterName}
+                              </Text>
+                              <View
+                                style={[
+                                  styles.friendStatusBadge,
+                                  styles.friendStatusBadgeOffline,
+                                ]}
+                              >
+                                <View
+                                  style={[
+                                    styles.friendStatusDot,
+                                    styles.friendStatusDotOffline,
+                                  ]}
+                                />
+                                <Text
+                                  numberOfLines={1}
+                                  style={[
+                                    styles.friendStatusText,
+                                    styles.friendStatusBadgeText,
+                                    styles.friendStatusTextOffline,
+                                  ]}
+                                >
+                                  {t('Offline')}
+                                </Text>
+                              </View>
+                            </View>
                             {requestTitle ? (
                               <Text style={styles.friendTitleText} numberOfLines={1}>
                                 {t(requestTitle)}
                               </Text>
                             ) : null}
-                            <View style={styles.friendStatusRow}>
-                              <View style={[styles.friendStatusDot, styles.friendStatusDotOffline]} />
-                              <Text style={[styles.friendStatusText, styles.friendStatusTextOffline]}>
-                                {t('Offline')}
-                              </Text>
-                            </View>
                           </View>
                         </View>
                       </Pressable>

@@ -1,5 +1,6 @@
 // App.js
 import 'react-native-gesture-handler';
+import './src/i18n';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { registerRootComponent } from 'expo';
@@ -12,6 +13,7 @@ import { initializeAds } from './src/services/adsService';
 import { preloadAppAssets, preloadAppFonts } from './src/utils/preloadAppAssets';
 import registerUpdates from './src/utils/registerUpdates';
 import { colors } from './src/styles/theme';
+import { registerSupabaseAuthAppState } from './src/lib/supabaseClient';
 
 // OAuth-Return in Expo
 WebBrowser.maybeCompleteAuthSession();
@@ -65,6 +67,7 @@ function App() {
       }
     }
     initializeAds();
+    const unregisterSupabaseAuthAppState = registerSupabaseAuthAppState();
     const unregisterUpdates = registerUpdates();
     let idleHandle = null;
     let timeoutId = null;
@@ -82,6 +85,9 @@ function App() {
       isMounted = false;
       if (unregisterUpdates) {
         unregisterUpdates();
+      }
+      if (unregisterSupabaseAuthAppState) {
+        unregisterSupabaseAuthAppState();
       }
       if (idleHandle !== null && typeof cancelIdleCallback === 'function') {
         cancelIdleCallback(idleHandle);

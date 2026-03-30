@@ -9,22 +9,19 @@ import {
   DEFAULT_BOOSTS,
   DEFAULT_STREAKS,
   DEFAULT_USER_STATS,
-  DEFAULT_LANGUAGE,
   ENERGY_BASE_STORAGE_KEY,
   ENERGY_TIMESTAMP_KEY,
   ENERGY_VALUE_KEY,
   FRIEND_REQUESTS_STORAGE_KEY,
-  LANGUAGE_STORAGE_KEY,
+  LEGACY_STREAK_STORAGE_KEYS,
   MAX_ENERGY,
   MAX_ENERGY_CAP_BONUS,
   NEW_ACCOUNT_MAX_ENERGY,
   OWNED_FRAMES_KEY,
   PUSH_STORAGE_KEY,
-  SOUND_STORAGE_KEY,
   STREAK_SHIELD_ACTIVE_KEY,
   STREAK_STORAGE_KEYS,
   USER_STATS_STORAGE_KEY,
-  VIBRATION_STORAGE_KEY,
 } from './constants';
 import { recalcEnergy } from './energyUtils';
 import {
@@ -48,12 +45,9 @@ export async function loadPreferencesFromStorage() {
   let hasStoredEnergyTimestamp = false;
 
   const [
-    storedSound,
-    storedVibration,
     storedPush,
     storedRequests,
     storedAvatar,
-    storedLanguage,
     storedAvatarUri,
     storedAvatarFrame,
     storedOwnedFrames,
@@ -63,12 +57,9 @@ export async function loadPreferencesFromStorage() {
     storedClaimedAchievements,
     storedEnergyBase,
   ] = await Promise.all([
-    AsyncStorage.getItem(SOUND_STORAGE_KEY),
-    AsyncStorage.getItem(VIBRATION_STORAGE_KEY),
     AsyncStorage.getItem(PUSH_STORAGE_KEY),
     AsyncStorage.getItem(FRIEND_REQUESTS_STORAGE_KEY),
     AsyncStorage.getItem(AVATAR_STORAGE_KEY),
-    AsyncStorage.getItem(LANGUAGE_STORAGE_KEY),
     AsyncStorage.getItem(AVATAR_URI_KEY),
     AsyncStorage.getItem(AVATAR_FRAME_KEY),
     AsyncStorage.getItem(OWNED_FRAMES_KEY),
@@ -80,13 +71,24 @@ export async function loadPreferencesFromStorage() {
   ]);
 
   await Promise.all([
-    ...Object.entries(STREAK_STORAGE_KEYS).map(async ([difficulty, key]) => {
+    ...Object.entries(STREAK_STORAGE_KEYS).map(async ([streakKey, key]) => {
       try {
-        const raw = await AsyncStorage.getItem(key);
+        const [raw, ...legacyValues] = await Promise.all([
+          AsyncStorage.getItem(key),
+          ...LEGACY_STREAK_STORAGE_KEYS.map((legacyKey) =>
+            AsyncStorage.getItem(legacyKey)
+          ),
+        ]);
         const value = raw ? sanitizeStreakValue(raw) : 0;
-        nextStreaks[difficulty] = value;
+        const legacyTotal = legacyValues.reduce((sum, entry) => {
+          if (entry === null) {
+            return sum;
+          }
+          return sum + sanitizeStreakValue(entry);
+        }, 0);
+        nextStreaks[streakKey] = Math.max(value, legacyTotal);
       } catch (err) {
-        console.warn(`Konnte Streak fuer ${difficulty} nicht laden:`, err);
+        console.warn(`Konnte Streak fuer ${streakKey} nicht laden:`, err);
       }
     }),
     (async () => {
@@ -157,9 +159,6 @@ export async function loadPreferencesFromStorage() {
   const energyCapBonus = sanitizeStatNumber(nextUserStats?.energyCapBonus);
   const maxEnergy = resolvedEnergyBase + Math.min(energyCapBonus, MAX_ENERGY_CAP_BONUS);
   const recalc = recalcEnergy(loadedEnergy, loadedEnergyTs, maxEnergy);
-
-  const normalizedLanguage =
-    storedLanguage && storedLanguage.toLowerCase() === 'en' ? 'en' : DEFAULT_LANGUAGE;
   let ownedFrames = [];
   if (storedOwnedFrames) {
     try {
@@ -202,8 +201,6 @@ export async function loadPreferencesFromStorage() {
   }
 
   return {
-    soundEnabled: storedSound === null ? true : storedSound === 'true',
-    vibrationEnabled: storedVibration === null ? true : storedVibration === 'true',
     pushEnabled: storedPush === null ? true : storedPush === 'true',
     friendRequestsEnabled:
       storedRequests === null ? true : storedRequests === 'true',
@@ -215,7 +212,6 @@ export async function loadPreferencesFromStorage() {
     streakShieldActive,
     doubleXpExpiresAt,
     claimedAchievements,
-    language: normalizedLanguage,
     streaks: nextStreaks,
     userStats: nextUserStats,
     energyBase: resolvedEnergyBase,
@@ -341,15 +337,6 @@ export async function persistEnergy(energyValue, timestamp) {
   }
 }
 
-export async function persistLanguage(language) {
-  try {
-    const normalized = language && language.toLowerCase() === 'en' ? 'en' : DEFAULT_LANGUAGE;
-    await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, normalized);
-  } catch (err) {
-    console.warn('Konnte Sprache nicht speichern:', err);
-  }
-}
-
 export async function persistStreakValue(key, value) {
   try {
     await AsyncStorage.setItem(key, String(value));
@@ -374,6 +361,7 @@ export async function clearAccountPreferencesStorage() {
       ENERGY_TIMESTAMP_KEY,
       ENERGY_BASE_STORAGE_KEY,
       ...Object.values(STREAK_STORAGE_KEYS),
+      ...LEGACY_STREAK_STORAGE_KEYS,
     ]);
   } catch (err) {
     console.warn('Konnte kontobezogene Einstellungen nicht loeschen:', err);

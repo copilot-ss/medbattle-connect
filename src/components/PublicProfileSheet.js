@@ -193,12 +193,12 @@ export default function PublicProfileSheet({
       ? resolvedProfile.questions
       : 0;
   const derivedTitle = Number.isFinite(xp)
-    ? getTitleProgress(xp).current?.label ?? 'Med Rookie'
+    ? getTitleProgress(xp).current?.label ?? 'Praktikant'
     : null;
   const derivedLevel = Number.isFinite(xp)
     ? getTitleLevel(xp)
     : null;
-  const title = derivedTitle ?? resolvedProfile.title ?? 'Med Rookie';
+  const title = derivedTitle ?? resolvedProfile.title ?? 'Praktikant';
   const localizedTitle = t(title);
   const level = Number.isFinite(resolvedProfile.level)
     ? resolvedProfile.level
