@@ -1,17 +1,8 @@
 {
   "servers": {
-    "alexander-zuev/supabase-mcp-server": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "@alexander-zuev/supabase-mcp-server@latest"
-      ],
-      "env": {
-        "SUPABASE_URL": "${env:SUPABASE_URL}",
-        "SUPABASE_SERVICE_ROLE_KEY": "${env:SUPABASE_SERVICE_ROLE_KEY}"
-      },
-      "gallery": "https://api.mcp.github.com",
-      "version": "latest"
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=uxlwbzgohgxbnhcjiimh&features=database"
     }
   }
 }

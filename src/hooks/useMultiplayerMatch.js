@@ -362,6 +362,7 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
       correct,
       durationMs,
       timedOut = false,
+      boostsUsed = [],
     } = {}) => {
       if (!state.match || !role) {
         return { ok: false, error: new Error('Kein aktives Match vorhanden.') };
@@ -386,6 +387,7 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
           correct,
           durationMs,
           timedOut,
+          boostsUsed,
         },
       });
 

@@ -12,6 +12,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
+import {
+  FRIEND_CODE_FALLBACK,
+  FRIEND_CODE_PLACEHOLDER,
+} from '../../utils/friendCode';
 import styles from '../styles/SettingsScreen.styles';
 
 export default function FriendsAddSheet({
@@ -115,7 +119,7 @@ export default function FriendsAddSheet({
             accessibilityLabel={t('Code kopieren')}
           >
             <Text style={styles.friendCodeValue}>
-              {friendCode || '------'}
+              {friendCode || FRIEND_CODE_FALLBACK}
             </Text>
             {copySuccess ? (
               <Text style={styles.friendCodeCopy}>{t('Kopiert!')}</Text>
@@ -136,10 +140,11 @@ export default function FriendsAddSheet({
             ref={friendInputRef}
             value={friendCodeInput}
             onChangeText={setFriendCodeInput}
-            placeholder="ABC12345"
+            placeholder={FRIEND_CODE_PLACEHOLDER}
             placeholderTextColor="#64748B"
             autoCapitalize="characters"
             keyboardType="default"
+            autoCorrect={false}
             style={styles.input}
           />
           <Pressable

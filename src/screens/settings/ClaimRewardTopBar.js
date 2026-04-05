@@ -381,7 +381,6 @@ export default function ClaimRewardTopBar({
           }}
         >
           <View style={styles.claimCenterHero}>
-            <Text style={styles.claimCenterCoinsLabel}>{COIN_EMOJI}</Text>
             <View style={styles.claimCenterHeroRow}>
               <Text style={styles.claimCenterCoinsValue}>{formatThousands(animatedCoins)}</Text>
               <View style={styles.claimCenterMiniLevelBadge}>

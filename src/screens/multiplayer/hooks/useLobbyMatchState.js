@@ -25,6 +25,7 @@ export default function useLobbyMatchState({
   const [currentMatch, setCurrentMatch] = useState(null);
   const [realtimeStatus, setRealtimeStatus] = useState('idle');
   const subscriptionRef = useRef(null);
+  const attachedMatchIdRef = useRef(null);
   const handledActiveMatchIdRef = useRef(null);
   const { isOnline } = useConnectivity();
   const isOffline = isOnline === false;
@@ -36,6 +37,7 @@ export default function useLobbyMatchState({
       subscriptionRef.current = null;
     }
 
+    attachedMatchIdRef.current = matchId;
     setRealtimeStatus('subscribing');
     subscriptionRef.current = subscribeToMatch(
       matchId,
@@ -65,6 +67,20 @@ export default function useLobbyMatchState({
         },
       }
     );
+
+    getMatchById(matchId)
+      .then((result) => {
+        if (attachedMatchIdRef.current !== matchId) {
+          return;
+        }
+        if (!result?.ok || !result.match) {
+          return;
+        }
+        setCurrentMatch((prev) => resolveProgressiveMatch(prev, result.match));
+      })
+      .catch((err) => {
+        console.warn('Konnte aktuellen Lobby-Status nicht laden:', err);
+      });
   }, []);
 
   useEffect(() => () => {
@@ -72,6 +88,7 @@ export default function useLobbyMatchState({
       subscriptionRef.current();
       subscriptionRef.current = null;
     }
+    attachedMatchIdRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -121,6 +138,14 @@ export default function useLobbyMatchState({
     suppressActiveNavigation,
     userId,
   ]);
+
+  useEffect(() => {
+    if (currentMatch?.status === 'active') {
+      return;
+    }
+
+    handledActiveMatchIdRef.current = null;
+  }, [currentMatch?.id, currentMatch?.status]);
 
   useEffect(() => {
     if (
@@ -216,6 +241,7 @@ export default function useLobbyMatchState({
         subscriptionRef.current();
         subscriptionRef.current = null;
       }
+      attachedMatchIdRef.current = null;
 
       setCurrentMatch(null);
 
@@ -251,6 +277,11 @@ export default function useLobbyMatchState({
     }
 
     clearActiveLobby();
+    if (subscriptionRef.current) {
+      subscriptionRef.current();
+      subscriptionRef.current = null;
+    }
+    attachedMatchIdRef.current = null;
     setCurrentMatch(null);
     if (!closingRef?.current && setMatchesError) {
       setMatchesError(new Error('Du wurdest aus der Lobby entfernt.'));

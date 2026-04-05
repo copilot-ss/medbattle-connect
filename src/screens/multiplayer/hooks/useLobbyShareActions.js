@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Clipboard from 'expo-clipboard';
 import { sendLobbyInvite } from '../../../services/lobbyInviteService';
+import { sanitizeFriendCode } from '../../../utils/friendCode';
 
 function normalizeFriendCode(value) {
-  if (typeof value !== 'string') {
-    return null;
-  }
-  const cleaned = value.trim().toUpperCase();
-  return cleaned || null;
+  return sanitizeFriendCode(value) || null;
 }
 
 export default function useLobbyShareActions({ currentJoinCode, currentMatchId, t }) {

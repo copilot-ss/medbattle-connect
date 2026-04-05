@@ -6,6 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../i18n/useTranslation';
 import AvatarView from './avatar/AvatarView';
 import { colors, fonts, radii } from '../styles/theme';
@@ -16,11 +17,17 @@ import {
 import { fetchLeaderboard } from '../services/quizService';
 import { getTitleLevel, getTitleProgress } from '../services/titleService';
 import { getAvatarInitials, getAvatarPresetSource } from '../utils/avatarUtils';
+import { sanitizeFriendCode } from '../utils/friendCode';
 
 export default function PublicProfileSheet({
   visible,
   onClose,
   profile,
+  primaryActionLabel = null,
+  onPrimaryAction = null,
+  primaryActionIcon = null,
+  primaryActionLoading = false,
+  primaryActionDisabled = false,
   footerActionLabel = null,
   onFooterAction = null,
   footerActionLoading = false,
@@ -31,10 +38,7 @@ export default function PublicProfileSheet({
   const [loading, setLoading] = useState(false);
 
   const profileUserId = profile?.userId ?? null;
-  const profileFriendCode =
-    typeof profile?.friendCode === 'string' && profile.friendCode.trim()
-      ? profile.friendCode.trim().toUpperCase()
-      : null;
+  const profileFriendCode = sanitizeFriendCode(profile?.friendCode) || null;
 
   useEffect(() => {
     if (!visible) {
@@ -232,6 +236,10 @@ export default function PublicProfileSheet({
     typeof footerActionLabel === 'string'
     && footerActionLabel.trim()
     && typeof onFooterAction === 'function';
+  const showPrimaryAction =
+    typeof primaryActionLabel === 'string'
+    && primaryActionLabel.trim()
+    && typeof onPrimaryAction === 'function';
 
   const statCards = [
     {
@@ -260,10 +268,36 @@ export default function PublicProfileSheet({
       <Pressable style={styles.backdrop} onPress={onClose} />
       <View style={styles.card}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t('Profil')}</Text>
+          <View style={styles.headerLeading}>
+            <Text style={styles.headerTitle}>{t('Profil')}</Text>
+          </View>
           <View style={styles.headerActions}>
             {loading ? (
               <ActivityIndicator size="small" color={colors.accent} />
+            ) : null}
+            {showPrimaryAction ? (
+              <Pressable
+                onPress={() => onPrimaryAction(resolvedProfile)}
+                disabled={loading || primaryActionDisabled || primaryActionLoading}
+                style={[
+                  styles.headerIconButton,
+                  (loading || primaryActionDisabled || primaryActionLoading)
+                    ? styles.footerActionButtonDisabled
+                    : null,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={primaryActionLabel}
+              >
+                {primaryActionLoading ? (
+                  <ActivityIndicator size="small" color="#D8ECFF" />
+                ) : (
+                  <Ionicons
+                    name={primaryActionIcon || 'person-add'}
+                    size={16}
+                    color="#D8ECFF"
+                  />
+                )}
+              </Pressable>
             ) : null}
           </View>
         </View>
@@ -319,24 +353,28 @@ export default function PublicProfileSheet({
         ) : null}
 
         {showFooterAction ? (
-          <Pressable
-            onPress={onFooterAction}
-            disabled={footerActionDisabled || footerActionLoading}
-            style={[
-              styles.footerActionButton,
-              (footerActionDisabled || footerActionLoading)
-                ? styles.footerActionButtonDisabled
-                : null,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={footerActionLabel}
-          >
-            {footerActionLoading ? (
-              <ActivityIndicator size="small" color="#FFD1D1" />
-            ) : (
-              <Text style={styles.footerActionText}>{footerActionLabel}</Text>
-            )}
-          </Pressable>
+          <View style={styles.actionStack}>
+            {showFooterAction ? (
+              <Pressable
+                onPress={() => onFooterAction(resolvedProfile)}
+                disabled={footerActionDisabled || footerActionLoading}
+                style={[
+                  styles.footerActionButton,
+                  (footerActionDisabled || footerActionLoading)
+                    ? styles.footerActionButtonDisabled
+                    : null,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={footerActionLabel}
+              >
+                {footerActionLoading ? (
+                  <ActivityIndicator size="small" color="#FFD1D1" />
+                ) : (
+                  <Text style={styles.footerActionText}>{footerActionLabel}</Text>
+                )}
+              </Pressable>
+            ) : null}
+          </View>
         ) : null}
       </View>
     </View>
@@ -378,6 +416,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 4,
+  },
+  headerLeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 10,
+  },
+  headerIconButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(87, 199, 255, 0.55)',
+    backgroundColor: 'rgba(87, 199, 255, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
     color: colors.textPrimary,
@@ -542,8 +595,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     lineHeight: 18,
   },
-  footerActionButton: {
+  actionStack: {
     marginTop: 14,
+    rowGap: 10,
+  },
+  footerActionButton: {
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: 'rgba(248, 113, 113, 0.55)',

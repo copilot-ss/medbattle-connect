@@ -10,7 +10,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 42,
     paddingBottom: 0,
   },
   containerProfileTop: {
@@ -516,6 +516,27 @@ const styles = StyleSheet.create({
   friendCodeCopyIcon: {
     marginTop: 4,
   },
+  subtleFriendCodeButton: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 6,
+    paddingVertical: 2,
+  },
+  subtleFriendCodeText: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontFamily: fonts.medium,
+    letterSpacing: 0.5,
+    opacity: 0.74,
+  },
+  subtleFriendCodeTextCopied: {
+    color: '#9EDCFF',
+    opacity: 0.92,
+  },
+  subtleFriendCodeIcon: {
+    opacity: 0.86,
+  },
   friendInputLabel: {
     color: colors.textSecondary,
     fontSize: 15,
@@ -555,6 +576,9 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 13,
     fontFamily: fonts.regular,
+  },
+  friendListInlineCode: {
+    marginTop: 4,
   },
   friendAddButton: {
     width: 34,
@@ -639,7 +663,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 16,
     fontFamily: fonts.bold,
-    letterSpacing: 2,
+    letterSpacing: 0.2,
     flex: 1,
     minWidth: 0,
   },
@@ -752,41 +776,35 @@ const styles = StyleSheet.create({
   },
   friendRequestInfo: {
     flex: 1,
-    marginRight: 10,
+    minWidth: 0,
+    marginRight: 6,
   },
   friendRequestActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    columnGap: 8,
+    columnGap: 6,
+    flexShrink: 0,
+  },
+  friendRequestActionButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   friendRequestDeclineButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radii.sm,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 93, 110, 0.45)',
     backgroundColor: 'rgba(255, 93, 110, 0.14)',
   },
-  friendRequestDeclineText: {
-    color: '#FFB1B9',
-    fontSize: 12,
-    fontFamily: fonts.bold,
-  },
   friendRequestAcceptButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radii.sm,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(34, 197, 94, 0.45)',
     backgroundColor: 'rgba(34, 197, 94, 0.18)',
   },
   friendRequestAcceptButtonDisabled: {
     opacity: 0.65,
-  },
-  friendRequestAcceptText: {
-    color: '#B9F8CC',
-    fontSize: 12,
-    fontFamily: fonts.bold,
   },
   friendAddOverlay: {
     position: 'absolute',
@@ -835,6 +853,75 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  friendRemoveConfirmOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    zIndex: 40,
+    elevation: 12,
+  },
+  friendRemoveConfirmBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(4, 8, 18, 0.76)',
+  },
+  friendRemoveConfirmCard: {
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: radii.xl,
+    backgroundColor: 'rgba(17, 25, 40, 0.96)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 127, 168, 0.34)',
+    paddingHorizontal: 22,
+    paddingVertical: 22,
+    shadowColor: '#000',
+    shadowOpacity: 0.36,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    overflow: 'hidden',
+    rowGap: 16,
+  },
+  friendRemoveConfirmMessage: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    lineHeight: 24,
+    fontFamily: fonts.medium,
+  },
+  friendRemoveConfirmActions: {
+    flexDirection: 'row',
+    columnGap: 12,
+    marginTop: 2,
+  },
+  friendRemoveConfirmButton: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+  },
+  friendRemoveConfirmCancelButton: {
+    backgroundColor: colors.surfaceAlt,
+    borderColor: colors.borderStrong,
+  },
+  friendRemoveConfirmDangerButton: {
+    backgroundColor: 'rgba(255, 93, 110, 0.18)',
+    borderColor: 'rgba(255, 93, 110, 0.52)',
+  },
+  friendRemoveConfirmCancelText: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontFamily: fonts.bold,
+  },
+  friendRemoveConfirmDangerText: {
+    color: '#FFD3DA',
+    fontSize: 14,
+    fontFamily: fonts.bold,
+  },
+  friendRemoveConfirmButtonDisabled: {
+    opacity: 0.7,
   },
   banner: {
     paddingVertical: 12,
@@ -977,6 +1064,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: fonts.medium,
     marginTop: 4,
+  },
+  profileFriendCodeInline: {
+    marginTop: 8,
   },
   profileQuickAuthButton: {
     alignSelf: 'flex-start',

@@ -24,25 +24,24 @@ import { colors } from '../styles/theme';
 import { findBadge } from './result/resultConstants';
 import ResultScoreboard from './result/ResultScoreboard';
 import ResultReviewList from './result/ResultReviewList';
-import { RewardSummary, Sparkle } from './result/ResultWidgets';
+import { BubbleReveal, RewardSummary, Sparkle } from './result/ResultWidgets';
 import useResultMultiplayerData from './result/hooks/useResultMultiplayerData';
 import useResultScoreAnimations from './result/hooks/useResultScoreAnimations';
 import useResultEntranceAnimations from './result/hooks/useResultEntranceAnimations';
 import { useTranslation } from '../i18n/useTranslation';
 import EnergyBoostModal from './home/EnergyBoostModal';
 import useHomeBoostActions from './home/useHomeBoostActions';
-import { COIN_ENERGY_AMOUNT, COIN_ENERGY_COST } from './home/homeConfig';
+import { COIN_ENERGY_AMOUNT, COIN_ENERGY_COST, REWARDED_ENERGY } from './home/homeConfig';
 import PublicProfileSheet from '../components/PublicProfileSheet';
 import usePublicProfileSheet from '../hooks/usePublicProfileSheet';
 import { clearActiveLobby } from '../utils/activeLobbyStorage';
+import { buildActiveLobbyPayload } from './multiplayer/lobbyUtils';
 import styles, {
   getLargeGlowStyle,
   getPrimaryButtonStyle,
 } from './styles/ResultScreen.styles';
 
-const KIWI_ANIMATION = require('../../assets/animations/kiwi.gif');
 const ZERO_GHOST_ANIMATION = require('../../assets/animations/score/zero.gif');
-const ZERO_SCORE_SKY_ANIMATION = require('../../assets/animations/score/zero_clouds.gif');
 
 function sanitizeStatNumber(value) {
   const parsed = Number.parseInt(value, 10);
@@ -126,9 +125,7 @@ export default function ResultScreen({ route, navigation }) {
   const badge = useMemo(() => findBadge(percentage), [percentage]);
   const showZeroScoreAnimation =
     !isMultiplayer && totalQuestions > 0 && score === 0;
-  const showKiwiPeck = false;
-  const showZeroFullScreen = showKiwiPeck;
-  const showZeroSparkles = showZeroScoreAnimation && !showKiwiPeck;
+  const showZeroSparkles = showZeroScoreAnimation;
   const showScorePoints = !showZeroScoreAnimation;
   const coinsEarned = Number.isFinite(coins) ? coins : 0;
   const xpEarned = Number.isFinite(xp) ? xp : 0;
@@ -194,6 +191,8 @@ export default function ResultScreen({ route, navigation }) {
     playerRole,
     userId,
     score,
+    category,
+    questionLimit,
     opponentScore,
     opponentName,
     playerState,
@@ -352,6 +351,27 @@ export default function ResultScreen({ route, navigation }) {
   const { showZeroGhostOverlay } = useResultScoreAnimations({
     showZeroScoreAnimation,
   });
+  const showPointsBadge = pointsEarned > 0;
+  const returnLobbyMatch = useMemo(() => {
+    if (!liveMatch) {
+      return fallbackExistingMatch ?? null;
+    }
+    if (!fallbackExistingMatch) {
+      return liveMatch;
+    }
+    return {
+      ...fallbackExistingMatch,
+      ...liveMatch,
+      category: liveMatch.category ?? fallbackExistingMatch.category ?? null,
+      question_limit:
+        liveMatch.question_limit ?? fallbackExistingMatch.question_limit ?? null,
+      state: liveMatch.state ?? fallbackExistingMatch.state ?? null,
+    };
+  }, [fallbackExistingMatch, liveMatch]);
+  const activeLobbyForHome = useMemo(
+    () => (isMultiplayer ? buildActiveLobbyPayload(returnLobbyMatch) : null),
+    [isMultiplayer, returnLobbyMatch]
+  );
   const entranceTriggerKey = useMemo(
     () => [
       isMultiplayer ? 'mp' : 'solo',
@@ -386,15 +406,15 @@ export default function ResultScreen({ route, navigation }) {
     () => [
       styles.scrollContent,
       {
-        paddingTop: Math.max(insets.top + 8, 12),
+        paddingTop: Math.max(insets.top - 4, 8),
         paddingBottom: Math.max(insets.bottom + 32, 56),
       },
     ],
     [insets.bottom, insets.top]
   );
   const handleReturnHome = useCallback(() => {
-    if (isMultiplayer && !showMultiplayerWaiting) {
-      clearActiveLobby();
+    if (isMultiplayer && !activeLobbyForHome) {
+      void clearActiveLobby();
     }
     navigation.dispatch(
       CommonActions.reset({
@@ -404,21 +424,31 @@ export default function ResultScreen({ route, navigation }) {
             name: 'MainTabs',
             state: {
               index: 0,
-              routes: [{ name: 'Home' }],
+              routes: [
+                {
+                  name: 'Home',
+                  params: {
+                    activeLobby: activeLobbyForHome,
+                  },
+                },
+              ],
             },
           },
         ],
       })
     );
-  }, [isMultiplayer, navigation, showMultiplayerWaiting]);
-
-  useEffect(() => {
-    if (!isMultiplayer || showMultiplayerWaiting) {
+  }, [activeLobbyForHome, isMultiplayer, navigation]);
+  const handleReturnToLobby = useCallback(() => {
+    if (!isMultiplayer || !returnLobbyMatch) {
+      handleReturnHome();
       return;
     }
-
-    clearActiveLobby();
-  }, [isMultiplayer, showMultiplayerWaiting]);
+    navigation.replace('MultiplayerLobby', {
+      mode: 'hub',
+      existingMatch: returnLobbyMatch,
+      keepCompleted: true,
+    });
+  }, [handleReturnHome, isMultiplayer, navigation, returnLobbyMatch]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (event) => {
@@ -484,15 +514,6 @@ export default function ResultScreen({ route, navigation }) {
           />
         </View>
       ) : null}
-      {showZeroFullScreen ? (
-        <View style={styles.zeroScoreOverlay} pointerEvents="none">
-          <Image
-            source={ZERO_SCORE_SKY_ANIMATION}
-            style={styles.zeroScoreOverlayImage}
-            resizeMode="cover"
-          />
-        </View>
-      ) : null}
       <ScrollView
         contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}
@@ -511,35 +532,28 @@ export default function ResultScreen({ route, navigation }) {
             <Animated.View style={[summaryAnimatedStyle, { width: '100%' }]}>
               {!isMultiplayer ? (
                 <View style={styles.scoreSummary}>
-                  <View style={styles.scoreRow}>
-                    <View style={styles.scoreValueWrap}>
-                      <Text style={styles.scoreValue}>{`${score}/${totalQuestions}`}</Text>
-                      {showKiwiPeck ? (
-                        <View style={styles.scoreKiwiWrap}>
-                          <Image
-                            source={KIWI_ANIMATION}
-                            style={styles.scoreKiwi}
-                            resizeMode="contain"
+                  <BubbleReveal delay={40} resetKey={`${entranceTriggerKey}:score-row`}>
+                    <View style={styles.scoreRow}>
+                      <View style={styles.scoreValueWrap}>
+                        <Text style={styles.scoreValue}>{`${score}/${totalQuestions}`}</Text>
+                      </View>
+                      {showScorePoints ? (
+                        <View style={styles.scorePoints}>
+                          <Text style={styles.scorePointsText}>
+                            {`+${pointsEarned}`}
+                          </Text>
+                          <Ionicons
+                            name="sparkles"
+                            size={14}
+                            color={colors.accent}
+                            style={styles.scorePointsIconTrailing}
                           />
                         </View>
                       ) : null}
                     </View>
-                    {showScorePoints ? (
-                      <View style={styles.scorePoints}>
-                        <Ionicons
-                          name="sparkles"
-                          size={14}
-                          color={colors.accent}
-                          style={styles.scorePointsIcon}
-                        />
-                        <Text style={styles.scorePointsText}>
-                          {`+${pointsEarned} ${t('Punkte')}`}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  <View style={styles.trophyRewardRow}>
-                    {!showKiwiPeck ? (
+                  </BubbleReveal>
+                  <BubbleReveal delay={140} resetKey={`${entranceTriggerKey}:trophy-row`}>
+                    <View style={styles.trophyRewardRow}>
                       <View style={styles.trophyWrap}>
                         {showZeroSparkles ? (
                           <>
@@ -563,47 +577,76 @@ export default function ResultScreen({ route, navigation }) {
                         ) : null}
                         <Ionicons name="trophy" size={72} color={colors.highlight} />
                       </View>
-                    ) : null}
-                  </View>
-                  <View style={styles.rewardSummaryRowSide}>
-                    <RewardSummary
-                      items={rewardItems}
-                      delay={80}
-                      direction="column"
-                    />
-                  </View>
+                    </View>
+                  </BubbleReveal>
+                  <BubbleReveal delay={240} resetKey={`${entranceTriggerKey}:reward-side`}>
+                    <View style={styles.rewardSummaryRowSide}>
+                      <RewardSummary
+                        items={rewardItems}
+                        delay={0}
+                        direction="column"
+                      />
+                    </View>
+                  </BubbleReveal>
                 </View>
               ) : (
                 <>
                   {showMultiplayerWaiting ? (
-                    <View style={styles.multiplayerWaitingCard}>
-                      <Text style={styles.multiplayerWaitingTitle}>
-                        {t('Warte auf Spieler')}
-                      </Text>
-                      <Text style={styles.multiplayerWaitingName}>
-                        {waitingPlayersLabel}
-                      </Text>
-                      <View style={styles.multiplayerWaitingLoader}>
-                        <ActivityIndicator size="small" color={colors.accent} />
-                        <Text style={styles.multiplayerWaitingHint}>
-                          {liveMatchLoading ? t('Lade Status ...') : t('Wird geladen...')}
+                    <BubbleReveal
+                      delay={80}
+                      resetKey={`${entranceTriggerKey}:waiting-card`}
+                    >
+                      <View style={styles.multiplayerWaitingCard}>
+                        <Text style={styles.multiplayerWaitingTitle}>
+                          {t('Warte auf Spieler')}
                         </Text>
+                        <Text style={styles.multiplayerWaitingName}>
+                          {waitingPlayersLabel}
+                        </Text>
+                        <View style={styles.multiplayerWaitingLoader}>
+                          <ActivityIndicator size="small" color={colors.accent} />
+                          <Text style={styles.multiplayerWaitingHint}>
+                            {liveMatchLoading ? t('Lade Status ...') : t('Wird geladen...')}
+                          </Text>
+                        </View>
                       </View>
-                    </View>
+                    </BubbleReveal>
                   ) : (
                     <ResultScoreboard
                       entries={multiplayerEntries}
                       selectedEntryKey={selectedScorePlayerKey}
                       onSelectEntry={setSelectedScorePlayerKey}
                       onOpenProfile={handleOpenScoreProfile}
+                      entranceKey={entranceTriggerKey}
+                      baseDelay={60}
                     />
                   )}
-                  <View style={styles.multiplayerRewards}>
-                    <RewardSummary
-                      items={rewardItems}
-                      delay={80}
-                    />
-                  </View>
+                  <BubbleReveal delay={220} resetKey={`${entranceTriggerKey}:mp-rewards`}>
+                    <View style={styles.multiplayerRewards}>
+                      <RewardSummary
+                        items={rewardItems}
+                        delay={0}
+                      />
+                    </View>
+                  </BubbleReveal>
+                  {showPointsBadge ? (
+                    <BubbleReveal
+                      delay={280}
+                      resetKey={`${entranceTriggerKey}:mp-points`}
+                    >
+                      <View style={styles.multiplayerPointsWrap}>
+                        <View style={styles.scorePoints}>
+                          <Text style={styles.scorePointsText}>{`+${pointsEarned}`}</Text>
+                          <Ionicons
+                            name="sparkles"
+                            size={14}
+                            color={colors.accent}
+                            style={styles.scorePointsIconTrailing}
+                          />
+                        </View>
+                      </View>
+                    </BubbleReveal>
+                  ) : null}
                 </>
               )}
             </Animated.View>
@@ -622,7 +665,12 @@ export default function ResultScreen({ route, navigation }) {
             <Animated.View style={[actionsAnimatedStyle, { width: '100%' }]}>
               <View style={styles.actionsStack}>
                 {!isMultiplayer ? (
-                  <Pressable
+                  <BubbleReveal
+                    delay={40}
+                    resetKey={`${entranceTriggerKey}:primary-action`}
+                    style={styles.actionReveal}
+                  >
+                    <Pressable
                     onPress={() => {
                       if (soloQuizLocked) {
                         setShowBoostModal(true);
@@ -644,36 +692,39 @@ export default function ResultScreen({ route, navigation }) {
                     <Text style={[styles.primaryButtonText, styles.primaryButtonTextLarge]}>
                       {t('Nächstes Quiz')}
                     </Text>
-                  </Pressable>
+                    </Pressable>
+                  </BubbleReveal>
                 ) : (
-                  <Pressable
-                    onPress={() => {
-                      if (showMultiplayerWaiting) {
-                        navigation.navigate('MultiplayerLobby', {
-                          mode: 'create',
-                          existingMatch: liveMatch ?? fallbackExistingMatch,
-                        });
-                        return;
-                      }
-
-                      navigation.navigate('MultiplayerLobby', {
-                        mode: 'create',
-                      });
-                    }}
+                  <BubbleReveal
+                    delay={40}
+                    resetKey={`${entranceTriggerKey}:primary-action`}
+                    style={styles.actionReveal}
+                  >
+                    <Pressable
+                    onPress={handleReturnToLobby}
                     style={getPrimaryButtonStyle(colors.accent)}
                   >
                     <Text style={styles.primaryButtonText}>
-                      {showMultiplayerWaiting ? t('Zurück zur Lobby') : t('Multiplayer')}
+                      {t('Zurück zur Lobby')}
                     </Text>
-                  </Pressable>
+                    </Pressable>
+                  </BubbleReveal>
                 )}
 
-                <Pressable
-                  onPress={handleReturnHome}
-                  style={styles.tertiaryButton}
+                <BubbleReveal
+                  delay={120}
+                  resetKey={`${entranceTriggerKey}:secondary-action`}
+                  style={styles.actionReveal}
                 >
-                  <Text style={styles.tertiaryButtonText}>{t('Fertig')}</Text>
-                </Pressable>
+                  <Pressable
+                    onPress={handleReturnHome}
+                    style={styles.tertiaryButton}
+                  >
+                    <Text style={styles.tertiaryButtonText}>
+                      {t('Fertig')}
+                    </Text>
+                  </Pressable>
+                </BubbleReveal>
               </View>
             </Animated.View>
           </View>
@@ -684,6 +735,8 @@ export default function ResultScreen({ route, navigation }) {
             items={isMultiplayer ? selectedReviewItems : reviewItems}
             title={isMultiplayer ? selectedReviewTitle : null}
             answerLabel={isMultiplayer ? selectedAnswerLabel : null}
+            entranceKey={entranceTriggerKey}
+            baseDelay={40}
           />
         </Animated.View>
       </ScrollView>
@@ -702,6 +755,7 @@ export default function ResultScreen({ route, navigation }) {
         rewarding={rewarding}
         coinCost={COIN_ENERGY_COST}
         coinEnergyAmount={COIN_ENERGY_AMOUNT}
+        rewardEnergyAmount={REWARDED_ENERGY}
         onBuyWithCoins={handleBuyEnergyWithCoins}
         onWatchAd={watchAdForEnergy}
         onRefreshEnergy={refreshEnergy}

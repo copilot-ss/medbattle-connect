@@ -114,7 +114,7 @@ def isEasBuild = ["EAS_BUILD", "EAS_BUILD_PLATFORM", "EAS_BUILD_PROFILE"].any { 
 }
 def googleTestAdmobAppId = "ca-app-pub-3940256099942544~3347511713"
 def androidAdmobAppId = readRepoEnvValue(["EXPO_PUBLIC_ADMOB_APP_ID_ANDROID"])
-def trackedAndroidVersionCode = 40
+def trackedAndroidVersionCode = 45
 def appBuildGradleFile = project.file("build.gradle")
 def appConfigFile = new File(projectRoot, "app.json")
 def parseVersionCode = { String text, String pattern ->

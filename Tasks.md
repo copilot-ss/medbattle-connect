@@ -1,21 +1,20 @@
 # TASKS.md - MedQuiz Aufgabenliste
 
-## Aktueller Stand (2026-03-24)
+## Aktueller Stand (2026-03-31)
 - Verteilung laeuft aktuell ueber Google Play Closed testing.
-- Neuester hochgeladener Store-Build: `versionCode 31` (`1.0.1`), Upload am `2026-03-17`.
-- Neuester lokal gebauter Store-Build: `versionCode 39` (`1.0.1`), erstellt am `2026-03-24`.
-- Das aktuelle lokale Store-AAB `39` wurde frisch aus dem aktuellen Repo-Stand gebaut; fuer einen echten Store-Install auf Emulator oder Realgeraet muss dieser Build jetzt in Google Play hochgeladen und ausgerollt werden.
-- Das angeschlossene Realgeraet `c2ccd135` zeigt derzeit `versionCode 35` / `versionName 1.0.1`, aber auch dieser installierte APK-Stand liegt hinter den juengsten UI-Aenderungen im Repo.
-- Build `31` ist in Play derzeit noch inaktiv, bis Review und Rollout im Closed-Test-Track abgeschlossen sind.
-- Solange `31` inaktiv bleibt, sehen Tester weiter den zuletzt aktiven Closed-Test-Build.
+- Neuester hochgeladener Store-Build: `versionCode 42` (`1.0.1`), aktuell im Closed-Test-Track.
+- Neuester lokal gebauter Store-Build: `versionCode 44` (`1.0.1`), erstellt am `2026-03-31`.
+- Das aktuelle Store-AAB `42` wurde frisch aus dem aktuellen Repo-Stand gebaut und liegt jetzt im Closed-Test-Track; fuer einen echten Store-Install auf Emulator oder Realgeraet muss dieses Geraet jetzt genau diesen Build ueber den Play Store beziehen.
+- Das angeschlossene Realgeraet `c2ccd135` zeigt derzeit `versionCode 43` / `versionName 1.0.1`; fuer echte Play-Billing-Tests ist trotzdem weiter der Install ueber den Closed-Test-Link im Play Store der sauberste Pfad.
 - Repo-Stand nach dem Upload:
   - OAuth-/Deep-Link-Session-Recovery gehaertet, damit bestehende Google-Accounts nach Neuinstallation nicht mehr mit einem falschen Supabase-Timeout aus dem Login fallen.
   - OAuth-Callback-Verarbeitung dedupliziert, damit Google-Redirect und globaler Deep-Link-Listener nicht parallel `setSession`/`exchangeCodeForSession` auf dieselbe URL feuern.
-  - Rewarded Ads koennen in Closed Tests weiter mit Google-Test-IDs laufen.
-  - Android-Repo ist fuer `armeabi-v7a`, `arm64-v8a` und wieder `x86_64` gebaut; der aktuelle lokale Store-Build `39` ist erstellt, Upload und echter Store-Smoke aber noch offen.
+  - Rewarded Ads laufen im Release jetzt mit der echten Ad-Unit; einzelne Testgeraete koennen optional ueber `EXPO_PUBLIC_ADMOB_TEST_DEVICE_IDS_ANDROID` weiter Test-Ads ziehen.
+  - `npm run release:check` blockiert jetzt versehentliches `EXPO_PUBLIC_ADMOB_USE_TEST_IDS=true` vor dem AAB-Bau.
+  - Android-Repo ist fuer `armeabi-v7a`, `arm64-v8a` und wieder `x86_64` gebaut; der aktuelle Store-Build `42` liegt im Closed-Test-Track, echter Store-Smoke aber noch offen.
 
 ## Offen
-- Aktuellen Store-Build `39` in Google Play hochladen bzw. ausrollen und danach den echten Store-Build auf Emulator und Realgeraet testen.
+- Aktuellen Closed-Test-Store-Build `42` auf Emulator und Realgeraet installieren und danach den echten Store-Build testen.
 - Play Console finalisieren: Content Rating, Data Safety und spaeter produktiven Submit-Flow.
 - End-to-end Smoke offen: echter OAuth-Roundtrip, Offline-Sync, Multiplayer, Rewarded Ad, Premium-/IAP-Flow.
 - Google Service Account Key fuer Play-Submit in EAS hinterlegen.
@@ -48,7 +47,7 @@
 - [x] Supabase DB: DB-Passwort rotiert (2026-03-10; per Management API erneuert, lokal sicher im Windows Credential Manager abgelegt, Pooler-Login via `psql`/Docker verifiziert).
 - [ ] Offline: Login-Recall, Offline-Quick-Play, Online-Sync getestet (teilweise via adb; Cold-Start Session-Recall auf Production-Build 26 am 2026-03-10 verifiziert, Details in RELEASE_TESTS.md).
 - [ ] Multiplayer: Create/Join/Resume/Abbruch getestet (teilweise via adb; Details in RELEASE_TESTS.md).
-- [ ] Purchases/Ads: Energie-Flow, Rewarded Ad, Premium-Flow im Closed-Test-Store-Build getestet (Test-Ad-Override fuer Closed Tests ist im Code vorhanden).
+- [ ] Purchases/Ads: Energie-Flow, Rewarded Ad, Premium-Flow im Closed-Test-Store-Build getestet (Live-Ad-Flow + optionale Testgeraete sind im Code vorhanden).
 - [x] Telemetry: Externer Provider entfernt; Crash-Logging laeuft ueber `client_logs` (kein DSN/Alert-Setup erforderlich).
 - [x] App: Externes Telemetry-Setup entfernt (`sentry-expo` Plugin/Dependency entfernt).
 - [x] App: Client-Error-Logging redigiert sensible Inhalte (E-Mail, Token, Session, API Keys) vor Persistenz.
@@ -56,13 +55,51 @@
 - [x] Datenschutz: DSAR-Prozess (Auskunft/Loeschung/Berichtigung) inkl. SLA und operativem Ablauf dokumentiert (`DSAR_PROCESS.md`).
 - [x] Ads/Consent: EWR-Consent-Nachweis im Privacy-Text + Code-Stand konsistent dokumentiert (Rewarded Ads non-personalized).
 - [x] Security: Dependency-Vulnerability-Check fuer produktive Dependencies dokumentiert (2026-03-08: `npm audit --omit=dev` => 0 high / 0 moderate / 0 critical).
-- [ ] Release-Build: Store-AAB `39` in Google Play hochladen/aktivieren und genau diesen Stand danach auf Emulator und Realgeraet smoke-testen.
+- [x] Release-Build: Store-AAB `42` ist im Google-Play-Closed-Test-Track hinterlegt.
+- [ ] Release-Build: Genau diesen Store-Stand `42` danach auf Emulator und Realgeraet smoke-testen.
 - [x] QA: Manuelle Release-Checkliste dokumentiert (`RELEASE_TESTS.md`).
 
 ## In Arbeit
-- Store-Build `39` in Google Play hochladen bzw. aktivieren; danach Auth-, Quiz-, Ads- und Multiplayer-Smoke direkt gegen den echten Store-Stand auf Emulator und Realgeraet dokumentieren.
+- Auth-, Quiz-, Ads-, Purchases- und Multiplayer-Smoke direkt gegen den echten Closed-Test-Store-Stand `42` auf Emulator und Realgeraet dokumentieren.
 
 ## Erledigt
+- [x] Multiplayer-Rematch-/Avatar-/Countdown-Haertung (2026-04-02): Rueckkehr aus dem Result in die Lobby verpasst den naechsten Match-Start nicht mehr, wenn `completed` direkt in `active` kippt; der Start-Countdown laeuft jetzt auch vom Home-Screen aus. Lobby-/Result-Avatare priorisieren Live-Presence/Public-Profile vor alten Match-Snapshots, Kamera-Profilfotos werden dadurch robuster angezeigt. Host-Badge-Layering und Achievement-Reward-Overlay bereinigt. `npx tsc --noEmit` danach clean.
+- [x] Multiplayer-Result-/Avatar-Darstellung geschaerft (2026-04-02): Punkte im Result zeigen jetzt als `+Zahl` mit Sparkles-Symbol statt `Punkte`-Text; der Leaderboard-Titel nutzt dasselbe Symbol. Gegner-Avatare im Result laden jetzt korrekt Preset-Bilder und holen fehlende Profilfotos nach; die Lobby zieht fehlende Avatar-Fotos ebenfalls trotz vorhandenem Preset-Fallback nach, damit Kamera-Avatare und Public-Profile-Opener nicht mehr auf einem Dummy haengen. `npx tsc --noEmit` clean.
+- [x] Lobby-Inaktivitaets-Timeout auf `2` Minuten reduziert (2026-04-02): `close_waiting_matches` nutzt jetzt `updated_at` statt `created_at`, damit wartende Lobbys nach `2` Minuten echter Inaktivitaet geschlossen werden; lokale Cleanup-Konstante ebenfalls auf `2` gesetzt, Migration `20260402190000_reduce_lobby_idle_timeout.sql` remote gepusht, `npx tsc --noEmit` clean.
+- [x] Supabase: `generate_join_code()` per neuer Migration bereinigt und semantisch auf `volatile` gesetzt; ein separates Post-Release-Cleanup-SQL fuer Legacy-/Index-Kandidaten liegt jetzt bewusst ausserhalb von `supabase/migrations`, damit vor dem Release nichts versehentlich live geht (2026-04-02).
+- [x] Multiplayer-Lobby-Rueckkehr aus Result an echten Match-Status gebunden (2026-04-01): Beim Wiedereinstieg in die Lobby wird der aktuelle Match sofort vom Server nachgeladen, damit ein veralteter `active`/`completed`-Snapshot nicht mehr als pseudo-Lobby haengen bleibt; die unterdrueckte Auto-Navigation wird wieder freigegeben, sobald der Match zurueck auf `waiting` steht. `npx tsc --noEmit` clean.
+- [x] Punktewertung vereinfacht und Joker-Abzug versteckt (2026-04-01): Quiz-Punkte geben jetzt `3` Punkte pro richtiger Antwort, jeder genutzte Joker zieht intern `1` Punkt ab, und die Abzuege werden im Result-/Ranking-UI nicht mehr explizit angezeigt. `npx tsc --noEmit` clean.
+- [x] Multiplayer-Lobby-/Profil-Flow fuer Result-Rueckkehr erweitert (2026-04-01): Im Multiplayer-Score-Screen sind `Zurueck zur Lobby` und `Fertig` jetzt immer verfuegbar. Der Rueckweg in die Lobby ersetzt den Result-Screen im Stack, behaelt Kategorie und Fragenanzahl der letzten Runde bei und unterdrueckt in der Lobby jeden Auto-Countdown zurueck ins laufende Match. Teilnehmer ausserhalb der Lobby werden jetzt ausgegraut mit Status wie `Im Quiz`, die aktuelle Kategorie steht auch im Lobby-Settings-Modal, und das Lobby-Profil zeigt fuer Nicht-Freunde zusaetzlich einen `person-add`-CTA ueber denselben Public-Profile-Sheet. `npx tsc --noEmit` clean.
+- [x] Multiplayer-Result-Flow fuer Joker + Lobby-Rueckkehr erweitert (2026-03-31): der Score-Screen zeigt jetzt `Zurueck zur Lobby` statt eines neuen Multiplayer-Starts und springt mit `keepCompleted` in dieselbe vorherige Lobby zurueck; `Home` bleibt als zweiter CTA. Benutzte Joker werden im Ranking pro Spieler sowie in der Quiz-Zusammenfassung pro Frage sichtbar, Multiplayer-Punkte ziehen dafuer jetzt einen Joker-Abzug ab, und die neue Supabase-Migration `20260331180500_store_match_boost_usage.sql` sorgt dafuer, dass `boostsUsed` beim Match-RPC auch fuer den Gegner gespeichert bleibt. `npx tsc --noEmit` clean.
+- [x] Multiplayer-Lobby zieht fremde Profilbilder jetzt wieder sauber (2026-03-31): die Match-State-Normalisierung behaelt `title` und `avatar_*`-Felder jetzt bei, und falls ein Remote-Spieler in der Lobby trotzdem ohne Avatar ankommt, wird sein oeffentliches Profil nachgeladen und fuer die Teilnehmerkarte gemerged.
+- [x] Result-Screen auf gestaffelte Bubble-Reveals erweitert (2026-03-31): Score-Zeile, Trophy/Rewards, Multiplayer-Waiting/Ranking, Action-Buttons sowie die `Quiz Zusammenfassung` mit allen Review-Karten blenden jetzt sichtbar nacheinander ein statt nur als ein grober Block zu erscheinen.
+- [x] No-Energy-Buttons auf solide CTA-Flaechen umgebaut + Top-Abstaende weiter reduziert (2026-03-31): Coin- und Energie-Button sind jetzt vollflaechig gefuellt, nutzen Coin-/Blitz-Symbol und klarere zweizeilige Typo; der Timer ist kompakter gesetzt und zentrale Top-Paddings in Home, Shop, Quiz, Result, Settings, Leaderboard, Kategorie-, Lobby- und Username-Screens wurden spuerbar nach oben gezogen.
+- [x] No-Energy-Screen visuell entzerrt und neu gestaffelt (2026-03-31): der Fullscreen-Boost-Dialog zeigt die `0` deutlich ruhiger, ordnet Titel/Status/Aktionen klarer und blendet Titel, Panel, Optionen und Coins nacheinander mit einer sanften Bubble-Animation ein; der Zurueck-Button bleibt dabei sofort sichtbar.
+- [x] Fullscreen-Inset-Offset auf Android reduziert (2026-03-31): das native Fenster bleibt im versteckten Systemleistenmodus, nutzt aber wieder `decorFitsSystemWindows`, damit die Screens nicht unnoetig nach unten rutschen.
+- [x] 50/50-Joker im Quiz visuell gestrafft (2026-03-31): der Kreis um das Joker-Symbol ist entfernt und das Symbol selbst im Boost-Button etwas vergroessert.
+- [x] Freeze-Time-Schneeflocke im Quiz-Timer entfernt (2026-03-31): auf dem Zeitbalken wird waehrend `Freeze Time` kein separates Snowflake-Badge mehr angezeigt; der eingefrorene Balken-Effekt selbst bleibt unveraendert.
+- [x] Android-App jetzt wieder echter Fullscreen (2026-03-31): `MainActivity` erzwingt nativ per `WindowInsetsControllerCompat` versteckte Systemleisten, damit oben Uhrzeit/Statussymbole und unten die Navigationsleiste nach Start, Resume und Fokuswechseln ausgeblendet bleiben.
+- [x] Lokaler Android AAB-Rebuild fuer den naechsten Store-Upload erstellt (`versionCode 44`, `android/app/build/outputs/bundle/release/app-release.aab`) am 2026-03-31.
+- [x] Android-15-Systemleistenwarnung adressiert (2026-03-31): App-seitige Status-/Navigationsleisten-APIs auf Android reduziert, Edge-to-Edge in `android/gradle.properties` deaktiviert, `statusBarTranslucent` im Energie-Modal entfernt und React Native `0.83.2` per neuem Patch `patches/react-native+0.83.2.patch` so angepasst, dass auf Android 15 keine veralteten `statusBarColor`-/`navigationBarColor`-Aufrufe mehr aus `StatusBarModule` bzw. `WindowUtil.enableEdgeToEdge` erfolgen.
+- [x] Shop-Karten kaufen jetzt direkt per Tap (2026-03-31): die unteren Kauf-Buttons sind entfernt; ein Tap auf die gesamte Artikelkarte loest jetzt direkt den Kauf bzw. Claim aus, Statushinweise bleiben als nicht-klickbare Pills in der Karte sichtbar.
+- [x] IAP-Fallback-SKUs an aktuelle Play-IDs angeglichen (2026-03-31): falls `EXPO_PUBLIC_IAP_*` beim nativen Release-Bundle nicht injiziert werden, nutzt die App jetzt trotzdem `buy_coins500`, `buy_coins1300`, `buy_coins2700`, `buy_coins7000` und `buy_coins1800` statt der veralteten `coins_*`-IDs.
+- [x] Leeren Play-Katalog im Shop abgefangen (2026-03-31): Echtgeld-Kaeufe werden nicht mehr blind angefragt, wenn Google Play noch keine Produkte geliefert hat; stattdessen bleibt der Fehler klarer und der Produkt-Load wird im Log protokolliert.
+- [x] Billing-Installationsfehler im Shop konkretisiert (2026-03-31): wenn Google Play meldet, dass diese App-Version noch nicht fuer Billing konfiguriert ist, zeigt der Shop jetzt direkt den Hinweis auf Closed-Test-Install ueber Play Store bzw. korrektes License-Tester-Konto statt nur eines unspezifischen Fehlers.
+- [x] IAP-Fehlertexte geschaerft (2026-03-31): Shop zeigt bei Billing-Problemen jetzt nach Moeglichkeit den konkreteren Grund statt nur einer generischen Fehlermeldung und loggt Request-/Finish-Fehler fuer Troubleshooting.
+- [x] Shop-CTA-Texte reduziert (2026-03-31): die generischen `Kaufen`-/`Charge`-Beschriftungen sind bei Shop-Artikeln entfernt; die Buttons bleiben klickbar und fuehren weiter direkt den Kauf aus.
+- [x] Coin-IAP-SKUs auf aktuelle Play-Console-IDs umgestellt (2026-03-31): `.env` nutzt jetzt `buy_coins500`, `buy_coins1300`, `buy_coins2700`, `buy_coins7000` und `buy_coins1800`.
+- [x] Groesstes Coin-Paket aus dem Shop entfernt (2026-03-31): das bisherige 45.000-Coins-IAP wurde aus Shop, IAP-Konfiguration und Release-Checks vollstaendig entfernt.
+- [x] Shop-Balance fuer Max-Energie angepasst (2026-03-31): beide dauerhaften Max-Energie-Upgrades kosten jetzt im Shop das Doppelte.
+- [x] Store-AAB `42` in Google Play Closed testing hinterlegt (2026-03-31): aktueller Repo-Stand ist damit jetzt als Store-Build im Closed-Test-Track verfuegbar.
+- [x] Leaderboard-Eigenhighlight verfeinert (2026-03-31): der Rahmen der eigenen Ranglisten-Zeile uebernimmt jetzt Gold/Silber/Bronze passend zum Rang und bleibt ausserhalb der Top 3 blau.
+- [x] Lokaler Android AAB-Rebuild fuer den naechsten Store-Upload erstellt (`versionCode 42`, `android/app/build/outputs/bundle/release/app-release.aab`) am 2026-03-31.
+- [x] AdMob-Release-Flow auf Live-Ads + optionale Testgeraete umgestellt (2026-03-31): Release nutzt jetzt standardmaessig die echte Rewarded-Ad-Unit, `EXPO_PUBLIC_ADMOB_TEST_DEVICE_IDS_ANDROID` erlaubt gezielte Testgeraete, `release:check` blockiert globalen Test-ID-Override und der Rewarded-Flow loggt jetzt Fehlercode/-text fuer echtes Troubleshooting.
+- [x] Lokaler Android AAB-Rebuild fuer den naechsten Store-Upload erstellt (`versionCode 41`, `android/app/build/outputs/bundle/release/app-release.aab`) am 2026-03-30.
+- [x] Online-Pool um weitere `20` ultra-einfache DE/EN-Fragen erweitert und remote gepusht (2026-03-30): zweiter `online-sehr-einfach-*`-Pack mit noch simpleren Alltagsfragen und klaren 4er-Optionen live.
+- [x] Online-Pool um `20` weitere sehr einfache Kernfragen erweitert und remote gepusht (2026-03-30): neuer bilingualer `online-sehr-einfach-*`-Pack mit besonders niedriger Huerde und klaren 4er-Antwortfeldern, inklusive Blut-/Grundlagenfragen.
+- [x] Online-Anfaengerpool auf `5` Fragen pro Kategorie ausgebaut und remote gepusht (2026-03-30): die bilinguale `online-einfach-einstieg`-Reihe deckt jetzt alle 10 App-Kategorien mit je `5` niedrigen Einstiegsfragen ab.
+- [x] Repo-Cleanup: veraltete `.tmp_*` SQL-Dumps und `temp/` UI-Automation-Artefakte entfernt; `.gitignore` blockiert diese Pfade jetzt dauerhaft (2026-03-30).
+- [x] Fragenpools: neuer Anfaengerblock fuer alle 10 Offline-Kategorien plus weiterer bilingualer Online-Foundation-Pack vorbereitet (2026-03-30).
 - [x] Ads-SDK auf aktuellen Android-Stand angehoben (2026-03-30): `react-native-google-mobile-ads` auf `16.3.1` aktualisiert; zusaetzlich nutzt Android per Override jetzt Googles aktuelles `play-services-ads:25.1.0` statt des Paket-Defaults, damit der Rewarded-Ad-Stack auf dem neuesten Stand bleibt.
 - [x] Recharge-Screen visuell geschaerft + Shop-Energie-CTA vereinheitlicht (2026-03-30): Energie-Kaufkarten im Shop zeigen jetzt wieder `Kaufen`/`Buy` statt `Aufladen`/`Charge`; der bestehende Fullscreen-Recharge-Screen bekam nur ein Style-Refresh mit staerkerem Hero-Panel, aufgewertetem Timer und klareren Action-Buttons, ohne neue Inhalte oder neue Aktionen hinzuzufuegen.
 - [x] Energie-Erfolgshinweis auf Header-Animation umgestellt (2026-03-26): der Charge-Screen zeigt nach erfolgreichem Aufladen keine `+Energie`-Textmeldung mehr; stattdessen pulst die Energieanzeige im Home-Header mit Glow und schwebendem `+N`.

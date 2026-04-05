@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { ImageBackground, View } from 'react-native';
 
 import {
   deriveMatchRole,
@@ -7,6 +7,7 @@ import {
 } from '../services/matchService';
 import { usePreferences } from '../context/PreferencesContext';
 import useCurrentAvatar from '../hooks/useCurrentAvatar';
+import useMatchStartCountdown from '../hooks/useMatchStartCountdown';
 import { getTitleProgress } from '../services/titleService';
 import styles from './styles/MultiplayerLobbyScreen.styles';
 import LobbyHeader from './multiplayer/LobbyHeader';
@@ -39,8 +40,7 @@ import PublicProfileSheet from '../components/PublicProfileSheet';
 import usePublicProfileSheet from '../hooks/usePublicProfileSheet';
 import LobbyStartCountdownOverlay from './multiplayer/LobbyStartCountdownOverlay';
 
-const START_COUNTDOWN_STEP_MS = 700;
-const START_COUNTDOWN_NAVIGATE_DELAY_MS = 2850;
+const lobbyBackgroundImage = require('../../assets/images/multiplayer-lobby-bg.png');
 
 export default function MultiplayerLobbyScreen({ navigation, route }) {
   const { t } = useTranslation();
@@ -80,93 +80,37 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   const autoCreateAttemptedRef = useRef(false);
   const closingRef = useRef(false);
   const skipAutoCloseRef = useRef(false);
-  const countdownTimeoutsRef = useRef([]);
-  const activeStartMatchIdRef = useRef(null);
-  const prefetchedMatchRef = useRef(null);
-  const [showStartCountdown, setShowStartCountdown] = useState(false);
-  const [startCountdownValue, setStartCountdownValue] = useState(3);
-
-  const clearStartCountdownTimers = useCallback(() => {
-    countdownTimeoutsRef.current.forEach((timeoutId) => {
-      clearTimeout(timeoutId);
-    });
-    countdownTimeoutsRef.current = [];
-  }, []);
-
-  useEffect(
-    () => () => {
-      clearStartCountdownTimers();
-    },
-    [clearStartCountdownTimers]
+  const [shouldSuppressActiveNavigation, setShouldSuppressActiveNavigation] = useState(
+    suppressActiveNavigation
   );
+  const navigateToQuiz = useCallback(
+    ({ match, role, preloadedMatch }) => {
+      navigation.replace('Quiz', {
+        mode: 'multiplayer',
+        matchId: match.id,
+        joinCode: match.code,
+        role,
+        preloadedMatch,
+      });
+    },
+    [navigation]
+  );
+  const {
+    showStartCountdown,
+    startCountdownValue,
+    beginMatchStartCountdown,
+    resetStartCountdown,
+  } = useMatchStartCountdown({
+    canStart: !shouldSuppressActiveNavigation,
+    fetchLatestMatchById: getMatchById,
+    onNavigate: navigateToQuiz,
+  });
 
   const handleMatchActive = useCallback(
     ({ match, role }) => {
-      if (!match?.id || !role) {
-        return;
-      }
-
-      if (activeStartMatchIdRef.current === match.id) {
-        return;
-      }
-
-      activeStartMatchIdRef.current = match.id;
-      prefetchedMatchRef.current = match;
-      clearStartCountdownTimers();
-      setStartCountdownValue(3);
-      setShowStartCountdown(true);
-
-      getMatchById(match.id)
-        .then((result) => {
-          if (activeStartMatchIdRef.current !== match.id) {
-            return;
-          }
-          if (result?.ok && result.match) {
-            prefetchedMatchRef.current = result.match;
-          }
-        })
-        .catch((err) => {
-          console.warn('Konnte Match fuer Quiz-Start nicht vorladen:', err);
-        });
-
-      const scheduleStep = (value, delayMs) => {
-        const timeoutId = setTimeout(() => {
-          if (activeStartMatchIdRef.current !== match.id) {
-            return;
-          }
-          setStartCountdownValue(value);
-        }, delayMs);
-        countdownTimeoutsRef.current.push(timeoutId);
-      };
-
-      scheduleStep(2, START_COUNTDOWN_STEP_MS);
-      scheduleStep(1, START_COUNTDOWN_STEP_MS * 2);
-      scheduleStep('go', START_COUNTDOWN_STEP_MS * 3);
-
-      const navigateTimeoutId = setTimeout(() => {
-        if (activeStartMatchIdRef.current !== match.id) {
-          return;
-        }
-
-        const preloadedMatch =
-          prefetchedMatchRef.current?.id === match.id
-            ? prefetchedMatchRef.current
-            : match;
-
-        setShowStartCountdown(false);
-        clearStartCountdownTimers();
-
-        navigation.replace('Quiz', {
-          mode: 'multiplayer',
-          matchId: match.id,
-          joinCode: match.code,
-          role,
-          preloadedMatch,
-        });
-      }, START_COUNTDOWN_NAVIGATE_DELAY_MS);
-      countdownTimeoutsRef.current.push(navigateTimeoutId);
+      beginMatchStartCountdown({ match, role });
     },
-    [clearStartCountdownTimers, navigation]
+    [beginMatchStartCountdown]
   );
 
   const { userId, userCode, username, loadingUser } = useLobbyUser();
@@ -196,7 +140,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     existingMatch,
     isCreateOnly,
     allowCompletedLobby,
-    suppressActiveNavigation,
+    suppressActiveNavigation: shouldSuppressActiveNavigation,
     onMatchActive: handleMatchActive,
     refreshMatches,
     setMatchesError,
@@ -216,12 +160,8 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
       return;
     }
 
-    activeStartMatchIdRef.current = null;
-    prefetchedMatchRef.current = null;
-    setShowStartCountdown(false);
-    setStartCountdownValue(3);
-    clearStartCountdownTimers();
-  }, [clearStartCountdownTimers, currentMatch?.status]);
+    resetStartCountdown();
+  }, [currentMatch?.status, resetStartCountdown]);
 
   const isHostWaiting = useMemo(() => {
     if (!currentMatch || !userId) {
@@ -231,6 +171,16 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     return (
       deriveMatchRole(currentMatch, userId) === 'host' &&
       currentMatch.status === 'waiting'
+    );
+  }, [currentMatch, userId]);
+  const isHostCompletedLobby = useMemo(() => {
+    if (!currentMatch || !userId) {
+      return false;
+    }
+
+    return (
+      deriveMatchRole(currentMatch, userId) === 'host' &&
+      currentMatch.status === 'completed'
     );
   }, [currentMatch, userId]);
   const {
@@ -269,13 +219,6 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     [selectedCategory]
   );
   const {
-    startPulseStyle,
-    handleJoinPressIn,
-    handleJoinPressOut,
-    joinPressStyle,
-  } = useLobbyActionAnimations({ isHostWaiting });
-
-  const {
     currentJoinCode,
     onlineFriends,
     participants,
@@ -296,6 +239,20 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     friends,
     t,
   });
+  const allParticipantsInLobby = useMemo(() => {
+    const activeParticipants = (participants ?? []).filter((item) => !item.isPlaceholder);
+    return activeParticipants.length > 0 && activeParticipants.every((item) => !item.isPending);
+  }, [participants]);
+  const showHostStartControls = isHostWaiting || isHostCompletedLobby;
+  const canStartFromLobby =
+    hasEnoughPlayers &&
+    (isHostWaiting || (isHostCompletedLobby && allParticipantsInLobby));
+  const {
+    startPulseStyle,
+    handleJoinPressIn,
+    handleJoinPressOut,
+    joinPressStyle,
+  } = useLobbyActionAnimations({ isHostWaiting: canStartFromLobby });
   const {
     joinCode,
     setJoinCode,
@@ -330,9 +287,19 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     setMatchesError,
     closingRef,
     skipAutoCloseRef,
-    isHostWaiting,
-    hasEnoughPlayers,
+    canStartFromLobby,
   });
+  useEffect(() => {
+    const nextStatus = currentMatch?.status ?? null;
+
+    if (
+      shouldSuppressActiveNavigation &&
+      nextStatus &&
+      nextStatus !== 'completed'
+    ) {
+      setShouldSuppressActiveNavigation(false);
+    }
+  }, [currentMatch?.status, shouldSuppressActiveNavigation]);
   useLobbyBackHandler({
     currentMatch,
     onLeaveLobby: handleLeaveLobby,
@@ -362,10 +329,17 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     t,
   });
   const {
+    canAddProfileFriend,
     canRemoveProfileParticipant,
+    handleAddFriendFromProfile,
     handleOpenParticipantProfile,
     handleRemoveParticipantFromProfile,
+    profileActionDisabled,
+    profileActionIcon,
+    profileActionLabel,
+    profileActionLoading,
   } = useLobbyProfileActions({
+    friends,
     isHostWaiting,
     kickingPlayer,
     participants,
@@ -394,90 +368,105 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   });
 
   return (
-    <View style={styles.container}>
-      <View style={styles.backgroundGlowTop} pointerEvents="none" />
-      <View style={styles.backgroundGlowBottom} pointerEvents="none" />
-      <LobbyHeader
-        isCreateOnly={isCreateOnly}
-        hasActiveLobby={hasActiveLobby}
-        closingLobby={closingLobby}
-        onNavigateHome={handleNavigateHome}
-        onLeaveLobby={handleLeaveLobby}
-      />
-      <View style={styles.headerStreak} />
+    <ImageBackground
+      source={lobbyBackgroundImage}
+      style={styles.container}
+      imageStyle={styles.backgroundImage}
+    >
+      <View style={styles.backgroundOverlay}>
+        <View style={styles.backgroundGlowTop} pointerEvents="none" />
+        <View style={styles.backgroundGlowBottom} pointerEvents="none" />
+        <LobbyHeader
+          isCreateOnly={isCreateOnly}
+          hasActiveLobby={hasActiveLobby}
+          closingLobby={closingLobby}
+          onNavigateHome={handleNavigateHome}
+          onLeaveLobby={handleLeaveLobby}
+        />
+        <View style={styles.headerStreak} />
 
-      <LobbyContent
-        loadingUser={loadingUser}
-        matchesError={resolvedMatchesError}
-        creating={creating}
-        isCreateOnly={isCreateOnly}
-        isJoinOnly={isJoinOnly}
-        currentMatch={currentMatch}
-        joinCode={joinCode}
-        onChangeJoinCode={setJoinCode}
-        onJoinByCode={handleJoinByCode}
-        onJoinPressIn={handleJoinPressIn}
-        onJoinPressOut={handleJoinPressOut}
-        joinPressStyle={joinPressStyle}
-        joining={joining}
-        matchesLoading={matchesLoading}
-        openMatches={visibleOpenMatches}
-        onRefreshMatches={handleRefreshOpenMatches}
-        onJoinQuick={handleJoinQuick}
-        onCreateMatch={handleCreateMatch}
-        userId={userId}
-        currentJoinCode={currentJoinCode}
-        participants={participants}
-        participantCount={participantCount}
-        isHostWaiting={isHostWaiting}
-        onSelectParticipant={handleSelectParticipant}
-        onOpenParticipantProfile={handleOpenParticipantProfile}
-        kickCandidateKey={kickCandidateKey}
-        onKickGuest={handleKickGuest}
-        kickingPlayer={kickingPlayer}
-        onStartMatch={handleStartMatch}
-        hasEnoughPlayers={hasEnoughPlayers}
-        startingMatch={startingMatch}
-        startPulseStyle={startPulseStyle}
-        onOpenSettings={handleOpenSettings}
-        copied={copied}
-        onCopyCode={handleCopyCode}
-        settingsQuestionLimit={settingsQuestionLimit}
-        settingsCategoryLabel={settingsCategoryLabel}
-        friendsLoading={friendsLoading}
-        onlineFriends={onlineFriends}
-        invitingFriendCodes={invitingFriendCodes}
-        onInviteFriend={handleInviteFriend}
-      />
+        <LobbyContent
+          loadingUser={loadingUser}
+          matchesError={resolvedMatchesError}
+          creating={creating}
+          isCreateOnly={isCreateOnly}
+          isJoinOnly={isJoinOnly}
+          currentMatch={currentMatch}
+          joinCode={joinCode}
+          onChangeJoinCode={setJoinCode}
+          onJoinByCode={handleJoinByCode}
+          onJoinPressIn={handleJoinPressIn}
+          onJoinPressOut={handleJoinPressOut}
+          joinPressStyle={joinPressStyle}
+          joining={joining}
+          matchesLoading={matchesLoading}
+          openMatches={visibleOpenMatches}
+          onRefreshMatches={handleRefreshOpenMatches}
+          onJoinQuick={handleJoinQuick}
+          onCreateMatch={handleCreateMatch}
+          userId={userId}
+          currentJoinCode={currentJoinCode}
+          participants={participants}
+          participantCount={participantCount}
+          isHostWaiting={isHostWaiting}
+          showHostStartControls={showHostStartControls}
+          canStartMatch={canStartFromLobby}
+          canOpenSettings={isHostWaiting}
+          onSelectParticipant={handleSelectParticipant}
+          onOpenParticipantProfile={handleOpenParticipantProfile}
+          kickCandidateKey={kickCandidateKey}
+          onKickGuest={handleKickGuest}
+          kickingPlayer={kickingPlayer}
+          onStartMatch={handleStartMatch}
+          hasEnoughPlayers={hasEnoughPlayers}
+          startingMatch={startingMatch}
+          startPulseStyle={startPulseStyle}
+          onOpenSettings={handleOpenSettings}
+          copied={copied}
+          onCopyCode={handleCopyCode}
+          settingsQuestionLimit={settingsQuestionLimit}
+          settingsCategoryLabel={settingsCategoryLabel}
+          friendsLoading={friendsLoading}
+          onlineFriends={onlineFriends}
+          invitingFriendCodes={invitingFriendCodes}
+          onInviteFriend={handleInviteFriend}
+        />
 
-      <PublicProfileSheet
-        {...sheetProps}
-        footerActionLabel={canRemoveProfileParticipant ? t('Entfernen') : null}
-        onFooterAction={canRemoveProfileParticipant ? handleRemoveParticipantFromProfile : null}
-        footerActionLoading={canRemoveProfileParticipant && kickingPlayer}
-        footerActionDisabled={canRemoveProfileParticipant && kickingPlayer}
-      />
+        <PublicProfileSheet
+          {...sheetProps}
+          primaryActionLabel={canAddProfileFriend ? profileActionLabel : null}
+          onPrimaryAction={canAddProfileFriend ? handleAddFriendFromProfile : null}
+          primaryActionIcon={canAddProfileFriend ? profileActionIcon : 'person-add'}
+          primaryActionLoading={canAddProfileFriend && profileActionLoading}
+          primaryActionDisabled={canAddProfileFriend && profileActionDisabled}
+          footerActionLabel={canRemoveProfileParticipant ? 'Remove from lobby' : null}
+          onFooterAction={canRemoveProfileParticipant ? handleRemoveParticipantFromProfile : null}
+          footerActionLoading={canRemoveProfileParticipant && kickingPlayer}
+          footerActionDisabled={canRemoveProfileParticipant && kickingPlayer}
+        />
 
-      <LobbyLeaveConfirmModal
-        visible={showLeaveConfirm}
-        onCancel={handleCancelLeave}
-        onConfirm={handleConfirmLeave}
-      />
-      <LobbySettingsModal
-        visible={showSettingsModal}
-        questionLimit={draftQuestionLimit}
-        min={MIN_QUESTION_LIMIT}
-        max={MAX_QUESTION_LIMIT}
-        onDecrement={() => adjustDraftQuestionLimit(-1)}
-        onIncrement={() => adjustDraftQuestionLimit(1)}
-        onApply={handleApplySettings}
-        isLoading={updatingSettings}
-      />
-      <LobbyStartCountdownOverlay
-        visible={showStartCountdown}
-        countdownValue={startCountdownValue}
-      />
-    </View>
+        <LobbyLeaveConfirmModal
+          visible={showLeaveConfirm}
+          onCancel={handleCancelLeave}
+          onConfirm={handleConfirmLeave}
+        />
+        <LobbySettingsModal
+          visible={showSettingsModal}
+          categoryLabel={settingsCategoryLabel}
+          questionLimit={draftQuestionLimit}
+          min={MIN_QUESTION_LIMIT}
+          max={MAX_QUESTION_LIMIT}
+          onDecrement={() => adjustDraftQuestionLimit(-1)}
+          onIncrement={() => adjustDraftQuestionLimit(1)}
+          onApply={handleApplySettings}
+          isLoading={updatingSettings}
+        />
+        <LobbyStartCountdownOverlay
+          visible={showStartCountdown}
+          countdownValue={startCountdownValue}
+        />
+      </View>
+    </ImageBackground>
   );
 }
 

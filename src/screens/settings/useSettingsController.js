@@ -316,10 +316,20 @@ export default function useSettingsController({ navigation, route, onClearSessio
       return;
     }
 
-    const remoteAvatarUri =
-      typeof avatarUri === 'string' && /^https?:\/\//i.test(avatarUri.trim())
+    const normalizedAvatarUri =
+      typeof avatarUri === 'string' && avatarUri.trim()
         ? avatarUri.trim()
         : null;
+    const remoteAvatarUri =
+      normalizedAvatarUri && /^https?:\/\//i.test(normalizedAvatarUri)
+        ? normalizedAvatarUri
+        : null;
+
+    // A freshly picked camera/gallery image is local (`file://...`) until upload finishes.
+    // Do not sync the old preset avatar during that window or it can overwrite the remote photo.
+    if (normalizedAvatarUri && !remoteAvatarUri) {
+      return;
+    }
 
     const payload = remoteAvatarUri
       ? {

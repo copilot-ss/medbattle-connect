@@ -124,6 +124,9 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     alignItems: 'center',
   },
+  itemWrapPressed: {
+    opacity: 0.92,
+  },
   itemCard: {
     width: '100%',
     alignItems: 'center',
@@ -141,6 +144,9 @@ const styles = StyleSheet.create({
   itemCardDaily: {
     minHeight: 102,
     paddingBottom: 9,
+  },
+  itemCardDisabled: {
+    opacity: 0.62,
   },
   itemBadge: {
     position: 'absolute',
@@ -214,45 +220,33 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textAlign: 'center',
   },
-  buyButton: {
-    width: '100%',
-    height: 30,
-    paddingHorizontal: 16,
+  itemStatusPill: {
+    minHeight: 24,
+    maxWidth: '100%',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-    overflow: 'visible',
     borderRadius: radii.pill,
-    backfaceVisibility: 'hidden',
     backgroundColor: colors.surfaceHigh,
     borderWidth: 1,
     borderColor: colors.borderStrong,
-  },
-  buyButtonOutside: {
     marginTop: 6,
   },
-  buyButtonDailyCompact: {
-    height: 26,
-    marginTop: 4,
-  },
-  buyButtonActive: {
-    backgroundColor: colors.accent,
-    borderColor: 'rgba(87, 199, 255, 0.7)',
-  },
-  buyButtonDailyActive: {
+  itemStatusPillSuccess: {
     backgroundColor: colors.success,
     borderColor: 'rgba(57, 229, 138, 0.75)',
   },
-  buyButtonDisabled: {
-    opacity: 0.6,
+  itemStatusPillMuted: {
+    opacity: 0.88,
   },
-  buyButtonText: {
+  itemStatusText: {
     color: colors.textSecondary,
     fontFamily: fonts.medium,
     fontSize: 12,
     textAlign: 'center',
   },
-  buyButtonTextActive: {
+  itemStatusTextDark: {
     color: '#0A0A12',
   },
 });

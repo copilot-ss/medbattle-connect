@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
 import AvatarView from '../../components/avatar/AvatarView';
 import { getLevelProgress, getTitleProgress } from '../../services/titleService';
+import FriendCodeInline from './FriendCodeInline';
 import styles from '../styles/SettingsScreen.styles';
 import useProfileSectionAnimations from './useProfileSectionAnimations';
 
@@ -51,6 +52,9 @@ export default function ProfileSection({
   linkGoogleHint,
   linkingGoogle,
   onLinkGoogle,
+  friendCode = '',
+  copySuccess = false,
+  onCopyFriendCode,
 }) {
   const { t } = useTranslation();
   const levelLabel = t('Level {level}', { level: userLevel });
@@ -193,6 +197,12 @@ export default function ProfileSection({
               </Text>
             </View>
             <Text style={styles.profileXpText}>{xpCoinsLabel}</Text>
+            <FriendCodeInline
+              friendCode={friendCode}
+              copySuccess={copySuccess}
+              onCopyFriendCode={onCopyFriendCode}
+              containerStyle={styles.profileFriendCodeInline}
+            />
           </View>
         </View>
 

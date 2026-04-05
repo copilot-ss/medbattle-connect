@@ -1,4 +1,8 @@
 import AVATARS from '../settings/avatars';
+import {
+  getAvatarPresetSource,
+  isRemoteAvatarUrl,
+} from '../../utils/avatarUtils';
 
 const AVATAR_BY_ID = new Map(
   AVATARS.map((avatar) => [avatar.id, avatar])
@@ -11,6 +15,42 @@ function getPresenceAvatar({ isSelf, avatarId }) {
   return AVATAR_BY_ID.get(avatarId) ?? null;
 }
 
+function getPresenceActivity(presence) {
+  return typeof presence?.activity === 'string' && presence.activity.trim()
+    ? presence.activity.trim().toLowerCase()
+    : null;
+}
+
+function resolveParticipantLobbyState({
+  isSelf,
+  presence,
+  matchStatus,
+  pendingQuizLabel,
+  pendingReturnLabel,
+}) {
+  const activity = getPresenceActivity(presence);
+  const isExplicitlyInCurrentLobby = isSelf || Boolean(presence?.inCurrentLobby);
+  const isInQuiz = activity === 'quiz';
+  const shouldWaitForReturn =
+    !isSelf &&
+    matchStatus === 'completed' &&
+    !isExplicitlyInCurrentLobby &&
+    !isInQuiz;
+  const isPending = !isSelf && (isInQuiz || shouldWaitForReturn);
+  const inCurrentLobby =
+    isExplicitlyInCurrentLobby ||
+    (!isPending && matchStatus === 'waiting');
+
+  return {
+    activity,
+    inCurrentLobby,
+    isPending,
+    statusLabel: isPending
+      ? (isInQuiz ? pendingQuizLabel : pendingReturnLabel)
+      : null,
+  };
+}
+
 function buildParticipantEntry({
   key,
   isHost,
@@ -21,11 +61,39 @@ function buildParticipantEntry({
   presenceAvatar,
   isSelf,
   resolvedUserId,
+  activity,
+  inCurrentLobby,
   isPending,
+  pendingStatusLabel,
   activeAvatarColor,
   activeAvatarSource,
   activeAvatarIcon,
 }) {
+  const presenceAvatarUrl = isRemoteAvatarUrl(presence?.avatarUri)
+    ? presence.avatarUri.trim()
+    : null;
+  const stateAvatarUrlRaw = state.avatar_url ?? state.avatarUrl ?? null;
+  const stateAvatarUrl = isRemoteAvatarUrl(stateAvatarUrlRaw)
+    ? stateAvatarUrlRaw.trim()
+    : null;
+  const resolvedAvatarUrl = presenceAvatarUrl ?? stateAvatarUrl ?? null;
+  const resolvedAvatarIcon =
+    resolvedAvatarUrl
+      ? null
+      : state.avatar_icon
+        ?? state.avatarIcon
+        ?? presence?.avatarIcon
+        ?? presenceAvatar?.icon
+        ?? (isSelf ? activeAvatarIcon : null);
+  const resolvedAvatarSource =
+    resolvedAvatarUrl
+      ? null
+      : state.avatar_source
+        ?? state.avatarSource
+        ?? presenceAvatar?.source
+        ?? (isSelf ? activeAvatarSource : null)
+        ?? getAvatarPresetSource(resolvedAvatarIcon);
+
   return {
     key,
     isHost,
@@ -34,26 +102,21 @@ function buildParticipantEntry({
     username: state.username ?? presence?.username ?? null,
     title: state.title ?? presence?.title ?? null,
     userId: resolvedUserId,
-    avatarUrl: state.avatar_url ?? state.avatarUrl ?? presence?.avatarUri ?? null,
-    avatarSource:
-      state.avatar_source
-      ?? state.avatarSource
-      ?? presenceAvatar?.source
-      ?? (isSelf ? activeAvatarSource : null),
-    avatarIcon:
-      state.avatar_icon
-      ?? state.avatarIcon
-      ?? presenceAvatar?.icon
-      ?? presence?.avatarIcon
-      ?? (isSelf ? activeAvatarIcon : null),
+    avatarUrl: resolvedAvatarUrl,
+    avatarSource: resolvedAvatarSource,
+    avatarIcon: resolvedAvatarIcon,
     avatarColor:
       state.avatar_color
       ?? state.avatarColor
       ?? presenceAvatar?.color
       ?? presence?.avatarColor
       ?? (isSelf ? activeAvatarColor ?? null : null),
+    friendCode: presence?.code ?? null,
+    activity,
+    inCurrentLobby,
     ready: Boolean(state.ready),
     isPending,
+    statusLabel: isPending ? pendingStatusLabel : null,
     isPlaceholder: false,
   };
 }
@@ -78,6 +141,8 @@ export function buildLobbyParticipants({
   activeAvatarIcon,
   hostLabel,
   guestLabel,
+  pendingQuizLabel,
+  pendingReturnLabel,
 }) {
   if (!currentMatch?.state) {
     return [];
@@ -110,8 +175,21 @@ export function buildLobbyParticipants({
     avatarId: guestPresence?.avatarId,
   });
 
-  const hostInLobby = Boolean(hostPresence?.inCurrentLobby);
-  const guestInLobby = Boolean(guestPresence?.inCurrentLobby);
+  const matchStatus = currentMatch.status ?? null;
+  const hostLobbyState = resolveParticipantLobbyState({
+    isSelf: hostIsSelf,
+    presence: hostPresence,
+    matchStatus,
+    pendingQuizLabel,
+    pendingReturnLabel,
+  });
+  const guestLobbyState = resolveParticipantLobbyState({
+    isSelf: guestIsSelf,
+    presence: guestPresence,
+    matchStatus,
+    pendingQuizLabel,
+    pendingReturnLabel,
+  });
 
   const items = [
     buildParticipantEntry({
@@ -124,7 +202,10 @@ export function buildLobbyParticipants({
       presenceAvatar: hostPresenceAvatar,
       isSelf: hostIsSelf,
       resolvedUserId: hostUserId,
-      isPending: !hostIsSelf && !hostInLobby,
+      activity: hostLobbyState.activity,
+      inCurrentLobby: hostLobbyState.inCurrentLobby,
+      isPending: hostLobbyState.isPending,
+      pendingStatusLabel: hostLobbyState.statusLabel,
       activeAvatarColor,
       activeAvatarSource,
       activeAvatarIcon,
@@ -143,7 +224,10 @@ export function buildLobbyParticipants({
         presenceAvatar: guestPresenceAvatar,
         isSelf: guestIsSelf,
         resolvedUserId: guestUserId,
-        isPending: !guestIsSelf && !guestInLobby,
+        activity: guestLobbyState.activity,
+        inCurrentLobby: guestLobbyState.inCurrentLobby,
+        isPending: guestLobbyState.isPending,
+        pendingStatusLabel: guestLobbyState.statusLabel,
         activeAvatarColor,
         activeAvatarSource,
         activeAvatarIcon,

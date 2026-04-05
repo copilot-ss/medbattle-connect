@@ -1,5 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import useLobbyPresence from './useLobbyPresence';
+import { fetchPublicProfileByUserId } from '../../../services/userService';
+import {
+  getAvatarPresetSource,
+  isRemoteAvatarUrl,
+} from '../../../utils/avatarUtils';
 import {
   buildLobbyParticipants,
   getPresenceParticipantCount,
@@ -41,7 +46,7 @@ export default function useLobbyParticipants({
     friends,
   });
 
-  const participants = useMemo(() => {
+  const baseParticipants = useMemo(() => {
     return buildLobbyParticipants({
       currentMatch,
       lobbyParticipants,
@@ -51,6 +56,8 @@ export default function useLobbyParticipants({
       activeAvatarIcon,
       hostLabel: t('Host'),
       guestLabel: t('Gast'),
+      pendingQuizLabel: t('Im Quiz'),
+      pendingReturnLabel: t('Wartet auf Rückkehr'),
     });
   }, [
     activeAvatar?.color,
@@ -61,6 +68,101 @@ export default function useLobbyParticipants({
     t,
     userId,
   ]);
+  const [participantProfiles, setParticipantProfiles] = useState({});
+
+  useEffect(() => {
+    const targetUserIds = baseParticipants
+      .filter((participant) => {
+        if (!participant?.userId || participant.userId === userId || participant.isPlaceholder) {
+          return false;
+        }
+        return true;
+      })
+      .map((participant) => participant.userId);
+
+    const missingUserIds = targetUserIds.filter(
+      (participantUserId) =>
+        !Object.prototype.hasOwnProperty.call(participantProfiles, participantUserId)
+    );
+
+    if (missingUserIds.length === 0) {
+      return undefined;
+    }
+
+    let active = true;
+
+    (async () => {
+      const entries = await Promise.all(
+        missingUserIds.map(async (participantUserId) => {
+          const result = await fetchPublicProfileByUserId(participantUserId);
+          if (!result.ok) {
+            console.warn(
+              'Konnte Lobby-Profil nicht laden:',
+              participantUserId,
+              result.error?.message ?? result.error
+            );
+            return [participantUserId, null];
+          }
+          return [participantUserId, result.profile ?? null];
+        })
+      );
+
+      if (!active) {
+        return;
+      }
+
+      setParticipantProfiles((prev) => {
+        const next = { ...prev };
+        entries.forEach(([participantUserId, profile]) => {
+          next[participantUserId] = profile;
+        });
+        return next;
+      });
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [baseParticipants, participantProfiles, userId]);
+
+  const participants = useMemo(() => {
+    return baseParticipants.map((participant) => {
+      if (!participant?.userId || participant.userId === userId || participant.isPlaceholder) {
+        return participant;
+      }
+
+      const profile = participantProfiles[participant.userId];
+      if (!profile) {
+        return participant;
+      }
+
+      const participantAvatarUrl = isRemoteAvatarUrl(participant.avatarUrl)
+        ? participant.avatarUrl.trim()
+        : null;
+      const profileAvatarUrl = isRemoteAvatarUrl(profile.avatarUrl)
+        ? profile.avatarUrl.trim()
+        : null;
+      const resolvedAvatarUrl = profileAvatarUrl ?? participantAvatarUrl ?? null;
+      const resolvedAvatarIcon =
+        resolvedAvatarUrl
+          ? null
+          : participant.avatarIcon ?? profile.avatarIcon ?? null;
+
+      return {
+        ...participant,
+        friendCode: participant.friendCode ?? profile.friendCode ?? null,
+        avatarUrl: resolvedAvatarUrl,
+        avatarSource:
+          resolvedAvatarUrl
+            ? null
+            : participant.avatarSource
+              ?? getAvatarPresetSource(resolvedAvatarIcon)
+              ?? null,
+        avatarIcon: resolvedAvatarIcon,
+        avatarColor: participant.avatarColor ?? profile.avatarColor ?? null,
+      };
+    });
+  }, [baseParticipants, participantProfiles, userId]);
 
   const participantCount = participants.filter((item) => !item.isPlaceholder).length;
   const hasEnoughPlayers = participantCount >= 2;

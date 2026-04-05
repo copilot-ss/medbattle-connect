@@ -47,27 +47,23 @@ const PRODUCT_ID_DEFINITIONS = Object.freeze({
   },
   coins600: {
     envKey: 'EXPO_PUBLIC_IAP_COINS_600_PRODUCT_ID',
-    fallback: 'coins_600',
+    fallback: 'buy_coins500',
   },
   coins1500: {
     envKey: 'EXPO_PUBLIC_IAP_COINS_1500_PRODUCT_ID',
-    fallback: 'coins_1500',
+    fallback: 'buy_coins1300',
   },
   coins3200: {
     envKey: 'EXPO_PUBLIC_IAP_COINS_3200_PRODUCT_ID',
-    fallback: 'coins_3200',
+    fallback: 'buy_coins2700',
   },
   coins7500: {
     envKey: 'EXPO_PUBLIC_IAP_COINS_7500_PRODUCT_ID',
-    fallback: 'coins_7500',
+    fallback: 'buy_coins7000',
   },
   coins16000: {
     envKey: 'EXPO_PUBLIC_IAP_COINS_16000_PRODUCT_ID',
-    fallback: 'coins_16000',
-  },
-  coins60000: {
-    envKey: 'EXPO_PUBLIC_IAP_COINS_60000_PRODUCT_ID',
-    fallback: 'coins_60000',
+    fallback: 'buy_coins1800',
   },
 });
 
@@ -82,7 +78,6 @@ export const IAP_PRODUCT_IDS = Object.freeze({
   coins3200: IAP_PRODUCT_META.coins3200.id,
   coins7500: IAP_PRODUCT_META.coins7500.id,
   coins16000: IAP_PRODUCT_META.coins16000.id,
-  coins60000: IAP_PRODUCT_META.coins60000.id,
 });
 
 export const MISSING_IAP_PRODUCT_ENV_KEYS = Object.freeze(
@@ -100,7 +95,7 @@ export function warnMissingIapProductConfigOnce() {
 
   missingIapEnvWarned = true;
   console.warn(
-    `IAP ENV nicht gesetzt (Fallback aktiv). Bitte vor Release Play-SKUs pruefen: ${MISSING_IAP_PRODUCT_ENV_KEYS.join(
+    `IAP ENV nicht gesetzt, nutze eingebaute Play-SKUs: ${MISSING_IAP_PRODUCT_ENV_KEYS.join(
       ', '
     )}`
   );

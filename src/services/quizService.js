@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabaseClient';
 import OFFLINE_SEED_QUESTIONS from '../data/offlineSeedQuestions';
 import { runSupabaseRequest } from './supabaseRequest';
+import { getBoostPointPenalty, sanitizeBoostUsage } from '../utils/quizBoosts';
 
 const LEADERBOARD_CACHE_TTL = 30 * 1000;
 const leaderboardCache = {
@@ -35,7 +36,7 @@ const DEFAULT_LANGUAGE = 'en';
 const BLOCKED_CATEGORY_KEYS = new Set(['fussball', 'football']);
 const questionCacheSyncTimes = new Map();
 const recentQuestionIdsCache = new Map();
-const BASE_MATCH_POINTS = 12;
+const POINTS_PER_CORRECT_ANSWER = 3;
 const COIN_COMPLETION_BONUS = 1;
 const COIN_PERFECT_BONUS = 2;
 const COIN_MULTIPLAYER_BONUS = 1;
@@ -1406,28 +1407,13 @@ export async function syncQuestionCache({ force = false, limit = 16, language } 
   return { ok: true, results, language: normalizedLanguage };
 }
 
-export function calculateMatchPoints({ correct = 0, total = 0 } = {}) {
+export function calculateMatchPoints({ correct = 0, total = 0, usedBoostIds = [] } = {}) {
   const safeTotal = Math.max(1, Number.isFinite(total) ? total : 0);
   const safeCorrect = Math.max(0, Math.min(Number.isFinite(correct) ? correct : 0, safeTotal));
-  const accuracy = Math.max(0, Math.min(safeCorrect / safeTotal, 1));
-  let bonusPoints = 0;
+  const boostPenalty = getBoostPointPenalty(sanitizeBoostUsage(usedBoostIds));
+  const rawPoints = safeCorrect * POINTS_PER_CORRECT_ANSWER;
 
-  if (accuracy >= 0.5) {
-    bonusPoints += 1;
-  }
-  if (accuracy >= 0.75) {
-    bonusPoints += 2;
-  }
-  if (accuracy >= 0.9) {
-    bonusPoints += 3;
-  }
-  if (accuracy >= 1) {
-    bonusPoints += 2;
-  }
-
-  const rawPoints = (BASE_MATCH_POINTS * accuracy) + bonusPoints;
-
-  return Math.max(0, Math.round(rawPoints));
+  return Math.max(0, rawPoints - boostPenalty);
 }
 
 export function calculateCoinReward({

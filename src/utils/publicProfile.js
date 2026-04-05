@@ -1,4 +1,7 @@
-import { deriveFriendCode } from '../services/friendsService';
+import {
+  deriveFriendCode,
+  sanitizeFriendCode,
+} from './friendCode';
 
 function resolveString(value) {
   return typeof value === 'string' && value.trim()
@@ -30,8 +33,9 @@ export function buildPublicProfilePayload({
   canRemoveFriend = false,
 } = {}) {
   const resolvedUserId = resolveString(userId);
-  const resolvedFriendCode = resolveString(friendCode)
-    ?? (resolvedUserId ? deriveFriendCode(resolvedUserId) : null);
+  const resolvedFriendCode =
+    sanitizeFriendCode(friendCode)
+    || (resolvedUserId ? deriveFriendCode(resolvedUserId) : null);
 
   return {
     userId: resolvedUserId,

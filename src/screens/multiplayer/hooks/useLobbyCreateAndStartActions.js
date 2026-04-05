@@ -4,6 +4,7 @@ import {
   createMatch,
   deriveMatchRole,
   getMatchById,
+  restartMatchLobby,
   startMatch,
 } from '../../../services/matchService';
 import {
@@ -27,8 +28,7 @@ export default function useLobbyCreateAndStartActions({
   setQuestionLimit,
   setMatchesError,
   closingRef,
-  isHostWaiting,
-  hasEnoughPlayers,
+  canStartFromLobby,
 }) {
   const [creating, setCreating] = useState(false);
   const [startingMatch, setStartingMatch] = useState(false);
@@ -116,7 +116,7 @@ export default function useLobbyCreateAndStartActions({
   ]);
 
   const handleStartMatch = useCallback(async () => {
-    if (!isHostWaiting || !currentMatch || startingMatch || !hasEnoughPlayers) {
+    if (!currentMatch || startingMatch || !canStartFromLobby) {
       return;
     }
 
@@ -124,8 +124,27 @@ export default function useLobbyCreateAndStartActions({
     setMatchesError(null);
 
     try {
+      let preparedMatch = currentMatch;
+
+      if (currentMatch.status === 'completed') {
+        const restartResult = await restartMatchLobby({
+          matchId: currentMatch.id,
+          userId,
+          questionLimit,
+          language,
+          fallbackLanguage: language === 'de' ? 'de' : null,
+        });
+
+        if (!restartResult.ok) {
+          throw restartResult.error ?? new Error(t('Neues Match konnte nicht vorbereitet werden.'));
+        }
+
+        preparedMatch = restartResult.match;
+        setCurrentMatch(preparedMatch);
+      }
+
       const result = await startMatch({
-        matchId: currentMatch.id,
+        matchId: preparedMatch.id,
         userId,
       });
 
@@ -141,9 +160,10 @@ export default function useLobbyCreateAndStartActions({
       setStartingMatch(false);
     }
   }, [
+    canStartFromLobby,
     currentMatch,
-    hasEnoughPlayers,
-    isHostWaiting,
+    language,
+    questionLimit,
     setCurrentMatch,
     setMatchesError,
     startingMatch,

@@ -1,13 +1,26 @@
 import { Pressable, Text, View } from 'react-native';
 import { useTranslation } from '../../i18n/useTranslation';
 import AvatarView from '../../components/avatar/AvatarView';
+import { BubbleReveal } from './ResultWidgets';
 import styles from '../styles/ResultScreen.styles';
+
+function getBoostLabel(boostId, t) {
+  if (boostId === 'joker_5050') {
+    return '50/50';
+  }
+  if (boostId === 'freeze_time') {
+    return t('Zeit einfrieren');
+  }
+  return null;
+}
 
 export default function ResultScoreboard({
   entries,
   selectedEntryKey,
   onSelectEntry,
   onOpenProfile,
+  entranceKey = '',
+  baseDelay = 0,
 }) {
   const { t } = useTranslation();
   const isInteractive = typeof onSelectEntry === 'function';
@@ -15,57 +28,81 @@ export default function ResultScoreboard({
 
   return (
     <View style={styles.multiplayerCard}>
-      <Text style={styles.multiplayerTitle}>{t('Ranking')}</Text>
+      <BubbleReveal delay={baseDelay} resetKey={`${entranceKey}:scoreboard-title`}>
+        <Text style={styles.multiplayerTitle}>{t('Ranking')}</Text>
+      </BubbleReveal>
       <View style={styles.scoreboardList}>
-        {entries.map((entry) => (
-          <Pressable
+        {entries.map((entry, index) => (
+          <BubbleReveal
             key={entry.key}
-            onPress={isInteractive ? () => onSelectEntry(entry.key) : undefined}
-            disabled={!isInteractive}
-            style={[
-              styles.scoreboardRow,
-              isInteractive ? styles.scoreboardRowInteractive : null,
-              selectedEntryKey === entry.key ? styles.scoreboardRowSelected : null,
-              entry.isSelf ? styles.scoreboardRowSelf : null,
-            ]}
+            delay={baseDelay + 85 * (index + 1)}
+            resetKey={`${entranceKey}:scoreboard-row:${index}`}
           >
-            <Text style={styles.scoreboardRank}>{entry.rank}.</Text>
             <Pressable
-              onPress={
-                canOpenProfile && !entry.isSelf && entry.userId
-                  ? () => onOpenProfile(entry)
-                  : undefined
-              }
-              disabled={!canOpenProfile || entry.isSelf || !entry.userId}
-              style={styles.scoreboardIdentityPressable}
+              onPress={isInteractive ? () => onSelectEntry(entry.key) : undefined}
+              disabled={!isInteractive}
+              style={[
+                styles.scoreboardRow,
+                isInteractive ? styles.scoreboardRowInteractive : null,
+                selectedEntryKey === entry.key ? styles.scoreboardRowSelected : null,
+                entry.isSelf ? styles.scoreboardRowSelf : null,
+              ]}
             >
-              <AvatarView
-                uri={entry.avatarUrl ?? null}
-                source={entry.avatarSource ?? null}
-                icon={entry.avatarIcon ?? null}
-                color={entry.avatarColor || '#9EDCFF'}
-                initials={entry.initials}
-                circleStyle={styles.scoreboardAvatar}
-                imageStyle={styles.scoreboardAvatarImage}
-                iconSize={20}
-                textStyle={styles.scoreboardAvatarText}
-              />
-              <View style={styles.scoreboardMeta}>
-                <Text style={styles.scoreboardName} numberOfLines={1}>
-                  {entry.name}
+              <Text style={styles.scoreboardRank}>{entry.rank}.</Text>
+              <Pressable
+                onPress={
+                  canOpenProfile && !entry.isSelf && entry.userId
+                    ? () => onOpenProfile(entry)
+                    : undefined
+                }
+                disabled={!canOpenProfile || entry.isSelf || !entry.userId}
+                style={styles.scoreboardIdentityPressable}
+              >
+                <AvatarView
+                  uri={entry.avatarUrl ?? null}
+                  source={entry.avatarSource ?? null}
+                  icon={entry.avatarIcon ?? null}
+                  color={entry.avatarColor || '#9EDCFF'}
+                  initials={entry.initials}
+                  circleStyle={styles.scoreboardAvatar}
+                  imageStyle={styles.scoreboardAvatarImage}
+                  iconSize={20}
+                  textStyle={styles.scoreboardAvatarText}
+                />
+                <View style={styles.scoreboardMeta}>
+                  <View style={styles.scoreboardNameRow}>
+                    <Text style={styles.scoreboardName} numberOfLines={1}>
+                      {entry.name}
+                    </Text>
+                    {entry.isSelf ? (
+                      <Text style={styles.scoreboardTag}>{t('Du')}</Text>
+                    ) : null}
+                  </View>
+                  {Array.isArray(entry.usedBoostIds) && entry.usedBoostIds.length ? (
+                    <View style={styles.scoreboardBoostRow}>
+                      {entry.usedBoostIds.map((boostId) => {
+                        const boostLabel = getBoostLabel(boostId, t);
+                        if (!boostLabel) {
+                          return null;
+                        }
+                        return (
+                          <View key={`${entry.key}-${boostId}`} style={styles.scoreboardBoostChip}>
+                            <Text style={styles.scoreboardBoostChipText}>{boostLabel}</Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  ) : null}
+                </View>
+              </Pressable>
+              <View style={styles.scoreboardScoreBox}>
+                <Text style={styles.scoreboardScore}>
+                  {Number.isFinite(entry.score) ? entry.score : '-'}
                 </Text>
-                {entry.isSelf ? (
-                  <Text style={styles.scoreboardTag}>{t('Du')}</Text>
-                ) : null}
+                <Text style={styles.scoreboardScoreLabel}>{t('Richtig')}</Text>
               </View>
             </Pressable>
-            <View style={styles.scoreboardScoreBox}>
-              <Text style={styles.scoreboardScore}>
-                {Number.isFinite(entry.score) ? entry.score : '-'}
-              </Text>
-              <Text style={styles.scoreboardScoreLabel}>{t('Richtig')}</Text>
-            </View>
-          </Pressable>
+          </BubbleReveal>
         ))}
       </View>
     </View>

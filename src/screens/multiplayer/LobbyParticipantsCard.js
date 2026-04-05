@@ -20,6 +20,9 @@ export default function LobbyParticipantsCard({
   participantCount,
   maxPlayers,
   isHostWaiting,
+  showHostStartControls,
+  canStartMatch,
+  canOpenSettings,
   onSelectParticipant,
   onOpenParticipantProfile,
   kickCandidateKey,
@@ -41,12 +44,21 @@ export default function LobbyParticipantsCard({
   onInviteFriend,
 }) {
   const { t } = useTranslation();
+  const resolvedCategoryLabel =
+    typeof categoryLabel === 'string' && categoryLabel.trim()
+      ? t(categoryLabel.trim())
+      : null;
+  const titleText = resolvedCategoryLabel
+    ? `${resolvedCategoryLabel} - ${t('Lobby')}`
+    : t('Lobby');
 
   return (
     <View style={styles.lobbyCard}>
       <View style={styles.lobbyTitleRow}>
-        <Text style={styles.lobbyTitle}>{t('Lobby')}</Text>
-        {isHostWaiting ? (
+        <Text style={styles.lobbyTitle} numberOfLines={1}>
+          {titleText}
+        </Text>
+        {canOpenSettings ? (
           <Pressable
             onPress={onOpenSettings}
             style={styles.lobbySettingsButton}
@@ -58,6 +70,13 @@ export default function LobbyParticipantsCard({
           </Pressable>
         ) : null}
       </View>
+
+      <LobbyCodeActionsRow
+        currentJoinCode={currentJoinCode}
+        copied={copied}
+        onCopyCode={onCopyCode}
+        questionLimit={questionLimit}
+      />
 
       <View style={styles.participantsHeader}>
         <Text style={styles.participantsTitle}>{t('Spieler')}</Text>
@@ -137,9 +156,9 @@ export default function LobbyParticipantsCard({
                 >
                   {participant.name}
                 </Text>
-                {participant.isPending ? (
+                {participant.statusLabel ? (
                   <Text style={styles.participantPendingLabel}>
-                    {t('Wartet auf Rückkehr')}
+                    {participant.statusLabel}
                   </Text>
                 ) : null}
               </Pressable>
@@ -161,31 +180,6 @@ export default function LobbyParticipantsCard({
         })}
       </View>
 
-      {isHostWaiting ? (
-        <View style={styles.startRow}>
-          <AnimatedPressable
-            onPress={onStartMatch}
-            style={[
-              styles.primaryAction,
-              styles.startButton,
-              startPulseStyle,
-              !hasEnoughPlayers || startingMatch ? styles.actionDisabled : null,
-            ]}
-            disabled={!hasEnoughPlayers || startingMatch}
-          >
-            <Text style={[styles.primaryActionText, styles.startButtonText]}>
-              {startingMatch ? t('Starte ...') : t('Start')}
-            </Text>
-          </AnimatedPressable>
-        </View>
-      ) : null}
-      <LobbyCodeActionsRow
-        currentJoinCode={currentJoinCode}
-        copied={copied}
-        onCopyCode={onCopyCode}
-        questionLimit={questionLimit}
-        categoryLabel={categoryLabel}
-      />
       <LobbyOnlineFriendsSection
         isHostWaiting={isHostWaiting}
         friendsLoading={friendsLoading}
@@ -193,6 +187,24 @@ export default function LobbyParticipantsCard({
         invitingFriendCodes={invitingFriendCodes}
         onInviteFriend={onInviteFriend}
       />
+      {showHostStartControls ? (
+        <View style={styles.startRow}>
+          <AnimatedPressable
+            onPress={onStartMatch}
+            style={[
+              styles.primaryAction,
+              styles.startButton,
+              startPulseStyle,
+              !canStartMatch || startingMatch ? styles.actionDisabled : null,
+            ]}
+            disabled={!canStartMatch || startingMatch}
+          >
+            <Text style={[styles.primaryActionText, styles.startButtonText]}>
+              {startingMatch ? t('Starte ...') : t('Start')}
+            </Text>
+          </AnimatedPressable>
+        </View>
+      ) : null}
     </View>
   );
 }

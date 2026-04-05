@@ -8,6 +8,9 @@ import android.os.Build
 import android.os.Bundle
 
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateOptions
@@ -41,6 +44,7 @@ class MainActivity : ReactActivity() {
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
     super.onCreate(null)
+    applyImmersiveMode()
     maybeStartMandatoryStoreUpdate()
   }
 
@@ -72,7 +76,15 @@ class MainActivity : ReactActivity() {
 
   override fun onResume() {
     super.onResume()
+    applyImmersiveMode()
     resumeMandatoryStoreUpdateIfNeeded()
+  }
+
+  override fun onWindowFocusChanged(hasFocus: Boolean) {
+    super.onWindowFocusChanged(hasFocus)
+    if (hasFocus) {
+      applyImmersiveMode()
+    }
   }
 
   /**
@@ -173,6 +185,14 @@ class MainActivity : ReactActivity() {
       }
     } finally {
       finishAffinity()
+    }
+  }
+
+  private fun applyImmersiveMode() {
+    WindowCompat.setDecorFitsSystemWindows(window, true)
+    WindowInsetsControllerCompat(window, window.decorView).run {
+      systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+      hide(WindowInsetsCompat.Type.systemBars())
     }
   }
 }

@@ -18,12 +18,17 @@ Ziel:
 ```env
 EXPO_PUBLIC_ADMOB_APP_ID_ANDROID=ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy
 EXPO_PUBLIC_ADMOB_REWARDED_ID_ANDROID=ca-app-pub-xxxxxxxxxxxxxxxx/zzzzzzzzzz
+EXPO_PUBLIC_ADMOB_USE_TEST_IDS=false
+# Optional fuer Live-Smokes auf einzelnen Geraeten:
+# EXPO_PUBLIC_ADMOB_TEST_DEVICE_IDS_ANDROID=EMULATOR,33BE2250B43518CCDA7DE426D04EE231
 ```
 
 Wichtig:
 
 - `App ID` und `Rewarded Ad Unit ID` sind zwei verschiedene Werte
 - die Google-Testwerte duerfen nicht fuer den Release-Build stehen bleiben
+- `EXPO_PUBLIC_ADMOB_USE_TEST_IDS` muss fuer Release auf `false` stehen
+- einzelne Testgeraete fuer Live-Ad-Smokes laufen stattdessen ueber `EXPO_PUBLIC_ADMOB_TEST_DEVICE_IDS_ANDROID`
 
 ## Danach pruefen
 
@@ -45,7 +50,8 @@ cd android
 ## Hinweise
 
 - Fuer Tests im Code sind Google-Demo-Ad-Units ok.
-- Vor dem Verentlichen muss die echte Rewarded-Ad-Unit gesetzt sein.
+- Vor dem Veroeffentlichen muss die echte Rewarded-Ad-Unit gesetzt sein.
+- Wenn Live-Ads auf einem Geraet als Test-Ad ausgeliefert werden sollen, die echte Testgeraete-ID aus Logcat in `EXPO_PUBLIC_ADMOB_TEST_DEVICE_IDS_ANDROID` eintragen.
 - Die Android `App ID` muss im Manifest vorhanden sein, sonst kann das Mobile-Ads-SDK abstuerzen.
 
 ## Offizielle Referenzen

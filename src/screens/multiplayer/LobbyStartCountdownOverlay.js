@@ -77,6 +77,46 @@ export default function LobbyStartCountdownOverlay({
     return String(countdownValue ?? '');
   }, [countdownValue, t]);
 
+  const countdownPalette = useMemo(() => {
+    if (countdownValue === 'go') {
+      return {
+        primary: '#52FF9B',
+        secondary: '#00D4FF',
+        border: 'rgba(82, 255, 155, 0.92)',
+        glow: 'rgba(82, 255, 155, 0.72)',
+        card: 'rgba(8, 28, 20, 0.9)',
+      };
+    }
+
+    switch (Number(countdownValue)) {
+      case 3:
+        return {
+          primary: '#FF6B6B',
+          secondary: '#FFD166',
+          border: 'rgba(255, 125, 102, 0.94)',
+          glow: 'rgba(255, 107, 107, 0.7)',
+          card: 'rgba(42, 14, 18, 0.9)',
+        };
+      case 2:
+        return {
+          primary: '#FFB703',
+          secondary: '#FF4D6D',
+          border: 'rgba(255, 196, 61, 0.94)',
+          glow: 'rgba(255, 183, 3, 0.72)',
+          card: 'rgba(44, 24, 6, 0.9)',
+        };
+      case 1:
+      default:
+        return {
+          primary: '#7CFF6B',
+          secondary: '#27C2FF',
+          border: 'rgba(124, 255, 107, 0.94)',
+          glow: 'rgba(124, 255, 107, 0.7)',
+          card: 'rgba(10, 34, 20, 0.9)',
+        };
+    }
+  }, [countdownValue]);
+
   if (!visible) {
     return null;
   }
@@ -110,8 +150,27 @@ export default function LobbyStartCountdownOverlay({
           },
         ]}
       >
-        <Text style={styles.startCountdownText}>{countdownLabel}</Text>
-        <Text style={styles.startCountdownHint}>{t('Fragen werden geladen ...')}</Text>
+        <Text
+          style={[
+            styles.startCountdownText,
+            {
+              color: countdownPalette.primary,
+              textShadowColor: countdownPalette.glow,
+            },
+          ]}
+        >
+          {countdownLabel}
+        </Text>
+        <Text
+          style={[
+            styles.startCountdownTextAccent,
+            {
+              color: countdownPalette.secondary,
+            },
+          ]}
+        >
+          {countdownLabel}
+        </Text>
       </Animated.View>
     </View>
   );

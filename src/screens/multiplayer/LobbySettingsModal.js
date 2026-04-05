@@ -7,6 +7,7 @@ import styles from '../styles/MultiplayerLobbyScreen.styles';
 
 export default function LobbySettingsModal({
   visible,
+  categoryLabel = null,
   questionLimit,
   min = 1,
   max = 50,
@@ -44,6 +45,13 @@ export default function LobbySettingsModal({
       />
       <View style={[styles.modalCard, styles.settingsModalCard]}>
         <Text style={styles.settingsModalTitle}>{t('Lobby Einstellungen')}</Text>
+
+        <View style={styles.settingsModalSection}>
+          <Text style={styles.settingsModalLabel}>{t('Kategorie')}</Text>
+          <Text style={styles.settingsModalValue}>
+            {categoryLabel ? t(categoryLabel) : '-'}
+          </Text>
+        </View>
 
         <View style={styles.settingsModalSection}>
           <Text style={styles.settingsModalLabel}>{t('Fragenanzahl')}</Text>

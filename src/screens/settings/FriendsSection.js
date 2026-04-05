@@ -5,6 +5,7 @@ import { getTitleProgress } from '../../services/titleService';
 import AvatarView from '../../components/avatar/AvatarView';
 import { getAvatarInitials, getAvatarPresetSource } from '../../utils/avatarUtils';
 import { buildPublicProfilePayload } from '../../utils/publicProfile';
+import FriendCodeInline from './FriendCodeInline';
 import styles from '../styles/SettingsScreen.styles';
 
 export default function FriendsSection({
@@ -19,6 +20,9 @@ export default function FriendsSection({
   onOpenProfile,
   onOpenAdd,
   showAddButton = false,
+  friendCode = '',
+  copySuccess = false,
+  onCopyFriendCode = null,
 }) {
   const { t } = useTranslation();
   const onlineByCode = new Map(
@@ -148,6 +152,12 @@ export default function FriendsSection({
                 {statusSummary}
               </Text>
             ) : null}
+            <FriendCodeInline
+              friendCode={friendCode}
+              copySuccess={copySuccess}
+              onCopyFriendCode={onCopyFriendCode}
+              containerStyle={styles.friendListInlineCode}
+            />
           </View>
           {showAddButton ? (
             <Pressable
@@ -294,8 +304,8 @@ export default function FriendsSection({
                             title: requestTitle ?? null,
                             xp: requestXp,
                             isOnline: false,
-                            activity: 'offline',
-                            statusLabel: t('Offline'),
+                            activity: null,
+                            statusLabel: null,
                             avatarUrl: requestAvatarUrl,
                             avatarIcon: requestAvatarIcon,
                             avatarColor: requestAvatarColor,
@@ -320,29 +330,6 @@ export default function FriendsSection({
                               <Text style={styles.friendCodeText} numberOfLines={1}>
                                 {requesterName}
                               </Text>
-                              <View
-                                style={[
-                                  styles.friendStatusBadge,
-                                  styles.friendStatusBadgeOffline,
-                                ]}
-                              >
-                                <View
-                                  style={[
-                                    styles.friendStatusDot,
-                                    styles.friendStatusDotOffline,
-                                  ]}
-                                />
-                                <Text
-                                  numberOfLines={1}
-                                  style={[
-                                    styles.friendStatusText,
-                                    styles.friendStatusBadgeText,
-                                    styles.friendStatusTextOffline,
-                                  ]}
-                                >
-                                  {t('Offline')}
-                                </Text>
-                              </View>
                             </View>
                             {requestTitle ? (
                               <Text style={styles.friendTitleText} numberOfLines={1}>
@@ -356,26 +343,30 @@ export default function FriendsSection({
                         <Pressable
                           onPress={() => onDeclineFriendRequest?.(request?.id)}
                           style={[
+                            styles.friendRequestActionButton,
                             styles.friendRequestDeclineButton,
                             isBusy ? styles.friendRequestAcceptButtonDisabled : null,
                           ]}
                           disabled={isBusy || !request?.id}
+                          accessibilityRole="button"
+                          accessibilityLabel={t('Freundesanfrage ablehnen')}
+                          hitSlop={8}
                         >
-                          <Text style={styles.friendRequestDeclineText}>
-                            {isBusy ? t('Ablehnen...') : t('Ablehnen')}
-                          </Text>
+                          <Ionicons name="close" size={16} color="#FFB1B9" />
                         </Pressable>
                         <Pressable
                           onPress={() => onAcceptFriendRequest?.(request?.id)}
                           style={[
+                            styles.friendRequestActionButton,
                             styles.friendRequestAcceptButton,
                             isBusy ? styles.friendRequestAcceptButtonDisabled : null,
                           ]}
                           disabled={isBusy || !request?.id}
+                          accessibilityRole="button"
+                          accessibilityLabel={t('Freundesanfrage annehmen')}
+                          hitSlop={8}
                         >
-                          <Text style={styles.friendRequestAcceptText}>
-                            {isBusy ? t('Annehmen...') : t('Annehmen')}
-                          </Text>
+                          <Ionicons name="checkmark" size={16} color="#B9F8CC" />
                         </Pressable>
                       </View>
                     </View>

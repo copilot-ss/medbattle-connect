@@ -10,6 +10,13 @@ export default function LobbyOpenMatchesList({
   onJoinQuick,
 }) {
   const { t } = useTranslation();
+  const resolvedOpenMatches = Array.isArray(openMatches) ? openMatches : [];
+  const visibleMatchCount = resolvedOpenMatches.length;
+  const clampedMatchCount = Math.min(visibleMatchCount, 3);
+  const listMinHeight =
+    visibleMatchCount === 0
+      ? 92
+      : clampedMatchCount * 92 + Math.max(0, clampedMatchCount - 1) * 14;
 
   return (
     <>
@@ -27,7 +34,7 @@ export default function LobbyOpenMatchesList({
         </View>
       ) : (
         <FlatList
-          data={openMatches}
+          data={resolvedOpenMatches}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <Pressable
@@ -35,13 +42,18 @@ export default function LobbyOpenMatchesList({
               style={styles.matchCard}
             >
               <View style={styles.matchInfo}>
-                <Text style={styles.matchCode}>{item.code}</Text>
-                <Text style={styles.matchMeta}>
-                  {item.questionLimit} {t('Fragen')}
+                <Text style={styles.matchHostName} numberOfLines={1}>
+                  {item.hostUsername || t('Freund')}
                 </Text>
-                {item.hostUsername ? (
-                  <Text style={styles.matchHost}>{t('Host')}: {item.hostUsername}</Text>
-                ) : null}
+                <Text style={styles.matchMeta}>
+                  {item.category ? t(item.category) : '-'}
+                </Text>
+                <Text style={styles.matchPlayers}>
+                  {t('Lobby {players}/{capacity}', {
+                    players: Number.isFinite(item.players) ? item.players : 1,
+                    capacity: Number.isFinite(item.capacity) ? item.capacity : 2,
+                  })}
+                </Text>
               </View>
               <View style={styles.matchAction}>
                 <Text style={styles.matchActionText}>{t('Beitreten')}</Text>
@@ -49,9 +61,10 @@ export default function LobbyOpenMatchesList({
             </Pressable>
           )}
           scrollEnabled={false}
-          contentContainerStyle={
-            openMatches.length ? styles.listContent : styles.listEmpty
-          }
+          contentContainerStyle={[
+            visibleMatchCount ? styles.listContent : styles.listEmpty,
+            { minHeight: listMinHeight },
+          ]}
           ListEmptyComponent={<LobbyEmptyState />}
         />
       )}

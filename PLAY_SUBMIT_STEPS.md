@@ -1,13 +1,13 @@
 # PLAY_SUBMIT_STEPS.md - MedQuiz
 
-Stand: 2026-03-24
+Stand: 2026-03-31
 
 ## Ziel
 Google Play Submit in EAS vorbereiten und das naechste frische Android-Release-Artefakt einreichen.
 
 ## Aktueller Status
-- In Google Play liegt bisher nur der hochgeladene Store-Build `31`; dieser ist weiterhin nicht aktiv.
-- Lokal existiert ein frisches Store-AAB `39` vom `2026-03-24`.
+- In Google Play liegt jetzt der aktuelle Closed-Test-Build `42` aus dem aktuellen Repo-Stand.
+- Lokal existiert dasselbe Store-AAB `42` vom `2026-03-31`.
 - Dieses AAB ist aus dem aktuellen Repo-Stand gebaut und enthaelt wieder `x86_64`, damit Google Play dem Emulator spaeter wieder eine passende Variante ausliefern kann.
 - Der Play Submit Service Account ist weiterhin offen und blockiert einen sauberen CLI-Submit.
 
@@ -44,7 +44,7 @@ Hinweis zu Kosten: Das Anlegen eines Service Accounts und JSON-Keys kostet in de
 - Wenn ein Service Account verwendet wird, die Rechte so klein wie moeglich halten.
 
 ## Schritte
-1. Falls seit `versionCode 39` wieder App-Code geaendert wurde: aktuelles Release-Artefakt neu bauen
+1. Falls seit `versionCode 42` wieder App-Code geaendert wurde: aktuelles Release-Artefakt neu bauen
 ```bash
 npm run release:check
 cd android

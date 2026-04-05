@@ -8,6 +8,22 @@ import {
   sanitizeStatNumber,
 } from './homeConfig';
 
+function formatAdError(err) {
+  if (!err || typeof err !== 'object') {
+    return null;
+  }
+
+  const details = [];
+  if (typeof err.code === 'string' && err.code.trim()) {
+    details.push(`code=${err.code.trim()}`);
+  }
+  if (typeof err.message === 'string' && err.message.trim()) {
+    details.push(`message=${err.message.trim()}`);
+  }
+
+  return details.length > 0 ? details.join(' ') : null;
+}
+
 export default function useHomeBoostActions({
   t,
   navigation,
@@ -114,7 +130,12 @@ export default function useHomeBoostActions({
       });
 
       const handleLoaded = () => {
-        rewardedAd.show().catch(() => {
+        rewardedAd.show().catch((err) => {
+          console.warn(
+            'Rewarded ad failed to show:',
+            rewardedAdUnitId,
+            formatAdError(err) ?? err
+          );
           finalize({ message: t('Werbung konnte nicht gestartet werden.') });
         });
       };
@@ -141,7 +162,11 @@ export default function useHomeBoostActions({
       };
 
       const handleError = (err) => {
-        console.warn('Rewarded ad failed to load:', err);
+        console.warn(
+          'Rewarded ad failed to load:',
+          rewardedAdUnitId,
+          formatAdError(err) ?? err
+        );
         finalize({ message: t('Werbung konnte nicht geladen werden.') });
       };
 
@@ -158,7 +183,7 @@ export default function useHomeBoostActions({
 
       rewardedAd.load();
     } catch (err) {
-      console.warn('Rewarded ad setup failed:', err);
+      console.warn('Rewarded ad setup failed:', rewardedAdUnitId, formatAdError(err) ?? err);
       finalize({ message: t('Werbung konnte nicht geladen werden.') });
     }
   }, [

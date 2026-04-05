@@ -1,4 +1,5 @@
 import { MULTIPLAYER_DEFAULT_QUESTION_LIMIT } from '../../config/quizLimits';
+import { sanitizeBoostUsage } from '../../utils/quizBoosts';
 
 const MATCH_CACHE_TTL = 15 * 1000;
 const LOBBY_IDLE_TIMEOUT_MINUTES = 10;
@@ -97,8 +98,47 @@ function sanitizeAnswer(answer) {
       ? Math.max(answer.durationMs, 0)
       : null,
     timedOut: Boolean(answer.timedOut),
+    boostsUsed: sanitizeBoostUsage(answer.boostsUsed),
     answeredAt: answer.answeredAt ?? nowIso(),
   };
+}
+
+function sanitizeOptionalText(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed || null;
+}
+
+function sanitizeAvatarUrl(value) {
+  const normalized = sanitizeOptionalText(value);
+  if (!normalized) {
+    return null;
+  }
+  if (/^https?:\/\//i.test(normalized) || /^data:image\//i.test(normalized)) {
+    return normalized;
+  }
+  return null;
+}
+
+function sanitizeAvatarIcon(value) {
+  const normalized = sanitizeOptionalText(value);
+  if (!normalized) {
+    return null;
+  }
+  return /^[a-z0-9-]+$/i.test(normalized) ? normalized : null;
+}
+
+function sanitizeAvatarColor(value) {
+  const normalized = sanitizeOptionalText(value);
+  if (!normalized) {
+    return null;
+  }
+  if (/^#[0-9a-f]{3,8}$/i.test(normalized) || /^rgba?\([^)]+\)$/i.test(normalized)) {
+    return normalized;
+  }
+  return null;
 }
 
 function normalizeMatchState(state) {
@@ -106,20 +146,28 @@ function normalizeMatchState(state) {
     host: {
       userId: null,
       username: null,
+      title: null,
       index: 0,
       score: 0,
       finished: false,
       answers: [],
       ready: false,
+      avatarUrl: null,
+      avatarIcon: null,
+      avatarColor: null,
     },
     guest: {
       userId: null,
       username: null,
+      title: null,
       index: 0,
       score: 0,
       finished: false,
       answers: [],
       ready: false,
+      avatarUrl: null,
+      avatarIcon: null,
+      avatarColor: null,
     },
     history: [],
   };
@@ -134,7 +182,8 @@ function normalizeMatchState(state) {
     const roleState = state[roleKey] ?? {};
     next[roleKey] = {
       userId: roleState.userId ?? base[roleKey].userId,
-      username: roleState.username ?? base[roleKey].username,
+      username: sanitizeOptionalText(roleState.username) ?? base[roleKey].username,
+      title: sanitizeOptionalText(roleState.title) ?? base[roleKey].title,
       index: Number.isFinite(roleState.index) ? Math.max(roleState.index, 0) : 0,
       score: Number.isFinite(roleState.score) ? Math.max(roleState.score, 0) : 0,
       finished: Boolean(roleState.finished),
@@ -145,6 +194,15 @@ function normalizeMatchState(state) {
             .filter(Boolean)
             .slice(-50)
         : [],
+      avatarUrl:
+        sanitizeAvatarUrl(roleState.avatarUrl ?? roleState.avatar_url)
+        ?? base[roleKey].avatarUrl,
+      avatarIcon:
+        sanitizeAvatarIcon(roleState.avatarIcon ?? roleState.avatar_icon)
+        ?? base[roleKey].avatarIcon,
+      avatarColor:
+        sanitizeAvatarColor(roleState.avatarColor ?? roleState.avatar_color)
+        ?? base[roleKey].avatarColor,
     };
   }
 
@@ -204,17 +262,6 @@ function resolveProgressiveMatch(prevMatch, nextMatch) {
     return nextMatch;
   }
 
-  const prevStatusRank = MATCH_STATUS_ORDER[prevMatch.status] ?? 0;
-  const nextStatusRank = MATCH_STATUS_ORDER[nextMatch.status] ?? 0;
-
-  if (nextStatusRank > prevStatusRank) {
-    return nextMatch;
-  }
-
-  if (nextStatusRank < prevStatusRank) {
-    return prevMatch;
-  }
-
   const prevUpdatedAt = Date.parse(prevMatch.updated_at ?? prevMatch.updatedAt ?? '') || 0;
   const nextUpdatedAt = Date.parse(nextMatch.updated_at ?? nextMatch.updatedAt ?? '') || 0;
 
@@ -223,6 +270,17 @@ function resolveProgressiveMatch(prevMatch, nextMatch) {
   }
 
   if (nextUpdatedAt < prevUpdatedAt) {
+    return prevMatch;
+  }
+
+  const prevStatusRank = MATCH_STATUS_ORDER[prevMatch.status] ?? 0;
+  const nextStatusRank = MATCH_STATUS_ORDER[nextMatch.status] ?? 0;
+
+  if (nextStatusRank > prevStatusRank) {
+    return nextMatch;
+  }
+
+  if (nextStatusRank < prevStatusRank) {
     return prevMatch;
   }
 

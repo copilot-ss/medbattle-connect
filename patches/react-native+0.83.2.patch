@@ -1,0 +1,126 @@
+diff --git a/node_modules/react-native/Libraries/Components/StatusBar/StatusBar.js b/node_modules/react-native/Libraries/Components/StatusBar/StatusBar.js
+index 5cbc674..9916890 100644
+--- a/node_modules/react-native/Libraries/Components/StatusBar/StatusBar.js
++++ b/node_modules/react-native/Libraries/Components/StatusBar/StatusBar.js
+@@ -469,32 +469,39 @@ class StatusBar extends React.Component<StatusBarProps> {
+           );
+         }
+       } else if (Platform.OS === 'android') {
++        const isAndroid15OrNewer =
++          typeof Platform.Version === 'number' && Platform.Version >= 35;
+         //todo(T60684787): Add back optimization to only update bar style and
+         //background color if the new value is different from the old value.
+         NativeStatusBarManagerAndroid.setStyle(mergedProps.barStyle.value);
+-        const processedColor = processColor(mergedProps.backgroundColor.value);
+-        if (processedColor == null) {
+-          console.warn(
+-            `\`StatusBar._updatePropsStack\`: Color ${mergedProps.backgroundColor.value} parsed to null or undefined`,
+-          );
+-        } else {
+-          invariant(
+-            typeof processedColor === 'number',
+-            'Unexpected color given in StatusBar._updatePropsStack',
+-          );
+-          NativeStatusBarManagerAndroid.setColor(
+-            processedColor,
+-            mergedProps.backgroundColor.animated,
+-          );
++        if (!isAndroid15OrNewer) {
++          const processedColor = processColor(mergedProps.backgroundColor.value);
++          if (processedColor == null) {
++            console.warn(
++              `\`StatusBar._updatePropsStack\`: Color ${mergedProps.backgroundColor.value} parsed to null or undefined`,
++            );
++          } else {
++            invariant(
++              typeof processedColor === 'number',
++              'Unexpected color given in StatusBar._updatePropsStack',
++            );
++            NativeStatusBarManagerAndroid.setColor(
++              processedColor,
++              mergedProps.backgroundColor.animated,
++            );
++          }
+         }
+         if (!oldProps || oldProps.hidden?.value !== mergedProps.hidden.value) {
+           NativeStatusBarManagerAndroid.setHidden(mergedProps.hidden.value);
+         }
+         // Activities are not translucent by default, so always set if true.
+         if (
+-          !oldProps ||
+-          oldProps.translucent !== mergedProps.translucent ||
+-          mergedProps.translucent
++          !isAndroid15OrNewer &&
++          (
++            !oldProps ||
++            oldProps.translucent !== mergedProps.translucent ||
++            mergedProps.translucent
++          )
+         ) {
+           NativeStatusBarManagerAndroid.setTranslucent(mergedProps.translucent);
+         }
+diff --git a/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/modules/statusbar/StatusBarModule.kt b/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/modules/statusbar/StatusBarModule.kt
+index 1e773ba..c90b560 100644
+--- a/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/modules/statusbar/StatusBarModule.kt
++++ b/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/modules/statusbar/StatusBarModule.kt
+@@ -36,9 +36,13 @@ internal class StatusBarModule(reactContext: ReactApplicationContext?) :
+   override fun getTypedExportedConstants(): Map<String, Any> {
+     val currentActivity = reactApplicationContext.currentActivity
+     val statusBarColor =
+-        currentActivity?.window?.statusBarColor?.let { color ->
+-          String.format("#%06X", 0xFFFFFF and color)
+-        } ?: "black"
++        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
++          "black"
++        } else {
++          currentActivity?.window?.statusBarColor?.let { color ->
++            String.format("#%06X", 0xFFFFFF and color)
++          } ?: "black"
++        }
+     return mapOf(
+         HEIGHT_KEY to PixelUtil.toDIPFromPixel(getStatusBarHeightPx(currentActivity).toFloat()),
+         DEFAULT_BACKGROUND_COLOR_KEY to statusBarColor,
+@@ -47,6 +51,9 @@ internal class StatusBarModule(reactContext: ReactApplicationContext?) :
+ 
+   @Suppress("DEPRECATION")
+   override fun setColor(colorDouble: Double, animated: Boolean) {
++    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
++      return
++    }
+     val color = colorDouble.toInt()
+     val activity = reactApplicationContext.getCurrentActivity()
+     if (activity == null) {
+diff --git a/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/views/view/WindowUtil.kt b/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/views/view/WindowUtil.kt
+index 0cff3bc..e25ec1c 100644
+--- a/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/views/view/WindowUtil.kt
++++ b/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/views/view/WindowUtil.kt
+@@ -107,19 +107,22 @@ internal fun Window.enableEdgeToEdge() {
+   WindowCompat.setDecorFitsSystemWindows(this, false)
+ 
+   val isDarkMode = UiModeUtils.isDarkMode(context)
++  val isAndroid15OrNewer = Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM
+ 
+   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+     isStatusBarContrastEnforced = false
+     isNavigationBarContrastEnforced = true
+   }
+ 
+-  statusBarColor = Color.TRANSPARENT
+-  navigationBarColor =
+-      when {
+-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> Color.TRANSPARENT
+-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !isDarkMode -> LightNavigationBarColor
+-        else -> DarkNavigationBarColor
+-      }
++  if (!isAndroid15OrNewer) {
++    statusBarColor = Color.TRANSPARENT
++    navigationBarColor =
++        when {
++          Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> Color.TRANSPARENT
++          Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !isDarkMode -> LightNavigationBarColor
++          else -> DarkNavigationBarColor
++        }
++  }
+ 
+   WindowInsetsControllerCompat(this, decorView).run {
+     isAppearanceLightNavigationBars = !isDarkMode

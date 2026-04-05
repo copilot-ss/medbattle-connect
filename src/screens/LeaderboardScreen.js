@@ -174,7 +174,7 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
     const isCurrent = currentUserId && item.userId === currentUserId;
     const containerBackground = topRankConfig?.cardBackground ?? 'rgba(18, 18, 28, 0.9)';
     const borderColor = isCurrent
-      ? colors.highlight
+      ? accent
       : (topRankConfig?.cardBorder ?? 'rgba(117, 117, 138, 0.45)');
     const resolvedXp = isCurrent && Number.isFinite(currentUserXp)
       ? currentUserXp
@@ -282,7 +282,7 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
           <View style={styles.headerTitleRow}>
             <Text style={styles.headerTitle}>{t('Rangliste')}</Text>
             <Ionicons
-              name="trophy"
+              name="sparkles"
               size={22}
               color={colors.highlight}
               style={styles.headerTitleIcon}

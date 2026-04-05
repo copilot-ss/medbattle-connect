@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { deriveMatchRole, getMatchById } from '../../services/matchService';
 import { clearActiveLobby, loadActiveLobby } from '../../utils/activeLobbyStorage';
+import {
+  buildActiveLobbyPayload,
+  shouldPersistActiveLobby,
+} from '../multiplayer/lobbyUtils';
 
 export default function useHomeActiveLobby({
   routeLobby,
@@ -63,10 +67,7 @@ export default function useHomeActiveLobby({
         return;
       }
 
-      if (
-        result.match.status === 'cancelled' ||
-        result.match.status === 'completed'
-      ) {
+      if (!shouldPersistActiveLobby(result.match)) {
         await clearActiveLobby();
         return;
       }
@@ -77,17 +78,9 @@ export default function useHomeActiveLobby({
         return;
       }
 
-      const players = result.match.state
-        ? [result.match.state.host, result.match.state.guest].filter(
-            (player) => player?.userId
-          ).length
-        : 1;
-
       setActiveLobbyState({
+        ...buildActiveLobbyPayload(result.match, lobbyCapacity),
         code: result.match.code ?? stored.code ?? null,
-        players,
-        capacity: lobbyCapacity,
-        existingMatch: result.match,
       });
     };
 

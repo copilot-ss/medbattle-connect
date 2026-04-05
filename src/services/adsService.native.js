@@ -70,12 +70,33 @@ function isTruthyEnv(value) {
     || normalized === 'on';
 }
 
+function parseEnvList(value) {
+  const normalized = sanitizeEnv(value);
+  if (!normalized) {
+    return [];
+  }
+
+  return normalized
+    .split(',')
+    .map((entry) => sanitizeEnv(entry))
+    .filter(Boolean);
+}
+
 function shouldUseTestAdIds() {
   if (__DEV__) {
     return true;
   }
 
   return isTruthyEnv(process.env.EXPO_PUBLIC_ADMOB_USE_TEST_IDS);
+}
+
+function getConfiguredTestDeviceIdentifiers() {
+  const platformValue =
+    Platform.OS === 'ios'
+      ? process.env.EXPO_PUBLIC_ADMOB_TEST_DEVICE_IDS_IOS
+      : process.env.EXPO_PUBLIC_ADMOB_TEST_DEVICE_IDS_ANDROID;
+
+  return parseEnvList(platformValue ?? process.env.EXPO_PUBLIC_ADMOB_TEST_DEVICE_IDS);
 }
 
 export function getRewardedAdUnitId() {
@@ -109,8 +130,24 @@ export async function initializeAds() {
       return { ok: false, reason: 'missing-module' };
     }
 
+    const mobileAdsInstance = mobileAds();
+    const testDeviceIdentifiers = getConfiguredTestDeviceIdentifiers();
+
     try {
-      await mobileAds().initialize();
+      if (
+        testDeviceIdentifiers.length > 0 &&
+        typeof mobileAdsInstance?.setRequestConfiguration === 'function'
+      ) {
+        try {
+          await mobileAdsInstance.setRequestConfiguration({
+            testDeviceIdentifiers,
+          });
+        } catch (err) {
+          console.warn('AdMob-Testgeraete konnten nicht gesetzt werden:', err);
+        }
+      }
+
+      await mobileAdsInstance.initialize();
       adsState.initialized = true;
       return { ok: true };
     } catch (err) {

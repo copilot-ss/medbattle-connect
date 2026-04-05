@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
-import { useTranslation } from '../../i18n/useTranslation';
+import { Ionicons } from '@expo/vector-icons';
 import styles from '../styles/MultiplayerLobbyScreen.styles';
 
 export default function LobbyCodeActionsRow({
@@ -7,30 +7,25 @@ export default function LobbyCodeActionsRow({
   copied,
   onCopyCode,
   questionLimit,
-  categoryLabel,
 }) {
-  const { t } = useTranslation();
-
   return (
     <View style={styles.codeActionsRow}>
       <Pressable
         onPress={onCopyCode}
-        style={[
-          styles.codeBadge,
-          copied ? styles.codeBadgeSuccess : null,
-        ]}
+        style={[styles.codeBadge, copied ? styles.codeBadgeSuccess : null]}
       >
-        <Text style={styles.codeBadgeText}>{currentJoinCode}</Text>
-        <Text style={copied ? styles.codeHintSuccess : styles.codeHint}>
-          {copied ? t('Kopiert!') : t('Tippen zum Kopieren')}
-        </Text>
+        <View style={styles.codeBadgeInline}>
+          <Ionicons
+            name={copied ? 'checkmark-circle' : 'copy-outline'}
+            size={14}
+            color={copied ? '#06140D' : '#DDF5FF'}
+          />
+          <Text style={styles.codeBadgeText}>{currentJoinCode}</Text>
+        </View>
       </Pressable>
       <View style={styles.codeSettingsWrap}>
         <Text style={styles.codeSettingText}>
-          {t('Fragenanzahl')}: {questionLimit}
-        </Text>
-        <Text style={styles.codeSettingText}>
-          {t('Kategorie')}: {categoryLabel ? t(categoryLabel) : '-'}
+          {`Questions: ${questionLimit}`}
         </Text>
       </View>
     </View>

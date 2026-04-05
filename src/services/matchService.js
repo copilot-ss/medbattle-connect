@@ -479,6 +479,14 @@ export async function fetchOpenMatches({ force = false, excludeHostId = null } =
                 id: row.id,
                 code: row.code,
                 createdAt: row.created_at ?? null,
+                category: row.category ?? row?.state?.category ?? null,
+                players:
+                  Number.isFinite(row.players)
+                    ? row.players
+                    : row?.state
+                      ? [row.state.host, row.state.guest].filter(Boolean).length
+                      : 1,
+                capacity: Number.isFinite(row.capacity) ? row.capacity : 2,
                 questionLimit: Number.isFinite(row.question_limit)
                   ? Math.max(1, row.question_limit)
                   : MULTIPLAYER_DEFAULT_QUESTION_LIMIT,
@@ -500,6 +508,65 @@ export async function fetchOpenMatches({ force = false, excludeHostId = null } =
   } catch (err) {
     console.error('Unerwarteter Fehler beim Laden offener Matches:', err);
     return [];
+  }
+}
+
+export async function restartMatchLobby({
+  matchId,
+  userId,
+  questionLimit = MULTIPLAYER_DEFAULT_QUESTION_LIMIT,
+  language,
+  fallbackLanguage,
+} = {}) {
+  const hostId = typeof userId === 'string' ? userId : null;
+
+  if (!matchId) {
+    return { ok: false, error: new Error('Match-ID fehlt.') };
+  }
+
+  if (!hostId) {
+    return { ok: false, error: new Error('Kein Nutzer angemeldet.') };
+  }
+
+  const normalizedLanguage = normalizeLanguage(language);
+  const normalizedFallbackLanguage =
+    fallbackLanguage === undefined
+      ? normalizedLanguage === DEFAULT_LANGUAGE
+        ? DEFAULT_LANGUAGE
+        : null
+      : normalizeLanguageOrNull(fallbackLanguage);
+  const limit = Number.isFinite(questionLimit)
+    ? Math.max(1, Math.min(questionLimit, 50))
+    : MULTIPLAYER_DEFAULT_QUESTION_LIMIT;
+
+  try {
+    const payload = {
+      p_match_id: matchId,
+      p_question_limit: limit,
+    };
+
+    if (normalizedLanguage) {
+      payload.p_language = normalizedLanguage;
+    }
+    if (normalizedFallbackLanguage !== null) {
+      payload.p_fallback_language = normalizedFallbackLanguage;
+    }
+
+    const { data, error } = await runSupabaseRequest(
+      () => supabase.rpc('restart_match_lobby', payload),
+      { label: 'matchService.restartMatchLobby' }
+    );
+
+    if (error) {
+      return { ok: false, error };
+    }
+
+    invalidateOpenMatchesCache();
+
+    return { ok: true, match: normalizeMatchRow(data) };
+  } catch (err) {
+    console.error('Unerwarteter Fehler beim Vorbereiten des Rematchs:', err);
+    return { ok: false, error: err };
   }
 }
 

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { getTimerProgressFillStyle } from '../styles/QuizScreen.styles';
 import styles from '../styles/QuizScreen.styles';
 
@@ -79,11 +78,6 @@ export default function TimerBar({
             </View>
           ) : null}
         </View>
-        {isFrozen ? (
-          <View style={styles.frozenSnowBadge} pointerEvents="none">
-            <Ionicons name="snow" size={12} color="#0C5B85" />
-          </View>
-        ) : null}
         {matchIsActive && !isFrozen ? (
           <Animated.Image
             source={SNAIL_ICON}

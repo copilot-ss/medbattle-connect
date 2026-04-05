@@ -110,9 +110,12 @@ export default function ShopSections({
                 : dailyTimerLabel || t('Morgen wieder')
               : isIapItem && !iapProductAvailable
                 ? t('Nicht verf\u00fcgbar')
-              : isEnergyItem
-                ? t('Kaufen')
-                : t('Kaufen');
+              : null;
+          const accessibilityLabel = isDailyItem
+            ? item.title
+            : priceLabel
+              ? `${item.title}, ${priceLabel}`
+              : item.title;
 
           const handlePress = () => {
             if (isComingSoon || isBuying) {
@@ -142,11 +145,23 @@ export default function ShopSections({
           };
 
           return (
-            <View key={item.id} style={[styles.itemWrap, { width: cardWidth }]}>
+            <Pressable
+              key={item.id}
+              style={({ pressed }) => [
+                styles.itemWrap,
+                { width: cardWidth },
+                pressed && !buttonDisabled ? styles.itemWrapPressed : null,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={accessibilityLabel}
+              disabled={buttonDisabled}
+              onPress={handlePress}
+            >
               <Animated.View
                 style={[
                   styles.itemCard,
                   isDailyItem ? styles.itemCardDaily : null,
+                  !canBuy ? styles.itemCardDisabled : null,
                   itemCardSpinStyle,
                 ]}
               >
@@ -208,32 +223,30 @@ export default function ShopSections({
                     </Text>
                   </View>
                 ) : null}
+                {buttonLabel ? (
+                  <View
+                    style={[
+                      styles.itemStatusPill,
+                      isDailyItem && canBuy ? styles.itemStatusPillSuccess : null,
+                      !canBuy ? styles.itemStatusPillMuted : null,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.itemStatusText,
+                        isDailyItem && canBuy ? styles.itemStatusTextDark : null,
+                      ]}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.85}
+                    >
+                      {buttonLabel}
+                    </Text>
+                  </View>
+                ) : null}
               </Animated.View>
-              <Pressable
-                style={[
-                  styles.buyButton,
-                  styles.buyButtonOutside,
-                  isDailyItem ? styles.buyButtonDailyCompact : null,
-                  canBuy ? styles.buyButtonActive : styles.buyButtonDisabled,
-                  isDailyItem && canBuy ? styles.buyButtonDailyActive : null,
-                ]}
-                disabled={buttonDisabled}
-                onPress={handlePress}
-              >
-                <Text
-                  style={[
-                    styles.buyButtonText,
-                    canBuy ? styles.buyButtonTextActive : null,
-                  ]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.85}
-                >
-                  {buttonLabel}
-                </Text>
-              </Pressable>
-            </View>
+            </Pressable>
           );
         })}
       </ScrollView>

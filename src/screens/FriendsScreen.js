@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, View } from 'react-native';
+import {
+  RefreshControl,
+  ScrollView,
+  View,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import FriendsSection from './settings/FriendsSection';
 import FriendsAddSheet from './settings/FriendsAddSheet';
+import FriendRemoveConfirmModal from './settings/FriendRemoveConfirmModal';
 import SettingsHeader from './settings/SettingsHeader';
 import useSettingsController from './settings/useSettingsController';
 import styles from './styles/SettingsScreen.styles';
@@ -13,6 +18,7 @@ import usePublicProfileSheet from '../hooks/usePublicProfileSheet';
 export default function FriendsScreen({ navigation, route, showClose = true }) {
   const { t } = useTranslation();
   const [showAddSheet, setShowAddSheet] = useState(false);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const {
     openProfile,
     closeProfile,
@@ -49,14 +55,34 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
   const handleRemoveFriendFromProfile = useCallback(async () => {
     const friendCodeToRemove = selectedProfile?.friendCode ?? null;
     if (!friendCodeToRemove) {
-      return;
+      return false;
     }
 
     const removed = await onRemoveFriend({ code: friendCodeToRemove });
     if (removed) {
       closeProfile();
     }
+    return removed;
   }, [closeProfile, onRemoveFriend, selectedProfile?.friendCode]);
+
+  const handleRequestRemoveFriend = useCallback(() => {
+    if (!selectedProfile?.friendCode || removingFriendCode === selectedProfile.friendCode) {
+      return;
+    }
+    setShowRemoveConfirm(true);
+  }, [removingFriendCode, selectedProfile?.friendCode]);
+
+  const handleCancelRemoveConfirm = useCallback(() => {
+    if (removingFriendCode === selectedProfile?.friendCode) {
+      return;
+    }
+    setShowRemoveConfirm(false);
+  }, [removingFriendCode, selectedProfile?.friendCode]);
+
+  const handleConfirmRemoveFriend = useCallback(async () => {
+    await handleRemoveFriendFromProfile();
+    setShowRemoveConfirm(false);
+  }, [handleRemoveFriendFromProfile]);
 
   useFocusEffect(
     useCallback(() => {
@@ -93,6 +119,22 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
     showAddSheet,
   ]);
 
+  useEffect(() => {
+    if (!selectedProfile && showRemoveConfirm) {
+      setShowRemoveConfirm(false);
+    }
+  }, [selectedProfile, showRemoveConfirm]);
+
+  const removeConfirmName =
+    selectedProfile?.name
+    ?? selectedProfile?.displayName
+    ?? selectedProfile?.username
+    ?? t('Freund');
+
+  const removeConfirmLoading =
+    Boolean(selectedProfile?.friendCode)
+    && removingFriendCode === selectedProfile.friendCode;
+
   return (
     <View style={styles.container}>
       <View style={styles.backgroundGlowTop} pointerEvents="none" />
@@ -128,6 +170,9 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
           onOpenProfile={openProfile}
           onOpenAdd={handleOpenAdd}
           showAddButton
+          friendCode={friendCode}
+          copySuccess={copySuccess}
+          onCopyFriendCode={handleCopyFriendCode}
         />
 
       </ScrollView>
@@ -149,7 +194,7 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
       <PublicProfileSheet
         {...sheetProps}
         footerActionLabel={selectedProfile?.canRemoveFriend ? t('Entfernen') : null}
-        onFooterAction={selectedProfile?.canRemoveFriend ? handleRemoveFriendFromProfile : null}
+        onFooterAction={selectedProfile?.canRemoveFriend ? handleRequestRemoveFriend : null}
         footerActionLoading={
           selectedProfile?.canRemoveFriend
           && removingFriendCode === selectedProfile?.friendCode
@@ -158,6 +203,15 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
           selectedProfile?.canRemoveFriend
           && removingFriendCode === selectedProfile?.friendCode
         }
+      />
+      <FriendRemoveConfirmModal
+        visible={showRemoveConfirm}
+        friendName={removeConfirmName}
+        loading={removeConfirmLoading}
+        onCancel={handleCancelRemoveConfirm}
+        onConfirm={() => {
+          void handleConfirmRemoveFriend();
+        }}
       />
     </View>
   );

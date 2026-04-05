@@ -6,7 +6,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     paddingHorizontal: 24,
-    paddingTop: 22,
+    paddingTop: 12,
     paddingBottom: 32,
   },
   topSection: {
@@ -163,19 +163,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(211, 244, 255, 0.65)',
     transform: [{ rotate: '18deg' }],
   },
-  frozenSnowBadge: {
-    position: 'absolute',
-    top: -10,
-    alignSelf: 'center',
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(110, 194, 238, 0.9)',
-    backgroundColor: 'rgba(211, 244, 255, 0.9)',
-  },
   snailIcon: {
     position: 'absolute',
     top: -15,
@@ -249,8 +236,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   boostGlyphWrapJoker: {
-    backgroundColor: 'rgba(255, 62, 165, 0.28)',
-    borderColor: 'rgba(255, 183, 223, 0.68)',
+    width: 42,
+    height: 42,
+    borderRadius: 0,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
   },
   boostGlyphWrapFreeze: {
     backgroundColor: 'rgba(55, 177, 255, 0.24)',
@@ -261,8 +252,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(148, 163, 184, 0.58)',
   },
   boostJokerGlyph: {
-    fontSize: 22,
-    lineHeight: 24,
+    fontSize: 28,
+    lineHeight: 30,
   },
   boostTypeBadge: {
     position: 'absolute',

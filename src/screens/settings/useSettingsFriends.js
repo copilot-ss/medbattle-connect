@@ -11,6 +11,7 @@ import {
   respondFriendRequest,
 } from '../../services/friendsService';
 import { formatUserError } from '../../utils/formatUserError';
+import { sanitizeFriendCode } from '../../utils/friendCode';
 import { useTranslation } from '../../i18n/useTranslation';
 import useFriendsPresence from './useFriendsPresence';
 
@@ -96,9 +97,7 @@ export default function useSettingsFriends({
   const [friendsMigrated, setFriendsMigrated] = useState(false);
   const hasLoadedFriendsRef = useRef(false);
   const refreshInFlightRef = useRef(false);
-  const normalizedFriendCodeInput = friendCodeInput
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .toUpperCase();
+  const normalizedFriendCodeInput = sanitizeFriendCode(friendCodeInput);
   const friendRequestSent =
     Boolean(sentFriendRequestCode) &&
     normalizedFriendCodeInput === sentFriendRequestCode;
@@ -289,14 +288,12 @@ export default function useSettingsFriends({
 
   const handleFriendCodeInputChange = useCallback(
     (value) => {
-      setFriendCodeInputState(value);
+      const normalizedValue = sanitizeFriendCode(value);
+      setFriendCodeInputState(normalizedValue);
       if (friendsFeedback) {
         setFriendsFeedback(null);
       }
-      const normalized = String(value ?? '')
-        .replace(/[^a-zA-Z0-9]/g, '')
-        .toUpperCase();
-      if (!normalized || normalized !== sentFriendRequestCode) {
+      if (!normalizedValue || normalizedValue !== sentFriendRequestCode) {
         setSentFriendRequestCode('');
       }
     },

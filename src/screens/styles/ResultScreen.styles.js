@@ -164,36 +164,13 @@ const styles = StyleSheet.create({
   scorePointsIcon: {
     marginRight: 6,
   },
+  scorePointsIconTrailing: {
+    marginLeft: 6,
+  },
   scorePointsText: {
     color: colors.accent,
     fontSize: 12,
     fontFamily: fonts.bold,
-  },
-  scoreKiwi: {
-    width: 26,
-    height: 26,
-  },
-  scoreKiwiWrap: {
-    position: 'absolute',
-    top: -12,
-    right: -26,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(87, 199, 255, 0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(87, 199, 255, 0.4)',
-  },
-  zeroTopAnimationWrap: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 120,
-    zIndex: 0,
-    overflow: 'hidden',
   },
   zeroGhostOverlay: {
     position: 'absolute',
@@ -205,20 +182,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   zeroGhostOverlayImage: {
-    width: '100%',
-    height: '100%',
-  },
-  zeroScoreOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 24,
-    backgroundColor: 'transparent',
-    zIndex: 0,
-    overflow: 'hidden',
-  },
-  zeroScoreOverlayImage: {
     width: '100%',
     height: '100%',
   },
@@ -435,17 +398,50 @@ const styles = StyleSheet.create({
   },
   scoreboardMeta: {
     flex: 1,
+    rowGap: 4,
+  },
+  scoreboardNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 8,
+    minWidth: 0,
   },
   scoreboardName: {
     color: colors.textPrimary,
     fontSize: 15,
     fontFamily: fonts.medium,
+    flexShrink: 1,
   },
   scoreboardTag: {
     color: '#9EDCFF',
     fontSize: 12,
-    marginTop: 2,
     fontFamily: fonts.regular,
+  },
+  scoreboardBoostRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 6,
+    columnGap: 6,
+  },
+  scoreboardBoostChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(87, 199, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(87, 199, 255, 0.28)',
+  },
+  scoreboardBoostChipText: {
+    color: '#DFF3FF',
+    fontSize: 11,
+    fontFamily: fonts.medium,
+  },
+  scoreboardBoostPenaltyChip: {
+    backgroundColor: 'rgba(255, 178, 92, 0.14)',
+    borderColor: 'rgba(255, 178, 92, 0.35)',
+  },
+  scoreboardBoostPenaltyText: {
+    color: '#FFD5A3',
   },
   scoreboardScoreBox: {
     alignItems: 'flex-end',
@@ -466,6 +462,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     fontFamily: fonts.regular,
+  },
+  multiplayerPointsWrap: {
+    alignItems: 'center',
+    marginTop: 2,
   },
   primaryButton: {
     width: '100%',
@@ -494,6 +494,9 @@ const styles = StyleSheet.create({
     rowGap: 12,
     alignItems: 'center',
   },
+  actionReveal: {
+    width: '100%',
+  },
   secondaryButton: {
     width: '100%',
     paddingVertical: 14,
@@ -510,7 +513,6 @@ const styles = StyleSheet.create({
   },
   tertiaryButton: {
     width: '100%',
-    maxWidth: 320,
     paddingVertical: 14,
     paddingHorizontal: 18,
     borderRadius: radii.md,
@@ -552,6 +554,18 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     rowGap: 12,
   },
+  reviewCardCorrect: {
+    backgroundColor: 'rgba(57, 229, 138, 0.07)',
+    borderColor: 'rgba(57, 229, 138, 0.2)',
+  },
+  reviewCardWrong: {
+    backgroundColor: 'rgba(255, 107, 124, 0.07)',
+    borderColor: 'rgba(255, 107, 124, 0.2)',
+  },
+  reviewCardTimedOut: {
+    backgroundColor: 'rgba(255, 178, 92, 0.07)',
+    borderColor: 'rgba(255, 178, 92, 0.2)',
+  },
   reviewHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -587,6 +601,26 @@ const styles = StyleSheet.create({
   reviewAnswers: {
     rowGap: 4,
   },
+  reviewBoostRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 6,
+    columnGap: 6,
+    marginTop: 2,
+  },
+  reviewBoostChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(87, 199, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(87, 199, 255, 0.26)',
+  },
+  reviewBoostChipText: {
+    color: '#DFF3FF',
+    fontSize: 11,
+    fontFamily: fonts.medium,
+  },
   reviewLabel: {
     color: colors.textMuted,
     fontSize: 12,
@@ -597,6 +631,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: fonts.regular,
     lineHeight: 21,
+  },
+  reviewAnswerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 8,
+  },
+  reviewAnswerValue: {
+    flex: 1,
+  },
+  reviewAnswerTimeoutIcon: {
+    width: 40,
+    height: 40,
   },
   reviewAnswerCorrect: {
     color: colors.success,

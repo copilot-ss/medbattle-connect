@@ -13,6 +13,14 @@ export function getAvatarPresetSource(icon) {
   return AVATAR_SOURCE_BY_ICON.get(icon.trim()) ?? null;
 }
 
+export function isRemoteAvatarUrl(value) {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  const trimmed = value.trim();
+  return /^https?:\/\//i.test(trimmed) || /^data:image\//i.test(trimmed);
+}
+
 export function getAvatarInitials(value, fallback = '?') {
   const raw = typeof value === 'string' ? value.trim() : '';
   if (!raw) {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { abandonMatch, deriveMatchRole } from '../../../services/matchService';
 import { clearActiveLobby } from '../../../utils/activeLobbyStorage';
-import { MAX_PLAYERS } from '../lobbyConstants';
+import { buildActiveLobbyPayload } from '../lobbyUtils';
 
 export default function useLobbyLeaveActions({
   currentMatch,
@@ -64,24 +64,9 @@ export default function useLobbyLeaveActions({
     setClosingLobby(true);
     setMatchesError(null);
 
-    const shouldKeepActiveLobby =
-      currentMatch &&
-      (currentMatch.status === 'waiting' || currentMatch.status === 'active');
+    const activeLobby = buildActiveLobbyPayload(currentMatch);
 
-    const activeLobby = shouldKeepActiveLobby
-      ? {
-          code: currentMatch.code ?? null,
-          players: currentMatch.state
-            ? [currentMatch.state.host, currentMatch.state.guest].filter(
-                (participant) => participant?.userId
-              ).length
-            : 1,
-          capacity: MAX_PLAYERS,
-          existingMatch: currentMatch,
-        }
-      : null;
-
-    if (!shouldKeepActiveLobby) {
+    if (!activeLobby) {
       clearActiveLobby();
     }
 

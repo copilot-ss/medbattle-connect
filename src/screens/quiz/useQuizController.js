@@ -21,6 +21,7 @@ import { syncUserProgressDelta } from '../../services/userProgressService';
 import useQuizConfig, { TIMER_DURATION } from './hooks/useQuizConfig';
 import useSoloQuestionLoader from './hooks/useSoloQuestionLoader';
 import useQuizInteractionHandlers from './hooks/useQuizInteractionHandlers';
+import { sanitizeBoostUsage } from '../../utils/quizBoosts';
 
 const BOOST_FREEZE_DURATION_MS = 5 * 1000;
 const DOUBLE_XP_MULTIPLIER = 2;
@@ -44,6 +45,7 @@ export default function useQuizController({ navigation, route }) {
   const answerHistoryRef = useRef([]);
   const [hiddenOptions, setHiddenOptions] = useState([]);
   const [usedBoosts, setUsedBoosts] = useState({});
+  const [currentQuestionBoosts, setCurrentQuestionBoosts] = useState([]);
   const [isTimerFrozen, setIsTimerFrozen] = useState(false);
   const freezeActiveRef = useRef(false);
   const freezeTimeoutRef = useRef(null);
@@ -73,6 +75,15 @@ export default function useQuizController({ navigation, route }) {
       return acc;
     }, { ...DEFAULT_BOOSTS });
   }, [boosts]);
+  const usedBoostIds = useMemo(
+    () =>
+      sanitizeBoostUsage(
+        Object.entries(usedBoosts)
+          .filter(([, used]) => Boolean(used))
+          .map(([boostId]) => boostId)
+      ),
+    [usedBoosts]
+  );
   const isDoubleXpActive = useCallback(
     (now = Date.now()) =>
       Number.isFinite(doubleXpExpiresAt) && doubleXpExpiresAt > now,
@@ -257,6 +268,7 @@ export default function useQuizController({ navigation, route }) {
       const earnedPoints = calculateMatchPoints({
         correct: resolvedScore,
         total: effectiveTotal,
+        usedBoostIds,
       });
       const baseXp = calculateXpGain({
         correct: resolvedScore,
@@ -444,6 +456,7 @@ export default function useQuizController({ navigation, route }) {
       updateUserStats,
       syncUserProgressDelta,
       totalQuestions,
+      usedBoostIds,
       userId,
       mode,
       isOffline,
@@ -493,6 +506,7 @@ export default function useQuizController({ navigation, route }) {
     recordMatchAnswer,
     onRecordAnswer: recordAnswerHistory,
     finalizeQuiz,
+    currentQuestionBoostIds: currentQuestionBoosts,
     surrenderMatch,
   });
 
@@ -517,6 +531,7 @@ export default function useQuizController({ navigation, route }) {
     }
 
     setUsedBoosts((prev) => ({ ...prev, freeze_time: true }));
+    setCurrentQuestionBoosts((prev) => sanitizeBoostUsage([...prev, 'freeze_time']));
     freezeActiveRef.current = true;
     setIsTimerFrozen(true);
     stopTimer();
@@ -580,6 +595,7 @@ export default function useQuizController({ navigation, route }) {
 
     setHiddenOptions(hidden);
     setUsedBoosts((prev) => ({ ...prev, joker_5050: true }));
+    setCurrentQuestionBoosts((prev) => sanitizeBoostUsage([...prev, 'joker_5050']));
   }, [
     boostInventory.joker_5050,
     consumeBoost,
@@ -592,6 +608,7 @@ export default function useQuizController({ navigation, route }) {
 
   useEffect(() => {
     setHiddenOptions([]);
+    setCurrentQuestionBoosts([]);
     freezeActiveRef.current = false;
     setIsTimerFrozen(false);
     clearFreezeTimeout();
@@ -634,6 +651,7 @@ export default function useQuizController({ navigation, route }) {
     resetQuestionState();
     setHiddenOptions([]);
     setUsedBoosts({});
+    setCurrentQuestionBoosts([]);
     freezeActiveRef.current = false;
     setIsTimerFrozen(false);
     clearFreezeTimeout();

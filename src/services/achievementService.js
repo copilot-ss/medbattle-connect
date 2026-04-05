@@ -5,7 +5,7 @@ const ACHIEVEMENTS = [
     hintKey: 'Achievement Quiz 100 Hint',
     statKey: 'quizzes',
     threshold: 100,
-    reward: { xp: 500, coins: 200 },
+    reward: { xp: 250, coins: 100 },
   },
   {
     key: 'quiz_500',
@@ -13,7 +13,7 @@ const ACHIEVEMENTS = [
     hintKey: 'Achievement Quiz 500 Hint',
     statKey: 'quizzes',
     threshold: 500,
-    reward: { xp: 3000, coins: 1200 },
+    reward: { xp: 1500, coins: 600 },
   },
   {
     key: 'streak_7',
@@ -21,7 +21,7 @@ const ACHIEVEMENTS = [
     hintKey: 'Achievement Streak 7 Hint',
     statKey: 'bestStreak',
     threshold: 7,
-    reward: { xp: 400, coins: 160 },
+    reward: { xp: 200, coins: 80 },
   },
   {
     key: 'streak_20',
@@ -29,7 +29,7 @@ const ACHIEVEMENTS = [
     hintKey: 'Achievement Streak 20 Hint',
     statKey: 'bestStreak',
     threshold: 20,
-    reward: { xp: 1400, coins: 600 },
+    reward: { xp: 700, coins: 300 },
   },
   {
     key: 'multiplayer_10',
@@ -37,7 +37,7 @@ const ACHIEVEMENTS = [
     hintKey: 'Achievement Multiplayer 10 Hint',
     statKey: 'multiplayerGames',
     threshold: 10,
-    reward: { xp: 700, coins: 260 },
+    reward: { xp: 350, coins: 130 },
   },
   {
     key: 'multiplayer_50',
@@ -45,7 +45,7 @@ const ACHIEVEMENTS = [
     hintKey: 'Achievement Multiplayer 50 Hint',
     statKey: 'multiplayerGames',
     threshold: 50,
-    reward: { xp: 2600, coins: 1100 },
+    reward: { xp: 1300, coins: 550 },
   },
   {
     key: 'friends_3',
@@ -53,7 +53,7 @@ const ACHIEVEMENTS = [
     hintKey: 'Achievement Friends 3 Hint',
     statKey: 'friends',
     threshold: 3,
-    reward: { xp: 500, coins: 220 },
+    reward: { xp: 250, coins: 110 },
   },
   {
     key: 'friends_10',
@@ -61,7 +61,7 @@ const ACHIEVEMENTS = [
     hintKey: 'Achievement Friends 10 Hint',
     statKey: 'friends',
     threshold: 10,
-    reward: { xp: 1500, coins: 650 },
+    reward: { xp: 750, coins: 325 },
   },
   {
     key: 'xpboost_5',
@@ -69,7 +69,7 @@ const ACHIEVEMENTS = [
     hintKey: 'Achievement XpBoost 5 Hint',
     statKey: 'xpBoostsUsed',
     threshold: 5,
-    reward: { xp: 900, coins: 350 },
+    reward: { xp: 450, coins: 175 },
   },
   {
     key: 'xpboost_20',
@@ -77,7 +77,7 @@ const ACHIEVEMENTS = [
     hintKey: 'Achievement XpBoost 20 Hint',
     statKey: 'xpBoostsUsed',
     threshold: 20,
-    reward: { xp: 2800, coins: 1200 },
+    reward: { xp: 1400, coins: 600 },
   },
 ];
 

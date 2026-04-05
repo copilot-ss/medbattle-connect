@@ -8,7 +8,7 @@ const SHARE_ANIM = require('../../assets/animations/share_6172544.gif');
 const ANATOMY_RESULT_ANIM = require('../../assets/animations/anatomy/skeleton_18166394.png');
 const PHARMA_RESULT_LOW = require('../../assets/animations/pharmacology/sleeping_pills_12082332.png');
 const PHARMA_RESULT_HIGH = require('../../assets/animations/pharmacology/tablet_13099875.png');
-const KIWI_RESULT_ANIM = require('../../assets/animations/kiwi.gif');
+
 
 const AVATAR_SOURCES = avatars
   .map((avatar) => avatar?.source)
@@ -20,7 +20,6 @@ const APP_ASSETS = [
   ANATOMY_RESULT_ANIM,
   PHARMA_RESULT_LOW,
   PHARMA_RESULT_HIGH,
-  KIWI_RESULT_ANIM,
   ...AVATAR_SOURCES,
 ];
 

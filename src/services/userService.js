@@ -1,4 +1,8 @@
 import { getSessionUser, supabase } from '../lib/supabaseClient';
+import {
+  deriveFriendCode as deriveFriendCodeFromUserId,
+  sanitizeFriendCode as normalizeFriendCode,
+} from '../utils/friendCode';
 import { runSupabaseRequest } from './supabaseRequest';
 
 const FRIEND_CODE_USER_ID_CACHE_MS = 2 * 60 * 1000;
@@ -19,29 +23,8 @@ export function sanitizeUsername(value, fallback) {
   return normalized || fallback;
 }
 
-function sanitizeFriendCode(value) {
-  if (!value) {
-    return '';
-  }
-  return String(value)
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .toUpperCase();
-}
-
-function deriveFriendCodeFromUserId(userId) {
-  if (!userId) {
-    return '';
-  }
-  const compact = String(userId).replace(/[^a-zA-Z0-9]/g, '');
-  if (!compact) {
-    return '';
-  }
-  const slice = compact.slice(-8).toUpperCase();
-  return slice.padStart(8, '0');
-}
-
 async function resolveFriendUserIdByCode(friendCode) {
-  const normalizedCode = sanitizeFriendCode(friendCode);
+  const normalizedCode = normalizeFriendCode(friendCode);
   if (!normalizedCode) {
     return null;
   }
@@ -193,7 +176,10 @@ function mapPublicProfile({ userRow, profileRow, fallbackUserId = null, fallback
   const username = userRow?.username ?? null;
   const displayName = profileRow?.display_name ?? null;
   const name = displayName || username || null;
-  const friendCode = profileRow?.friend_code ?? fallbackFriendCode ?? null;
+  const friendCode =
+    deriveFriendCodeFromUserId(userId)
+    || normalizeFriendCode(profileRow?.friend_code ?? fallbackFriendCode ?? null)
+    || null;
   const xp = parseNonNegativeNumber(userRow?.xp);
   const coins = parseNonNegativeNumber(userRow?.coins);
   const quizzes = parseNonNegativeNumber(userRow?.quizzes);
@@ -227,7 +213,10 @@ function mapPublicProfileFromRpcRow(row, fallbackUserId = null, fallbackFriendCo
   const username = row.username ?? null;
   const displayName = row.display_name ?? row.displayName ?? null;
   const name = displayName || username || null;
-  const friendCode = row.friend_code ?? row.friendCode ?? fallbackFriendCode ?? null;
+  const friendCode =
+    deriveFriendCodeFromUserId(userId)
+    || normalizeFriendCode(row.friend_code ?? row.friendCode ?? fallbackFriendCode ?? null)
+    || null;
   const xp = parseNonNegativeNumber(row.xp);
   const coins = parseNonNegativeNumber(row.coins);
   const quizzes = parseNonNegativeNumber(row.quizzes);
@@ -288,7 +277,7 @@ function isKnownPublicProfileRpcFallbackError(error) {
 }
 
 async function fetchPublicProfileViaRpc({ userId = null, friendCode = null } = {}) {
-  const normalizedCode = sanitizeFriendCode(friendCode ?? '');
+  const normalizedCode = normalizeFriendCode(friendCode ?? '');
   const payload = {
     p_user_id: userId ?? null,
     p_friend_code: normalizedCode || null,
@@ -409,7 +398,7 @@ export async function fetchPublicProfileByUserId(userId) {
 }
 
 export async function fetchPublicProfileByFriendCode(friendCode) {
-  const normalizedCode = sanitizeFriendCode(friendCode);
+  const normalizedCode = normalizeFriendCode(friendCode);
   if (!normalizedCode) {
     return { ok: false, error: new Error('Kein Freundescode angegeben.') };
   }

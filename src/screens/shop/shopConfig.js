@@ -19,8 +19,8 @@ export const SHOP_PRICES = Object.freeze({
     twenty: roundToFive(ENERGY_SINGLE_PRICE * 17.5),
   },
   energyCap: {
-    plus5: roundToFive(ENERGY_SINGLE_PRICE * 38),
-    plus10: roundToFive(ENERGY_SINGLE_PRICE * 68),
+    plus5: 5000,
+    plus10: 9000,
   },
   boosts: {
     streakShield: roundToFive(ENERGY_SINGLE_PRICE * 7.5),
@@ -70,14 +70,6 @@ export const COIN_PACKS = [
     productId: IAP_PRODUCT_IDS.coins16000,
     priceCents: 2999,
     priceLabel: '29,99 \u20AC',
-  },
-  {
-    id: 'coins-60000',
-    title: '45.000 Coins',
-    amount: 45000,
-    productId: IAP_PRODUCT_IDS.coins60000,
-    priceCents: 5999,
-    priceLabel: '59,99 \u20AC',
   },
 ];
 

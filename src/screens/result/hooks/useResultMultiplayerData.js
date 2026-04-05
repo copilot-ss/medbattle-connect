@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { buildPublicProfilePayload } from '../../../utils/publicProfile';
 import { getInitials } from '../resultUtils';
+import { sanitizeBoostUsage } from '../../../utils/quizBoosts';
+import { fetchPublicProfileByUserId } from '../../../services/userService';
+import {
+  getAvatarPresetSource,
+  isRemoteAvatarUrl,
+} from '../../../utils/avatarUtils';
 
 export default function useResultMultiplayerData({
   isMultiplayer,
@@ -10,6 +16,8 @@ export default function useResultMultiplayerData({
   playerRole,
   userId,
   score,
+  category,
+  questionLimit,
   opponentScore,
   opponentName,
   playerState,
@@ -27,6 +35,14 @@ export default function useResultMultiplayerData({
   t,
 }) {
   const [selectedScorePlayerKey, setSelectedScorePlayerKey] = useState(null);
+  const [participantProfiles, setParticipantProfiles] = useState({});
+  const collectUsedBoostIds = useCallback((items = []) => {
+    return sanitizeBoostUsage(
+      (Array.isArray(items) ? items : []).flatMap((item) =>
+        Array.isArray(item?.boostsUsed) ? item.boostsUsed : []
+      )
+    );
+  }, []);
 
   const resolvedPlayerState = useMemo(() => {
     if (isMultiplayer && liveMatch) {
@@ -44,6 +60,84 @@ export default function useResultMultiplayerData({
 
   const resolvedMatchStatus =
     liveMatch?.status ?? liveMatchStatus ?? matchStatus ?? null;
+  const opponentStateAvatarUrl = useMemo(() => {
+    if (!isRemoteAvatarUrl(resolvedOpponentState?.avatarUrl)) {
+      return null;
+    }
+    return resolvedOpponentState.avatarUrl.trim();
+  }, [resolvedOpponentState?.avatarUrl]);
+
+  useEffect(() => {
+    const opponentUserId =
+      typeof resolvedOpponentState?.userId === 'string' &&
+      resolvedOpponentState.userId.trim()
+        ? resolvedOpponentState.userId.trim()
+        : null;
+
+    if (
+      !opponentUserId ||
+      opponentStateAvatarUrl ||
+      Object.prototype.hasOwnProperty.call(participantProfiles, opponentUserId)
+    ) {
+      return undefined;
+    }
+
+    let active = true;
+
+    (async () => {
+      const result = await fetchPublicProfileByUserId(opponentUserId);
+      if (!active) {
+        return;
+      }
+
+      setParticipantProfiles((prev) => ({
+        ...prev,
+        [opponentUserId]: result?.ok ? result.profile ?? null : null,
+      }));
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    opponentStateAvatarUrl,
+    participantProfiles,
+    resolvedOpponentState?.userId,
+  ]);
+
+  const currentAvatarUri = useMemo(() => {
+    if (!avatarSource || typeof avatarSource !== 'object' || Array.isArray(avatarSource)) {
+      return null;
+    }
+    return typeof avatarSource.uri === 'string' && avatarSource.uri.trim()
+      ? avatarSource.uri.trim()
+      : null;
+  }, [avatarSource]);
+
+  const opponentProfile =
+    resolvedOpponentState?.userId
+      ? participantProfiles[resolvedOpponentState.userId] ?? null
+      : null;
+  const selfAvatarUrl = resolvedPlayerState?.avatarUrl ?? currentAvatarUri ?? null;
+  const selfAvatarIcon = selfAvatarUrl ? null : avatarIcon ?? resolvedPlayerState?.avatarIcon ?? null;
+  const selfAvatarSource = selfAvatarUrl
+    ? null
+    : avatarSource ?? getAvatarPresetSource(selfAvatarIcon);
+  const selfAvatarColor =
+    resolvedPlayerState?.avatarColor ?? currentAvatarColor ?? null;
+  const opponentProfileAvatarUrl = isRemoteAvatarUrl(opponentProfile?.avatarUrl)
+    ? opponentProfile.avatarUrl.trim()
+    : null;
+  const opponentAvatarUrl = opponentProfileAvatarUrl ?? opponentStateAvatarUrl ?? null;
+  const opponentAvatarIcon =
+    opponentAvatarUrl
+      ? null
+      : resolvedOpponentState?.avatarIcon ?? opponentProfile?.avatarIcon ?? null;
+  const opponentAvatarSource = opponentAvatarUrl
+    ? null
+    : getAvatarPresetSource(opponentAvatarIcon);
+  const opponentAvatarColor =
+    resolvedOpponentState?.avatarColor ?? opponentProfile?.avatarColor ?? null;
 
   const reviewItems = useMemo(() => {
     const source = Array.isArray(answerHistory) ? answerHistory : [];
@@ -217,6 +311,7 @@ export default function useResultMultiplayerData({
             isCorrect: Boolean(entry?.correct),
             timedOut: Boolean(entry?.timedOut),
             durationMs: Number.isFinite(entry?.durationMs) ? entry.durationMs : null,
+            boostsUsed: sanitizeBoostUsage(entry?.boostsUsed),
             explanation: question?.explanation ?? null,
           };
         })
@@ -256,6 +351,14 @@ export default function useResultMultiplayerData({
     selfPlayerKey,
     selfReviewItems,
   ]);
+  const selfBoostIds = useMemo(
+    () => collectUsedBoostIds(selfReviewItems),
+    [collectUsedBoostIds, selfReviewItems]
+  );
+  const opponentBoostIds = useMemo(
+    () => collectUsedBoostIds(opponentReviewItems),
+    [collectUsedBoostIds, opponentReviewItems]
+  );
 
   const multiplayerEntries = useMemo(() => {
     if (!isMultiplayer) {
@@ -270,12 +373,12 @@ export default function useResultMultiplayerData({
         userId: resolvedPlayerState?.userId ?? userId ?? null,
         score: Number.isFinite(selfScoreValue) ? selfScoreValue : 0,
         isSelf: true,
-        avatarSource,
-        avatarUrl: resolvedPlayerState?.avatarUrl ?? null,
-        avatarIcon,
-        avatarColor:
-          resolvedPlayerState?.avatarColor ?? currentAvatarColor ?? null,
+        avatarSource: selfAvatarSource,
+        avatarUrl: selfAvatarUrl,
+        avatarIcon: selfAvatarIcon,
+        avatarColor: selfAvatarColor,
         initials: getInitials(selfDisplayName),
+        usedBoostIds: selfBoostIds,
       },
     ];
 
@@ -288,13 +391,12 @@ export default function useResultMultiplayerData({
         userId: resolvedOpponentState?.userId ?? null,
         score: Number.isFinite(opponentScoreValue) ? opponentScoreValue : null,
         isSelf: false,
-        avatarSource: resolvedOpponentState?.avatarUrl
-          ? { uri: resolvedOpponentState.avatarUrl }
-          : null,
-        avatarUrl: resolvedOpponentState?.avatarUrl ?? null,
-        avatarIcon: resolvedOpponentState?.avatarIcon ?? null,
-        avatarColor: resolvedOpponentState?.avatarColor ?? null,
+        avatarSource: opponentAvatarSource,
+        avatarUrl: opponentAvatarUrl,
+        avatarIcon: opponentAvatarIcon,
+        avatarColor: opponentAvatarColor,
         initials: getInitials(opponentDisplayName),
+        usedBoostIds: opponentBoostIds,
       });
     }
 
@@ -318,25 +420,31 @@ export default function useResultMultiplayerData({
         rank: index + 1,
       }));
   }, [
-    avatarIcon,
     avatarSource,
-    currentAvatarColor,
     hasOpponent,
     isMultiplayer,
+    opponentBoostIds,
+    opponentAvatarColor,
+    opponentAvatarIcon,
+    opponentAvatarSource,
+    opponentAvatarUrl,
     opponentDisplayName,
+    opponentProfile?.avatarColor,
+    opponentProfile?.avatarIcon,
+    opponentProfile?.avatarUrl,
     opponentPlayerKey,
     opponentScoreValue,
-    resolvedOpponentState?.avatarColor,
-    resolvedOpponentState?.avatarIcon,
-    resolvedOpponentState?.avatarUrl,
     resolvedOpponentState?.title,
     resolvedOpponentState?.userId,
     resolvedOpponentState?.username,
-    resolvedPlayerState?.avatarColor,
-    resolvedPlayerState?.avatarUrl,
     resolvedPlayerState?.title,
     resolvedPlayerState?.userId,
     resolvedPlayerState?.username,
+    selfBoostIds,
+    selfAvatarColor,
+    selfAvatarIcon,
+    selfAvatarSource,
+    selfAvatarUrl,
     selfDisplayName,
     selfPlayerKey,
     selfScoreValue,
@@ -401,14 +509,28 @@ export default function useResultMultiplayerData({
     const selfSnapshot = {
       userId: resolvedPlayerState?.userId ?? userId ?? null,
       username: resolvedPlayerState?.username ?? null,
+      title: resolvedPlayerState?.title ?? null,
       score: Number.isFinite(selfScoreValue) ? selfScoreValue : score,
       finished: Boolean(resolvedPlayerState?.finished),
+      answers: Array.isArray(resolvedPlayerState?.answers)
+        ? resolvedPlayerState.answers
+        : [],
+      avatarUrl: selfAvatarUrl,
+      avatarIcon: selfAvatarIcon,
+      avatarColor: selfAvatarColor,
     };
     const opponentSnapshot = {
       userId: resolvedOpponentState?.userId ?? null,
       username: resolvedOpponentState?.username ?? opponentName ?? null,
+      title: resolvedOpponentState?.title ?? null,
       score: Number.isFinite(opponentScoreValue) ? opponentScoreValue : null,
       finished: Boolean(resolvedOpponentState?.finished),
+      answers: Array.isArray(resolvedOpponentState?.answers)
+        ? resolvedOpponentState.answers
+        : [],
+      avatarUrl: opponentAvatarUrl,
+      avatarIcon: opponentAvatarIcon,
+      avatarColor: opponentAvatarColor,
     };
     const resolvedRole = playerRole === 'guest' ? 'guest' : 'host';
     const hostState = resolvedRole === 'host' ? selfSnapshot : opponentSnapshot;
@@ -417,6 +539,8 @@ export default function useResultMultiplayerData({
       id: matchId,
       code: matchJoinCode ?? null,
       status: resolvedMatchStatus,
+      category: liveMatch?.category ?? category ?? null,
+      question_limit: liveMatch?.question_limit ?? questionLimit ?? null,
       host_id: hostState?.userId ?? null,
       guest_id: guestState?.userId ?? null,
       state: {
@@ -428,18 +552,32 @@ export default function useResultMultiplayerData({
     isMultiplayer,
     matchId,
     matchJoinCode,
+    category,
+    questionLimit,
     opponentName,
+    opponentAvatarColor,
+    opponentAvatarIcon,
+    opponentAvatarUrl,
     opponentScoreValue,
     playerRole,
     resolvedMatchStatus,
     resolvedOpponentState?.finished,
+    resolvedOpponentState?.answers,
+    resolvedOpponentState?.title,
     resolvedOpponentState?.userId,
     resolvedOpponentState?.username,
+    resolvedPlayerState?.answers,
+    resolvedPlayerState?.title,
     resolvedPlayerState?.finished,
     resolvedPlayerState?.userId,
     resolvedPlayerState?.username,
     score,
     selfScoreValue,
+    selfAvatarColor,
+    selfAvatarIcon,
+    selfAvatarUrl,
+    liveMatch?.category,
+    liveMatch?.question_limit,
     userId,
   ]);
 

@@ -82,6 +82,30 @@ function isLocalUrl(value) {
   return /localhost|127\.0\.0\.1/i.test(value ?? '');
 }
 
+function sanitizeEnv(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+
+  return trimmed;
+}
+
+function isTruthyEnv(value) {
+  const normalized = sanitizeEnv(value).toLowerCase();
+  return normalized === '1'
+    || normalized === 'true'
+    || normalized === 'yes'
+    || normalized === 'on';
+}
+
 function isGoogleTestId(value) {
   return value === googleTestAdmobAppId || value === googleTestRewardedId;
 }
@@ -163,7 +187,6 @@ for (const key of [
   'EXPO_PUBLIC_IAP_COINS_3200_PRODUCT_ID',
   'EXPO_PUBLIC_IAP_COINS_7500_PRODUCT_ID',
   'EXPO_PUBLIC_IAP_COINS_16000_PRODUCT_ID',
-  'EXPO_PUBLIC_IAP_COINS_60000_PRODUCT_ID',
 ]) {
   if (!env[key]) {
     fail(results, `Fehlender Env-Wert: ${key}`);
@@ -199,6 +222,12 @@ if (env.EXPO_PUBLIC_ADMOB_APP_ID_ANDROID) {
   }
 }
 
+if (isTruthyEnv(env.EXPO_PUBLIC_ADMOB_USE_TEST_IDS)) {
+  fail(results, 'EXPO_PUBLIC_ADMOB_USE_TEST_IDS=true ist fuer Release-Builds nicht erlaubt.');
+} else {
+  pass(results, 'Globaler AdMob-Test-ID-Override ist fuer Release deaktiviert.');
+}
+
 if (env.EXPO_PUBLIC_ADMOB_REWARDED_ID_ANDROID) {
   if (isGoogleTestId(env.EXPO_PUBLIC_ADMOB_REWARDED_ID_ANDROID)) {
     fail(results, 'EXPO_PUBLIC_ADMOB_REWARDED_ID_ANDROID ist noch die Google-Test-Ad-Unit.');
@@ -212,6 +241,10 @@ if (env.EXPO_PUBLIC_ADMOB_REWARDED_ID_ANDROID) {
   );
 }
 
+if (sanitizeEnv(env.EXPO_PUBLIC_ADMOB_TEST_DEVICE_IDS_ANDROID)) {
+  pass(results, 'Android AdMob-Testgeraete fuer Live-Ad-Smoke sind konfiguriert.');
+}
+
 const iapKeys = [
   'EXPO_PUBLIC_IAP_BOOST_PRODUCT_ID',
   'EXPO_PUBLIC_IAP_COINS_600_PRODUCT_ID',
@@ -219,7 +252,6 @@ const iapKeys = [
   'EXPO_PUBLIC_IAP_COINS_3200_PRODUCT_ID',
   'EXPO_PUBLIC_IAP_COINS_7500_PRODUCT_ID',
   'EXPO_PUBLIC_IAP_COINS_16000_PRODUCT_ID',
-  'EXPO_PUBLIC_IAP_COINS_60000_PRODUCT_ID',
 ];
 const iapValues = iapKeys.map((key) => env[key]).filter(Boolean);
 if (iapValues.length === iapKeys.length && new Set(iapValues).size !== iapValues.length) {

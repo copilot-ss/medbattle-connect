@@ -198,7 +198,8 @@ begin
       for delete
       using (
         auth.uid() = owner_id
-        or friend_code = upper(lpad(right(replace(auth.uid()::text, '-', ''), 8), 8, '0'))
+        or upper(right(regexp_replace(friend_code, '[^a-zA-Z0-9_]', '', 'g'), 7))
+          = upper(lpad(right(replace(auth.uid()::text, '-', ''), 7), 7, '0'))
       );
   end if;
 end $$;

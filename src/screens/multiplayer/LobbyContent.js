@@ -30,6 +30,9 @@ export default function LobbyContent({
   participants,
   participantCount,
   isHostWaiting,
+  showHostStartControls,
+  canStartMatch,
+  canOpenSettings,
   onSelectParticipant,
   onOpenParticipantProfile,
   kickCandidateKey,
@@ -95,6 +98,9 @@ export default function LobbyContent({
           participantCount={participantCount}
           maxPlayers={MAX_PLAYERS}
           isHostWaiting={isHostWaiting}
+          showHostStartControls={showHostStartControls}
+          canStartMatch={canStartMatch}
+          canOpenSettings={canOpenSettings}
           onSelectParticipant={onSelectParticipant}
           onOpenParticipantProfile={onOpenParticipantProfile}
           kickCandidateKey={kickCandidateKey}

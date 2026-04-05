@@ -68,6 +68,9 @@ export default function SettingsScreen({
     linkGoogleHint,
     linkingGoogle,
     handleLinkGoogle,
+    friendCode,
+    copySuccess,
+    handleCopyFriendCode,
     feedback,
     showResetForm,
     handleToggleResetForm,
@@ -205,6 +208,9 @@ export default function SettingsScreen({
               linkGoogleHint={linkGoogleHint}
               linkingGoogle={linkingGoogle}
               onLinkGoogle={handleLinkGoogle}
+              friendCode={friendCode}
+              copySuccess={copySuccess}
+              onCopyFriendCode={handleCopyFriendCode}
             />
           ) : null}
 

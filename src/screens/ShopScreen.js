@@ -70,6 +70,49 @@ const extractIapPriceLabel = (product) => {
   return null;
 };
 
+const normalizeIapErrorText = (value) => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  return value.trim();
+};
+
+const buildIapFailureMessage = (t, errorLike) => {
+  const rawCode = normalizeIapErrorText(
+    errorLike?.code ?? errorLike?.errorCode
+  );
+  const code = rawCode.toLowerCase();
+  const message = normalizeIapErrorText(
+    errorLike?.message ?? errorLike?.errorMessage
+  ).toLowerCase();
+
+  if (
+    code.includes('item_unavailable') ||
+    message.includes('item unavailable') ||
+    message.includes('product is not available') ||
+    message.includes('offer is not available')
+  ) {
+    return 'Produkt ist im Store gerade nicht verfügbar.';
+  }
+
+  if (
+    code.includes('developer') ||
+    message.includes('not configured for billing') ||
+    message.includes('billing through google play') ||
+    message.includes('this version of the application is not configured')
+  ) {
+    return 'Diese Installation ist fuer Google Play Billing noch kein gueltiger Play-Test. Installiere den Closed-Test-Build ueber den Play Store oder nutze ein korrekt eingetragenes License-Tester-Konto.';
+  }
+
+  if (code.includes('service_disconnected') || code.includes('not_ready')) {
+    return t('Kauf ist gerade nicht verfügbar.');
+  }
+
+  return rawCode
+    ? `${t('Kauf fehlgeschlagen. Bitte später erneut.')} (${rawCode})`
+    : t('Kauf fehlgeschlagen. Bitte später erneut.');
+};
+
 export default function ShopScreen() {
   const { t } = useTranslation();
   const isFocused = useIsFocused();
@@ -92,6 +135,7 @@ export default function ShopScreen() {
   const iapAvailable = Boolean(iapModule && typeof iapModule.connectAsync === 'function');
   const [availableIapProductIds, setAvailableIapProductIds] = useState([]);
   const [iapPriceLabelsByProductId, setIapPriceLabelsByProductId] = useState({});
+  const [iapProductsLoaded, setIapProductsLoaded] = useState(false);
   const [shopMessage, setShopMessage] = useState(null);
   const [purchasingId, setPurchasingId] = useState(null);
   const verticalScrollRef = useRef(null);
@@ -129,7 +173,7 @@ export default function ShopScreen() {
     const availableWidth = Math.max(0, screenWidth - 48);
     return Math.max(0, (availableWidth - cardGap * 2) / 3 - cardPeek);
   }, [cardGap, cardPeek, screenWidth]);
-  const contentPaddingTop = Math.max(insets.top + 16, 56);
+  const contentPaddingTop = Math.max(insets.top - 4, 28);
   const contentPaddingBottom = 24;
   const canClaimDaily = isDailyCoinsClaimAvailable(dailyClaimDate);
   const showDailySection =
@@ -356,7 +400,7 @@ export default function ShopScreen() {
     let cancelled = false;
 
     const unsubscribe = registerIapListener(
-      async ({ responseCode, results, errorCode }) => {
+      async ({ responseCode, results, errorCode, errorMessage }) => {
         if (cancelled) {
           return;
         }
@@ -372,12 +416,18 @@ export default function ShopScreen() {
               await iapModule.finishTransactionAsync(purchase, true);
               await grantCoins(pack.amount);
             } catch (err) {
-              setShopMessage(t('Kauf fehlgeschlagen. Bitte sp\u00e4ter erneut.'));
+              console.warn('IAP finish/grant failed:', purchase?.productId, err);
+              setShopMessage(buildIapFailureMessage(t, err));
             }
           }
         } else if (responseCode === iapModule.IAPResponseCode.USER_CANCELED) {
         } else if (errorCode) {
-          setShopMessage(t('Kauf fehlgeschlagen. Bitte sp\u00e4ter erneut.'));
+          setShopMessage(
+            buildIapFailureMessage(t, {
+              errorCode,
+              errorMessage,
+            })
+          );
         }
 
         setPurchasingId(null);
@@ -385,6 +435,7 @@ export default function ShopScreen() {
     );
 
     async function initIap() {
+      setIapProductsLoaded(false);
       try {
         await iapModule.connectAsync();
         const response = await iapModule.getProductsAsync(COIN_PACK_PRODUCT_IDS);
@@ -402,14 +453,18 @@ export default function ShopScreen() {
             priceLabelsByProductId[productId] = priceLabel;
           }
         });
+        console.info('IAP products loaded:', Array.from(loadedProductIds));
         if (!cancelled) {
           setAvailableIapProductIds(Array.from(loadedProductIds));
           setIapPriceLabelsByProductId(priceLabelsByProductId);
+          setIapProductsLoaded(true);
         }
       } catch (err) {
+        console.warn('IAP product load failed:', COIN_PACK_PRODUCT_IDS, err);
         if (!cancelled) {
           setAvailableIapProductIds([]);
           setIapPriceLabelsByProductId({});
+          setIapProductsLoaded(true);
         }
       }
     }
@@ -558,9 +613,11 @@ export default function ShopScreen() {
       setShopMessage(t('Kauf ist gerade nicht verf\u00fcgbar.'));
       return;
     }
-    const hasLoadedIapProducts = availableIapProductIds.length > 0;
-    const productAvailable =
-      !hasLoadedIapProducts || availableIapProductIds.includes(item.productId);
+    if (!iapProductsLoaded) {
+      setShopMessage('Google Play l\u00e4dt die Kaufprodukte gerade noch.');
+      return;
+    }
+    const productAvailable = availableIapProductIds.includes(item.productId);
     if (!productAvailable) {
       setShopMessage(t('Produkt ist im Store gerade nicht verf\u00fcgbar.'));
       return;
@@ -573,8 +630,9 @@ export default function ShopScreen() {
       await iapModule.connectAsync();
       await iapModule.requestPurchaseAsync({ sku: item.productId });
     } catch (err) {
+      console.warn('IAP request failed:', item.productId, err);
       setPurchasingId(null);
-      setShopMessage(t('Kauf fehlgeschlagen. Bitte sp\u00e4ter erneut.'));
+      setShopMessage(buildIapFailureMessage(t, err));
     }
   };
 

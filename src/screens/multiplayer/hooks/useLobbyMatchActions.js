@@ -20,8 +20,7 @@ export default function useLobbyMatchActions({
   setMatchesError,
   closingRef,
   skipAutoCloseRef,
-  isHostWaiting,
-  hasEnoughPlayers,
+  canStartFromLobby,
 }) {
   const {
     creating,
@@ -44,8 +43,7 @@ export default function useLobbyMatchActions({
     setQuestionLimit,
     setMatchesError,
     closingRef,
-    isHostWaiting,
-    hasEnoughPlayers,
+    canStartFromLobby,
   });
 
   const {

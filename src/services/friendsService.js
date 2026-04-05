@@ -1,6 +1,10 @@
 ﻿import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { supabase } from '../lib/supabaseClient';
+import {
+  deriveFriendCode as deriveNormalizedFriendCode,
+  sanitizeFriendCode,
+} from '../utils/friendCode';
 import { runSupabaseRequest } from './supabaseRequest';
 
 const STORAGE_PREFIX = 'medbattle_friends';
@@ -13,7 +17,7 @@ const TIMEOUT_WARN_COOLDOWN_MS = 60 * 1000;
 const timeoutWarnByKey = new Map();
 
 function normalizeCode(value = '') {
-  return value.replace(/[^a-zA-Z0-9_]/g, '').toUpperCase();
+  return sanitizeFriendCode(value);
 }
 
 function isSupabaseTimeoutError(error) {
@@ -205,15 +209,7 @@ function isDuplicatePendingRequestError(error) {
 }
 
 export function deriveFriendCode(userId) {
-  if (!userId) {
-    return '';
-  }
-  const compact = String(userId).replace(/[^a-zA-Z0-9]/g, '');
-  if (!compact) {
-    return '';
-  }
-  const slice = compact.slice(-8).toUpperCase();
-  return slice.padStart(8, '0');
+  return deriveNormalizedFriendCode(userId);
 }
 
 function getStorageKey(userId) {

@@ -91,11 +91,10 @@ Note: Der Emulator zeigte zwischendurch `System UI isn't responding`; die App se
 - [x] Lokales Release-AAB gebaut: `android/app/build/outputs/bundle/release/app-release.aab`.
 - [x] Store-Artefakt verifiziert: `versionCode 31`, `versionName 1.0.1`.
 - [x] AAB in Google Play Closed testing hochgeladen.
-- [ ] Build `31` ist in Play noch inaktiv, bis Review und Rollout abgeschlossen sind.
-- [ ] Solange `31` inaktiv ist, liefern Closed Tests weiter den zuletzt aktiven Build aus; Device-Smoke gegen `31` ist daher noch offen.
+- [x] Historischer Closed-Test-Upload; Build `31` ist inzwischen durch neuere Store-Builds ueberholt.
 - [x] Code-Stand fuer diesen Release-Zyklus gehaertet: OAuth-Session-Recovery nach Deep-Link/Google-Login verbessert.
 - [x] Code-Stand fuer diesen Release-Zyklus gehaertet: Rewarded Ads koennen in Closed Tests mit Google-Test-Ad-IDs laufen.
-- [ ] Nach Aktivierung von `31` auf Realgeraet pruefen: Neuinstallation, Google-Login mit bestehendem Account, Quick Play `1/6 -> Result`, Energie-Dialog, Rewarded Ad, Logout/Reopen.
+- [x] Urspruengliche Aktivierungs-Notiz erledigt; aktueller Store-Teststand laeuft inzwischen ueber neuere Builds.
 - [ ] Repo-Aenderung nach dem Upload: Android ist inzwischen auf `armeabi-v7a` und `arm64-v8a` reduziert; dafuer ist ein neuer Build nach `31` erforderlich.
 
 ## Local Rebuild / Store Build 32 (2026-03-19)
@@ -131,12 +130,23 @@ Note: Der Emulator zeigte zwischendurch `System UI isn't responding`; die App se
 - [ ] AAB `39` in Google Play hochladen.
 - [ ] Nach Upload/Rollout von `39` den echten Store-Build auf `emulator-5554` und `c2ccd135` smoke-testen.
 
-## Aktueller Artefakt-Stand (2026-03-24)
+## Closed Testing / Store Build 42 (2026-03-31)
+- [x] Repo-Release-Check vor dem Build erfolgreich (`npm run release:check`).
+- [x] Lokales Release-AAB gebaut: `android/app/build/outputs/bundle/release/app-release.aab`.
+- [x] Store-Artefakt verifiziert: `versionCode 42`, `versionName 1.0.1`.
+- [x] AAB `42` in Google Play Closed testing hinterlegt.
+- [x] Release-Build enthaelt weiter `armeabi-v7a`, `arm64-v8a` und `x86_64`.
+- [ ] Closed-Test-Install auf dem Realgeraet `c2ccd135` auf `versionCode 42` aktualisieren und verifizieren.
+- [ ] Closed-Test-Install auf `emulator-5554` pruefen.
+- [ ] Gegen genau diesen Store-Build `42` testen: Google-Login, Quick Play `1/6 -> Result`, Energie-Dialog, Rewarded Ad, Coin-/IAP-Kauf und Logout/Reopen.
+
+## Aktueller Artefakt-Stand (2026-03-31)
 - [x] Das angeschlossene Realgeraet `c2ccd135` meldet aktuell `versionCode 35`, `versionName 1.0.1`.
 - [x] Lokales Release-APK vorhanden: `android/app/build/outputs/apk/release/app-release.apk`.
 - [x] Lokales Store-AAB vorhanden: `android/app/build/outputs/bundle/release/app-release.aab`.
-- [x] Der aktuelle Repo-Stand ist als frisches Store-AAB `39` gebaut.
-- [ ] Vor dem naechsten belastbaren Store-Smoke muss dieses AAB `39` erst in Google Play hochgeladen und ausgerollt werden.
+- [x] Der aktuelle Repo-Stand ist als frisches Store-AAB `42` gebaut.
+- [x] Dieses AAB `42` liegt jetzt im Google-Play-Closed-Test-Track.
+- [ ] Der naechste belastbare Store-Smoke muss gegen den aus dem Closed Test installierten Build `42` erfolgen.
 
 ## Store Listing Links (Play Console)
 - Privacy Policy: https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=privacy
@@ -213,7 +223,8 @@ Note: Der Emulator zeigte zwischendurch `System UI isn't responding`; die App se
 - [x] Dev-Client Debug-Build (lokal) neu gebaut und neu installiert; Gradle listet `expo-iap` + `expo-notifications` im Build (2026-03-08).
 - [x] Runtime-Check auf Emulator bestanden: keine `ExpoIap`/`expo-notifications`/`ExpoAsset` Native-Fehler nach Neustart mit aktivem Metro.
 - [x] Runtime-Check auf Realgeraet (2026-03-09, `c2ccd135`): kein `Cannot find native module 'ExpoIap'` / kein `ExpoTopicSubscriptionModule fehlt` / kein `ExpoAsset.downloadAsync`-Klassenfehler nach Neustart mit aktivem Metro.
-- [ ] Produkt-IDs in `.env` gegen Play-Console SKUs pruefen (`EXPO_PUBLIC_IAP_*_PRODUCT_ID`) und Store-Build neu testen.
+- [x] Coin-Produkt-IDs in `.env` gegen die aktuellen Play-Console-SKUs abgeglichen (2026-03-31): `buy_coins500`, `buy_coins1300`, `buy_coins2700`, `buy_coins7000`, `buy_coins1800`.
+- [ ] Store-Build mit diesen neuen Coin-SKUs neu bauen, hochladen und im Closed Test erneut pruefen.
 - Rewarded Ad: Abschluss gibt +5 Energie.
 - Kauf-Flow: Premium setzt Werbung aus, Energie-Dialog passt.
 - [x] Consent-Nachweis (EWR) dokumentiert: Privacy-Text + Code sind konsistent (Rewarded Ads non-personalized, kein externer Telemetry-Provider).

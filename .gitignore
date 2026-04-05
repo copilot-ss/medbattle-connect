@@ -1,6 +1,8 @@
 node_modules
 .expo/
 .env
+/.tmp_*
+/temp/
 /.vscode/settings.json
 supabase/.temp/
 supabase/.branches/
@@ -23,3 +25,11 @@ expo-dev-server*.log
 tmp_screen.png
 tmp_ui.xml
 tmp-uizard-preview.*
+/emulator_*.jpg
+/emulator_*.png
+/emulator_*.xml
+/phone_*.jpg
+/phone_*.png
+/phone_*.xml
+/tmp_emulator_*.xml
+/tmp_phone_*.xml

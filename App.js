@@ -4,7 +4,7 @@ import './src/i18n';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { registerRootComponent } from 'expo';
-import { StatusBar, DevSettings, Platform } from 'react-native';
+import { DevSettings, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AppNavigator from './src/AppNavigator';
 import GlobalErrorBoundary from './src/components/GlobalErrorBoundary';
@@ -46,9 +46,7 @@ function App() {
       }
       try {
         const NavigationBar = require('expo-navigation-bar');
-        await NavigationBar.setBehaviorAsync('inset-touch');
         await NavigationBar.setVisibilityAsync('hidden');
-        await NavigationBar.setBackgroundColorAsync('#000000');
       } catch (err) {
         if (__DEV__) {
           console.warn('NavigationBar update failed:', err);
@@ -100,15 +98,12 @@ function App() {
 
   if (!fontsReady) {
     return (
-      <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
-        <StatusBar hidden />
-      </GestureHandlerRootView>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }} />
     );
   }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <StatusBar hidden />
       <GlobalErrorBoundary>
         <AppNavigator />
       </GlobalErrorBoundary>

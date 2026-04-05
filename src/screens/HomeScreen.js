@@ -20,7 +20,9 @@ import HomeHeader from './home/HomeHeader';
 import ModeCard from './home/ModeCard';
 import OfflineBanner from './home/OfflineBanner';
 import StreakCard from './home/StreakCard';
+import LobbyStartCountdownOverlay from './multiplayer/LobbyStartCountdownOverlay';
 import useHomeActiveLobby from './home/useHomeActiveLobby';
+import useHomeActiveLobbyStart from './home/useHomeActiveLobbyStart';
 import useHomeBoostActions from './home/useHomeBoostActions';
 import useHomePresence from './home/useHomePresence';
 import useHomeUser from './home/useHomeUser';
@@ -29,6 +31,7 @@ import {
   COIN_ENERGY_COST,
   LOBBY_CAPACITY,
   QUICK_PLAY_QUESTIONS,
+  REWARDED_ENERGY,
   sanitizeStatNumber,
 } from './home/homeConfig';
 import useSettingsStats from './settings/useSettingsStats';
@@ -63,6 +66,14 @@ export default function HomeScreen({ navigation, route }) {
     isOffline,
     userId,
     lobbyCapacity: LOBBY_CAPACITY,
+  });
+  const {
+    showStartCountdown,
+    startCountdownValue,
+  } = useHomeActiveLobbyStart({
+    activeLobby,
+    navigation,
+    userId,
   });
   const {
     energyMessage,
@@ -294,12 +305,16 @@ export default function HomeScreen({ navigation, route }) {
         <ActiveLobbyBanner
           activeLobby={activeLobby}
           hasActiveLobby={hasActiveLobby}
-          onOpenLobby={() =>
+          onOpenLobby={() => {
+            const keepCompleted =
+              Boolean(activeLobby?.keepCompleted) ||
+              activeLobby?.existingMatch?.status === 'completed';
             navigation.navigate('MultiplayerLobby', {
               existingMatch: activeLobby?.existingMatch ?? null,
-              mode: 'create',
-            })
-          }
+              keepCompleted,
+              mode: 'hub',
+            });
+          }}
         />
 
         <StreakCard
@@ -361,10 +376,15 @@ export default function HomeScreen({ navigation, route }) {
         rewarding={rewarding}
         coinCost={COIN_ENERGY_COST}
         coinEnergyAmount={COIN_ENERGY_AMOUNT}
+        rewardEnergyAmount={REWARDED_ENERGY}
         onBuyWithCoins={handleBuyEnergyWithCoins}
         onWatchAd={watchAdForEnergy}
         onRefreshEnergy={refreshEnergy}
         onClose={() => setShowBoostModal(false)}
+      />
+      <LobbyStartCountdownOverlay
+        visible={showStartCountdown}
+        countdownValue={startCountdownValue}
       />
     </View>
   );

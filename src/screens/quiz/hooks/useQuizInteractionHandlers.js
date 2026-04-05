@@ -21,6 +21,7 @@ export default function useQuizInteractionHandlers({
   recordMatchAnswer,
   onRecordAnswer,
   finalizeQuiz,
+  currentQuestionBoostIds,
   surrenderMatch,
 }) {
   const [selectedOption, setSelectedOption] = useState(null);
@@ -163,6 +164,7 @@ export default function useQuizInteractionHandlers({
           isCorrect,
           timedOut: timedOutTrigger,
           durationMs: timedOutTrigger ? TIMER_DURATION : elapsedMs,
+          boostsUsed: currentQuestionBoostIds,
           explanation: questionSnapshot.explanation ?? null,
         });
       }
@@ -205,6 +207,7 @@ export default function useQuizInteractionHandlers({
                 correct: isCorrect,
                 durationMs: timedOutTrigger ? TIMER_DURATION : elapsedMs,
                 timedOut: timedOutTrigger,
+                boostsUsed: currentQuestionBoostIds,
               });
 
               if (!result.ok) {
@@ -258,6 +261,7 @@ export default function useQuizInteractionHandlers({
       activeIndex,
       activeScore,
       clearFeedbackTimer,
+      currentQuestionBoostIds,
       currentQuestion,
       finalizeQuiz,
       isAnswerLocked,
