@@ -119,7 +119,13 @@ async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
             throw err;
           }
         }
-        await ensureRecoveredSession(previousSession);
+        const recoveredSession = await ensureRecoveredSession(previousSession);
+        if (mode === 'signIn') {
+          await claimActiveSessionOrThrow({
+            dedupeKey: `oauth:${provider}`,
+            session: recoveredSession,
+          });
+        }
         return true;
       }
 
@@ -142,7 +148,13 @@ async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
             throw err;
           }
         }
-        await ensureRecoveredSession(previousSession);
+        const recoveredSession = await ensureRecoveredSession(previousSession);
+        if (mode === 'signIn') {
+          await claimActiveSessionOrThrow({
+            dedupeKey: `oauth:${provider}`,
+            session: recoveredSession,
+          });
+        }
         return true;
       }
 
@@ -151,12 +163,6 @@ async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
 
     if (!callbackHandled) {
       throw new Error(t('Nach OAuth wurde kein Code oder Token geliefert.'));
-    }
-
-    if (mode === 'signIn') {
-      await claimActiveSessionOrThrow({
-        dedupeKey: `oauth:${provider}`,
-      });
     }
 
     return { ok: true };
@@ -172,7 +178,7 @@ async function runOAuthFlow({ provider, setMessage, setLoading, mode }) {
           ? 'OAuth-Verknüpfung fehlgeschlagen.'
           : 'OAuth fehlgeschlagen.',
     });
-    setMessage(t(formatted) + hint);
+    setMessage(t(formatted));
     return { ok: false, error: err };
   } finally {
     setLoading(false);

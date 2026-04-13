@@ -1,15 +1,27 @@
 import { Pressable, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
 import AvatarView from '../../components/avatar/AvatarView';
 import { BubbleReveal } from './ResultWidgets';
 import styles from '../styles/ResultScreen.styles';
 
-function getBoostLabel(boostId, t) {
+function renderBoostChip(boostId, entryKey) {
   if (boostId === 'joker_5050') {
-    return '50/50';
+    return (
+      <View key={`${entryKey}-${boostId}`} style={styles.scoreboardBoostChip}>
+        <Text style={styles.scoreboardBoostChipText}>50/50</Text>
+      </View>
+    );
   }
   if (boostId === 'freeze_time') {
-    return t('Zeit einfrieren');
+    return (
+      <View
+        key={`${entryKey}-${boostId}`}
+        style={[styles.scoreboardBoostChip, styles.scoreboardBoostChipIconOnly]}
+      >
+        <Ionicons name="snow" size={14} color="#DFF3FF" />
+      </View>
+    );
   }
   return null;
 }
@@ -80,17 +92,7 @@ export default function ResultScoreboard({
                   </View>
                   {Array.isArray(entry.usedBoostIds) && entry.usedBoostIds.length ? (
                     <View style={styles.scoreboardBoostRow}>
-                      {entry.usedBoostIds.map((boostId) => {
-                        const boostLabel = getBoostLabel(boostId, t);
-                        if (!boostLabel) {
-                          return null;
-                        }
-                        return (
-                          <View key={`${entry.key}-${boostId}`} style={styles.scoreboardBoostChip}>
-                            <Text style={styles.scoreboardBoostChipText}>{boostLabel}</Text>
-                          </View>
-                        );
-                      })}
+                      {entry.usedBoostIds.map((boostId) => renderBoostChip(boostId, entry.key))}
                     </View>
                   ) : null}
                 </View>
@@ -99,7 +101,6 @@ export default function ResultScoreboard({
                 <Text style={styles.scoreboardScore}>
                   {Number.isFinite(entry.score) ? entry.score : '-'}
                 </Text>
-                <Text style={styles.scoreboardScoreLabel}>{t('Richtig')}</Text>
               </View>
             </Pressable>
           </BubbleReveal>

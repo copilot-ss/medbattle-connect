@@ -149,12 +149,12 @@ Note: Der Emulator zeigte zwischendurch `System UI isn't responding`; die App se
 - [ ] Der naechste belastbare Store-Smoke muss gegen den aus dem Closed Test installierten Build `42` erfolgen.
 
 ## Store Listing Links (Play Console)
-- Privacy Policy: https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=privacy
-- AGB/Terms: https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=terms
-- Support: https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=support
-- Delete Account: https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=delete-account
-- [x] Legal Function deployed public (`supabase functions deploy legal --no-verify-jwt`), Links live mit Stand `2026-03-11`.
-- [x] Delete-Account Function deployed (`supabase functions deploy delete-account`), ohne Auth korrekt `401` am `2026-03-11`.
+- Privacy Policy: https://copilot-ss.github.io/medbattle-connect/legal-static/privacy.html
+- AGB/Terms: https://copilot-ss.github.io/medbattle-connect/legal-static/terms.html
+- Support: https://copilot-ss.github.io/medbattle-connect/legal-static/support.html
+- Delete Account: https://copilot-ss.github.io/medbattle-connect/legal-static/delete-account.html
+- [x] Static legal pages deployed via GitHub Pages (2026-04-10): privacy, terms, support, and delete-account are live as standalone HTML pages under `legal-static/`.
+- [x] Legacy Delete-Account API bleibt deployed (`supabase functions deploy delete-account`), ist aber nicht die Play-Console-URL; fuer Google Play zaehlt die statische oeffentliche Delete-Account-Seite.
 
 ## Play Data Safety
 - [ ] Data Safety Form mit `PLAY_DATA_SAFETY_DRAFT.md` abgeglichen und final in Play Console eingetragen.

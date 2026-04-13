@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TIMER_DURATION } from './useQuizConfig';
+import { getBoostPointPenalty } from '../../../utils/quizBoosts';
+
+const MULTIPLAYER_POINTS_PER_CORRECT_ANSWER = 3;
 
 export default function useQuizInteractionHandlers({
   isMultiplayer,
@@ -149,7 +152,13 @@ export default function useQuizInteractionHandlers({
 
       const isCorrect = option === questionSnapshot.correct_answer;
       const nextSoloScore = isCorrect ? soloBaseScore + 1 : soloBaseScore;
-      const nextMatchScore = isCorrect ? matchBaseScore + 1 : matchBaseScore;
+      const boostPenalty = getBoostPointPenalty(currentQuestionBoostIds);
+      const nextMatchScore = Math.max(
+        0,
+        matchBaseScore +
+          (isCorrect ? MULTIPLAYER_POINTS_PER_CORRECT_ANSWER : 0) -
+          boostPenalty
+      );
 
       if (typeof onRecordAnswer === 'function') {
         onRecordAnswer({

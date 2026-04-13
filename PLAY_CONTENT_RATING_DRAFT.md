@@ -11,6 +11,7 @@ Zweck:
 - App-Typ: Quiz / Education
 - Thema: Medizinwissen im Lern-/Quiz-Kontext
 - Multiplayer: Ja
+- Nutzerinhalte: begrenzt auf Nutzernamen, optionale Profilfotos und Freundes-/Lobby-Interaktion; kein offener Chat- oder Posting-Feed
 - Freitext-Chat: im aktuellen Produkt nicht als Kernfunktion dokumentiert
 - Echtgeld / Gambling: Nein
 

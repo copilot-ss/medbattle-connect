@@ -89,6 +89,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  consentWrap: {
+    marginBottom: 16,
+  },
+  consentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  consentTextWrap: {
+    flex: 1,
+    paddingTop: 1,
+  },
+  consentLabel: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontFamily: fonts.medium,
+    lineHeight: 19,
+  },
+  consentHint: {
+    color: colors.textMuted,
+    fontSize: 12,
+    lineHeight: 17,
+    fontFamily: fonts.regular,
+    marginTop: 4,
+  },
+  consentLinksRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+  },
+  consentLinkButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
+  },
+  consentLinkText: {
+    color: '#9EDCFF',
+    fontSize: 13,
+    fontFamily: fonts.medium,
+  },
   rememberBox: {
     width: 20,
     height: 20,

@@ -9,6 +9,7 @@ import {
 import { resolveProgressiveMatch } from '../../../services/match/matchHelpers';
 
 const LOBBY_MATCH_SYNC_INTERVAL_MS = 2500;
+const COMPLETED_LOBBY_MATCH_SYNC_INTERVAL_MS = 900;
 
 export default function useLobbyMatchState({
   navigation,
@@ -31,6 +32,27 @@ export default function useLobbyMatchState({
   const isOffline = isOnline === false;
   const lastOnlineRef = useRef(isOnline);
 
+  const refreshCurrentMatch = useCallback(async (matchId, warningMessage) => {
+    if (!matchId) {
+      return null;
+    }
+
+    try {
+      const result = await getMatchById(matchId);
+      if (attachedMatchIdRef.current !== matchId) {
+        return result?.ok && result.match ? result.match : null;
+      }
+      if (!result?.ok || !result.match) {
+        return null;
+      }
+      setCurrentMatch((prev) => resolveProgressiveMatch(prev, result.match));
+      return result.match;
+    } catch (err) {
+      console.warn(warningMessage, err);
+      return null;
+    }
+  }, []);
+
   const attachMatchSubscription = useCallback((matchId) => {
     if (subscriptionRef.current) {
       subscriptionRef.current();
@@ -43,6 +65,12 @@ export default function useLobbyMatchState({
       matchId,
       (updated) => {
         setCurrentMatch((prev) => resolveProgressiveMatch(prev, updated));
+        if (updated?.id && updated.status === 'active') {
+          void refreshCurrentMatch(
+            updated.id,
+            'Konnte aktives Lobby-Match nicht nachladen:'
+          );
+        }
       },
       {
         onStatus: (status) => {
@@ -68,20 +96,8 @@ export default function useLobbyMatchState({
       }
     );
 
-    getMatchById(matchId)
-      .then((result) => {
-        if (attachedMatchIdRef.current !== matchId) {
-          return;
-        }
-        if (!result?.ok || !result.match) {
-          return;
-        }
-        setCurrentMatch((prev) => resolveProgressiveMatch(prev, result.match));
-      })
-      .catch((err) => {
-        console.warn('Konnte aktuellen Lobby-Status nicht laden:', err);
-      });
-  }, []);
+    void refreshCurrentMatch(matchId, 'Konnte aktuellen Lobby-Status nicht laden:');
+  }, [refreshCurrentMatch]);
 
   useEffect(() => () => {
     if (subscriptionRef.current) {
@@ -148,9 +164,13 @@ export default function useLobbyMatchState({
   }, [currentMatch?.id, currentMatch?.status]);
 
   useEffect(() => {
+    const shouldSyncWaitingLobby = currentMatch?.status === 'waiting';
+    const shouldSyncCompletedLobby =
+      allowCompletedLobby && currentMatch?.status === 'completed';
+
     if (
       !currentMatch ||
-      currentMatch.status !== 'waiting' ||
+      (!shouldSyncWaitingLobby && !shouldSyncCompletedLobby) ||
       isOffline
     ) {
       return undefined;
@@ -158,21 +178,30 @@ export default function useLobbyMatchState({
 
     let active = true;
     const intervalId = setInterval(async () => {
-      try {
-        const result = await getMatchById(currentMatch.id);
-        if (active && result.ok && result.match) {
-          setCurrentMatch((prev) => resolveProgressiveMatch(prev, result.match));
-        }
-      } catch (err) {
-        console.warn('Konnte Lobby-Status nicht aktualisieren:', err);
+      await refreshCurrentMatch(
+        currentMatch.id,
+        'Konnte Lobby-Status nicht aktualisieren:'
+      );
+      if (!active) {
+        return;
       }
-    }, realtimeStatus === 'ready' ? LOBBY_MATCH_SYNC_INTERVAL_MS : 1800);
+    }, shouldSyncCompletedLobby
+      ? COMPLETED_LOBBY_MATCH_SYNC_INTERVAL_MS
+      : realtimeStatus === 'ready'
+        ? LOBBY_MATCH_SYNC_INTERVAL_MS
+        : 1800);
 
     return () => {
       active = false;
       clearInterval(intervalId);
     };
-  }, [currentMatch, isOffline, realtimeStatus]);
+  }, [
+    allowCompletedLobby,
+    currentMatch,
+    isOffline,
+    realtimeStatus,
+    refreshCurrentMatch,
+  ]);
 
   useEffect(() => {
     const wasOffline = lastOnlineRef.current === false && isOnline === true;
@@ -187,19 +216,18 @@ export default function useLobbyMatchState({
     }
 
     attachMatchSubscription(currentMatch.id);
-    getMatchById(currentMatch.id)
-      .then((result) => {
-        if (result.ok && result.match) {
-          setCurrentMatch((prev) => resolveProgressiveMatch(prev, result.match));
-        }
-      })
-      .catch((err) => {
-        console.warn('Konnte Lobby nach Reconnect nicht laden:', err);
-        if (setMatchesError) {
-          setMatchesError(err);
-        }
-      });
-  }, [attachMatchSubscription, currentMatch?.id, isOnline, setMatchesError, userId]);
+    void refreshCurrentMatch(
+      currentMatch.id,
+      'Konnte Lobby nach Reconnect nicht laden:'
+    );
+  }, [
+    attachMatchSubscription,
+    currentMatch?.id,
+    isOnline,
+    refreshCurrentMatch,
+    setMatchesError,
+    userId,
+  ]);
 
   useEffect(() => {
     if (currentMatch || !existingMatch) {

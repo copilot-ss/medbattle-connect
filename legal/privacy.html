@@ -65,7 +65,8 @@
         margin: 22px 0 8px;
         font-size: 18px;
       }
-      p, li {
+      p,
+      li {
         font-size: 15px;
         line-height: 1.7;
       }
@@ -79,6 +80,10 @@
       }
       a:hover {
         text-decoration: underline;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 13px;
       }
       @media (max-width: 640px) {
         .page {
@@ -99,99 +104,130 @@
         <header>
           <p class="eyebrow">MedQuiz</p>
           <h1>Datenschutz</h1>
-          <p class="lead">MedQuiz ist eine Quiz-App für Medizinwissen. Diese Hinweise erklären, welche Daten wir verarbeiten und warum.</p>
-          <p class="meta">Stand: 2026-03-10</p>
+          <p class="lead">
+            MedQuiz ist eine Quiz-App fuer Medizinwissen. Diese Hinweise
+            erklaeren, welche Daten wir verarbeiten und warum.
+          </p>
+          <p class="meta">Stand: 2026-04-12</p>
         </header>
 
         <div class="card">
           <h2>Verantwortlicher</h2>
-          <p>Verantwortlich für die Datenverarbeitung ist das MedQuiz Team.</p>
+          <p>Verantwortlich fuer die Datenverarbeitung ist CoppiCodes als Publisher von MedQuiz.</p>
           <p>Kontakt: <a href="mailto:medbattle1@gmail.com">medbattle1@gmail.com</a></p>
 
           <h2>Welche Daten wir verarbeiten</h2>
           <ul>
-            <li>Accountdaten: E-Mail, Nutzername, Provider-IDs (z.B. Google, Discord).</li>
-            <li>Profil- und Spielwerte: Scores, Streaks, Achievements, Lobby-Status.</li>
-            <li>Optionale Profilfotos: nur wenn du Kamera oder Galerie fuer ein Avatar-Bild nutzt.</li>
-            <li>Geräte- und Nutzungsdaten: App-Version, OS, Crash-Logs, Diagnose-Infos.</li>
-            <li>Werbe- und Kaufdaten: Werbe-IDs und Kaufbelege, falls genutzt.</li>
-            <li>Gastmodus: lokale Gast-ID und Einstellungen auf dem Gerät.</li>
-            <li>Kommunikation: Inhalte deiner Support-Anfragen.</li>
+            <li>Accountdaten: E-Mail, Nutzername und Provider-IDs wie Google oder Discord.</li>
+            <li>Profil- und Spieldaten: Scores, Streaks, Achievements, Ranglisten und Lobby-Status.</li>
+            <li>Optionale Profilfotos: nur wenn du fuer deinen Avatar Kamera oder Galerie nutzt.</li>
+            <li>Geraete- und Diagnosedaten: App-Version, Betriebssystem und redigierte Crash-Logs.</li>
+            <li>Werbe- und Kaufdaten: relevante Werbe-IDs und Kauf-/Entitlement-Metadaten.</li>
+            <li>Gastmodus-Daten: lokale Gast-ID und Einstellungen auf deinem Geraet.</li>
+            <li>Kommunikationsdaten: Inhalte von Support-Anfragen, die du an uns sendest.</li>
           </ul>
 
           <h2>Zwecke der Verarbeitung</h2>
           <ul>
             <li>Login, Account-Schutz und Sicherheit.</li>
             <li>Gameplay, Matchmaking, Ranglisten und Fortschritt.</li>
-            <li>Fehleranalyse und Stabilität.</li>
-            <li>Abrechnung von Premium/Käufen und Auslieferung von Werbung.</li>
-            <li>Support und Beantwortung deiner Anfragen.</li>
+            <li>Fehleranalyse und Stabilitaet.</li>
+            <li>Abrechnung von Premium/Kaeufen und Auslieferung von Werbung.</li>
+            <li>Support und Bearbeitung deiner Anfragen.</li>
           </ul>
 
           <h2>Rechtsgrundlagen (DSGVO)</h2>
           <ul>
-            <li>Vertrag/Leistungserbringung (Art. 6 Abs. 1 lit. b DSGVO).</li>
-            <li>Einwilligung, z.B. für Werbung/Tracking (Art. 6 Abs. 1 lit. a DSGVO).</li>
-            <li>Berechtigtes Interesse, z.B. Sicherheits- und Fehleranalyse (Art. 6 Abs. 1 lit. f DSGVO).</li>
-            <li>Rechtliche Pflichten, z.B. Abrechnung (Art. 6 Abs. 1 lit. c DSGVO).</li>
+            <li>Vertrag bzw. Leistungserbringung (Art. 6 Abs. 1 lit. b DSGVO).</li>
+            <li>Einwilligung, zum Beispiel fuer Werbung oder Tracking (Art. 6 Abs. 1 lit. a DSGVO).</li>
+            <li>Berechtigte Interessen, zum Beispiel Sicherheit und Fehleranalyse (Art. 6 Abs. 1 lit. f DSGVO).</li>
+            <li>Rechtliche Pflichten, zum Beispiel Abrechnung (Art. 6 Abs. 1 lit. c DSGVO).</li>
           </ul>
 
-          <h2>Empfänger und Dienstleister</h2>
+          <h2>Empfaenger und Dienstleister</h2>
           <ul>
-            <li>Supabase (Auth, Datenbank, Storage).</li>
-            <li>Google/Discord (OAuth-Login).</li>
-            <li>Interne, redigierte Client-Logs für Crash-Diagnosen.</li>
-            <li>Google AdMob für Werbung.</li>
-            <li>App-Store Provider für In-App-Käufe (Apple/Google).</li>
+            <li>Supabase fuer Auth, Datenbank und Storage.</li>
+            <li>Google oder Discord fuer OAuth-Login.</li>
+            <li>Interne redigierte Client-Logs fuer Crash-Diagnosen ohne externen Telemetry-Provider.</li>
+            <li>Google AdMob fuer Werbung.</li>
+            <li>App-Store-Anbieter fuer In-App-Kaeufe, also Apple oder Google.</li>
           </ul>
 
-          <h2>Datenübermittlung in Drittländer</h2>
-          <p>Einige Dienstleister können Daten außerhalb der EU verarbeiten (z.B. USA). Dabei nutzen wir Standardvertragsklauseln oder vergleichbare Schutzmaßnahmen.</p>
+          <h2>Sichere Datenverarbeitung</h2>
+          <ul>
+            <li>Wir uebertragen personenbezogene Daten ueber verschluesselte Verbindungen wie HTTPS/TLS.</li>
+            <li>Auf Kontodaten greifen nur die Systeme und Dienstleister zu, die fuer den Betrieb von MedQuiz erforderlich sind.</li>
+            <li>Client-Fehler- und Diagnosedaten werden vor der Speicherung redigiert.</li>
+            <li>Du bist selbst dafuer verantwortlich, deine Zugangsdaten auf deinen Geraeten sicher aufzubewahren.</li>
+          </ul>
 
-          <h2>Speicherdauer und Löschung</h2>
-          <p>Wir speichern Daten nur so lange, wie es für den Betrieb der App, rechtliche Pflichten oder Sicherheitszwecke erforderlich ist. Auf Wunsch löschen wir deinen Account und zugehörige Daten, sofern keine Aufbewahrungspflichten entgegenstehen.</p>
+          <h2>Drittlaender und Speicherdauer</h2>
+          <p>
+            Einige Dienstleister koennen Daten ausserhalb der EU verarbeiten,
+            zum Beispiel in den USA. Wir nutzen dafuer
+            Standardvertragsklauseln oder vergleichbare Schutzmassnahmen.
+          </p>
+          <ul>
+            <li>Account-, Profil-, Spiel-, Ranglisten- und Avatar-Daten: solange dein Konto aktiv ist. Nach einer Kontoloeschung loeschen wir diese Daten in der Regel sofort, spaetestens innerhalb von 30 Tagen, sofern keine gesetzlichen oder sicherheitsrelevanten Gruende entgegenstehen.</li>
+            <li>Gastmodus- und Einstellungsdaten, die nur lokal auf deinem Geraet liegen: bis du App-Daten loeschst oder die App deinstallierst.</li>
+            <li>Redigierte Crash- und Diagnosedaten: in der Regel bis zu 90 Tage.</li>
+            <li>Support-Anfragen: bis zur Bearbeitung und danach bis zu 24 Monate fuer Rueckfragen.</li>
+            <li>Abrechnungs-, Steuer-, Betrugs- oder Sicherheitsnachweise, die wir rechtlich aufbewahren muessen: bis zu 10 Jahre.</li>
+          </ul>
 
           <h2>Deine Rechte</h2>
           <ul>
-            <li>Auskunft, Berichtigung, Löschung, Einschränkung.</li>
-            <li>Datenübertragbarkeit.</li>
+            <li>Auskunft, Berichtigung, Loeschung und Einschraenkung.</li>
+            <li>Datenuebertragbarkeit.</li>
             <li>Widerspruch gegen Verarbeitung und Widerruf von Einwilligungen.</li>
-            <li>Beschwerde bei einer Aufsichtsbehörde.</li>
+            <li>Beschwerde bei einer Aufsichtsbehoerde.</li>
           </ul>
           <p>Schreibe uns dazu an die Kontaktadresse oben.</p>
 
           <h2>Werbung und Einwilligung (EWR)</h2>
           <p>
-            Rewarded Ads werden derzeit als nicht personalisierte Werbung angefragt
-            (<code>requestNonPersonalizedAdsOnly: true</code>).
+            Rewarded Ads werden derzeit als nicht personalisierte Werbung
+            angefragt (<code>requestNonPersonalizedAdsOnly: true</code>).
             Ein externer Telemetry-Provider wird aktuell nicht genutzt.
           </p>
           <p>
-            Falls personalisierte Werbung oder weitere Tracking-Dienste eingefuehrt
-            werden, aktualisieren wir diese Datenschutzhinweise und den Consent-Flow
-            vor dem Rollout.
+            Falls personalisierte Werbung oder weitere Tracking-Dienste
+            eingefuehrt werden, aktualisieren wir diese Datenschutzhinweise und
+            den Consent-Flow vor dem Rollout.
           </p>
 
           <h2>DSAR-Prozess (Betroffenenrechte)</h2>
           <p>
-            Anfragen zu Auskunft, Berichtigung oder Loeschung kannst du per E-Mail
-            an <a href="mailto:medbattle1@gmail.com">medbattle1@gmail.com</a> senden.
+            Anfragen zu Auskunft, Berichtigung oder Loeschung kannst du per
+            E-Mail an <a href="mailto:medbattle1@gmail.com">medbattle1@gmail.com</a>
+            senden.
           </p>
           <p>
-            Eingangsbestaetigung: innerhalb von 72 Stunden. Abschluss: in der Regel
-            innerhalb von 30 Tagen (Art. 12 Abs. 3 DSGVO), bei komplexen Faellen
-            zulaessige Verlaengerung um bis zu 60 Tage.
+            Eingangsbestaetigung: innerhalb von 72 Stunden. Abschluss: in der
+            Regel innerhalb von 30 Tagen (Art. 12 Abs. 3 DSGVO), bei komplexen
+            Faellen zulaessige Verlaengerung um bis zu 60 Tage.
           </p>
           <p>
-            Vor der Bearbeitung kann eine Identitaetspruefung verlangt werden, um
-            Kontodaten vor unbefugtem Zugriff zu schuetzen.
+            Vor der Bearbeitung kann eine Identitaetspruefung verlangt werden,
+            um Kontodaten vor unbefugtem Zugriff zu schuetzen.
           </p>
 
           <h2>Hinweis zur Nutzung</h2>
-          <p>MedQuiz ist ein Lernspiel und kein Medizinprodukt. Die App diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.</p>
+          <p>
+            MedQuiz ist ein Lernspiel und kein Medizinprodukt. Die App
+            diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen
+            und ersetzt keine medizinische Beratung.
+          </p>
+          <p>
+            Wenn du eine Diagnose, Behandlung oder individuellen medizinischen
+            Rat brauchst, konsultiere qualifiziertes medizinisches Fachpersonal.
+          </p>
 
-          <h2>Änderungen</h2>
-          <p>Wir aktualisieren diese Hinweise bei Bedarf. Die aktuelle Version ist unter dem Link in der App verfügbar.</p>
+          <h2>Aenderungen</h2>
+          <p>
+            Wir aktualisieren diese Hinweise bei Bedarf. Die aktuelle Version
+            ist unter dem Link in der App verfuegbar.
+          </p>
         </div>
       </div>
     </main>

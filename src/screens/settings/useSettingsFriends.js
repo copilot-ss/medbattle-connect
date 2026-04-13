@@ -11,6 +11,7 @@ import {
   respondFriendRequest,
 } from '../../services/friendsService';
 import { formatUserError } from '../../utils/formatUserError';
+import { getBlockedUsers, isUserBlocked } from '../../utils/blockedUsers';
 import { sanitizeFriendCode } from '../../utils/friendCode';
 import { useTranslation } from '../../i18n/useTranslation';
 import useFriendsPresence from './useFriendsPresence';
@@ -95,12 +96,43 @@ export default function useSettingsFriends({
   const [sentFriendRequestCode, setSentFriendRequestCode] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
   const [friendsMigrated, setFriendsMigrated] = useState(false);
+  const [blockedUsers, setBlockedUsers] = useState([]);
   const hasLoadedFriendsRef = useRef(false);
   const refreshInFlightRef = useRef(false);
   const normalizedFriendCodeInput = sanitizeFriendCode(friendCodeInput);
   const friendRequestSent =
     Boolean(sentFriendRequestCode) &&
     normalizedFriendCodeInput === sentFriendRequestCode;
+
+  const filterBlockedEntries = useCallback(
+    (entries = []) =>
+      (Array.isArray(entries) ? entries : []).filter(
+        (entry) =>
+          !isUserBlocked(
+            {
+              userId:
+                entry?.userId
+                ?? entry?.requesterId
+                ?? entry?.friendId
+                ?? null,
+              friendCode: entry?.code ?? entry?.friendCode ?? null,
+              username: entry?.username ?? entry?.displayName ?? null,
+            },
+            blockedUsers
+          )
+      ),
+    [blockedUsers]
+  );
+
+  const refreshBlockedUsers = useCallback(async () => {
+    const nextBlockedUsers = await getBlockedUsers();
+    setBlockedUsers(nextBlockedUsers);
+    return nextBlockedUsers;
+  }, []);
+
+  useEffect(() => {
+    void refreshBlockedUsers();
+  }, [refreshBlockedUsers]);
 
   const loadFriends = useCallback(
     async (currentUserId, options = {}) => {
@@ -125,7 +157,7 @@ export default function useSettingsFriends({
         const list = await fetchFriends(currentUserId, {
           suppressTimeoutWarning: silent,
         });
-        const normalized = Array.isArray(list) ? list : [];
+        const normalized = filterBlockedEntries(Array.isArray(list) ? list : []);
         await prefetchFriendAvatars(normalized);
         setFriends((previous) => mergeFriendsList(normalized, previous));
         hasLoadedFriendsRef.current = true;
@@ -140,7 +172,7 @@ export default function useSettingsFriends({
         setLoadingFriends(false);
       }
     },
-    [t]
+    [filterBlockedEntries, t]
   );
 
   const loadFriendRequests = useCallback(
@@ -160,7 +192,7 @@ export default function useSettingsFriends({
         const list = await fetchFriendRequests(currentUserId, {
           suppressTimeoutWarning: silent,
         });
-        const normalized = Array.isArray(list) ? list : [];
+        const normalized = filterBlockedEntries(Array.isArray(list) ? list : []);
         await prefetchFriendAvatars(normalized);
         setFriendRequests(normalized);
       } catch (err) {
@@ -174,7 +206,7 @@ export default function useSettingsFriends({
         setLoadingFriendRequests(false);
       }
     },
-    [t]
+    [filterBlockedEntries, t]
   );
 
   useEffect(() => {
@@ -223,7 +255,16 @@ export default function useSettingsFriends({
     return () => {
       active = false;
     };
-  }, [authUserId, friendsMigrated, loadFriendRequests, loadFriends, localGuestId, userId]);
+  }, [
+    authUserId,
+    blockedUsers,
+    filterBlockedEntries,
+    friendsMigrated,
+    loadFriendRequests,
+    loadFriends,
+    localGuestId,
+    userId,
+  ]);
 
   useFocusEffect(
     useCallback(() => {
@@ -331,6 +372,18 @@ export default function useSettingsFriends({
       return;
     }
 
+    if (
+      isUserBlocked(
+        {
+          friendCode: normalizedCode,
+        },
+        blockedUsers
+      )
+    ) {
+      setFriendsFeedback(t('Dieser Nutzer ist blockiert.'));
+      return;
+    }
+
     setAddingFriend(true);
     setFriendsFeedback(null);
 
@@ -367,7 +420,15 @@ export default function useSettingsFriends({
     } finally {
       setAddingFriend(false);
     }
-  }, [addingFriend, friendCode, friends, normalizedFriendCodeInput, t, userId]);
+  }, [
+    addingFriend,
+    blockedUsers,
+    friendCode,
+    friends,
+    normalizedFriendCodeInput,
+    t,
+    userId,
+  ]);
 
   const handleRespondToFriendRequest = useCallback(async (requestId, action = 'accept') => {
     if (!userId || !requestId || respondingFriendRequestId) {
@@ -508,5 +569,6 @@ export default function useSettingsFriends({
     handleCopyFriendCode,
     refreshingFriends,
     onRefreshFriends: handleRefreshFriends,
+    refreshBlockedUsers,
   };
 }

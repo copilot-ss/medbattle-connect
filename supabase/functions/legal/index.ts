@@ -1,6 +1,20 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
+const APP_NAME = 'MedQuiz';
+const PUBLISHER_NAME = 'CoppiCodes';
+const PACKAGE_NAME = 'com.sjigalin.medbattle';
 const LEGAL_CONTACT_EMAIL = 'medbattle1@gmail.com';
+const LAST_UPDATED = '2026-04-12';
+const PUBLIC_DOC_URLS = {
+  privacy:
+    'https://copilot-ss.github.io/medbattle-connect/legal-static/privacy.html',
+  terms:
+    'https://copilot-ss.github.io/medbattle-connect/legal-static/terms.html',
+  support:
+    'https://copilot-ss.github.io/medbattle-connect/legal-static/support.html',
+  'delete-account':
+    'https://copilot-ss.github.io/medbattle-connect/legal-static/delete-account.html',
+} as const;
 
 const baseStyles = `
       :root {
@@ -24,7 +38,7 @@ const baseStyles = `
           #f8fafc;
       }
       .container {
-        max-width: 900px;
+        max-width: 940px;
         margin: 0 auto;
       }
       header {
@@ -51,12 +65,69 @@ const baseStyles = `
         font-size: 12px;
         color: #64748b;
       }
+      .identity {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+      .identity-card {
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid #dbeafe;
+        border-radius: 14px;
+        padding: 14px 16px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+      }
+      .identity-label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: #64748b;
+      }
+      .identity-value {
+        font-size: 15px;
+        font-weight: 700;
+        word-break: break-word;
+      }
+      .doc-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+      .doc-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid #cbd5e1;
+        background: rgba(255, 255, 255, 0.92);
+        color: #0f172a;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .doc-link:hover {
+        border-color: #93c5fd;
+        text-decoration: none;
+      }
       .card {
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 16px;
         padding: 22px;
         box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+      }
+      .notice {
+        margin: 0 0 18px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
       }
       h2 {
         margin: 22px 0 8px;
@@ -77,6 +148,10 @@ const baseStyles = `
       a:hover {
         text-decoration: underline;
       }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 13px;
+      }
       @media (max-width: 640px) {
         .page {
           padding: 24px 14px 36px;
@@ -88,6 +163,29 @@ const baseStyles = `
           padding: 18px;
         }
       }
+`;
+
+const identityHtml = `
+        <div class="identity" aria-label="App identity">
+          <div class="identity-card">
+            <span class="identity-label">Google Play app</span>
+            <span class="identity-value">${APP_NAME}</span>
+          </div>
+          <div class="identity-card">
+            <span class="identity-label">Publisher / developer</span>
+            <span class="identity-value">${PUBLISHER_NAME}</span>
+          </div>
+          <div class="identity-card">
+            <span class="identity-label">Android package</span>
+            <span class="identity-value"><code>${PACKAGE_NAME}</code></span>
+          </div>
+        </div>
+        <nav class="doc-nav" aria-label="Legal pages">
+          <a class="doc-link" href="/legal?doc=privacy">Privacy</a>
+          <a class="doc-link" href="/legal?doc=terms">Terms</a>
+          <a class="doc-link" href="/legal?doc=support">Support</a>
+          <a class="doc-link" href="/legal?doc=delete-account">Delete account</a>
+        </nav>
 `;
 
 const renderPage = ({
@@ -108,6 +206,10 @@ const renderPage = ({
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light" />
+    <meta
+      name="description"
+      content="${APP_NAME} by ${PUBLISHER_NAME}. Official legal and account deletion page for the Google Play app ${APP_NAME}."
+    />
     <title>${title}</title>
     <style>
 ${baseStyles}
@@ -117,10 +219,11 @@ ${baseStyles}
     <main class="page">
       <div class="container">
         <header>
-          <p class="eyebrow">MedQuiz</p>
+          <p class="eyebrow">Official Google Play legal page</p>
           <h1>${heading}</h1>
           <p class="lead">${lead}</p>
-          <p class="meta">Stand: ${updatedAt}</p>
+          <p class="meta">Updated: ${updatedAt}</p>
+${identityHtml}
         </header>
 
         <div class="card">
@@ -132,243 +235,212 @@ ${body}
 </html>`;
 
 const privacyHtml = renderPage({
-  title: 'Datenschutz - MedQuiz',
-  heading: 'Datenschutz',
-  lead: 'MedQuiz ist eine Quiz-App für Medizinwissen. Diese Hinweise erklären, welche Daten wir verarbeiten und warum.',
-  updatedAt: '2026-03-10',
-  body: `          <h2>Verantwortlicher</h2>
-          <p>Verantwortlich für die Datenverarbeitung ist das MedQuiz Team.</p>
-          <p>Kontakt: <a href="mailto:${LEGAL_CONTACT_EMAIL}">${LEGAL_CONTACT_EMAIL}</a></p>
-
-          <h2>Welche Daten wir verarbeiten</h2>
-          <ul>
-            <li>Accountdaten: E-Mail, Nutzername, Provider-IDs (z.B. Google, Discord).</li>
-            <li>Profil- und Spielwerte: Scores, Streaks, Achievements, Lobby-Status.</li>
-            <li>Geräte- und Nutzungsdaten: App-Version, OS, Crash-Logs, Diagnose-Infos.</li>
-            <li>Werbe- und Kaufdaten: Werbe-IDs und Kaufbelege, falls genutzt.</li>
-            <li>Gastmodus: lokale Gast-ID und Einstellungen auf dem Gerät.</li>
-            <li>Kommunikation: Inhalte deiner Support-Anfragen.</li>
-          </ul>
-
-          <h2>Zwecke der Verarbeitung</h2>
-          <ul>
-            <li>Login, Account-Schutz und Sicherheit.</li>
-            <li>Gameplay, Matchmaking, Ranglisten und Fortschritt.</li>
-            <li>Fehleranalyse und Stabilität.</li>
-            <li>Abrechnung von Premium/Käufen und Auslieferung von Werbung.</li>
-            <li>Support und Beantwortung deiner Anfragen.</li>
-          </ul>
-
-          <h2>Rechtsgrundlagen (DSGVO)</h2>
-          <ul>
-            <li>Vertrag/Leistungserbringung (Art. 6 Abs. 1 lit. b DSGVO).</li>
-            <li>Einwilligung, z.B. für Werbung/Tracking (Art. 6 Abs. 1 lit. a DSGVO).</li>
-            <li>Berechtigtes Interesse, z.B. Sicherheits- und Fehleranalyse (Art. 6 Abs. 1 lit. f DSGVO).</li>
-            <li>Rechtliche Pflichten, z.B. Abrechnung (Art. 6 Abs. 1 lit. c DSGVO).</li>
-          </ul>
-
-          <h2>Empfänger und Dienstleister</h2>
-          <ul>
-            <li>Supabase (Auth, Datenbank, Storage).</li>
-            <li>Google/Discord (OAuth-Login).</li>
-            <li>Interne, redigierte Client-Logs für Crash-Diagnosen.</li>
-            <li>Google AdMob für Werbung.</li>
-            <li>App-Store Provider für In-App-Käufe (Apple/Google).</li>
-          </ul>
-
-          <h2>Datenübermittlung in Drittländer</h2>
-          <p>Einige Dienstleister können Daten außerhalb der EU verarbeiten (z.B. USA). Dabei nutzen wir Standardvertragsklauseln oder vergleichbare Schutzmaßnahmen.</p>
-
-          <h2>Speicherdauer und Löschung</h2>
-          <p>Wir speichern Daten nur so lange, wie es für den Betrieb der App, rechtliche Pflichten oder Sicherheitszwecke erforderlich ist. Auf Wunsch löschen wir deinen Account und zugehörige Daten, sofern keine Aufbewahrungspflichten entgegenstehen.</p>
-
-          <h2>Deine Rechte</h2>
-          <ul>
-            <li>Auskunft, Berichtigung, Löschung, Einschränkung.</li>
-            <li>Datenübertragbarkeit.</li>
-            <li>Widerspruch gegen Verarbeitung und Widerruf von Einwilligungen.</li>
-            <li>Beschwerde bei einer Aufsichtsbehörde.</li>
-          </ul>
-          <p>Schreibe uns dazu an die Kontaktadresse oben.</p>
-
-          <h2>Werbung und Einwilligung (EWR)</h2>
-          <p>
-            Rewarded Ads werden derzeit als nicht personalisierte Werbung angefragt
-            (<code>requestNonPersonalizedAdsOnly: true</code>).
-            Ein externer Telemetry-Provider wird aktuell nicht genutzt.
-          </p>
-          <p>
-            Falls personalisierte Werbung oder weitere Tracking-Dienste eingefuehrt
-            werden, aktualisieren wir diese Datenschutzhinweise und den Consent-Flow
-            vor dem Rollout.
+  title: `Privacy - ${APP_NAME} by ${PUBLISHER_NAME}`,
+  heading: 'Privacy / Datenschutz',
+  lead: `Official privacy information for the Google Play app ${APP_NAME} by ${PUBLISHER_NAME}.`,
+  updatedAt: LAST_UPDATED,
+  body: `          <p class="notice">
+            This page belongs to the Google Play app <strong>${APP_NAME}</strong>,
+            published by <strong>${PUBLISHER_NAME}</strong>.
           </p>
 
-          <h2>DSAR-Prozess (Betroffenenrechte)</h2>
-          <p>
-            Anfragen zu Auskunft, Berichtigung oder Loeschung kannst du per E-Mail
-            an <a href="mailto:${LEGAL_CONTACT_EMAIL}">${LEGAL_CONTACT_EMAIL}</a> senden.
-          </p>
-          <p>
-            Eingangsbestaetigung: innerhalb von 72 Stunden. Abschluss: in der Regel
-            innerhalb von 30 Tagen (Art. 12 Abs. 3 DSGVO), bei komplexen Faellen
-            zulaessige Verlaengerung um bis zu 60 Tage.
-          </p>
-          <p>
-            Vor der Bearbeitung kann eine Identitaetspruefung verlangt werden, um
-            Kontodaten vor unbefugtem Zugriff zu schuetzen.
-          </p>
+          <h2>Responsible party</h2>
+          <p>${PUBLISHER_NAME} is the publisher of ${APP_NAME} and responsible for the data processing described here.</p>
+          <p>Contact: <a href="mailto:${LEGAL_CONTACT_EMAIL}">${LEGAL_CONTACT_EMAIL}</a></p>
 
-          <h2>Hinweis zur Nutzung</h2>
-          <p>MedQuiz ist ein Lernspiel und kein Medizinprodukt. Die App diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.</p>
+          <h2>Data we process</h2>
+          <ul>
+            <li>Account data such as email address, username, and login provider identifiers.</li>
+            <li>Profile and gameplay data such as scores, streaks, achievements, and lobby state.</li>
+            <li>Optional avatar photos if you choose to upload a profile image.</li>
+            <li>Device and diagnostics data such as app version, operating system, and redacted crash logs.</li>
+            <li>Purchase and advertising related metadata where relevant.</li>
+            <li>Support messages that you send to us.</li>
+          </ul>
 
-          <h2>Änderungen</h2>
-          <p>Wir aktualisieren diese Hinweise bei Bedarf. Die aktuelle Version ist unter dem Link in der App verfügbar.</p>`,
+          <h2>Why we process data</h2>
+          <ul>
+            <li>Account login, security, and fraud prevention.</li>
+            <li>Gameplay, matchmaking, leaderboards, and progress sync.</li>
+            <li>Stability analysis and bug fixing.</li>
+            <li>Purchase fulfilment, premium features, and ad delivery.</li>
+            <li>Support and legal compliance.</li>
+          </ul>
+
+          <h2>Security and data handling</h2>
+          <ul>
+            <li>We transmit personal data over encrypted connections such as HTTPS/TLS.</li>
+            <li>Access to account data is limited to the systems and service providers needed to operate ${APP_NAME}.</li>
+            <li>Client error and crash information is redacted before it is stored for diagnostics.</li>
+            <li>You are responsible for keeping your login credentials secure on your devices.</li>
+          </ul>
+
+          <h2>Retention and deletion</h2>
+          <ul>
+            <li>Account, profile, gameplay, leaderboard, and avatar data: while your account is active. After account deletion, we usually delete these data immediately and no later than within 30 days unless legal or security reasons require temporary retention.</li>
+            <li>Guest mode data and app settings stored only on your device: until you clear app data or uninstall the app.</li>
+            <li>Redacted diagnostics and crash logs: usually up to 90 days.</li>
+            <li>Support requests: until the request is resolved and then up to 24 months for follow-up.</li>
+            <li>Billing, tax, anti-fraud, or security records that we must keep by law: up to 10 years where required.</li>
+          </ul>
+
+          <h2>Your rights</h2>
+          <ul>
+            <li>Access, correction, deletion, restriction, and portability.</li>
+            <li>Objection to processing and withdrawal of consent where applicable.</li>
+            <li>Complaint to a competent supervisory authority.</li>
+          </ul>
+
+          <h2>Account deletion</h2>
+          <p>
+            The public account deletion page for ${APP_NAME} is available here:
+            <a href="/legal?doc=delete-account">Delete account</a>.
+          </p>`,
 });
 
 const termsHtml = renderPage({
-  title: 'AGB - MedQuiz',
-  heading: 'Allgemeine Geschäftsbedingungen (AGB)',
-  lead: 'Diese Bedingungen regeln die Nutzung der MedQuiz App und der zugehörigen Dienste.',
-  updatedAt: '2026-03-10',
-  body: `          <h2>Geltungsbereich</h2>
-          <p>Mit der Nutzung der App akzeptierst du diese Bedingungen. Sie gelten für alle Funktionen der App.</p>
+  title: `Terms - ${APP_NAME} by ${PUBLISHER_NAME}`,
+  heading: 'Terms / Nutzungsbedingungen',
+  lead: `Official terms for the Google Play app ${APP_NAME} by ${PUBLISHER_NAME}.`,
+  updatedAt: LAST_UPDATED,
+  body: `          <p class="notice">
+            These terms apply to the Google Play app <strong>${APP_NAME}</strong>,
+            published by <strong>${PUBLISHER_NAME}</strong>.
+          </p>
 
-          <h2>Leistungen</h2>
-          <p>MedQuiz ist ein Lern- und Quizspiel und kein Medizinprodukt. Inhalte dienen der Wissensübung; die App diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.</p>
+          <h2>Scope</h2>
+          <p>By using ${APP_NAME}, you agree to these terms for the app and related services.</p>
+
+          <h2>Service description</h2>
+          <p>
+            ${APP_NAME} is an educational medical quiz app. It is not a medical device,
+            does not diagnose or treat, and does not replace professional medical advice.
+          </p>
+          <p>
+            If you need diagnosis, treatment, or individual medical advice,
+            consult a qualified healthcare professional.
+          </p>
 
           <h2>Accounts</h2>
           <ul>
-            <li>Du kannst dich mit E-Mail/Passwort oder OAuth anmelden.</li>
-            <li>Du bist für die Sicherheit deiner Zugangsdaten verantwortlich.</li>
-            <li>Wir dürfen Accounts sperren, wenn gegen diese Bedingungen verstoßen wird.</li>
+            <li>You may use guest mode or create an account with email or supported sign-in providers.</li>
+            <li>You are responsible for the security of your login credentials.</li>
+            <li>We may limit or suspend accounts in case of abuse, fraud, or violations of these terms.</li>
           </ul>
 
-          <h2>Gastmodus</h2>
+          <h2>Prohibited conduct</h2>
           <ul>
-            <li>Im Gastmodus sind einige Funktionen eingeschränkt.</li>
-            <li>Gastdaten werden lokal auf dem Gerät gespeichert und können verloren gehen.</li>
+            <li>No abusive, hateful, sexual, violent, illegal, spammy, or impersonating usernames, profile photos, invites, or multiplayer behavior.</li>
+            <li>No cheating, bots, score manipulation, or attacks against the app, infrastructure, or other users.</li>
           </ul>
 
-          <h2>Pflichten der Nutzer</h2>
+          <h2>Purchases and advertising</h2>
           <ul>
-            <li>Keine Weitergabe von Zugangsdaten an Dritte.</li>
-            <li>Keine Manipulation von Scores oder Ranglisten.</li>
-            <li>Kein Missbrauch von Multiplayer- oder Kommunikationsfunktionen.</li>
+            <li>${APP_NAME} may offer optional in-app purchases and premium features.</li>
+            <li>Store billing is handled by the relevant app store provider.</li>
+            <li>The free version may contain advertising.</li>
           </ul>
 
-          <h2>Nutzungsrechte</h2>
-          <p>Wir räumen dir ein einfaches, nicht übertragbares Recht ein, die App für private Zwecke zu nutzen. Inhalte bleiben urheberrechtlich geschützt.</p>
-
-          <h2>Verbotene Nutzung</h2>
-          <ul>
-            <li>Kein Reverse Engineering, keine Umgehung von Schutzmaßnahmen.</li>
-            <li>Keine automatisierten Zugriffe oder Bots.</li>
-            <li>Keine Angriffe auf Server oder andere Nutzer.</li>
-          </ul>
-
-          <h2>Inhalte und Fortschritt</h2>
-          <p>Fortschritt und Ranglisten können bei Regelverstößen angepasst oder entfernt werden.</p>
-
-          <h2>Premium, Käufe und Werbung</h2>
-          <ul>
-            <li>Optionale Käufe und Premium-Funktionen sind innerhalb der App verfügbar.</li>
-            <li>Abrechnung erfolgt über den jeweiligen App-Store.</li>
-            <li>Die kostenlose Version kann Werbung enthalten.</li>
-          </ul>
-
-          <h2>Verfügbarkeit</h2>
-          <p>Wir bemühen uns um eine stabile App, können jedoch keine dauerhafte Verfügbarkeit garantieren.</p>
-
-          <h2>Haftung</h2>
-          <p>Wir haften nur für Schäden, die durch Vorsatz oder grobe Fahrlässigkeit verursacht wurden, soweit gesetzlich zulässig.</p>
-
-          <h2>Datenschutz</h2>
-          <p>Informationen zur Datenverarbeitung findest du in der Datenschutzerklärung der App.</p>
-
-          <h2>Änderungen</h2>
-          <p>Wir können diese Bedingungen aktualisieren. Die aktuelle Version ist unter dem Link in der App erreichbar.</p>
-
-          <h2>Kontakt</h2>
+          <h2>Contact</h2>
           <p>
-            Fragen zu den AGB kannst du an
-            <a href="mailto:${LEGAL_CONTACT_EMAIL}">${LEGAL_CONTACT_EMAIL}</a>
-            senden.
+            Questions about these terms can be sent to
+            <a href="mailto:${LEGAL_CONTACT_EMAIL}">${LEGAL_CONTACT_EMAIL}</a>.
           </p>`,
 });
 
 const supportHtml = renderPage({
-  title: 'Support - MedQuiz',
+  title: `Support - ${APP_NAME} by ${PUBLISHER_NAME}`,
   heading: 'Support',
-  lead: 'Wir helfen dir gerne weiter.',
-  updatedAt: '2026-03-10',
-  body: `          <h2>Kontakt</h2>
-          <p>
-            Schreibe uns an
-            <a href="mailto:${LEGAL_CONTACT_EMAIL}">${LEGAL_CONTACT_EMAIL}</a>.
+  lead: `Official support page for the Google Play app ${APP_NAME} by ${PUBLISHER_NAME}.`,
+  updatedAt: LAST_UPDATED,
+  body: `          <p class="notice">
+            Support for the Google Play app <strong>${APP_NAME}</strong> by
+            <strong>${PUBLISHER_NAME}</strong>.
           </p>
-          <p>Typische Antwortzeit: 1-3 Werktage.</p>
 
-          <h2>FAQ</h2>
-          <ul>
-            <li>Login-Probleme: prüfe deine Verbindung und Passwort/Provider.</li>
-            <li>Käufe nicht freigeschaltet: App neu starten und im Store prüfen.</li>
-            <li>Multiplayer-Fehler: Lobby neu erstellen oder erneut beitreten.</li>
-            <li>Werbung: prüfe deine Netzwerkverbindung und ob Tracking erlaubt ist.</li>
-          </ul>
-
-          <h2>Was wir brauchen</h2>
-          <ul>
-            <li>App-Version und Gerätemodell.</li>
-            <li>Android/iOS Version.</li>
-            <li>Kurze Beschreibung des Problems und wann es auftritt.</li>
-            <li>Optional: Screenshot oder Bildschirmaufnahme.</li>
-          </ul>
-
-          <h2>Fehler melden</h2>
+          <h2>Contact</h2>
           <p>
-            Bitte sende uns eine kurze Beschreibung, dein Gerät, die App-Version
-            und den Zeitpunkt des Fehlers.
+            Email:
+            <a href="mailto:${LEGAL_CONTACT_EMAIL}">${LEGAL_CONTACT_EMAIL}</a>
+          </p>
+          <p>Typical response time: 1 to 3 business days.</p>
+
+          <h2>Please include</h2>
+          <ul>
+            <li>App name: ${APP_NAME}</li>
+            <li>Device model and Android/iOS version</li>
+            <li>Short issue description and rough time of the issue</li>
+            <li>Optional screenshot or screen recording</li>
+          </ul>
+
+          <h2>Abuse reports</h2>
+          <p>
+            To report abusive usernames, profile photos, invites, or multiplayer
+            behavior, email <a href="mailto:${LEGAL_CONTACT_EMAIL}">${LEGAL_CONTACT_EMAIL}</a>.
+          </p>
+          <p>
+            Please include the reported username and, if possible, a short
+            description and screenshot.
           </p>`,
 });
 
 const deleteAccountHtml = renderPage({
-  title: 'Konto loeschen - MedQuiz',
-  heading: 'Konto loeschen',
-  lead: 'Hier findest du den offiziellen Loeschpfad fuer MedQuiz-Konten.',
-  updatedAt: '2026-03-11',
-  body: `          <h2>Direkt in der App</h2>
-          <p>
-            Wenn du noch Zugriff auf die App hast und angemeldet bist, gehe zu
-            Einstellungen &gt; Konto loeschen und tippe auf
-            <strong>"Konto dauerhaft loeschen"</strong>.
-          </p>
-          <p>
-            Die Loeschung wird nach einer Sicherheitsabfrage direkt ausgefuehrt.
+  title: `Delete Account - ${APP_NAME} by ${PUBLISHER_NAME}`,
+  heading: 'Delete account / Konto loeschen',
+  lead: `Official account deletion page for the Google Play app ${APP_NAME}, published by ${PUBLISHER_NAME}.`,
+  updatedAt: LAST_UPDATED,
+  body: `          <p class="notice">
+            This is the official public account deletion page for the Google Play app
+            <strong>${APP_NAME}</strong> by <strong>${PUBLISHER_NAME}</strong>.
           </p>
 
-          <h2>Alternative ohne App</h2>
-          <p>
-            Wenn du die App nicht mehr nutzen kannst, sende deine Anfrage an
-            <a href="mailto:${LEGAL_CONTACT_EMAIL}?subject=DSAR%20-%20Loeschung%20-%20%3CAccount-E-Mail%3E">${LEGAL_CONTACT_EMAIL}</a>.
-          </p>
-          <p>
-            Bitte nutze moeglichst die E-Mail-Adresse deines Kontos und nenne
-            deinen Nutzernamen, falls vorhanden.
-          </p>
-
-          <h2>Was geloescht wird</h2>
+          <h2>App and publisher reference</h2>
           <ul>
-            <li>Dein Auth-Konto und Profilangaben.</li>
-            <li>Spiel- und Fortschrittsdaten, soweit keine gesetzlichen Pflichten entgegenstehen.</li>
-            <li>Optional hochgeladene Avatar-Dateien in unserem Storage.</li>
+            <li>App name on Google Play: <strong>${APP_NAME}</strong></li>
+            <li>Publisher / developer: <strong>${PUBLISHER_NAME}</strong></li>
+            <li>Android package: <code>${PACKAGE_NAME}</code></li>
+            <li>Support email: <a href="mailto:${LEGAL_CONTACT_EMAIL}">${LEGAL_CONTACT_EMAIL}</a></li>
           </ul>
 
-          <h2>Wichtige Hinweise</h2>
+          <h2>Delete directly in the app</h2>
+          <p>
+            If you still have access to ${APP_NAME} and are signed in, open the app and go to:
+            <strong>Settings &gt; Konto loeschen</strong>.
+          </p>
+          <p>
+            Tap <strong>Konto dauerhaft loeschen</strong> and confirm the final prompt.
+          </p>
+
+          <h2>Delete without the app</h2>
+          <p>
+            If you cannot access the app anymore, send a deletion request to
+            <a href="mailto:${LEGAL_CONTACT_EMAIL}?subject=${encodeURIComponent(`${APP_NAME} account deletion request`)}">${LEGAL_CONTACT_EMAIL}</a>.
+          </p>
+          <p>
+            Please send the request from the email address of your ${APP_NAME}
+            account whenever possible and include your username if available.
+          </p>
+
+          <h2>What we delete</h2>
           <ul>
-            <li>Kaeufe im App-Store koennen in deiner Store-Historie sichtbar bleiben.</li>
-            <li>Abrechnungs- oder sicherheitsrelevante Daten duerfen wir ggf. zeitweise laenger speichern, wenn wir rechtlich dazu verpflichtet sind.</li>
-            <li>Nach Abschluss ist die Loeschung in der Regel nicht rueckgaengig zu machen.</li>
-          </ul>`,
+            <li>Your account, profile information, and login access.</li>
+            <li>Gameplay and progress data unless limited retention is required by law or security obligations.</li>
+            <li>Optional uploaded avatar photos stored for your account.</li>
+          </ul>
+
+          <h2>Important notes</h2>
+          <ul>
+            <li>Store purchases may remain visible in your Google Play or App Store purchase history.</li>
+            <li>Account, profile, gameplay, and avatar data are usually deleted immediately and no later than within 30 days after your deletion request is completed.</li>
+            <li>Billing, tax, anti-fraud, or security records may need to be retained for up to 10 years where legally required.</li>
+            <li>Account deletion is usually irreversible once completed.</li>
+          </ul>
+
+          <h2>Response time</h2>
+          <p>
+            We usually confirm incoming deletion requests within 72 hours and
+            complete them as fast as possible.
+          </p>`,
 });
 
 const documents = {
@@ -387,19 +459,20 @@ serve((request) => {
     legalIndex >= 0 && pathParts.length > legalIndex + 1
       ? pathParts[legalIndex + 1]
       : null;
-  const doc = (docFromPath || url.searchParams.get('doc') || '').toLowerCase();
-  const html = documents[doc as keyof typeof documents];
+  const doc = (docFromPath || url.searchParams.get('doc') || 'privacy').toLowerCase();
+  const redirectUrl = PUBLIC_DOC_URLS[doc as keyof typeof PUBLIC_DOC_URLS];
 
-  if (!html) {
+  if (!redirectUrl) {
     return new Response('Not found', {
       status: 404,
       headers: { 'content-type': 'text/plain; charset=utf-8' },
     });
   }
 
-  return new Response(html, {
+  return new Response(null, {
+    status: 302,
     headers: {
-      'content-type': 'text/html; charset=utf-8',
+      location: redirectUrl,
       'cache-control': 'max-age=300',
     },
   });

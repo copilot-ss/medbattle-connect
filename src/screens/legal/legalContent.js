@@ -4,14 +4,14 @@ const LEGAL_DOCS_DE = {
   privacy: {
     id: 'privacy',
     title: 'Datenschutz',
-    updatedAt: '2026-03-10',
+    updatedAt: '2026-04-12',
     intro:
-      'MedQuiz ist eine Quiz-App für Medizinwissen. Diese Hinweise erklären, welche Daten wir verarbeiten und warum.',
+      'MedQuiz ist eine Quiz-App fuer Medizinwissen. Diese Hinweise erklaeren, welche Daten wir verarbeiten und warum.',
     sections: [
       {
         heading: 'Verantwortlicher',
         paragraphs: [
-          'Verantwortlich für die Datenverarbeitung ist das MedQuiz Team.',
+          'Verantwortlich fuer die Datenverarbeitung ist CoppiCodes als Publisher von MedQuiz.',
           `Kontakt: ${LEGAL_CONTACT_EMAIL}`,
         ],
       },
@@ -19,11 +19,11 @@ const LEGAL_DOCS_DE = {
         heading: 'Welche Daten wir verarbeiten',
         bullets: [
           'Accountdaten: E-Mail, Nutzername, Provider-IDs, zum Beispiel Google oder Discord.',
-          'Profil- und Spieldaten: Scores, Streaks, Achievements und Lobby-Status.',
-          'Optionale Profilfotos: nur wenn du Kamera oder Galerie für deinen Avatar nutzt.',
-          'Geräte- und Nutzungsdaten: App-Version, Betriebssystem, Crash-Logs und Diagnosedaten.',
-          'Werbe- und Kaufdaten: Werbe-IDs und Kaufbelege, soweit relevant.',
-          'Gastmodus-Daten: lokale Gast-ID und Einstellungen auf deinem Gerät.',
+          'Profil- und Spieldaten: Scores, Streaks, Achievements, Ranglisten und Lobby-Status.',
+          'Optionale Profilfotos: nur wenn du Kamera oder Galerie fuer deinen Avatar nutzt.',
+          'Geraete- und Nutzungsdaten: App-Version, Betriebssystem, redigierte Crash-Logs und Diagnosedaten.',
+          'Werbe- und Kaufdaten: Werbe-IDs und Kauf- oder Entitlement-Metadaten, soweit relevant.',
+          'Gastmodus-Daten: lokale Gast-ID und Einstellungen auf deinem Geraet.',
           'Kommunikationsdaten: Inhalte von Support-Anfragen, die du an uns sendest.',
         ],
       },
@@ -32,8 +32,8 @@ const LEGAL_DOCS_DE = {
         bullets: [
           'Login, Account-Schutz und Sicherheit.',
           'Gameplay, Matchmaking, Ranglisten und Fortschritt.',
-          'Fehleranalyse und App-Stabilität.',
-          'Abrechnung von Premium/Käufen und Auslieferung von Werbung.',
+          'Fehleranalyse und App-Stabilitaet.',
+          'Abrechnung von Premium/Kaeufen und Auslieferung von Werbung.',
           'Support und Bearbeitung deiner Anfragen.',
         ],
       },
@@ -41,53 +41,72 @@ const LEGAL_DOCS_DE = {
         heading: 'Rechtsgrundlagen (DSGVO)',
         bullets: [
           'Vertrag bzw. Leistungserbringung (Art. 6 Abs. 1 lit. b DSGVO).',
-          'Einwilligung, zum Beispiel für Werbung oder Tracking (Art. 6 Abs. 1 lit. a DSGVO).',
+          'Einwilligung, zum Beispiel fuer Werbung oder Tracking (Art. 6 Abs. 1 lit. a DSGVO).',
           'Berechtigte Interessen, zum Beispiel Sicherheit und Fehleranalyse (Art. 6 Abs. 1 lit. f DSGVO).',
           'Rechtliche Pflichten, zum Beispiel Abrechnung (Art. 6 Abs. 1 lit. c DSGVO).',
         ],
       },
       {
-        heading: 'Empfänger und Dienstleister',
+        heading: 'Empfaenger und Dienstleister',
         bullets: [
-          'Supabase für Auth, Datenbank und Storage.',
-          'Google oder Discord für OAuth-Login.',
-          'Interne redigierte Client-Logs für Crash-Diagnosen ohne externen Telemetry-Provider.',
-          'Google AdMob für Werbung.',
-          'App-Store-Anbieter für In-App-Käufe, also Apple oder Google.',
+          'Supabase fuer Auth, Datenbank und Storage.',
+          'Google oder Discord fuer OAuth-Login.',
+          'Interne redigierte Client-Logs fuer Crash-Diagnosen ohne externen Telemetry-Provider.',
+          'Google AdMob fuer Werbung.',
+          'App-Store-Anbieter fuer In-App-Kaeufe, also Apple oder Google.',
         ],
       },
       {
-        heading: 'Drittländer, Speicherdauer und Rechte',
+        heading: 'Sichere Datenverarbeitung',
+        bullets: [
+          'Wir uebertragen personenbezogene Daten ueber verschluesselte Verbindungen wie HTTPS/TLS.',
+          'Auf Kontodaten greifen nur die Systeme und Dienstleister zu, die fuer den Betrieb von MedQuiz erforderlich sind.',
+          'Client-Fehler- und Diagnosedaten werden vor der Speicherung redigiert.',
+          'Du bist selbst dafuer verantwortlich, deine Zugangsdaten auf deinen Geraeten sicher aufzubewahren.',
+        ],
+      },
+      {
+        heading: 'Drittlaender und Speicherdauer',
         paragraphs: [
-          'Einige Dienstleister können Daten außerhalb der EU verarbeiten, zum Beispiel in den USA. Wir nutzen dafür Standardvertragsklauseln oder vergleichbare Schutzmaßnahmen.',
-          'Wir speichern Daten nur so lange, wie es für den Betrieb der App, rechtliche Pflichten oder Sicherheitszwecke erforderlich ist.',
+          'Einige Dienstleister koennen Daten ausserhalb der EU verarbeiten, zum Beispiel in den USA. Wir nutzen dafuer Standardvertragsklauseln oder vergleichbare Schutzmassnahmen.',
         ],
         bullets: [
-          'Auskunft, Berichtigung, Löschung und Einschränkung.',
-          'Datenübertragbarkeit.',
+          'Account-, Profil-, Spiel-, Ranglisten- und Avatar-Daten: solange dein Konto aktiv ist. Nach einer Kontoloeschung loeschen wir diese Daten in der Regel sofort, spaetestens innerhalb von 30 Tagen, sofern keine gesetzlichen oder sicherheitsrelevanten Gruende entgegenstehen.',
+          'Gastmodus- und Einstellungsdaten, die nur lokal auf deinem Geraet liegen: bis du App-Daten loeschst oder die App deinstallierst.',
+          'Redigierte Crash- und Diagnosedaten: in der Regel bis zu 90 Tage.',
+          'Support-Anfragen: bis zur Bearbeitung und danach bis zu 24 Monate fuer Rueckfragen.',
+          'Abrechnungs-, Steuer-, Betrugs- oder Sicherheitsnachweise, die wir rechtlich aufbewahren muessen: bis zu 10 Jahre.',
+        ],
+      },
+      {
+        heading: 'Deine Rechte',
+        bullets: [
+          'Auskunft, Berichtigung, Loeschung und Einschraenkung.',
+          'Datenuebertragbarkeit.',
           'Widerspruch und Widerruf erteilter Einwilligungen.',
-          'Beschwerde bei einer Aufsichtsbehörde.',
+          'Beschwerde bei einer Aufsichtsbehoerde.',
         ],
       },
       {
         heading: 'Werbung und Einwilligung im EWR',
         paragraphs: [
           'Rewarded Ads werden derzeit als nicht personalisierte Werbung angefragt (`requestNonPersonalizedAdsOnly: true`).',
-          'Falls wir personalisierte Werbung oder zusätzliche Tracking-Dienste einführen, aktualisieren wir diese Hinweise und den Consent-Flow vor dem Rollout.',
+          'Falls wir personalisierte Werbung oder zusaetzliche Tracking-Dienste einfuehren, aktualisieren wir diese Hinweise und den Consent-Flow vor dem Rollout.',
         ],
       },
       {
         heading: 'DSAR-Prozess und SLA',
         paragraphs: [
-          `Für Auskunfts-, Berichtigungs- oder Löschanfragen kontaktiere uns unter ${LEGAL_CONTACT_EMAIL}.`,
-          'Wir bestätigen den Eingang innerhalb von 72 Stunden und bearbeiten Anfragen in der Regel innerhalb von 30 Tagen (Art. 12 Abs. 3 DSGVO). Wenn rechtlich zulässig und erforderlich, kann diese Frist um bis zu 60 Tage verlängert werden.',
-          'Vor der Bearbeitung können wir eine Identitätsprüfung verlangen, um Kontodaten zu schützen.',
+          `Fuer Auskunfts-, Berichtigungs- oder Loeschanfragen kontaktiere uns unter ${LEGAL_CONTACT_EMAIL}.`,
+          'Wir bestaetigen den Eingang innerhalb von 72 Stunden und bearbeiten Anfragen in der Regel innerhalb von 30 Tagen (Art. 12 Abs. 3 DSGVO). Wenn rechtlich zulaessig und erforderlich, kann diese Frist um bis zu 60 Tage verlaengert werden.',
+          'Vor der Bearbeitung koennen wir eine Identitaetspruefung verlangen, um Kontodaten zu schuetzen.',
         ],
       },
       {
         heading: 'Hinweise',
         paragraphs: [
           'MedQuiz ist ein Lernspiel und kein Medizinprodukt. Die App diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.',
+          'Wenn du eine Diagnose, Behandlung oder individuellen medizinischen Rat brauchst, konsultiere qualifiziertes medizinisches Fachpersonal.',
           'Wir aktualisieren diese Hinweise bei Bedarf.',
         ],
       },
@@ -96,24 +115,25 @@ const LEGAL_DOCS_DE = {
   terms: {
     id: 'terms',
     title: 'AGB',
-    updatedAt: '2026-03-10',
+    updatedAt: '2026-04-12',
     intro:
-      'Diese Bedingungen regeln die Nutzung der MedQuiz App und der zugehörigen Dienste.',
+      'Diese Bedingungen regeln die Nutzung der MedQuiz App und der zugehoerigen Dienste.',
     sections: [
       {
         heading: 'Geltungsbereich und Leistungen',
         paragraphs: [
           'Mit der Nutzung der App akzeptierst du diese Bedingungen.',
           'MedQuiz ist ein Lern- und Quizspiel und kein Medizinprodukt. Die App diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.',
+          'Wenn du eine Diagnose, Behandlung oder individuellen medizinischen Rat brauchst, konsultiere qualifiziertes medizinisches Fachpersonal.',
         ],
       },
       {
         heading: 'Accounts und Gastmodus',
         bullets: [
-          'Die Anmeldung ist per E-Mail/Passwort oder OAuth möglich.',
-          'Du bist für die Sicherheit deiner Zugangsdaten verantwortlich.',
-          'Wir dürfen Accounts bei Verstößen sperren.',
-          'Der Gastmodus hat eingeschränkte Funktionen und lokale Daten können verloren gehen.',
+          'Die Anmeldung ist per E-Mail/Passwort oder OAuth moeglich.',
+          'Du bist fuer die Sicherheit deiner Zugangsdaten verantwortlich.',
+          'Wir duerfen Accounts bei Verstoessen sperren.',
+          'Der Gastmodus hat eingeschraenkte Funktionen und lokale Daten koennen verloren gehen.',
         ],
       },
       {
@@ -122,23 +142,24 @@ const LEGAL_DOCS_DE = {
           'Keine Weitergabe von Zugangsdaten an Dritte.',
           'Keine Manipulation von Scores oder Ranglisten.',
           'Kein Missbrauch von Multiplayer- oder Kommunikationsfunktionen.',
+          'Keine beleidigenden, hasserfuellten, sexuellen, gewaltbezogenen, rechtswidrigen, spamartigen oder identitaetstaeuschenden Nutzernamen, Profilfotos, Einladungen oder Multiplayer-Inhalte.',
           'Kein Reverse Engineering, keine Bots und keine Angriffe auf Infrastruktur oder andere Nutzer.',
         ],
       },
       {
-        heading: 'Käufe, Werbung, Verfügbarkeit und Haftung',
+        heading: 'Kaeufe, Werbung, Verfuegbarkeit und Haftung',
         paragraphs: [
-          'Optionale Käufe und Premium-Funktionen sind in der App verfügbar; die Abrechnung läuft über den jeweiligen App-Store.',
+          'Optionale Kaeufe und Premium-Funktionen sind in der App verfuegbar; die Abrechnung laeuft ueber den jeweiligen App-Store.',
           'Die kostenlose Version kann Werbung enthalten.',
-          'Wir bemühen uns um eine stabile Verfügbarkeit, können aber keinen unterbrechungsfreien Betrieb garantieren.',
-          'Die Haftung ist auf den gesetzlich zulässigen Umfang beschränkt.',
+          'Wir bemuehen uns um eine stabile Verfuegbarkeit, koennen aber keinen unterbrechungsfreien Betrieb garantieren.',
+          'Die Haftung ist auf den gesetzlich zulaessigen Umfang beschraenkt.',
         ],
       },
       {
-        heading: 'Datenschutz, Änderungen und Kontakt',
+        heading: 'Datenschutz, Aenderungen und Kontakt',
         paragraphs: [
-          'Informationen zur Datenverarbeitung findest du in der Datenschutzerklärung.',
-          'Wir können diese Bedingungen aktualisieren; die jeweils aktuelle Version ist in der App verfügbar.',
+          'Informationen zur Datenverarbeitung findest du in der Datenschutzerklaerung.',
+          'Wir koennen diese Bedingungen aktualisieren; die jeweils aktuelle Version ist in der App verfuegbar.',
           `Kontakt: ${LEGAL_CONTACT_EMAIL}`,
         ],
       },
@@ -147,7 +168,7 @@ const LEGAL_DOCS_DE = {
   support: {
     id: 'support',
     title: 'Support',
-    updatedAt: '2026-03-10',
+    updatedAt: '2026-04-12',
     intro: 'Wir helfen dir gerne weiter.',
     sections: [
       {
@@ -160,16 +181,24 @@ const LEGAL_DOCS_DE = {
       {
         heading: 'FAQ',
         bullets: [
-          'Login-Probleme: prüfe Verbindung und Zugangsdaten.',
-          'Fehlende Käufe: starte die App neu und prüfe dein Store-Konto.',
+          'Login-Probleme: pruefe Verbindung und Zugangsdaten.',
+          'Fehlende Kaeufe: starte die App neu und pruefe dein Store-Konto.',
           'Multiplayer-Probleme: erstelle eine neue Lobby oder tritt erneut bei.',
-          'Werbe-Probleme: prüfe Netzwerk und Tracking-Einstellungen.',
+          'Werbe-Probleme: pruefe Netzwerk und Tracking-Einstellungen.',
+          'Missbraeuchliche Nutzernamen, Profilfotos, Einladungen oder Spielerinteraktionen melden.',
+        ],
+      },
+      {
+        heading: 'Missbrauch melden',
+        paragraphs: [
+          `Wenn du einen missbraeuchlichen Nutzernamen, ein Profilfoto, eine Einladung oder problematisches Multiplayer-Verhalten melden moechtest, schreibe uns an ${LEGAL_CONTACT_EMAIL}.`,
+          'Bitte nenne den betroffenen Nutzernamen und fuege nach Moeglichkeit eine kurze Beschreibung sowie einen Screenshot bei.',
         ],
       },
       {
         heading: 'Bitte mitschicken',
         bullets: [
-          'App-Version und Gerätemodell.',
+          'App-Version und Geraetemodell.',
           'Android- oder iOS-Version.',
           'Kurze Problembeschreibung mit Uhrzeit.',
           'Optional einen Screenshot oder eine Bildschirmaufnahme.',
@@ -179,27 +208,30 @@ const LEGAL_DOCS_DE = {
   },
   deleteAccount: {
     id: 'deleteAccount',
-    title: 'Konto löschen',
-    updatedAt: '2026-03-11',
+    title: 'Konto loeschen',
+    updatedAt: '2026-04-12',
     intro:
-      'Hier kannst du dein MedQuiz-Konto direkt löschen oder alternativ eine Löschanfrage senden.',
+      'Offizielle Loeschseite fuer die Google-Play-App MedQuiz von CoppiCodes.',
     sections: [
       {
         heading: 'Direkt in der App',
         paragraphs: [
-          'Wenn du angemeldet bist, tippe unten auf "Konto dauerhaft löschen".',
-          'Zur Sicherheit bestätigst du die Löschung noch einmal, bevor sie ausgeführt wird.',
+          'Der normale Weg ist direkt in der App.',
+          'Wenn du angemeldet bist, tippe unten auf "Konto dauerhaft loeschen".',
+          'Zur Sicherheit bestaetigst du die Loeschung noch einmal, bevor sie ausgefuehrt wird.',
         ],
       },
       {
-        heading: 'Alternative ohne App',
+        heading: 'Nur wenn du nicht mehr in die App kommst',
         paragraphs: [
-          `Falls du keinen Zugriff auf die App hast, nutze unsere öffentliche Löschseite oder schreibe an ${LEGAL_CONTACT_EMAIL}.`,
-          'Bitte verwende möglichst die E-Mail-Adresse deines Kontos, damit wir die Anfrage zuordnen können.',
+          `Falls du keinen Zugriff auf die App mehr hast, nutze die offizielle oeffentliche Loeschseite fuer MedQuiz oder schreibe an ${LEGAL_CONTACT_EMAIL}.`,
+          'Die oeffentliche Seite nennt MedQuiz, CoppiCodes und das Android-Paket com.sjigalin.medbattle eindeutig.',
+          'Die E-Mail ist nur der Fallback-Weg, wenn du dein Konto nicht mehr selbst in der App loeschen kannst.',
+          'Bitte verwende moeglichst die E-Mail-Adresse deines Kontos, damit wir die Anfrage zuordnen koennen.',
         ],
       },
       {
-        heading: 'Was gelöscht wird',
+        heading: 'Was geloescht wird',
         bullets: [
           'Dein Konto und Profilangaben.',
           'Spiel- und Fortschrittsdaten, soweit keine gesetzlichen Pflichten entgegenstehen.',
@@ -209,9 +241,10 @@ const LEGAL_DOCS_DE = {
       {
         heading: 'Wichtige Hinweise',
         bullets: [
-          'Käufe im App-Store bleiben gegebenenfalls in deiner Store-Historie sichtbar.',
-          'Abrechnungs- oder sicherheitsrelevante Daten können wir ggf. vorübergehend länger speichern, wenn wir rechtlich dazu verpflichtet sind.',
-          'Nach Abschluss ist die Löschung in der Regel nicht rückgängig zu machen.',
+          'Kaeufe im App-Store bleiben gegebenenfalls in deiner Store-Historie sichtbar.',
+          'Konto-, Profil-, Spiel- und Avatar-Daten werden nach deiner Loeschanfrage in der Regel sofort, spaetestens innerhalb von 30 Tagen entfernt.',
+          'Abrechnungs-, Steuer-, Betrugs- oder sicherheitsrelevante Daten koennen wir, soweit rechtlich erforderlich, bis zu 10 Jahre aufbewahren.',
+          'Nach Abschluss ist die Loeschung in der Regel nicht rueckgaengig zu machen.',
         ],
       },
     ],
@@ -222,14 +255,14 @@ const LEGAL_DOCS_EN = {
   privacy: {
     id: 'privacy',
     title: 'Privacy Policy',
-    updatedAt: '2026-03-10',
+    updatedAt: '2026-04-12',
     intro:
       'MedQuiz is a quiz app for medical knowledge. This notice explains what data we process and why.',
     sections: [
       {
         heading: 'Responsible Party',
         paragraphs: [
-          'The MedQuiz team is responsible for data processing.',
+          'CoppiCodes, as the publisher of MedQuiz, is responsible for data processing.',
           `Contact: ${LEGAL_CONTACT_EMAIL}`,
         ],
       },
@@ -237,10 +270,10 @@ const LEGAL_DOCS_EN = {
         heading: 'Data We Process',
         bullets: [
           'Account data: email, username, provider IDs such as Google or Discord.',
-          'Profile and gameplay data: scores, streaks, achievements, and lobby status.',
+          'Profile and gameplay data: scores, streaks, achievements, leaderboards, and lobby status.',
           'Optional profile photos: only if you choose camera or gallery for your avatar.',
-          'Device and usage data: app version, OS, crash logs, and diagnostics.',
-          'Advertising and purchase data: ad IDs and purchase receipts where applicable.',
+          'Device and usage data: app version, OS, redacted crash logs, and diagnostics.',
+          'Advertising and purchase data: ad IDs and purchase or entitlement metadata where applicable.',
           'Guest mode data: local guest ID and settings on your device.',
           'Communication data: the content of support requests you send us.',
         ],
@@ -275,11 +308,29 @@ const LEGAL_DOCS_EN = {
         ],
       },
       {
-        heading: 'Third Countries, Retention, and Rights',
+        heading: 'Secure Data Handling',
+        bullets: [
+          'We transmit personal data over encrypted connections such as HTTPS/TLS.',
+          'Access to account data is limited to the systems and service providers needed to operate MedQuiz.',
+          'Client error and diagnostics data are redacted before storage.',
+          'You are responsible for keeping your login credentials secure on your devices.',
+        ],
+      },
+      {
+        heading: 'Third Countries and Retention',
         paragraphs: [
           'Some providers may process data outside the EU, for example in the USA. We use standard contractual clauses or comparable safeguards.',
-          'We keep data only as long as needed for app operation, legal obligations, or security purposes.',
         ],
+        bullets: [
+          'Account, profile, gameplay, leaderboard, and avatar data: while your account is active. After account deletion, we usually delete these data immediately and no later than within 30 days unless legal or security reasons require temporary retention.',
+          'Guest mode data and app settings stored only on your device: until you clear app data or uninstall the app.',
+          'Redacted crash and diagnostics data: usually up to 90 days.',
+          'Support requests: until the request is resolved and then up to 24 months for follow-up.',
+          'Billing, tax, anti-fraud, or security records that we must keep by law: up to 10 years where required.',
+        ],
+      },
+      {
+        heading: 'Your Rights',
         bullets: [
           'Access, rectification, deletion, and restriction.',
           'Data portability.',
@@ -306,6 +357,7 @@ const LEGAL_DOCS_EN = {
         heading: 'Notes',
         paragraphs: [
           'MedQuiz is a learning game and not a medical device. It does not diagnose, treat, cure, or prevent any disease and does not replace medical advice.',
+          'If you need diagnosis, treatment, or individual medical advice, consult a qualified healthcare professional.',
           'We update this notice when needed.',
         ],
       },
@@ -314,7 +366,7 @@ const LEGAL_DOCS_EN = {
   terms: {
     id: 'terms',
     title: 'Terms of Service',
-    updatedAt: '2026-03-10',
+    updatedAt: '2026-04-12',
     intro: 'These terms govern the use of the MedQuiz app and related services.',
     sections: [
       {
@@ -322,6 +374,7 @@ const LEGAL_DOCS_EN = {
         paragraphs: [
           'By using the app, you accept these terms.',
           'MedQuiz is a learning and quiz game and not a medical device. It does not diagnose, treat, cure, or prevent any disease and does not replace medical advice.',
+          'If you need diagnosis, treatment, or individual medical advice, consult a qualified healthcare professional.',
         ],
       },
       {
@@ -339,6 +392,7 @@ const LEGAL_DOCS_EN = {
           'Do not share account credentials with third parties.',
           'Do not manipulate scores or leaderboards.',
           'Do not abuse multiplayer or communication features.',
+          'Do not use abusive, hateful, sexual, violent, illegal, spammy, or impersonating usernames, profile photos, invites, or multiplayer content.',
           'No reverse engineering, bots, or attacks against infrastructure or users.',
         ],
       },
@@ -364,7 +418,7 @@ const LEGAL_DOCS_EN = {
   support: {
     id: 'support',
     title: 'Support',
-    updatedAt: '2026-03-10',
+    updatedAt: '2026-04-12',
     intro: 'We are happy to help.',
     sections: [
       {
@@ -381,6 +435,14 @@ const LEGAL_DOCS_EN = {
           'Missing purchases: restart the app and verify your store account.',
           'Multiplayer issues: create a new lobby or rejoin.',
           'Ad issues: check your network and tracking settings.',
+          'Report abusive usernames, profile photos, invites, or player behavior.',
+        ],
+      },
+      {
+        heading: 'Report Abuse',
+        paragraphs: [
+          `If you need to report an abusive username, profile photo, invite, or problematic multiplayer behavior, email ${LEGAL_CONTACT_EMAIL}.`,
+          'Please include the reported username and, if possible, a short description and screenshot.',
         ],
       },
       {
@@ -397,21 +459,24 @@ const LEGAL_DOCS_EN = {
   deleteAccount: {
     id: 'deleteAccount',
     title: 'Delete Account',
-    updatedAt: '2026-03-11',
+    updatedAt: '2026-04-12',
     intro:
-      'Here you can delete your MedQuiz account directly or use a deletion request as a fallback.',
+      'Official deletion page for the Google Play app MedQuiz by CoppiCodes.',
     sections: [
       {
         heading: 'Directly in the app',
         paragraphs: [
+          'The normal way is directly inside the app.',
           'If you are signed in, tap "Delete account permanently" below.',
           'For safety, you will be asked to confirm the deletion once before it runs.',
         ],
       },
       {
-        heading: 'Alternative without the app',
+        heading: 'Only if you cannot access the app',
         paragraphs: [
-          `If you cannot access the app, use our public deletion page or email ${LEGAL_CONTACT_EMAIL}.`,
+          `If you cannot access the app, use the official public deletion page for MedQuiz or email ${LEGAL_CONTACT_EMAIL}.`,
+          'The public page clearly references MedQuiz, CoppiCodes, and the Android package com.sjigalin.medbattle.',
+          'Email is only the fallback path if you can no longer delete the account yourself inside the app.',
           'Please send the request from your account email address whenever possible so we can match it correctly.',
         ],
       },
@@ -427,7 +492,8 @@ const LEGAL_DOCS_EN = {
         heading: 'Important notes',
         bullets: [
           'App store purchases may still remain visible in your store history.',
-          'Billing or security-related records may need to be retained temporarily where legally required.',
+          'Account, profile, gameplay, and avatar data are usually removed immediately and no later than within 30 days after your deletion request is completed.',
+          'Billing, tax, anti-fraud, or security-related records may need to be retained for up to 10 years where legally required.',
           'Deletion is usually not reversible once completed.',
         ],
       },

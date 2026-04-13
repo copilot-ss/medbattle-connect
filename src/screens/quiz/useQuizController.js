@@ -33,6 +33,19 @@ const sanitizeStatNumber = (value) => {
   return 0;
 };
 
+const countCorrectAnswers = (items = []) =>
+  (Array.isArray(items) ? items : []).reduce(
+    (sum, entry) => sum + ((entry?.correct === true || entry?.isCorrect === true) ? 1 : 0),
+    0
+  );
+
+const collectUsedBoostIds = (items = []) =>
+  sanitizeBoostUsage(
+    (Array.isArray(items) ? items : []).flatMap((entry) =>
+      Array.isArray(entry?.boostsUsed) ? entry.boostsUsed : []
+    )
+  );
+
 export default function useQuizController({ navigation, route }) {
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -265,13 +278,28 @@ export default function useQuizController({ navigation, route }) {
       const resolvedScore = Number.isFinite(finalScoreValue)
         ? finalScoreValue
         : activeScore;
-      const earnedPoints = calculateMatchPoints({
-        correct: resolvedScore,
-        total: effectiveTotal,
-        usedBoostIds,
-      });
+      const resolvedAnswerItems = isMultiplayer
+        ? (
+          Array.isArray(matchPlayerState?.answers) && matchPlayerState.answers.length
+            ? matchPlayerState.answers
+            : answerHistoryRef.current
+        )
+        : answerHistoryRef.current;
+      const resolvedCorrectCount = isMultiplayer
+        ? countCorrectAnswers(resolvedAnswerItems)
+        : resolvedScore;
+      const resolvedUsedBoostIds = isMultiplayer
+        ? collectUsedBoostIds(resolvedAnswerItems)
+        : usedBoostIds;
+      const earnedPoints = isMultiplayer && Number.isFinite(resolvedScore)
+        ? Math.max(0, resolvedScore)
+        : calculateMatchPoints({
+            correct: resolvedCorrectCount,
+            total: effectiveTotal,
+            usedBoostIds: resolvedUsedBoostIds,
+          });
       const baseXp = calculateXpGain({
-        correct: resolvedScore,
+        correct: resolvedCorrectCount,
         total: effectiveTotal,
         isMultiplayer,
       });
@@ -282,7 +310,7 @@ export default function useQuizController({ navigation, route }) {
       );
       const coinsEarned = submit
         ? calculateCoinReward({
-            correct: resolvedScore,
+            correct: resolvedCorrectCount,
             total: effectiveTotal,
             isMultiplayer,
           })

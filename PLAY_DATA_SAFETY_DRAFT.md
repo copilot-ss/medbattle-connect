@@ -1,6 +1,6 @@
 # PLAY_DATA_SAFETY_DRAFT.md - MedQuiz
 
-Stand: 2026-03-11
+Stand: 2026-04-10
 
 Zweck:
 - Arbeitsvorlage fuer die Play Console `Data safety` Eingabe.
@@ -10,9 +10,11 @@ Zweck:
 - Daten werden verschluesselt uebertragen: `Ja` (HTTPS/TLS fuer Supabase, Store, Ads).
 - Kontoloeschung moeglich: `Ja` (direkt in der App plus oeffentliche Delete-Account-URL).
 - Oeffentliche Delete-Account-URL:
-  - `https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=delete-account`
+  - `https://copilot-ss.github.io/medbattle-connect/legal-static/delete-account.html`
+  - Die Seite muss sichtbar `MedQuiz`, `CoppiCodes` und das Android-Paket `com.sjigalin.medbattle` referenzieren.
 - Sicherheitspraktiken dokumentiert: `Ja` (redigierte Client-Logs, kein externer Telemetry-Provider).
 - Daten werden nicht verkauft: `Nein` zu `Data is sold`.
+- Separat beachten: `Health apps declaration` ist nicht Teil von `Data safety`, muss fuer medizinische Lerninhalte aber zusaetzlich unter `App content` geprueft werden.
 
 ## 2) Relevante Features im Code
 - Auth (E-Mail, Google, Discord):
@@ -36,7 +38,7 @@ Zweck:
 - Direkte Kontoloeschung:
   - `src/screens/LegalScreen.js`
   - `src/services/accountDeletionService.js`
-  - `supabase/functions/delete-account/index.ts`
+  - `legal-static/delete-account.html` (oeffentliche Play-Delete-Account-Seite)
 
 ## 3) Data-Type Draft fuer Play Console
 Hinweis:
@@ -79,4 +81,5 @@ Hinweis:
   - Kontoerstellung per E-Mail/OAuth
   - In-App-Kontoloeschung plus oeffentliche Delete-Account-URL
 - Privacy-URL, Delete-Account-URL und In-App-Legal-Text sind konsistent mit dem finalen Data-Safety-Formular.
+- Privacy-Text nennt explizit auch sichere Datenverarbeitung (HTTPS/TLS, redigierte Diagnosedaten, begrenzter Zugriff).
 - Nach jedem Feature-Change Data Safety erneut gegenpruefen.

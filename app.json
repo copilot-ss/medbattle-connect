@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.sjigalin.medbattle",
-      "versionCode": 45,
+      "versionCode": 47,
       "adaptiveIcon": {
         "foregroundImage": "./assets/branding/adaptive-icon-foreground.png",
         "backgroundColor": "#082b39"

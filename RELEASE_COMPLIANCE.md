@@ -21,10 +21,18 @@ Basis: `TASKS.md`, `RELEASE_TESTS.md`
 - App-Typecheck (`npx tsc --noEmit`, `2026-03-24`): clean.
 - Aktuelle Supabase-Inhalts- und RPC-Aenderungen sind remote live; fuer Store-/Device-Qualitaet entscheidend offen bleibt vor allem der frische App-Build aus dem aktuellen Repo plus Realgeraet-Smoke.
 
+## Relevante Play-Policy-Lage
+- Nutzerdaten: Privacy Policy nennt jetzt explizite Aufbewahrungsfristen und sichere Datenverarbeitung; Play-Console-Resubmit mit derselben Privacy-URL bleibt manuell offen.
+- Gesundheitsbezogene Inhalte: aktuelle Store-/Legal-Texte markieren MedQuiz als Lern-/Quiz-App und nicht als Medizinprodukt; diese Abgrenzung darf in keiner Metadaten- oder UI-Aenderung verloren gehen. Die `Health apps declaration` in Play Console ist zusaetzlich manuell noetig.
+- Monetarisierung / Werbung: Rewarded Ads und IAP sind im Code dokumentiert, aber der echte Store-Smoke fuer Ads/Kaeufe bleibt offen.
+- User Interaction / UGC: Freunde, Lobbys, frei waehlbare Nutzernamen und optionale Profilfotos sind vorhanden. Der aktuelle Repo-Stand enthaelt in-app Report-/Block-Funktionen ueber Public-Profile-Sheets und eine Terms-/Privacy-Bestaetigung im Auth-/Avatar-Flow. Operativ offen bleibt nur, dass Abuse-Reports ueber `medbattle1@gmail.com` zeitnah bearbeitet werden muessen.
+- Funktionalitaet / UX: stabiler Smoke gegen den wirklich ausgerollten Closed-Test-Build bleibt weiter Go/No-Go-Kriterium.
+
 ## Must-Pass Gates
 - [x] Play Store Assets vorbereitet (`STORE_ASSETS.md`)
 - [ ] Play Store Content Rating final in Play Console eingetragen
 - [ ] Play Data Safety final in Play Console eingetragen
+- [ ] Play App Content: `Health apps declaration` fuer den medizinischen Lern-/Quiz-Kontext final ausgefuellt
 - [ ] OAuth Redirects + Deep Links end-to-end getestet (Google, Discord, E-Mail)
 - [x] Supabase Security Advisor ohne kritische Findings
 - [x] Supabase DB Lint (linked) ohne Error-Findings

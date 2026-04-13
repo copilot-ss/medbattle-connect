@@ -570,6 +570,53 @@ export async function restartMatchLobby({
   }
 }
 
+export async function leaveMatchLobby({
+  matchId,
+  language,
+  fallbackLanguage,
+} = {}) {
+  if (!matchId) {
+    return { ok: false, error: new Error('Match-ID fehlt.') };
+  }
+
+  const normalizedLanguage = normalizeLanguage(language);
+  const normalizedFallbackLanguage =
+    fallbackLanguage === undefined
+      ? normalizedLanguage === DEFAULT_LANGUAGE
+        ? DEFAULT_LANGUAGE
+        : null
+      : normalizeLanguageOrNull(fallbackLanguage);
+
+  try {
+    const payload = {
+      p_match_id: matchId,
+    };
+
+    if (normalizedLanguage) {
+      payload.p_language = normalizedLanguage;
+    }
+    if (normalizedFallbackLanguage !== null) {
+      payload.p_fallback_language = normalizedFallbackLanguage;
+    }
+
+    const { data, error } = await runSupabaseRequest(
+      () => supabase.rpc('leave_match_lobby', payload),
+      { label: 'matchService.leaveMatchLobby' }
+    );
+
+    if (error) {
+      return { ok: false, error };
+    }
+
+    invalidateOpenMatchesCache();
+
+    return { ok: true, match: normalizeMatchRow(data) };
+  } catch (err) {
+    console.error('Unerwarteter Fehler beim Verlassen der Lobby:', err);
+    return { ok: false, error: err };
+  }
+}
+
 export function subscribeToMatch(matchId, handler, options = {}) {
   if (!matchId) {
     return () => {};

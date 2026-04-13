@@ -1,6 +1,10 @@
+const BASE_LEVEL_XP = 240;
+const LEVEL_XP_STEP = 80;
+const FACHARZT_START_LEVEL = 3;
+
 const TITLE_TIERS = [
   { key: 'praktikant', label: 'Praktikant', minXp: 0 },
-  { key: 'facharzt', label: 'Facharzt', minXp: 6000 },
+  { key: 'facharzt', label: 'Facharzt', minXp: getMinXpForLevel(FACHARZT_START_LEVEL) },
   { key: 'oberarzt', label: 'Oberarzt', minXp: 10000 },
   { key: 'chefarzt', label: 'Chefarzt', minXp: 16000 },
   { key: 'dr', label: 'Dr.', minXp: 22000 },
@@ -9,8 +13,6 @@ const TITLE_TIERS = [
   { key: 'prof_dr', label: 'Prof. Dr.', minXp: 34000 },
   { key: 'prof_dr_dr', label: 'Prof. Dr. Dr.', minXp: 42000 },
 ];
-const BASE_LEVEL_XP = 240;
-const LEVEL_XP_STEP = 80;
 
 const ACHIEVEMENTS = [
   {

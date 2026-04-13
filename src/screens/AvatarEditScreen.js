@@ -1,10 +1,11 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Image,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -18,6 +19,10 @@ import {
   syncProfileAvatar,
   uploadProfileAvatarPhoto,
 } from '../services/userService';
+import {
+  loadUserContentPolicyAccepted,
+  saveUserContentPolicyAccepted,
+} from '../utils/userContentPolicyConsent';
 import SettingsHeader from './settings/SettingsHeader';
 import useSettingsStats from './settings/useSettingsStats';
 import useSettingsUser from './settings/useSettingsUser';
@@ -43,9 +48,32 @@ export default function AvatarEditScreen({ navigation }) {
   });
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [selectingAvatarId, setSelectingAvatarId] = useState(null);
+  const [userContentPolicyAccepted, setUserContentPolicyAccepted] = useState(false);
+  const [userContentPolicyResolved, setUserContentPolicyResolved] = useState(false);
 
   const isCustomSelected = Boolean(avatarUri);
   const busy = uploadingPhoto || Boolean(selectingAvatarId);
+
+  useEffect(() => {
+    let active = true;
+
+    loadUserContentPolicyAccepted()
+      .then((accepted) => {
+        if (!active) {
+          return;
+        }
+        setUserContentPolicyAccepted(accepted);
+      })
+      .finally(() => {
+        if (active) {
+          setUserContentPolicyResolved(true);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleSelectAvatar = useCallback(async (item) => {
     if (!item || userLevel < item.level) {
@@ -76,6 +104,13 @@ export default function AvatarEditScreen({ navigation }) {
     }
   }, [authUserId, avatarUri, isGuest, setAvatarId, setAvatarUri, userLevel]);
 
+  const showAvatarSyncWarning = useCallback(() => {
+    Alert.alert(
+      t('Foto konnte nicht gespeichert werden.'),
+      t('Bitte versuche es noch einmal.')
+    );
+  }, [t]);
+
   const openAvatarImagePicker = useCallback(async (source) => {
     setUploadingPhoto(true);
     try {
@@ -99,7 +134,7 @@ export default function AvatarEditScreen({ navigation }) {
           : ImagePicker.launchImageLibraryAsync;
 
       if (typeof picker !== 'function') {
-        Alert.alert(t('Kamera nicht verf\u00fcgbar.'));
+        Alert.alert(t('Kamera nicht verfügbar.'));
         return;
       }
 
@@ -111,6 +146,7 @@ export default function AvatarEditScreen({ navigation }) {
         mediaTypes,
         allowsEditing: source !== 'camera',
         aspect: [1, 1],
+        base64: true,
         quality: 0.8,
       });
 
@@ -123,14 +159,20 @@ export default function AvatarEditScreen({ navigation }) {
         return;
       }
 
+      const previousAvatarUri = avatarUri ?? null;
       await setAvatarUri(asset.uri);
       if (!authUserId || isGuest) {
         return;
       }
 
-      const uploadResult = await uploadProfileAvatarPhoto(authUserId, asset.uri);
+      const uploadResult = await uploadProfileAvatarPhoto(authUserId, asset.uri, {
+        base64Data: asset.base64 ?? null,
+        mimeType: asset.mimeType ?? null,
+      });
       if (!uploadResult.ok || !uploadResult.publicUrl) {
         console.warn('Konnte Avatar-Foto nicht hochladen:', uploadResult.error);
+        await setAvatarUri(previousAvatarUri);
+        showAvatarSyncWarning();
         return;
       }
 
@@ -142,18 +184,29 @@ export default function AvatarEditScreen({ navigation }) {
       });
       if (!syncResult.ok) {
         console.warn('Konnte Profil-Avatar nach Upload nicht speichern:', syncResult.error);
+        await setAvatarUri(previousAvatarUri);
+        showAvatarSyncWarning();
       }
     } catch (err) {
-      console.warn('Konnte Avatar-Foto nicht ausw\u00e4hlen:', err);
+      console.warn('Konnte Avatar-Foto nicht auswählen:', err);
+      showAvatarSyncWarning();
     } finally {
       setUploadingPhoto(false);
     }
-  }, [authUserId, isGuest, setAvatarUri, t]);
+  }, [authUserId, avatarUri, isGuest, setAvatarUri, showAvatarSyncWarning, t]);
 
   const handlePickAvatarPhoto = useCallback(() => {
+    if (!userContentPolicyAccepted) {
+      Alert.alert(
+        t('Bitte akzeptiere zuerst AGB und Datenschutz.'),
+        t('Bevor du ein Profilfoto hochlaedst, musst du die AGB akzeptieren und die Datenschutzerklaerung lesen.')
+      );
+      return;
+    }
+
     Alert.alert(
-      t('Foto w\u00e4hlen'),
-      t('Quelle ausw\u00e4hlen'),
+      t('Foto wählen'),
+      t('Quelle auswählen'),
       [
         { text: t('Abbrechen'), style: 'cancel' },
         { text: t('Galerie'), onPress: () => openAvatarImagePicker('library') },
@@ -161,7 +214,20 @@ export default function AvatarEditScreen({ navigation }) {
       ],
       { cancelable: true }
     );
-  }, [openAvatarImagePicker, t]);
+  }, [openAvatarImagePicker, t, userContentPolicyAccepted]);
+
+  const handleAcceptUserContentPolicy = useCallback(async () => {
+    const ok = await saveUserContentPolicyAccepted(true);
+    if (ok) {
+      setUserContentPolicyAccepted(true);
+      return;
+    }
+
+    Alert.alert(
+      t('Fehler'),
+      t('Zustimmung konnte nicht gespeichert werden.')
+    );
+  }, [t]);
 
   return (
     <View style={styles.container}>
@@ -179,6 +245,44 @@ export default function AvatarEditScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.card, styles.profileCard]}>
+          {userContentPolicyResolved && !userContentPolicyAccepted ? (
+            <View style={localStyles.policyCard}>
+              <Text style={localStyles.policyTitle}>
+                {t('AGB und Datenschutz vor UGC-Upload bestaetigen')}
+              </Text>
+              <Text style={localStyles.policyText}>
+                {t('Bevor du ein Profilfoto hochlaedst, musst du die AGB akzeptieren und die Datenschutzerklaerung lesen.')}
+              </Text>
+              <Text style={localStyles.policyHint}>
+                {t('Nutzernamen, Profilbilder und soziale Interaktionen muessen unsere App-Regeln beachten.')}
+              </Text>
+              <View style={localStyles.policyActions}>
+                <Pressable
+                  onPress={() => navigation.navigate('Legal', { doc: 'terms' })}
+                  style={localStyles.policySecondaryButton}
+                >
+                  <Text style={localStyles.policySecondaryButtonText}>{t('AGB')}</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => navigation.navigate('Legal', { doc: 'privacy' })}
+                  style={localStyles.policySecondaryButton}
+                >
+                  <Text style={localStyles.policySecondaryButtonText}>{t('Datenschutz')}</Text>
+                </Pressable>
+              </View>
+              <Pressable
+                onPress={() => {
+                  void handleAcceptUserContentPolicy();
+                }}
+                style={localStyles.policyPrimaryButton}
+              >
+                <Text style={localStyles.policyPrimaryButtonText}>
+                  {t('Akzeptieren und fortfahren')}
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+
           <View style={[styles.profileRow, styles.profileRowNoTitle]}>
             <AvatarView
               uri={avatarUri}
@@ -203,19 +307,19 @@ export default function AvatarEditScreen({ navigation }) {
             />
             <View style={styles.profileInfo}>
               <Text style={styles.profileName}>{userName || t('Profil')}</Text>
-              <Text style={styles.profileTitleHint}>{t('Tippe unten, um dein Bild zu \u00e4ndern.')}</Text>
+              <Text style={styles.profileTitleHint}>{t('Tippe unten, um dein Bild zu ändern.')}</Text>
             </View>
           </View>
 
           <View style={styles.avatarGrid}>
             <Pressable
               onPress={handlePickAvatarPhoto}
-              disabled={busy}
+              disabled={busy || !userContentPolicyAccepted}
               style={[
                 styles.avatarTile,
                 styles.avatarTileCustom,
                 isCustomSelected ? styles.avatarTileSelected : null,
-                busy ? { opacity: 0.75 } : null,
+                busy || !userContentPolicyAccepted ? { opacity: 0.75 } : null,
               ]}
               accessibilityLabel={t('Foto aus Galerie')}
             >
@@ -314,3 +418,66 @@ export default function AvatarEditScreen({ navigation }) {
     </View>
   );
 }
+
+const localStyles = StyleSheet.create({
+  policyCard: {
+    marginBottom: 18,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(96, 165, 250, 0.26)',
+    backgroundColor: 'rgba(15, 23, 42, 0.72)',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  policyTitle: {
+    color: '#F8FAFC',
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '700',
+  },
+  policyText: {
+    color: '#D9E7F5',
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 8,
+  },
+  policyHint: {
+    color: '#9FB4C8',
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 8,
+  },
+  policyActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
+  },
+  policySecondaryButton: {
+    flex: 1,
+    minHeight: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.26)',
+    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  policySecondaryButtonText: {
+    color: '#D8ECFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  policyPrimaryButton: {
+    marginTop: 10,
+    minHeight: 42,
+    borderRadius: 12,
+    backgroundColor: '#60A5FA',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  policyPrimaryButtonText: {
+    color: '#081019',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+});

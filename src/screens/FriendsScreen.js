@@ -50,6 +50,7 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
     friendRequestSent,
     refreshingFriends,
     onRefreshFriends,
+    refreshBlockedUsers,
   } = useSettingsController({ navigation, route });
 
   const handleRemoveFriendFromProfile = useCallback(async () => {
@@ -83,6 +84,11 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
     await handleRemoveFriendFromProfile();
     setShowRemoveConfirm(false);
   }, [handleRemoveFriendFromProfile]);
+
+  const handleProfileBlockChange = useCallback(async () => {
+    await refreshBlockedUsers?.();
+    await onRefreshFriends?.();
+  }, [onRefreshFriends, refreshBlockedUsers]);
 
   useFocusEffect(
     useCallback(() => {
@@ -193,6 +199,7 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
       />
       <PublicProfileSheet
         {...sheetProps}
+        onBlockChange={handleProfileBlockChange}
         footerActionLabel={selectedProfile?.canRemoveFriend ? t('Entfernen') : null}
         onFooterAction={selectedProfile?.canRemoveFriend ? handleRequestRemoveFriend : null}
         footerActionLoading={

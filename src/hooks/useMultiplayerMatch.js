@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useConnectivity } from '../context/ConnectivityContext';
+import { getBoostPointPenalty } from '../utils/quizBoosts';
 
 import {
   abandonMatch,
@@ -12,6 +13,7 @@ import {
 import { resolveProgressiveMatch } from '../services/match/matchHelpers';
 
 const MATCH_STATE_SYNC_INTERVAL_MS = 2500;
+const MULTIPLAYER_POINTS_PER_CORRECT_ANSWER = 3;
 
 function ensurePlayerState(match, role) {
   if (!match || !match.state) {
@@ -372,7 +374,13 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
       }
 
       const nextIndex = Math.min(playerState.index + 1, questions.length);
-      const nextScore = correct ? playerState.score + 1 : playerState.score;
+      const boostPenalty = getBoostPointPenalty(boostsUsed);
+      const nextScore = Math.max(
+        0,
+        playerState.score +
+          (correct ? MULTIPLAYER_POINTS_PER_CORRECT_ANSWER : 0) -
+          boostPenalty
+      );
       const finished = nextIndex >= questions.length;
 
       const response = await updateMatchProgress({

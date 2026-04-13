@@ -1,6 +1,9 @@
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useTranslation } from '../../i18n/useTranslation';
+import { formatUserError } from '../../utils/formatUserError';
 import styles from '../styles/MultiplayerLobbyScreen.styles';
+
+const SUPABASE_URL_HINT = process.env.EXPO_PUBLIC_SUPABASE_URL;
 
 export default function LobbyStatusCards({
   loadingUser,
@@ -15,6 +18,12 @@ export default function LobbyStatusCards({
   const showCreateOnlyLoading = Boolean(
     isCreateOnly && !currentMatch && !showProfileLoading && !showMatchesError && creating
   );
+  const matchesErrorMessage = showMatchesError
+    ? formatUserError(matchesError, {
+        supabaseUrl: SUPABASE_URL_HINT,
+        fallback: t('Es ist ein Fehler aufgetreten.'),
+      })
+    : null;
 
   return (
     <>
@@ -28,9 +37,7 @@ export default function LobbyStatusCards({
       {showMatchesError ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorTitle}>{t('Oops!')}</Text>
-          <Text style={styles.errorMessage}>
-            {t(matchesError.message ?? 'Es ist ein Fehler aufgetreten.')}
-          </Text>
+          <Text style={styles.errorMessage}>{matchesErrorMessage}</Text>
         </View>
       ) : null}
 

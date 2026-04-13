@@ -33,7 +33,17 @@ Begruendung:
 
 Store-/Legal-Hinweis:
 
-`MedQuiz dient ausschliesslich Lern- und Quiz-Zwecken. Die App ist kein Medizinprodukt, diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.`
+`MedQuiz dient ausschliesslich Lern- und Quiz-Zwecken. Die App ist kein Medizinprodukt, diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung. Bei Beschwerden oder wenn du eine Diagnose oder Behandlung brauchst, hole bitte medizinischen Rat bei qualifiziertem Fachpersonal ein.`
+
+## Health Apps Declaration
+
+Empfehlung:
+
+- In Play Console unter `App content` die `Health apps declaration` fuer den medizinischen Lern-/Quiz-Kontext manuell ausfuellen.
+
+Begruendung:
+
+- Laut aktueller Google-Play-Richtlinie fallen auch Apps mit gesundheitsbezogenen Informationen in diese Deklaration, selbst wenn sie kein Medizinprodukt sind.
 
 ## User Interaction
 
@@ -45,6 +55,13 @@ Begruendung:
 
 - Multiplayer-Matches
 - Freunde / Einladungen / Lobby-Bezug
+- Frei waehlbare Nutzernamen und optionale Profilfotos
+
+Aktueller Repo-Stand:
+
+- In-App-Profilansichten bieten jetzt klar beschriftete `Report user/content`- und `Block`-Funktionen.
+- Auth- und Avatar-Flow verlangen vor Social-/UGC-Nutzung eine bestaetigte Kenntnis von AGB und Datenschutz.
+- Support-Mailbox fuer Abuse-Reports bleibt operativ zu ueberwachen.
 
 ## Ads
 
@@ -72,7 +89,8 @@ Vorschlag fuer Reviewer-Notiz:
 In der Play Console hinterlegen:
 
 - Delete account URL:
-  `https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=delete-account`
+  `https://copilot-ss.github.io/medbattle-connect/legal-static/delete-account.html`
+  Die Zielseite muss `MedQuiz`, `CoppiCodes` und `com.sjigalin.medbattle` sichtbar nennen.
 
 In-App vorhanden:
 
@@ -81,8 +99,10 @@ In-App vorhanden:
 ## Privacy / Terms / Support
 
 - Privacy:
-  `https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=privacy`
+  `https://copilot-ss.github.io/medbattle-connect/legal-static/privacy.html`
 - Terms:
-  `https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=terms`
+  `https://copilot-ss.github.io/medbattle-connect/legal-static/terms.html`
 - Support:
-  `https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=support`
+  `https://copilot-ss.github.io/medbattle-connect/legal-static/support.html`
+- Privacy page update (2026-04-12): the public privacy policy now states explicit retention periods for account/profile/gameplay data, local guest data, diagnostics, support requests, and legally required billing/security records.
+- Privacy page update (2026-04-12): the public privacy policy now also states secure data handling procedures such as HTTPS/TLS transport and redacted diagnostics logging.

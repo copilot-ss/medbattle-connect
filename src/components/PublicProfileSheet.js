@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
+  Linking,
   Pressable,
   StyleSheet,
   Text,
@@ -17,6 +19,13 @@ import {
 import { fetchLeaderboard } from '../services/quizService';
 import { getTitleLevel, getTitleProgress } from '../services/titleService';
 import { getAvatarInitials, getAvatarPresetSource } from '../utils/avatarUtils';
+import { LEGAL_CONTACT_EMAIL } from '../screens/legal/legalContent';
+import {
+  blockUser,
+  getBlockedUsers,
+  isUserBlocked,
+  unblockUser,
+} from '../utils/blockedUsers';
 import { sanitizeFriendCode } from '../utils/friendCode';
 
 export default function PublicProfileSheet({
@@ -32,10 +41,13 @@ export default function PublicProfileSheet({
   onFooterAction = null,
   footerActionLoading = false,
   footerActionDisabled = false,
+  onBlockChange = null,
 }) {
   const { t } = useTranslation();
   const [resolvedProfile, setResolvedProfile] = useState(profile ?? null);
   const [loading, setLoading] = useState(false);
+  const [blockedUsers, setBlockedUsers] = useState([]);
+  const [blockingUser, setBlockingUser] = useState(false);
 
   const profileUserId = profile?.userId ?? null;
   const profileFriendCode = sanitizeFriendCode(profile?.friendCode) || null;
@@ -44,10 +56,36 @@ export default function PublicProfileSheet({
     if (!visible) {
       setResolvedProfile(null);
       setLoading(false);
+      setBlockingUser(false);
       return;
     }
     setResolvedProfile(profile ?? null);
   }, [profile, visible]);
+
+  useEffect(() => {
+    if (!visible) {
+      setBlockedUsers([]);
+      return;
+    }
+
+    let active = true;
+
+    getBlockedUsers()
+      .then((entries) => {
+        if (active) {
+          setBlockedUsers(entries);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setBlockedUsers([]);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [visible]);
 
   useEffect(() => {
     if (!visible || (!profileUserId && !profileFriendCode)) {
@@ -240,6 +278,16 @@ export default function PublicProfileSheet({
     typeof primaryActionLabel === 'string'
     && primaryActionLabel.trim()
     && typeof onPrimaryAction === 'function';
+  const moderationTarget = {
+    userId: resolvedProfile.userId ?? profileUserId ?? null,
+    friendCode: resolvedProfile.friendCode ?? profileFriendCode ?? null,
+    username: username ?? name,
+  };
+  const showModerationActions = Boolean(
+    moderationTarget.userId || moderationTarget.friendCode || moderationTarget.username
+  );
+  const userBlocked = showModerationActions && isUserBlocked(moderationTarget, blockedUsers);
+  const showActionStack = showFooterAction || showModerationActions;
 
   const statCards = [
     {
@@ -262,6 +310,75 @@ export default function PublicProfileSheet({
       value: `${accuracyPercent}%`,
     },
   ];
+
+  const handleReportUser = async () => {
+    if (!showModerationActions) {
+      return;
+    }
+
+    const subject = t('Nutzer/Inhalt melden');
+    const body = [
+      'MedQuiz report',
+      '',
+      `Username: ${username ?? '-'}`,
+      `Display name: ${name ?? '-'}`,
+      `User ID: ${moderationTarget.userId ?? '-'}`,
+      `Friend code: ${moderationTarget.friendCode ?? '-'}`,
+      `Context: ${resolvedProfile?.statusLabel ?? t('Profil')}`,
+      '',
+      'Reason:',
+    ].join('\n');
+
+    try {
+      await Linking.openURL(
+        `mailto:${LEGAL_CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+      );
+    } catch {
+      Alert.alert(
+        t('Fehler'),
+        t('Melde-E-Mail konnte nicht geoeffnet werden.')
+      );
+    }
+  };
+
+  const handleToggleBlock = async () => {
+    if (!showModerationActions || blockingUser) {
+      return;
+    }
+
+    setBlockingUser(true);
+    try {
+      const result = userBlocked
+        ? await unblockUser(moderationTarget)
+        : await blockUser(moderationTarget);
+
+      if (!result?.ok) {
+        throw result?.error ?? new Error('Block action failed.');
+      }
+
+      const nextBlockedUsers = Array.isArray(result?.blockedUsers)
+        ? result.blockedUsers
+        : await getBlockedUsers();
+      setBlockedUsers(nextBlockedUsers);
+
+      if (typeof onBlockChange === 'function') {
+        await onBlockChange({
+          blocked: !userBlocked,
+          profile: resolvedProfile,
+          blockedUsers: nextBlockedUsers,
+        });
+      }
+    } catch {
+      Alert.alert(
+        t('Fehler'),
+        userBlocked
+          ? t('Blockierung konnte nicht aufgehoben werden.')
+          : t('Nutzer konnte nicht blockiert werden.')
+      );
+    } finally {
+      setBlockingUser(false);
+    }
+  };
 
   return (
     <View style={styles.overlay}>
@@ -352,8 +469,49 @@ export default function PublicProfileSheet({
           </View>
         ) : null}
 
-        {showFooterAction ? (
+        {showActionStack ? (
           <View style={styles.actionStack}>
+            {showModerationActions ? (
+              <View style={styles.secondaryActionRow}>
+                <Pressable
+                  onPress={() => {
+                    void handleReportUser();
+                  }}
+                  style={styles.secondaryActionButton}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('Nutzer/Inhalt melden')}
+                >
+                  <Text style={styles.secondaryActionText}>{t('Nutzer/Inhalt melden')}</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    void handleToggleBlock();
+                  }}
+                  disabled={blockingUser}
+                  style={[
+                    styles.secondaryActionButton,
+                    styles.secondaryActionDangerButton,
+                    userBlocked ? styles.secondaryActionNeutralButton : null,
+                    blockingUser ? styles.footerActionButtonDisabled : null,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={userBlocked ? t('Blockierung aufheben') : t('Blockieren')}
+                >
+                  {blockingUser ? (
+                    <ActivityIndicator size="small" color="#FFE7E7" />
+                  ) : (
+                    <Text
+                      style={[
+                        styles.secondaryActionDangerText,
+                        userBlocked ? styles.secondaryActionNeutralText : null,
+                      ]}
+                    >
+                      {userBlocked ? t('Blockierung aufheben') : t('Blockieren')}
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+            ) : null}
             {showFooterAction ? (
               <Pressable
                 onPress={() => onFooterAction(resolvedProfile)}
@@ -598,6 +756,44 @@ const styles = StyleSheet.create({
   actionStack: {
     marginTop: 14,
     rowGap: 10,
+  },
+  secondaryActionRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  secondaryActionButton: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
+  secondaryActionText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontFamily: fonts.bold,
+    textAlign: 'center',
+  },
+  secondaryActionDangerButton: {
+    borderColor: 'rgba(248, 113, 113, 0.5)',
+    backgroundColor: 'rgba(248, 113, 113, 0.12)',
+  },
+  secondaryActionDangerText: {
+    color: '#FFD1D1',
+    fontSize: 13,
+    fontFamily: fonts.bold,
+    textAlign: 'center',
+  },
+  secondaryActionNeutralButton: {
+    borderColor: 'rgba(96, 165, 250, 0.45)',
+    backgroundColor: 'rgba(96, 165, 250, 0.12)',
+  },
+  secondaryActionNeutralText: {
+    color: '#D8ECFF',
   },
   footerActionButton: {
     borderRadius: radii.md,

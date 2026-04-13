@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -14,12 +14,18 @@ import { CommonActions } from '@react-navigation/native';
 import {
   useAvatarPrefs,
   useEnergyPrefs,
+  usePreferences,
   useStatsPrefs,
 } from '../context/PreferencesContext';
 import { useConnectivity } from '../context/ConnectivityContext';
 import usePremiumStatus from '../hooks/usePremiumStatus';
 import useMultiplayerMatch from '../hooks/useMultiplayerMatch';
 import useCurrentAvatar from '../hooks/useCurrentAvatar';
+import {
+  abandonMatch,
+  deriveMatchRole,
+  leaveMatchLobby,
+} from '../services/matchService';
 import { colors } from '../styles/theme';
 import { findBadge } from './result/resultConstants';
 import ResultScoreboard from './result/ResultScoreboard';
@@ -35,7 +41,6 @@ import { COIN_ENERGY_AMOUNT, COIN_ENERGY_COST, REWARDED_ENERGY } from './home/ho
 import PublicProfileSheet from '../components/PublicProfileSheet';
 import usePublicProfileSheet from '../hooks/usePublicProfileSheet';
 import { clearActiveLobby } from '../utils/activeLobbyStorage';
-import { buildActiveLobbyPayload } from './multiplayer/lobbyUtils';
 import styles, {
   getLargeGlowStyle,
   getPrimaryButtonStyle,
@@ -43,16 +48,75 @@ import styles, {
 
 const ZERO_GHOST_ANIMATION = require('../../assets/animations/score/zero.gif');
 
-function sanitizeStatNumber(value) {
-  const parsed = Number.parseInt(value, 10);
-  if (Number.isFinite(parsed) && parsed >= 0) {
-    return parsed;
+function getFeedbackState({
+  isMultiplayer,
+  percentage,
+  selfScoreValue,
+  opponentScoreValue,
+  showMultiplayerWaiting,
+  waitingPlayersLabel,
+  t,
+}) {
+  if (isMultiplayer) {
+    if (showMultiplayerWaiting) {
+      return {
+        line: t('Du bist durch. Wir warten noch auf {players}.', {
+          players: waitingPlayersLabel,
+        }),
+        tone: null,
+      };
+    }
+    if (!Number.isFinite(opponentScoreValue)) {
+      return {
+        line: t('Ergebnis steht. Schau dir die Antworten in Ruhe an.'),
+        tone: null,
+      };
+    }
+    if (selfScoreValue > opponentScoreValue) {
+      return {
+        line: t('Starke Runde. Du hast dieses Match vorne beendet.'),
+        tone: 'high',
+      };
+    }
+    if (selfScoreValue < opponentScoreValue) {
+      return {
+        line: t('Knapp verloren. Hol dir direkt die nächste Runde.'),
+        tone: 'low',
+      };
+    }
+    return {
+      line: t('Unentschieden. Diese Runde war komplett ausgeglichen.'),
+      tone: null,
+    };
   }
-  return 0;
-}
-
-function formatCount(value) {
-  return sanitizeStatNumber(value).toLocaleString();
+  if (percentage === 0) {
+    return {
+      line: t('Hilfe - hier krachts total !'),
+      tone: 'low',
+    };
+  }
+  if (percentage === 100) {
+    return {
+      line: t('Perfekt gespielt. Alle Fragen richtig - kompletter Sweep.'),
+      tone: 'high',
+    };
+  }
+  if (percentage >= 80) {
+    return {
+      line: t('Mega stark! Du bist im Flow - das war richtig clean gespielt.'),
+      tone: 'high',
+    };
+  }
+  if (percentage >= 50) {
+    return {
+      line: t('Solide Runde. Da ist schon richtig Momentum drin.'),
+      tone: null,
+    };
+  }
+  return {
+    line: t("War nix. Ziemlich schwach - reiss dich zusammen und versuch's nochmal."),
+    tone: 'low',
+  };
 }
 
 export default function ResultScreen({ route, navigation }) {
@@ -83,10 +147,12 @@ export default function ResultScreen({ route, navigation }) {
   } = route.params ?? {};
   const { isOnline } = useConnectivity();
   const isOffline = isOnline === false;
+  const { language } = usePreferences();
   const { energy, energyMax, nextEnergyAt, addEnergy, refreshEnergy } = useEnergyPrefs();
   const { avatarId, avatarUri } = useAvatarPrefs();
   const { userStats, updateUserStats } = useStatsPrefs();
   const { premium } = usePremiumStatus();
+  const returnHomeInFlightRef = useRef(false);
   const {
     loading: liveMatchLoading,
     match: liveMatch,
@@ -171,8 +237,6 @@ export default function ResultScreen({ route, navigation }) {
   const { openProfile, sheetProps } = usePublicProfileSheet();
   const {
     reviewItems,
-    resolvedPlayerState,
-    resolvedOpponentState,
     showMultiplayerWaiting,
     waitingPlayersLabel,
     multiplayerEntries,
@@ -183,6 +247,8 @@ export default function ResultScreen({ route, navigation }) {
     selectedReviewTitle,
     selectedAnswerLabel,
     fallbackExistingMatch,
+    selfScoreValue,
+    opponentScoreValue,
   } = useResultMultiplayerData({
     isMultiplayer,
     matchId,
@@ -209,107 +275,38 @@ export default function ResultScreen({ route, navigation }) {
     openProfile,
     t,
   });
-  const feedbackLine = useMemo(() => {
-    if (isMultiplayer) {
-      const selfMultiplayerScore = Number.isFinite(resolvedPlayerState?.score)
-        ? resolvedPlayerState.score
-        : score;
-      const opponentMultiplayerScore = Number.isFinite(resolvedOpponentState?.score)
-        ? resolvedOpponentState.score
-        : Number.isFinite(opponentScore)
-          ? opponentScore
-          : null;
-
-      if (showMultiplayerWaiting) {
-        return t('Du bist durch. Wir warten noch auf {players}.', {
-          players: waitingPlayersLabel,
-        });
-      }
-      if (!Number.isFinite(opponentMultiplayerScore)) {
-        return t('Ergebnis steht. Schau dir die Antworten in Ruhe an.');
-      }
-      if (selfMultiplayerScore > opponentMultiplayerScore) {
-        return t('Starke Runde. Du hast dieses Match vorne beendet.');
-      }
-      if (selfMultiplayerScore < opponentMultiplayerScore) {
-        return t('Knapp verloren. Hol dir direkt die nächste Runde.');
-      }
-      return t('Unentschieden. Diese Runde war komplett ausgeglichen.');
-    }
-    if (percentage === 0) {
-      return t('Hilfe - hier krachts total !');
-    }
-    if (percentage === 100) {
-      return t('Perfekt gespielt. Alle Fragen richtig - kompletter Sweep.');
-    }
-    if (percentage >= 80) {
-      return t('Mega stark! Du bist im Flow - das war richtig clean gespielt.');
-    }
-    if (percentage >= 50) {
-      return t('Solide Runde. Da ist schon richtig Momentum drin.');
-    }
-    if (percentage < 50) {
-      return t("War nix. Ziemlich schwach - reiss dich zusammen und versuch's nochmal.");
-    }
-    return t('Solide Runde. Da ist schon richtig Momentum drin.');
-  }, [
-    isMultiplayer,
-    opponentScore,
-    percentage,
-    resolvedOpponentState?.score,
-    resolvedPlayerState?.score,
-    score,
-    showMultiplayerWaiting,
-    t,
-    waitingPlayersLabel,
-  ]);
+  const feedbackState = useMemo(
+    () => getFeedbackState({
+      isMultiplayer,
+      percentage,
+      selfScoreValue,
+      opponentScoreValue,
+      showMultiplayerWaiting,
+      waitingPlayersLabel,
+      t,
+    }),
+    [
+      isMultiplayer,
+      opponentScoreValue,
+      percentage,
+      selfScoreValue,
+      showMultiplayerWaiting,
+      t,
+      waitingPlayersLabel,
+    ]
+  );
   const feedbackToneStyle = useMemo(() => {
-    if (!feedbackLine) {
-      return null;
-    }
-    if (isMultiplayer) {
-      const selfMultiplayerScore = Number.isFinite(resolvedPlayerState?.score)
-        ? resolvedPlayerState.score
-        : score;
-      const opponentMultiplayerScore = Number.isFinite(resolvedOpponentState?.score)
-        ? resolvedOpponentState.score
-        : Number.isFinite(opponentScore)
-          ? opponentScore
-          : null;
-
-      if (
-        !showMultiplayerWaiting &&
-        Number.isFinite(opponentMultiplayerScore) &&
-        selfMultiplayerScore > opponentMultiplayerScore
-      ) {
-        return styles.feedbackLineHigh;
-      }
-      if (
-        !showMultiplayerWaiting &&
-        Number.isFinite(opponentMultiplayerScore) &&
-        selfMultiplayerScore < opponentMultiplayerScore
-      ) {
-        return styles.feedbackLineLow;
-      }
-      return null;
-    }
-    if (percentage < 50) {
-      return styles.feedbackLineLow;
-    }
-    if (percentage >= 80) {
+    if (feedbackState.tone === 'high') {
       return styles.feedbackLineHigh;
+    }
+    if (feedbackState.tone === 'low') {
+      return styles.feedbackLineLow;
     }
     return null;
   }, [
-    feedbackLine,
-    isMultiplayer,
-    opponentScore,
-    percentage,
-    resolvedOpponentState?.score,
-    resolvedPlayerState?.score,
-    score,
-    showMultiplayerWaiting,
+    feedbackState.tone,
   ]);
+  const feedbackLine = feedbackState.line;
 
   useEffect(() => {
     if (
@@ -368,10 +365,11 @@ export default function ResultScreen({ route, navigation }) {
       state: liveMatch.state ?? fallbackExistingMatch.state ?? null,
     };
   }, [fallbackExistingMatch, liveMatch]);
-  const activeLobbyForHome = useMemo(
-    () => (isMultiplayer ? buildActiveLobbyPayload(returnLobbyMatch) : null),
-    [isMultiplayer, returnLobbyMatch]
+  const multiplayerResultMatch = useMemo(
+    () => (isMultiplayer ? liveMatch ?? returnLobbyMatch ?? null : null),
+    [isMultiplayer, liveMatch, returnLobbyMatch]
   );
+  const multiplayerResultStatus = multiplayerResultMatch?.status ?? matchStatus ?? null;
   const entranceTriggerKey = useMemo(
     () => [
       isMultiplayer ? 'mp' : 'solo',
@@ -412,43 +410,114 @@ export default function ResultScreen({ route, navigation }) {
     ],
     [insets.bottom, insets.top]
   );
-  const handleReturnHome = useCallback(() => {
-    if (isMultiplayer && !activeLobbyForHome) {
-      void clearActiveLobby();
+  const handleReturnHome = useCallback(async () => {
+    if (returnHomeInFlightRef.current) {
+      return;
     }
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [
-          {
-            name: 'MainTabs',
-            state: {
-              index: 0,
-              routes: [
-                {
-                  name: 'Home',
-                  params: {
-                    activeLobby: activeLobbyForHome,
+    returnHomeInFlightRef.current = true;
+
+    try {
+      if (isMultiplayer && multiplayerResultMatch?.id) {
+        const shouldLeaveLobby =
+          multiplayerResultStatus === 'waiting' ||
+          multiplayerResultStatus === 'completed';
+
+        if (shouldLeaveLobby) {
+          const leaveResult = await leaveMatchLobby({
+            matchId: multiplayerResultMatch.id,
+            language,
+            fallbackLanguage: language === 'de' ? 'de' : null,
+          });
+
+          if (!leaveResult?.ok) {
+            throw leaveResult?.error ?? new Error('Lobby konnte nicht verlassen werden.');
+          }
+        } else {
+          const resolvedRole =
+            deriveMatchRole(multiplayerResultMatch, userId)
+            ?? (playerRole === 'host' || playerRole === 'guest' ? playerRole : null);
+
+          if (resolvedRole) {
+            const abandonResult = await abandonMatch({
+              match: multiplayerResultMatch,
+              role: resolvedRole,
+            });
+
+            if (!abandonResult?.ok) {
+              throw abandonResult?.error ?? new Error('Match konnte nicht verlassen werden.');
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Konnte Multiplayer-Ergebnis nicht sauber verlassen:', err);
+    } finally {
+      if (isMultiplayer) {
+        await clearActiveLobby();
+      }
+
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'MainTabs',
+              state: {
+                index: 0,
+                routes: [
+                  {
+                    name: 'Home',
+                    params: {
+                      activeLobby: null,
+                    },
                   },
-                },
-              ],
+                ],
+              },
             },
-          },
-        ],
-      })
-    );
-  }, [activeLobbyForHome, isMultiplayer, navigation]);
+          ],
+        })
+      );
+      returnHomeInFlightRef.current = false;
+    }
+  }, [
+    isMultiplayer,
+    language,
+    multiplayerResultMatch,
+    multiplayerResultStatus,
+    navigation,
+    playerRole,
+    userId,
+  ]);
   const handleReturnToLobby = useCallback(() => {
     if (!isMultiplayer || !returnLobbyMatch) {
-      handleReturnHome();
+      void handleReturnHome();
       return;
     }
     navigation.replace('MultiplayerLobby', {
       mode: 'hub',
       existingMatch: returnLobbyMatch,
-      keepCompleted: true,
+      keepCompleted: returnLobbyMatch.status === 'completed',
     });
   }, [handleReturnHome, isMultiplayer, navigation, returnLobbyMatch]);
+  const handleReplayQuiz = useCallback(() => {
+    if (soloQuizLocked) {
+      setShowBoostModal(true);
+      return;
+    }
+
+    navigation.replace('Quiz', {
+      mode,
+      questionLimit,
+      category,
+    });
+  }, [
+    category,
+    mode,
+    navigation,
+    questionLimit,
+    setShowBoostModal,
+    soloQuizLocked,
+  ]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (event) => {
@@ -457,7 +526,7 @@ export default function ResultScreen({ route, navigation }) {
         return;
       }
       event.preventDefault();
-      handleReturnHome();
+      void handleReturnHome();
     });
 
     return unsubscribe;
@@ -671,27 +740,16 @@ export default function ResultScreen({ route, navigation }) {
                     style={styles.actionReveal}
                   >
                     <Pressable
-                    onPress={() => {
-                      if (soloQuizLocked) {
-                        setShowBoostModal(true);
-                        return;
-                      }
-
-                      navigation.replace('Quiz', {
-                        mode,
-                        questionLimit,
-                        category,
-                      });
-                    }}
-                    style={[
-                      getPrimaryButtonStyle(colors.accentGreen),
-                      isBoostBusy ? styles.primaryButtonDisabled : null,
-                    ]}
-                    disabled={isBoostBusy}
-                  >
-                    <Text style={[styles.primaryButtonText, styles.primaryButtonTextLarge]}>
-                      {t('Nächstes Quiz')}
-                    </Text>
+                      onPress={handleReplayQuiz}
+                      style={[
+                        getPrimaryButtonStyle(colors.accentGreen),
+                        isBoostBusy ? styles.primaryButtonDisabled : null,
+                      ]}
+                      disabled={isBoostBusy}
+                    >
+                      <Text style={[styles.primaryButtonText, styles.primaryButtonTextLarge]}>
+                        {t('Nächstes Quiz')}
+                      </Text>
                     </Pressable>
                   </BubbleReveal>
                 ) : (
@@ -701,12 +759,12 @@ export default function ResultScreen({ route, navigation }) {
                     style={styles.actionReveal}
                   >
                     <Pressable
-                    onPress={handleReturnToLobby}
-                    style={getPrimaryButtonStyle(colors.accent)}
-                  >
-                    <Text style={styles.primaryButtonText}>
-                      {t('Zurück zur Lobby')}
-                    </Text>
+                      onPress={handleReturnToLobby}
+                      style={getPrimaryButtonStyle(colors.accent)}
+                    >
+                      <Text style={styles.primaryButtonText}>
+                        {t('Zurück zur Lobby')}
+                      </Text>
                     </Pressable>
                   </BubbleReveal>
                 )}

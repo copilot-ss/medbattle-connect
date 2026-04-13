@@ -75,16 +75,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 6,
   },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 20,
-    fontFamily: fonts.regular,
-  },
-  subtitleCompact: {
-    marginBottom: 10,
-  },
   feedbackLine: {
     fontSize: 15,
     color: colors.textPrimary,
@@ -97,16 +87,6 @@ const styles = StyleSheet.create({
   },
   feedbackLineHigh: {
     color: colors.accentGreen,
-  },
-  anatomyAnimationWrap: {
-    width: '100%',
-    alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 20,
-  },
-  anatomyAnimation: {
-    width: 120,
-    height: 120,
   },
   scoreSummary: {
     width: '100%',
@@ -127,13 +107,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-  },
-  scoreLabel: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontFamily: fonts.medium,
-    letterSpacing: 1.6,
-    textTransform: 'uppercase',
   },
   scoreRow: {
     flexDirection: 'row',
@@ -161,9 +134,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(87, 199, 255, 0.4)',
   },
-  scorePointsIcon: {
-    marginRight: 6,
-  },
   scorePointsIconTrailing: {
     marginLeft: 6,
   },
@@ -185,14 +155,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  trophyAnimation: {
-    width: 96,
-    height: 96,
-  },
-  trophyIcon: {
-    width: 72,
-    height: 72,
-  },
   offlineBanner: {
     width: '100%',
     marginTop: 16,
@@ -213,28 +175,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 4,
     fontFamily: fonts.regular,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 0,
-    flexWrap: 'wrap',
-    rowGap: 8,
-    columnGap: 10,
-  },
-  statsRowSecondary: {
-    marginTop: 10,
-  },
-  rewardRow: {
-    marginTop: 12,
-    justifyContent: 'center',
-    flexWrap: 'nowrap',
-    columnGap: 12,
-  },
-  rewardSummaryRow: {
-    marginTop: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   rewardSummaryRowSide: {
     position: 'absolute',
@@ -431,17 +371,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(87, 199, 255, 0.28)',
   },
+  scoreboardBoostChipIconOnly: {
+    minWidth: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   scoreboardBoostChipText: {
     color: '#DFF3FF',
     fontSize: 11,
     fontFamily: fonts.medium,
-  },
-  scoreboardBoostPenaltyChip: {
-    backgroundColor: 'rgba(255, 178, 92, 0.14)',
-    borderColor: 'rgba(255, 178, 92, 0.35)',
-  },
-  scoreboardBoostPenaltyText: {
-    color: '#FFD5A3',
   },
   scoreboardScoreBox: {
     alignItems: 'flex-end',
@@ -455,12 +393,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 11,
     marginTop: 2,
-    fontFamily: fonts.regular,
-  },
-  multiplayerMeta: {
-    color: colors.textMuted,
-    fontSize: 13,
-    textAlign: 'center',
     fontFamily: fonts.regular,
   },
   multiplayerPointsWrap: {
@@ -496,20 +428,6 @@ const styles = StyleSheet.create({
   },
   actionReveal: {
     width: '100%',
-  },
-  secondaryButton: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    alignItems: 'center',
-    marginTop: 14,
-  },
-  secondaryButtonText: {
-    color: colors.textSecondary,
-    fontSize: 16,
-    fontFamily: fonts.medium,
   },
   tertiaryButton: {
     width: '100%',

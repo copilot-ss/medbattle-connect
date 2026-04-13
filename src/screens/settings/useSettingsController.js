@@ -102,6 +102,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     handleCopyFriendCode,
     refreshingFriends,
     onRefreshFriends,
+    refreshBlockedUsers,
   } = useSettingsFriends({
     userId,
     authUserId,
@@ -489,6 +490,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     friendRequestSent,
     refreshingFriends,
     onRefreshFriends,
+    refreshBlockedUsers,
     // feedback banners
     feedback,
     // auth/reset

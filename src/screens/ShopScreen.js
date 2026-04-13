@@ -101,7 +101,7 @@ const buildIapFailureMessage = (t, errorLike) => {
     message.includes('billing through google play') ||
     message.includes('this version of the application is not configured')
   ) {
-    return 'Diese Installation ist fuer Google Play Billing noch kein gueltiger Play-Test. Installiere den Closed-Test-Build ueber den Play Store oder nutze ein korrekt eingetragenes License-Tester-Konto.';
+    return t('Kauf ist gerade nicht verfÃ¼gbar.');
   }
 
   if (code.includes('service_disconnected') || code.includes('not_ready')) {
@@ -111,6 +111,33 @@ const buildIapFailureMessage = (t, errorLike) => {
   return rawCode
     ? `${t('Kauf fehlgeschlagen. Bitte später erneut.')} (${rawCode})`
     : t('Kauf fehlgeschlagen. Bitte später erneut.');
+};
+
+const buildFriendlyIapFailureMessage = (t, errorLike) => {
+  const rawCode = normalizeIapErrorText(
+    errorLike?.code ?? errorLike?.errorCode
+  );
+  const code = rawCode.toLowerCase();
+  const message = normalizeIapErrorText(
+    errorLike?.message ?? errorLike?.errorMessage
+  ).toLowerCase();
+
+  if (
+    code.includes('item_unavailable') ||
+    message.includes('item unavailable') ||
+    message.includes('product is not available') ||
+    message.includes('offer is not available') ||
+    code.includes('developer') ||
+    message.includes('not configured for billing') ||
+    message.includes('billing through google play') ||
+    message.includes('this version of the application is not configured') ||
+    code.includes('service_disconnected') ||
+    code.includes('not_ready')
+  ) {
+    return t('Kauf ist gerade nicht verfügbar.');
+  }
+
+  return t('Kauf fehlgeschlagen. Bitte später erneut.');
 };
 
 export default function ShopScreen() {
@@ -417,13 +444,13 @@ export default function ShopScreen() {
               await grantCoins(pack.amount);
             } catch (err) {
               console.warn('IAP finish/grant failed:', purchase?.productId, err);
-              setShopMessage(buildIapFailureMessage(t, err));
+              setShopMessage(buildFriendlyIapFailureMessage(t, err));
             }
           }
         } else if (responseCode === iapModule.IAPResponseCode.USER_CANCELED) {
         } else if (errorCode) {
           setShopMessage(
-            buildIapFailureMessage(t, {
+            buildFriendlyIapFailureMessage(t, {
               errorCode,
               errorMessage,
             })
@@ -632,7 +659,7 @@ export default function ShopScreen() {
     } catch (err) {
       console.warn('IAP request failed:', item.productId, err);
       setPurchasingId(null);
-      setShopMessage(buildIapFailureMessage(t, err));
+      setShopMessage(buildFriendlyIapFailureMessage(t, err));
     }
   };
 

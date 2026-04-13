@@ -1,3 +1,4 @@
+import * as FileSystem from 'expo-file-system/legacy';
 import { getSessionUser, supabase } from '../lib/supabaseClient';
 import {
   deriveFriendCode as deriveFriendCodeFromUserId,
@@ -121,6 +122,125 @@ function sanitizeAvatarColor(value) {
     return trimmed;
   }
   return null;
+}
+
+function normalizeAvatarMimeType(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim().toLowerCase();
+  return trimmed.startsWith('image/') ? trimmed : null;
+}
+
+function inferAvatarMimeTypeFromUri(uri) {
+  if (typeof uri !== 'string') {
+    return null;
+  }
+  const normalizedUri = uri.trim().split('?')[0].toLowerCase();
+  if (normalizedUri.endsWith('.png')) {
+    return 'image/png';
+  }
+  if (normalizedUri.endsWith('.webp')) {
+    return 'image/webp';
+  }
+  if (normalizedUri.endsWith('.heic') || normalizedUri.endsWith('.heif')) {
+    return 'image/heic';
+  }
+  return normalizedUri.endsWith('.jpg') || normalizedUri.endsWith('.jpeg')
+    ? 'image/jpeg'
+    : null;
+}
+
+function resolveAvatarMimeType({ mimeType = null, uri = null, fallback = null } = {}) {
+  return (
+    normalizeAvatarMimeType(mimeType)
+    ?? normalizeAvatarMimeType(fallback)
+    ?? inferAvatarMimeTypeFromUri(uri)
+    ?? 'image/jpeg'
+  );
+}
+
+function normalizeAvatarBase64(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const marker = ';base64,';
+  const markerIndex = trimmed.indexOf(marker);
+  return markerIndex >= 0
+    ? trimmed.slice(markerIndex + marker.length)
+    : trimmed;
+}
+
+async function createArrayBufferFromBase64(base64Data, mimeType) {
+  const response = await fetch(`data:${mimeType};base64,${base64Data}`);
+  if (!response.ok) {
+    throw new Error(`Avatar-Bild konnte nicht aus Base64 gelesen werden (${response.status}).`);
+  }
+  return response.arrayBuffer();
+}
+
+async function loadAvatarUploadData(localUri, preferredMimeType = null, base64Data = null) {
+  const fallbackMimeType = resolveAvatarMimeType({
+    mimeType: preferredMimeType,
+    uri: localUri,
+  });
+  const normalizedUri = typeof localUri === 'string' ? localUri.trim() : '';
+  const normalizedBase64Data = normalizeAvatarBase64(base64Data);
+
+  if (normalizedBase64Data) {
+    const fileData = await createArrayBufferFromBase64(
+      normalizedBase64Data,
+      fallbackMimeType
+    );
+    return {
+      fileData,
+      mimeType: fallbackMimeType,
+    };
+  }
+
+  try {
+    const base64Data = await FileSystem.readAsStringAsync(normalizedUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    if (!base64Data) {
+      throw new Error('Leere Base64-Daten erhalten.');
+    }
+
+    const fileData = await createArrayBufferFromBase64(base64Data, fallbackMimeType);
+    return {
+      fileData,
+      mimeType: fallbackMimeType,
+    };
+  } catch (fileSystemError) {
+    try {
+      const response = await fetch(normalizedUri);
+      if (!response.ok) {
+        throw new Error(`Avatar-Bild konnte nicht gelesen werden (${response.status}).`);
+      }
+
+      const fileData = await response.arrayBuffer();
+      return {
+        fileData,
+        mimeType: resolveAvatarMimeType({
+          mimeType: response.headers?.get?.('Content-Type') ?? null,
+          uri: normalizedUri,
+          fallback: fallbackMimeType,
+        }),
+      };
+    } catch (fetchError) {
+      const fileSystemMessage = fileSystemError?.message ?? String(fileSystemError);
+      const fetchMessage = fetchError?.message ?? String(fetchError);
+      throw new Error(
+        `Avatar-Bild konnte nicht gelesen werden. Dateisystem: ${fileSystemMessage}. Fetch-Fallback: ${fetchMessage}.`
+      );
+    }
+  }
 }
 
 function getAvatarFileExtension(mimeType) {
@@ -571,7 +691,7 @@ export async function updateUsername(userId, nextUsername) {
   }
 }
 
-export async function uploadProfileAvatarPhoto(userId, localUri) {
+export async function uploadProfileAvatarPhoto(userId, localUri, options = {}) {
   if (!userId) {
     return { ok: false, error: new Error('Kein Nutzer angemeldet.') };
   }
@@ -580,21 +700,16 @@ export async function uploadProfileAvatarPhoto(userId, localUri) {
   }
 
   try {
-    const response = await fetch(localUri);
-    if (!response.ok) {
-      throw new Error(`Avatar-Bild konnte nicht gelesen werden (${response.status}).`);
-    }
-
-    const blob = await response.blob();
-    const mimeType =
-      typeof blob?.type === 'string' && blob.type.trim()
-        ? blob.type.trim()
-        : 'image/jpeg';
+    const { fileData, mimeType } = await loadAvatarUploadData(
+      localUri,
+      options?.mimeType ?? null,
+      options?.base64Data ?? null
+    );
     const path = buildAvatarStoragePath(userId, mimeType);
 
     const { error: uploadError } = await runSupabaseRequest(
       () =>
-        supabase.storage.from('avatars').upload(path, blob, {
+        supabase.storage.from('avatars').upload(path, fileData, {
           upsert: true,
           contentType: mimeType,
           cacheControl: '3600',

@@ -7,6 +7,10 @@ import { claimActiveSessionOrThrow } from '../services/activeSessionService';
 import { loadRememberMe, saveRememberMe } from '../utils/authPersistence';
 import { formatUserError } from '../utils/formatUserError';
 import {
+  loadUserContentPolicyAccepted,
+  saveUserContentPolicyAccepted,
+} from '../utils/userContentPolicyConsent';
+import {
   AUTH_TIMEOUT_MS,
   EMAIL_CONFIRM_REDIRECT,
   PASSWORD_HINT,
@@ -38,6 +42,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(initialMessage);
   const [rememberMe, setRememberMe] = useState(true);
+  const [userContentPolicyAccepted, setUserContentPolicyAccepted] = useState(false);
 
   const isSignUp = mode === 'signUp';
   const isRecovery = mode === 'recovery';
@@ -90,13 +95,32 @@ export default function AuthScreen({ route, navigation, onGuest }) {
         }
       })
       .catch(() => {});
+    loadUserContentPolicyAccepted()
+      .then((value) => {
+        if (active) {
+          setUserContentPolicyAccepted(value);
+        }
+      })
+      .catch(() => {});
 
     return () => {
       active = false;
     };
   }, []);
 
+  function ensureUserContentPolicyAccepted() {
+    if (userContentPolicyAccepted) {
+      return true;
+    }
+    setMessage(t('Bitte akzeptiere zuerst AGB und Datenschutz.'));
+    return false;
+  }
+
   async function handleSubmit() {
+    if (!isRecovery && !ensureUserContentPolicyAccepted()) {
+      return;
+    }
+
     if (!email || !password) {
       setMessage(t('Bitte E-Mail und Passwort eingeben.'));
       return;
@@ -142,6 +166,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
         if (data?.session) {
           await claimActiveSessionOrThrow({
             dedupeKey: `auth:${trimmedEmail}:signup`,
+            session: data.session,
           });
         }
 
@@ -167,6 +192,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
         if (data?.session) {
           await claimActiveSessionOrThrow({
             dedupeKey: `auth:${trimmedEmail}:signin`,
+            session: data.session,
           });
         }
       }
@@ -189,7 +215,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
           supabaseUrl: SUPABASE_URL_HINT,
           fallback: 'Unbekannter Fehler.',
         });
-        setMessage(t(formatted) + hint);
+        setMessage(t(formatted));
       }
     } finally {
       setLoading(false);
@@ -208,6 +234,12 @@ export default function AuthScreen({ route, navigation, onGuest }) {
     const next = !rememberMe;
     setRememberMe(next);
     await saveRememberMe(next);
+  }
+
+  async function handleUserContentPolicyToggle() {
+    const next = !userContentPolicyAccepted;
+    setUserContentPolicyAccepted(next);
+    await saveUserContentPolicyAccepted(next);
   }
 
   function handleBackToLogin() {
@@ -297,6 +329,20 @@ export default function AuthScreen({ route, navigation, onGuest }) {
     }
   }
 
+  async function handleGuestStart() {
+    if (!ensureUserContentPolicyAccepted()) {
+      return;
+    }
+    await handleGuest();
+  }
+
+  async function handleOAuthLogin(provider) {
+    if (!ensureUserContentPolicyAccepted()) {
+      return;
+    }
+    await loginOAuth(provider, setMessage, setLoading);
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.backgroundGlowTop} pointerEvents="none" />
@@ -358,6 +404,50 @@ export default function AuthScreen({ route, navigation, onGuest }) {
           </Pressable>
         ) : null}
 
+        {!isRecovery ? (
+          <View style={styles.consentWrap}>
+            <Pressable
+              onPress={handleUserContentPolicyToggle}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: userContentPolicyAccepted }}
+              style={styles.consentRow}
+            >
+              <View
+                style={[
+                  styles.rememberBox,
+                  userContentPolicyAccepted ? styles.rememberBoxChecked : null,
+                ]}
+              >
+                {userContentPolicyAccepted ? (
+                  <FontAwesome5 name="check" size={12} color="#0F172A" />
+                ) : null}
+              </View>
+              <View style={styles.consentTextWrap}>
+                <Text style={styles.consentLabel}>
+                  {t('Ich akzeptiere die AGB und habe die Datenschutzerklaerung gelesen.')}
+                </Text>
+                <Text style={styles.consentHint}>
+                  {t('Nutzernamen, Profilbilder und soziale Interaktionen muessen unsere App-Regeln beachten.')}
+                </Text>
+              </View>
+            </Pressable>
+            <View style={styles.consentLinksRow}>
+              <Pressable
+                onPress={() => navigation.navigate('Legal', { doc: 'terms' })}
+                style={styles.consentLinkButton}
+              >
+                <Text style={styles.consentLinkText}>{t('AGB')}</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => navigation.navigate('Legal', { doc: 'privacy' })}
+                style={styles.consentLinkButton}
+              >
+                <Text style={styles.consentLinkText}>{t('Datenschutz')}</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
         {message ? <Text style={styles.message}>{message}</Text> : null}
 
         <Pressable
@@ -394,7 +484,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
         {!isRecovery ? (
           <Pressable
-            onPress={handleGuest}
+            onPress={handleGuestStart}
             disabled={loading}
             style={[styles.guestButton, loading ? styles.guestButtonDisabled : null]}
           >
@@ -405,7 +495,9 @@ export default function AuthScreen({ route, navigation, onGuest }) {
         {!isRecovery ? (
           <View style={styles.socialGroup}>
             <Pressable
-              onPress={() => loginOAuth('google', setMessage, setLoading)}
+              onPress={() => {
+                void handleOAuthLogin('google');
+              }}
               disabled={loading}
               style={[styles.socialButton, styles.googleButton]}
               accessibilityRole="button"
@@ -415,7 +507,9 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             </Pressable>
 
             <Pressable
-              onPress={() => loginOAuth('discord', setMessage, setLoading)}
+              onPress={() => {
+                void handleOAuthLogin('discord');
+              }}
               disabled={loading}
               style={[styles.socialButton, styles.discordButton]}
               accessibilityRole="button"

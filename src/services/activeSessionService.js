@@ -72,8 +72,40 @@ function hasAuthenticatedSession(session) {
   );
 }
 
-async function waitForAuthenticatedSupabaseSession() {
+async function adoptAuthenticatedSupabaseSession(session) {
+  if (!hasAuthenticatedSession(session)) {
+    return { ok: false, error: null };
+  }
+
+  try {
+    const { error } = await supabase.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
+
+    if (error) {
+      return { ok: false, error };
+    }
+
+    return { ok: true, error: null };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
+async function waitForAuthenticatedSupabaseSession(sessionOverride = null) {
   let lastError = null;
+
+  if (hasAuthenticatedSession(sessionOverride)) {
+    const adopted = await adoptAuthenticatedSupabaseSession(sessionOverride);
+    if (adopted.ok) {
+      return {
+        ok: true,
+        session: sessionOverride,
+      };
+    }
+    lastError = adopted.error ?? null;
+  }
 
   for (let attempt = 1; attempt <= AUTH_READINESS_MAX_ATTEMPTS; attempt += 1) {
     try {
@@ -93,6 +125,10 @@ async function waitForAuthenticatedSupabaseSession() {
         }
 
         lastError = userError ?? lastError;
+        return {
+          ok: true,
+          session,
+        };
       }
     } catch (error) {
       lastError = error;
@@ -162,8 +198,9 @@ export async function claimActiveSessionOrThrow(options = {}) {
     typeof options.sessionToken === 'string' && options.sessionToken.trim()
       ? options.sessionToken.trim()
       : createActiveSessionToken();
+  const providedSession = options.session ?? null;
   let result = null;
-  const authReady = await waitForAuthenticatedSupabaseSession();
+  const authReady = await waitForAuthenticatedSupabaseSession(providedSession);
 
   if (!authReady.ok) {
     throw authReady.error ?? new Error('Supabase-Session ist noch nicht vollstaendig bereit.');
@@ -184,6 +221,9 @@ export async function claimActiveSessionOrThrow(options = {}) {
       break;
     }
 
+    if (hasAuthenticatedSession(providedSession)) {
+      await adoptAuthenticatedSupabaseSession(providedSession);
+    }
     await wait(CLAIM_ACTIVE_SESSION_RETRY_DELAY_MS);
   }
 

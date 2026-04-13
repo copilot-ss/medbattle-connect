@@ -163,10 +163,11 @@ export default function useAuthCallbackLinking({ navigationRef }) {
               throw err;
             }
           }
-          await ensureRecoveredSession(previousSession);
+          const recoveredSession = await ensureRecoveredSession(previousSession);
 
           await claimActiveSessionOrThrow({
             dedupeKey: 'auth-callback',
+            session: recoveredSession,
           });
           return true;
         } catch (err) {

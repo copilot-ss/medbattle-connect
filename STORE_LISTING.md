@@ -3,12 +3,13 @@
 Stand: 2026-03-24
 
 ## Links
-- Privacy: https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=privacy
-- Terms: https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=terms
-- Support: https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=support
-- Delete account: https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=delete-account
+- Privacy: https://copilot-ss.github.io/medbattle-connect/legal-static/privacy.html
+- Terms: https://copilot-ss.github.io/medbattle-connect/legal-static/terms.html
+- Support: https://copilot-ss.github.io/medbattle-connect/legal-static/support.html
+- Delete account: https://copilot-ss.github.io/medbattle-connect/legal-static/delete-account.html
+- Delete-account page must visibly reference: `MedQuiz`, `CoppiCodes`, `com.sjigalin.medbattle`
 - Contact: medbattle1@gmail.com
-- Link check (2026-03-11): privacy, terms, support, delete-account all 200 OK
+- Link check (2026-04-10): privacy, terms, support, delete-account are live as GitHub Pages HTML pages; delete-account page visibly references `MedQuiz`, `CoppiCodes`, `com.sjigalin.medbattle`
 
 Scope:
 - Android Play Store only
@@ -49,6 +50,7 @@ Important notice:
 MedQuiz is for learning and quiz purposes only. It is not a medical device,
 does not provide diagnosis or treatment, and does not replace professional
 medical advice.
+If you need diagnosis or treatment, consult a qualified healthcare professional.
 
 Full description:
 MedQuiz ist ein Medizin-Quiz fuer Studium und Praxis. Spiele Solo oder im
@@ -59,6 +61,8 @@ Wichtiger Hinweis:
 MedQuiz dient ausschliesslich Lern- und Quiz-Zwecken. Die App ist kein
 Medizinprodukt, diagnostiziert, behandelt, heilt oder verhindert keine
 Erkrankungen und ersetzt keine medizinische Beratung.
+Bei Beschwerden oder wenn du eine Diagnose oder Behandlung brauchst, hole bitte
+medizinischen Rat bei qualifiziertem Fachpersonal ein.
 
 Highlights:
 - Kurze Quizrunden in medizinischen Kernkategorien.

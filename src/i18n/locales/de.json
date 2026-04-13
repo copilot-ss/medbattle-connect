@@ -349,11 +349,11 @@
   "Noch keine Erklärung hinterlegt.": "Noch keine Erklärung hinterlegt.",
   "Noch ein Versuch und du kletterst ins Mittelfeld!": "Noch ein Versuch und du kletterst ins Mittelfeld!",
   "War nix. Ziemlich schwach - reiss dich zusammen und versuch's nochmal.": "War nix. Ziemlich schwach - reiss dich zusammen und versuch's nochmal.",
-  "OAuth nicht abgeschlossen": "OAuth nicht abgeschlossen",
-  "Nach OAuth wurde keine Session wiederhergestellt.": "Nach OAuth wurde keine Session wiederhergestellt.",
-  "OAuth fehlgeschlagen.": "OAuth fehlgeschlagen.",
-  "OAuth-Verknüpfung fehlgeschlagen.": "OAuth-Verknüpfung fehlgeschlagen.",
-  "OAuth-Verknüpfung nicht verfügbar.": "OAuth-Verknüpfung nicht verfügbar.",
+  "OAuth nicht abgeschlossen": "Anmeldung nicht abgeschlossen.",
+  "Nach OAuth wurde keine Session wiederhergestellt.": "Anmeldung gerade nicht möglich. Bitte versuche es erneut.",
+  "OAuth fehlgeschlagen.": "Anmeldung fehlgeschlagen. Bitte versuche es erneut.",
+  "OAuth-Verknüpfung fehlgeschlagen.": "Verknüpfen fehlgeschlagen. Bitte versuche es erneut.",
+  "OAuth-Verknüpfung nicht verfügbar.": "Verknüpfen ist gerade nicht möglich.",
   "Offline Modus": "Offline Modus",
   "Online gehen": "Online gehen",
   "OP-Techniken, Indikationen und Anatomie im OP.": "OP-Techniken, Indikationen und Anatomie im OP.",
@@ -391,19 +391,27 @@
   "Stoffwechselwege, Enzyme und Moleküle.": "Stoffwechselwege, Enzyme und Moleküle.",
   "Streak {count}": "Streak {count}",
   "Streak starten": "Streak starten",
-  "Supabase nicht erreichbar (Code-Austausch).": "Supabase nicht erreichbar (Code-Austausch).",
-  "Supabase nicht erreichbar (OAuth). Bitte Verbindung oder Supabase-URL prüfen.": "Supabase nicht erreichbar (OAuth). Bitte Verbindung oder Supabase-URL prüfen.",
-  "Supabase nicht erreichbar (OAuth-Verknüpfung). Bitte Verbindung oder Supabase-URL prüfen.": "Supabase nicht erreichbar (OAuth-Verknüpfung). Bitte Verbindung oder Supabase-URL prüfen.",
-  "Supabase nicht erreichbar (Passwort-Reset).": "Supabase nicht erreichbar (Passwort-Reset).",
-  "Supabase nicht erreichbar (Token setzen).": "Supabase nicht erreichbar (Token setzen).",
-  "Supabase nicht erreichbar. Bitte Verbindung oder Supabase-URL prüfen.": "Supabase nicht erreichbar. Bitte Verbindung oder Supabase-URL prüfen.",
-  "Supabase nicht konfiguriert (.env).": "Supabase nicht konfiguriert (.env).",
-  "Supabase nicht konfiguriert (.env). Bitte URL + Anon Key setzen.": "Supabase nicht konfiguriert (.env). Bitte URL + Anon Key setzen.",
-  "Supabase-URL nutzt HTTP. Android blockiert ggf. Cleartext. Bitte https:// Projekt-URL aus Supabase verwenden.": "Supabase-URL nutzt HTTP. Android blockiert ggf. Cleartext. Bitte https:// Projekt-URL aus Supabase verwenden.",
-  "Supabase-URL zeigt auf localhost. Auf echtem Gerät nicht erreichbar. Bitte die gehostete Supabase-URL nutzen.": "Supabase-URL zeigt auf localhost. Auf echtem Gerät nicht erreichbar. Bitte die gehostete Supabase-URL nutzen.",
+  "Supabase nicht erreichbar (Code-Austausch).": "Anmeldung gerade nicht möglich. Bitte versuche es erneut.",
+  "Supabase nicht erreichbar (OAuth). Bitte Verbindung oder Supabase-URL prüfen.": "Anmeldung gerade nicht möglich. Bitte versuche es erneut.",
+  "Supabase nicht erreichbar (OAuth-Verknüpfung). Bitte Verbindung oder Supabase-URL prüfen.": "Verknüpfen gerade nicht möglich. Bitte versuche es erneut.",
+  "Supabase nicht erreichbar (Passwort-Reset).": "Das Zurücksetzen klappt gerade nicht. Bitte versuche es erneut.",
+  "Supabase nicht erreichbar (Token setzen).": "Anmeldung gerade nicht möglich. Bitte versuche es erneut.",
+  "Supabase nicht erreichbar. Bitte Verbindung oder Supabase-URL prüfen.": "Verbindung gerade nicht möglich. Bitte versuche es erneut.",
+  "Supabase nicht konfiguriert (.env).": "Es ist gerade ein Fehler aufgetreten. Bitte versuche es später erneut.",
+  "Supabase nicht konfiguriert (.env). Bitte URL + Anon Key setzen.": "Es ist gerade ein Fehler aufgetreten. Bitte versuche es später erneut.",
+  "Supabase-URL nutzt HTTP. Android blockiert ggf. Cleartext. Bitte https:// Projekt-URL aus Supabase verwenden.": "Anmeldung gerade nicht möglich. Bitte versuche es später erneut.",
+  "Supabase-URL zeigt auf localhost. Auf echtem Gerät nicht erreichbar. Bitte die gehostete Supabase-URL nutzen.": "Anmeldung gerade nicht möglich. Bitte versuche es später erneut.",
   "Timeout": "Timeout",
   "Unbekannt": "Unbekannt",
   "Unbekannter Fehler.": "Unbekannter Fehler.",
+  "Das hat gerade nicht geklappt. Bitte versuche es erneut.": "Das hat gerade nicht geklappt. Bitte versuche es erneut.",
+  "E-Mail oder Passwort stimmt nicht.": "E-Mail oder Passwort stimmt nicht.",
+  "Bitte bestätige zuerst deine E-Mail.": "Bitte bestätige zuerst deine E-Mail.",
+  "Diese E-Mail ist bereits registriert. Bitte melde dich an.": "Diese E-Mail ist bereits registriert. Bitte melde dich an.",
+  "Bitte warte kurz und versuche es erneut.": "Bitte warte kurz und versuche es erneut.",
+  "Bitte wähle ein stärkeres Passwort.": "Bitte wähle ein stärkeres Passwort.",
+  "Foto konnte nicht gespeichert werden.": "Foto konnte nicht gespeichert werden.",
+  "Bitte versuche es noch einmal.": "Bitte versuche es noch einmal.",
   "Warte auf Gegner": "Warte auf Gegner",
   "Weiter so!": "Weiter so!",
   "Wirkstoffe, Wirkmechanismen und Nebenwirkungen.": "Wirkstoffe, Wirkmechanismen und Nebenwirkungen.",
@@ -674,4 +682,16 @@
   ,"Fertig": "Fertig"
   ,"Solo-Spiel": "Solo-Spiel"
   ,"Bitte melde dich an, um Multiplayer zu nutzen.": "Bitte melde dich an, um Multiplayer zu nutzen."
+  ,"Bitte akzeptiere zuerst AGB und Datenschutz.": "Bitte akzeptiere zuerst AGB und Datenschutz."
+  ,"Ich akzeptiere die AGB und habe die Datenschutzerklaerung gelesen.": "Ich akzeptiere die AGB und habe die Datenschutzerklaerung gelesen."
+  ,"Nutzernamen, Profilbilder und soziale Interaktionen muessen unsere App-Regeln beachten.": "Nutzernamen, Profilbilder und soziale Interaktionen muessen unsere App-Regeln beachten."
+  ,"Bevor du ein Profilfoto hochlaedst, musst du die AGB akzeptieren und die Datenschutzerklaerung lesen.": "Bevor du ein Profilfoto hochlaedst, musst du die AGB akzeptieren und die Datenschutzerklaerung lesen."
+  ,"Zustimmung konnte nicht gespeichert werden.": "Zustimmung konnte nicht gespeichert werden."
+  ,"AGB und Datenschutz vor UGC-Upload bestaetigen": "AGB und Datenschutz vor UGC-Upload bestaetigen"
+  ,"Akzeptieren und fortfahren": "Akzeptieren und fortfahren"
+  ,"Nutzer/Inhalt melden": "Nutzer/Inhalt melden"
+  ,"Melde-E-Mail konnte nicht geoeffnet werden.": "Melde-E-Mail konnte nicht geoeffnet werden."
+  ,"Blockierung aufheben": "Blockierung aufheben"
+  ,"Blockierung konnte nicht aufgehoben werden.": "Blockierung konnte nicht aufgehoben werden."
+  ,"Nutzer konnte nicht blockiert werden.": "Nutzer konnte nicht blockiert werden."
 }

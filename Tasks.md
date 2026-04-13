@@ -16,6 +16,7 @@
 ## Offen
 - Aktuellen Closed-Test-Store-Build `42` auf Emulator und Realgeraet installieren und danach den echten Store-Build testen.
 - Play Console finalisieren: Content Rating, Data Safety und spaeter produktiven Submit-Flow.
+- Play Console: `Health apps declaration` fuer den medizinischen Lern-/Quiz-Kontext unter `App content` final ausfuellen.
 - End-to-end Smoke offen: echter OAuth-Roundtrip, Offline-Sync, Multiplayer, Rewarded Ad, Premium-/IAP-Flow.
 - Google Service Account Key fuer Play-Submit in EAS hinterlegen.
 
@@ -23,6 +24,7 @@
 - [x] Play Store: Store-Assets vorbereitet (siehe `STORE_ASSETS.md`, Stand 2026-03-11).
 - [ ] Play Store: Content Rating ausfÃƒÂ¼llen.
 - [ ] Play Store: Data Safety final eintragen und mit `PLAY_DATA_SAFETY_DRAFT.md` abgleichen.
+- [ ] Play Store: Health apps declaration in `App content` ausfuellen.
 - [x] Play Data Safety: Code-Abgleich zur Draft-Vorlage abgeschlossen (Avatar-Foto optional, Ads non-personalized, IAP + redigiertes `client_logs` Logging) am 2026-03-09.
 - [x] Play Store: Privacy Policy/AGB + Support-Links hinterlegt (siehe STORE_LISTING.md).
 - [x] Play Store: In-App-Kontoloeschung + oeffentliche Delete-Account-URL bereitgestellt (App + Web + Supabase Functions) am 2026-03-11.
@@ -63,6 +65,10 @@
 - Auth-, Quiz-, Ads-, Purchases- und Multiplayer-Smoke direkt gegen den echten Closed-Test-Store-Stand `42` auf Emulator und Realgeraet dokumentieren.
 
 ## Erledigt
+- [x] Privacy Policy fuer Google Play konkretisiert (2026-04-12): `legal-static/privacy.html`, `legal/privacy.html`, In-App-Legal-Content und die begleitenden Play-Dokumente nennen jetzt explizite Aufbewahrungsfristen fuer Konto-/Profil-/Spieldaten, lokale Gastdaten, Diagnosedaten, Support-Anfragen und gesetzlich erforderliche Abrechnungs-/Sicherheitsdaten.
+- [x] UGC-Schutz fuer Google Play ergaenzt (2026-04-12): Auth- und Avatar-Flow verlangen jetzt eine sichtbare Terms-/Privacy-Bestaetigung, und Public-Profile-Sheets bieten klar beschriftete `Report user/content`- sowie `Block/Unblock`-Aktionen fuer Nutzernamen, Profilbilder und soziale Interaktionen.
+- [x] Play-Legal-Seiten auf echte HTML-Seiten umgestellt (2026-04-10): Privacy, Terms, Support und Delete-Account werden fuer Play jetzt ueber GitHub Pages unter `copilot-ss.github.io/medbattle-connect/legal-static/*` bereitgestellt statt ueber `functions.supabase.co`. Die Delete-Account-Seite nennt sichtbar `MedQuiz`, `CoppiCodes` und `com.sjigalin.medbattle`.
+- [x] Profilfoto-Upload und Nutzer-Fehltexte vereinfacht (2026-04-09): Avatar-Foto-Upload nutzt jetzt bevorzugt Base64 aus dem Picker, damit Galerie-/Kamera-Fotos auf Android robuster in den `avatars`-Bucket gehen. Sichtbare Fehlmeldungen fuer Login, Profilfoto, Lobby und Shop wurden auf einfache Endnutzer-Texte reduziert; technische Hinweise wie Supabase-/URL-/Billing-Details werden nicht mehr direkt angezeigt.
 - [x] Multiplayer-Rematch-/Avatar-/Countdown-Haertung (2026-04-02): Rueckkehr aus dem Result in die Lobby verpasst den naechsten Match-Start nicht mehr, wenn `completed` direkt in `active` kippt; der Start-Countdown laeuft jetzt auch vom Home-Screen aus. Lobby-/Result-Avatare priorisieren Live-Presence/Public-Profile vor alten Match-Snapshots, Kamera-Profilfotos werden dadurch robuster angezeigt. Host-Badge-Layering und Achievement-Reward-Overlay bereinigt. `npx tsc --noEmit` danach clean.
 - [x] Multiplayer-Result-/Avatar-Darstellung geschaerft (2026-04-02): Punkte im Result zeigen jetzt als `+Zahl` mit Sparkles-Symbol statt `Punkte`-Text; der Leaderboard-Titel nutzt dasselbe Symbol. Gegner-Avatare im Result laden jetzt korrekt Preset-Bilder und holen fehlende Profilfotos nach; die Lobby zieht fehlende Avatar-Fotos ebenfalls trotz vorhandenem Preset-Fallback nach, damit Kamera-Avatare und Public-Profile-Opener nicht mehr auf einem Dummy haengen. `npx tsc --noEmit` clean.
 - [x] Lobby-Inaktivitaets-Timeout auf `2` Minuten reduziert (2026-04-02): `close_waiting_matches` nutzt jetzt `updated_at` statt `created_at`, damit wartende Lobbys nach `2` Minuten echter Inaktivitaet geschlossen werden; lokale Cleanup-Konstante ebenfalls auf `2` gesetzt, Migration `20260402190000_reduce_lobby_idle_timeout.sql` remote gepusht, `npx tsc --noEmit` clean.

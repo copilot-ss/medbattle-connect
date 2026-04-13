@@ -349,11 +349,11 @@
   "Noch keine Erklärung hinterlegt.": "No explanation yet.",
   "Noch ein Versuch und du kletterst ins Mittelfeld!": "One more try and you’ll climb into the middle of the pack!",
   "War nix. Ziemlich schwach - reiss dich zusammen und versuch's nochmal.": "That was nothing. Pretty weak - get it together and try again.",
-  "OAuth nicht abgeschlossen": "OAuth not completed",
-  "Nach OAuth wurde keine Session wiederhergestellt.": "No session was restored after OAuth.",
-  "OAuth fehlgeschlagen.": "OAuth failed.",
-  "OAuth-Verknüpfung fehlgeschlagen.": "OAuth linking failed.",
-  "OAuth-Verknüpfung nicht verfügbar.": "OAuth linking not available.",
+  "OAuth nicht abgeschlossen": "Sign-in was not completed.",
+  "Nach OAuth wurde keine Session wiederhergestellt.": "Sign-in is not available right now. Please try again.",
+  "OAuth fehlgeschlagen.": "Sign-in failed. Please try again.",
+  "OAuth-Verknüpfung fehlgeschlagen.": "Linking failed. Please try again.",
+  "OAuth-Verknüpfung nicht verfügbar.": "Linking is not available right now.",
   "Offline Modus": "Offline mode",
   "Online gehen": "Go online",
   "OP-Techniken, Indikationen und Anatomie im OP.": "Surgical techniques, indications, and anatomy in the OR.",
@@ -391,19 +391,27 @@
   "Stoffwechselwege, Enzyme und Moleküle.": "Metabolic pathways, enzymes, and molecules.",
   "Streak {count}": "Streak {count}",
   "Streak starten": "Start your streak",
-  "Supabase nicht erreichbar (Code-Austausch).": "Supabase not reachable (code exchange).",
-  "Supabase nicht erreichbar (OAuth). Bitte Verbindung oder Supabase-URL prüfen.": "Supabase not reachable (OAuth). Please check your connection or Supabase URL.",
-  "Supabase nicht erreichbar (OAuth-Verknüpfung). Bitte Verbindung oder Supabase-URL prüfen.": "Supabase not reachable (OAuth linking). Please check your connection or Supabase URL.",
-  "Supabase nicht erreichbar (Passwort-Reset).": "Supabase not reachable (password reset).",
-  "Supabase nicht erreichbar (Token setzen).": "Supabase not reachable (set token).",
-  "Supabase nicht erreichbar. Bitte Verbindung oder Supabase-URL prüfen.": "Supabase not reachable. Please check your connection or Supabase URL.",
-  "Supabase nicht konfiguriert (.env).": "Supabase not configured (.env).",
-  "Supabase nicht konfiguriert (.env). Bitte URL + Anon Key setzen.": "Supabase not configured (.env). Please set URL + anon key.",
-  "Supabase-URL nutzt HTTP. Android blockiert ggf. Cleartext. Bitte https:// Projekt-URL aus Supabase verwenden.": "Supabase URL uses HTTP. Android may block cleartext. Please use the https:// project URL from Supabase.",
-  "Supabase-URL zeigt auf localhost. Auf echtem Gerät nicht erreichbar. Bitte die gehostete Supabase-URL nutzen.": "Supabase URL points to localhost. Not reachable on a physical device. Please use the hosted Supabase URL.",
+  "Supabase nicht erreichbar (Code-Austausch).": "Sign-in is not available right now. Please try again.",
+  "Supabase nicht erreichbar (OAuth). Bitte Verbindung oder Supabase-URL prüfen.": "Sign-in is not available right now. Please try again.",
+  "Supabase nicht erreichbar (OAuth-Verknüpfung). Bitte Verbindung oder Supabase-URL prüfen.": "Linking is not available right now. Please try again.",
+  "Supabase nicht erreichbar (Passwort-Reset).": "Password reset is not available right now. Please try again.",
+  "Supabase nicht erreichbar (Token setzen).": "Sign-in is not available right now. Please try again.",
+  "Supabase nicht erreichbar. Bitte Verbindung oder Supabase-URL prüfen.": "Connection is not available right now. Please try again.",
+  "Supabase nicht konfiguriert (.env).": "Something went wrong. Please try again later.",
+  "Supabase nicht konfiguriert (.env). Bitte URL + Anon Key setzen.": "Something went wrong. Please try again later.",
+  "Supabase-URL nutzt HTTP. Android blockiert ggf. Cleartext. Bitte https:// Projekt-URL aus Supabase verwenden.": "Sign-in is not available right now. Please try again later.",
+  "Supabase-URL zeigt auf localhost. Auf echtem Gerät nicht erreichbar. Bitte die gehostete Supabase-URL nutzen.": "Sign-in is not available right now. Please try again later.",
   "Timeout": "Timeout",
   "Unbekannt": "Unknown",
   "Unbekannter Fehler.": "Unknown error.",
+  "Das hat gerade nicht geklappt. Bitte versuche es erneut.": "That did not work right now. Please try again.",
+  "E-Mail oder Passwort stimmt nicht.": "Your email or password is incorrect.",
+  "Bitte bestätige zuerst deine E-Mail.": "Please confirm your email first.",
+  "Diese E-Mail ist bereits registriert. Bitte melde dich an.": "This email is already registered. Please sign in.",
+  "Bitte warte kurz und versuche es erneut.": "Please wait a moment and try again.",
+  "Bitte wähle ein stärkeres Passwort.": "Please choose a stronger password.",
+  "Foto konnte nicht gespeichert werden.": "Photo could not be saved.",
+  "Bitte versuche es noch einmal.": "Please try again.",
   "Warte auf Gegner": "Waiting for opponent",
   "Weiter so!": "Keep it going!",
   "Wirkstoffe, Wirkmechanismen und Nebenwirkungen.": "Active substances, mechanisms of action, and side effects.",
@@ -674,4 +682,16 @@
   ,"Fertig": "Done"
   ,"Solo-Spiel": "Solo game"
   ,"Bitte melde dich an, um Multiplayer zu nutzen.": "Please sign in to use multiplayer."
+  ,"Bitte akzeptiere zuerst AGB und Datenschutz.": "Please accept the Terms and Privacy Policy first."
+  ,"Ich akzeptiere die AGB und habe die Datenschutzerklaerung gelesen.": "I accept the Terms and have read the Privacy Policy."
+  ,"Nutzernamen, Profilbilder und soziale Interaktionen muessen unsere App-Regeln beachten.": "Usernames, profile photos, and social interactions must follow our app rules."
+  ,"Bevor du ein Profilfoto hochlaedst, musst du die AGB akzeptieren und die Datenschutzerklaerung lesen.": "Before you upload a profile photo, you must accept the Terms and read the Privacy Policy."
+  ,"Zustimmung konnte nicht gespeichert werden.": "Consent could not be saved."
+  ,"AGB und Datenschutz vor UGC-Upload bestaetigen": "Confirm Terms and Privacy before uploading UGC"
+  ,"Akzeptieren und fortfahren": "Accept and continue"
+  ,"Nutzer/Inhalt melden": "Report user/content"
+  ,"Melde-E-Mail konnte nicht geoeffnet werden.": "The report email could not be opened."
+  ,"Blockierung aufheben": "Unblock"
+  ,"Blockierung konnte nicht aufgehoben werden.": "The block could not be removed."
+  ,"Nutzer konnte nicht blockiert werden.": "The user could not be blocked."
 }

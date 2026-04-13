@@ -13,11 +13,12 @@ Diese Datei buendelt die Werte, die du manuell in der Play Console brauchst. Sie
 
 ## Links
 
-- Privacy: `https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=privacy`
-- Terms: `https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=terms`
-- Support: `https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=support`
-- Delete account: `https://uxlwbzgohgxbnhcjiimh.functions.supabase.co/legal?doc=delete-account`
+- Privacy: `https://copilot-ss.github.io/medbattle-connect/legal-static/privacy.html`
+- Terms: `https://copilot-ss.github.io/medbattle-connect/legal-static/terms.html`
+- Support: `https://copilot-ss.github.io/medbattle-connect/legal-static/support.html`
+- Delete account: `https://copilot-ss.github.io/medbattle-connect/legal-static/delete-account.html`
 - Kontakt: `medbattle1@gmail.com`
+- Privacy update for Play review (2026-04-12): the privacy page now includes explicit retention periods. In Play Console, open `App content > Privacy policy`, save the same URL again if needed, then resubmit the changes for review.
 
 ## Store Listing
 
@@ -27,7 +28,7 @@ Short description:
 
 Pflichthinweis:
 
-`MedQuiz dient ausschliesslich Lern- und Quiz-Zwecken. Die App ist kein Medizinprodukt, diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung.`
+`MedQuiz dient ausschliesslich Lern- und Quiz-Zwecken. Die App ist kein Medizinprodukt, diagnostiziert, behandelt, heilt oder verhindert keine Erkrankungen und ersetzt keine medizinische Beratung. Bei Beschwerden oder wenn du eine Diagnose oder Behandlung brauchst, hole bitte medizinischen Rat bei qualifiziertem Fachpersonal ein.`
 
 Referenz: `STORE_LISTING.md`
 Store-Assets: `STORE_ASSETS.md`
@@ -54,6 +55,7 @@ Target audience:
 - Nicht primaer fuer Kinder
 - `Medical or health info`: Ja, aber nur Lern-/Quiz-Kontext
 - `User interaction`: Ja, wegen Multiplayer
+- `Health apps declaration`: manuell in `App content` ausfuellen, weil MedQuiz gesundheitsbezogene Lerninhalte bereitstellt
 
 ## Data Safety
 
@@ -67,6 +69,14 @@ Wichtige Punkte:
 - In-App-Kaeufe
 - redigiertes Crash-/Fehlerlogging
 - In-App-Kontoloeschung + oeffentliche Delete-Account-URL
+
+## Policy Focus
+
+- Nutzerdaten / Privacy Policy: Privacy- und Delete-Account-Seiten enthalten seit `2026-04-12` explizite Aufbewahrungsfristen und sichere Datenverarbeitung. In Play Console die Privacy-URL erneut speichern und zur Pruefung einreichen.
+- Gesundheitsbezogene Inhalte: MedQuiz muss ueberall klar als Lern-/Quiz-App bleiben. Keine diagnostischen, therapeutischen oder irrefuehrenden Heilversprechen in Store-Texten, In-App-Texten oder Screenshots. Zusaetzlich die `Health apps declaration` in Play Console ausfuellen und den Hinweis auf qualifiziertes Fachpersonal im Store-Text beibehalten.
+- Monetarisierung / Werbung: Rewarded Ads laufen als non-personalized, IAP ueber Store-Billing. Vor dem Release den echten Closed-Test-Store-Build gegen Ad-/Kauf-Flow smoke-testen.
+- User Interaction / UGC: Freunde, Multiplayer-Lobbys, Nutzernamen und optionale Profilfotos sind im Produkt vorhanden. Der aktuelle Repo-Stand bietet in Public-Profile-Sheets klar beschriftete `Report user/content`- und `Block`-Funktionen sowie eine Terms-/Privacy-Bestaetigung im Auth-/Avatar-Flow. Vor dem Submit trotzdem im Store-Build pruefen, dass diese Buttons sichtbar sind und Abuse-Mails unter `medbattle1@gmail.com` operativ bearbeitet werden.
+- Funktionalitaet / Nutzererfahrung: Store-Smoke fuer den tatsaechlich ausgerollten Closed-Test-Build bleibt Pflicht, weil Google funktionale und stabile Kernflows erwartet.
 
 ## Closed Test
 
