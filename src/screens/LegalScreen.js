@@ -141,41 +141,27 @@ const styles = StyleSheet.create({
 });
 
 export default function LegalScreen({ navigation, route, onClearSession = null }) {
-  const { t, locale } = useTranslation();
+  const { locale } = useTranslation();
   const { resetAccountData } = usePreferences();
   const requestedDoc = route?.params?.doc;
   const docKey = typeof requestedDoc === 'string' ? requestedDoc : 'privacy';
   const legalDocs = getLegalDocs(locale);
   const legalDoc = legalDocs[docKey] || legalDocs.privacy;
-  const isGerman = locale === 'de';
-  const updatedLabel = isGerman ? 'Stand' : 'Updated';
-  const supportButtonLabel = isGerman ? 'Support kontaktieren' : 'Contact support';
-  const supportEmailLabel = isGerman ? 'Support E-Mail' : 'Support email';
-  const deleteRequestButtonLabel = isGerman
-    ? 'Löschung per E-Mail anfragen'
-    : 'Request deletion by email';
-  const deleteRequestEmailLabel = isGerman
-    ? 'Konto per E-Mail löschen'
-    : 'Request account deletion by email';
-  const deleteActionLabel = isGerman
-    ? 'Konto dauerhaft löschen'
-    : 'Delete account permanently';
-  const deleteActionLoadingLabel = isGerman
-    ? 'Konto wird gelöscht...'
-    : 'Deleting account...';
-  const deleteAvailabilityHint = isGerman
-    ? 'Wenn du angemeldet bist, kannst du dein Konto hier direkt dauerhaft löschen. Alternativ funktioniert auch die öffentliche Löschseite per E-Mail.'
-    : 'If you are signed in, you can delete your account here directly. You can also use the public deletion page by email as a fallback.';
-  const deleteUnavailableHint = isGerman
-    ? 'Aktuell ist kein Cloud-Konto in dieser Sitzung aktiv. Nutze in diesem Fall die E-Mail-Löschanfrage.'
-    : 'There is no cloud account active in this session right now. Use the email deletion request in that case.';
-  const deleteConfirmTitle = isGerman
-    ? 'Konto wirklich löschen?'
-    : 'Delete account now?';
-  const deleteConfirmMessage = isGerman
-    ? 'Dein Konto und die zugehörigen Daten werden dauerhaft gelöscht. Dieser Schritt kann nicht rückgängig gemacht werden.'
-    : 'Your account and associated data will be deleted permanently. This cannot be undone.';
-  const deleteErrorTitle = isGerman ? 'Löschung fehlgeschlagen' : 'Deletion failed';
+  const updatedLabel = 'Updated';
+  const supportButtonLabel = 'Contact support';
+  const supportEmailLabel = 'Support email';
+  const deleteRequestButtonLabel = 'Request deletion by email';
+  const deleteRequestEmailLabel = 'Request account deletion by email';
+  const deleteActionLabel = 'Delete account permanently';
+  const deleteActionLoadingLabel = 'Deleting account...';
+  const deleteAvailabilityHint =
+    'If you are signed in, you can delete your account here directly. You can also use the public deletion page by email as a fallback.';
+  const deleteUnavailableHint =
+    'There is no cloud account active in this session right now. Use the email deletion request in that case.';
+  const deleteConfirmTitle = 'Delete account now?';
+  const deleteConfirmMessage =
+    'Your account and associated data will be deleted permanently. This cannot be undone.';
+  const deleteErrorTitle = 'Deletion failed';
 
   const mountedRef = useRef(true);
   const [deleteAvailable, setDeleteAvailable] = useState(false);
@@ -209,7 +195,7 @@ export default function LegalScreen({ navigation, route, onClearSession = null }
         setDeleteAvailable(Boolean(user?.id));
       } catch (error) {
         if (active) {
-          console.warn('Konnte Delete-Account-Status nicht bestimmen:', error);
+          console.warn('Could not determine delete-account availability:', error);
           setDeleteAvailable(false);
         }
       } finally {
@@ -239,24 +225,14 @@ export default function LegalScreen({ navigation, route, onClearSession = null }
   }, []);
 
   const handleDeleteAccountRequest = useCallback(async () => {
-    const subject = isGerman
-      ? 'DSAR - Löschung - <Account-E-Mail>'
-      : 'DSAR - Deletion - <account email>';
-    const body = isGerman
-      ? [
-          'Bitte löscht mein MedQuiz-Konto und die zugehörigen Daten.',
-          '',
-          'Account-E-Mail:',
-          'Nutzername (optional):',
-          'Hinweise (optional):',
-        ].join('\n')
-      : [
-          'Please delete my MedQuiz account and the associated data.',
-          '',
-          'Account email:',
-          'Username (optional):',
-          'Notes (optional):',
-        ].join('\n');
+    const subject = 'DSAR - Deletion - <account email>';
+    const body = [
+      'Please delete my MedQuiz account and the associated data.',
+      '',
+      'Account email:',
+      'Username (optional):',
+      'Notes (optional):',
+    ].join('\n');
     const mailto =
       `mailto:${LEGAL_CONTACT_EMAIL}` +
       `?subject=${encodeURIComponent(subject)}` +
@@ -269,7 +245,7 @@ export default function LegalScreen({ navigation, route, onClearSession = null }
     } catch (error) {
       console.warn('Delete account email could not be opened:', error);
     }
-  }, [isGerman]);
+  }, []);
 
   const runDeleteAccount = useCallback(async () => {
     if (deletingAccount) {
@@ -293,7 +269,7 @@ export default function LegalScreen({ navigation, route, onClearSession = null }
 
       cleanupResults.forEach((result) => {
         if (result.status === 'rejected') {
-          console.warn('Lokale Delete-Account-Bereinigung fehlgeschlagen:', result.reason);
+          console.warn('Local delete-account cleanup failed:', result.reason);
         }
       });
 
@@ -316,9 +292,8 @@ export default function LegalScreen({ navigation, route, onClearSession = null }
         deleteErrorTitle,
         formatUserError(error, {
           supabaseUrl: SUPABASE_URL_HINT,
-          fallback: isGerman
-            ? 'Das Konto konnte nicht gelöscht werden. Bitte versuche es erneut oder nutze die E-Mail-Löschanfrage.'
-            : 'The account could not be deleted. Please try again or use the email deletion request.',
+          fallback:
+            'The account could not be deleted. Please try again or use the email deletion request.',
         })
       );
     } finally {
@@ -329,7 +304,6 @@ export default function LegalScreen({ navigation, route, onClearSession = null }
   }, [
     deleteErrorTitle,
     deletingAccount,
-    isGerman,
     navigation,
     onClearSession,
     resetAccountData,
@@ -338,18 +312,18 @@ export default function LegalScreen({ navigation, route, onClearSession = null }
   const handleDeleteAccountPress = useCallback(() => {
     Alert.alert(deleteConfirmTitle, deleteConfirmMessage, [
       {
-        text: isGerman ? 'Abbrechen' : 'Cancel',
+        text: 'Cancel',
         style: 'cancel',
       },
       {
-        text: isGerman ? 'Löschen' : 'Delete',
+        text: 'Delete',
         style: 'destructive',
         onPress: () => {
           runDeleteAccount();
         },
       },
     ]);
-  }, [deleteConfirmMessage, deleteConfirmTitle, isGerman, runDeleteAccount]);
+  }, [deleteConfirmMessage, deleteConfirmTitle, runDeleteAccount]);
 
   return (
     <View style={styles.container}>
@@ -363,7 +337,7 @@ export default function LegalScreen({ navigation, route, onClearSession = null }
               onPress={() => navigation.goBack()}
               style={styles.backButton}
               accessibilityRole="button"
-              accessibilityLabel={t('Zurück')}
+              accessibilityLabel="Back"
             >
               <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
             </Pressable>

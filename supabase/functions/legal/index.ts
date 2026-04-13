@@ -4,7 +4,7 @@ const APP_NAME = 'MedQuiz';
 const PUBLISHER_NAME = 'CoppiCodes';
 const PACKAGE_NAME = 'com.sjigalin.medbattle';
 const LEGAL_CONTACT_EMAIL = 'medbattle1@gmail.com';
-const LAST_UPDATED = '2026-04-12';
+const LAST_UPDATED = '2026-04-13';
 const PUBLIC_DOC_URLS = {
   privacy:
     'https://copilot-ss.github.io/medbattle-connect/legal-static/privacy.html',
@@ -201,7 +201,7 @@ const renderPage = ({
   updatedAt: string;
   body: string;
 }) => `<!doctype html>
-<html lang="de">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -236,7 +236,7 @@ ${body}
 
 const privacyHtml = renderPage({
   title: `Privacy - ${APP_NAME} by ${PUBLISHER_NAME}`,
-  heading: 'Privacy / Datenschutz',
+  heading: 'Privacy',
   lead: `Official privacy information for the Google Play app ${APP_NAME} by ${PUBLISHER_NAME}.`,
   updatedAt: LAST_UPDATED,
   body: `          <p class="notice">
@@ -255,7 +255,9 @@ const privacyHtml = renderPage({
             <li>Optional avatar photos if you choose to upload a profile image.</li>
             <li>Device and diagnostics data such as app version, operating system, and redacted crash logs.</li>
             <li>Purchase and advertising related metadata where relevant.</li>
+            <li>Local block-list entries and social safety preferences stored on your device when you block users.</li>
             <li>Support messages that you send to us.</li>
+            <li>Abuse report details such as reported usernames, screenshots, and moderation context when you contact support.</li>
           </ul>
 
           <h2>Why we process data</h2>
@@ -263,6 +265,7 @@ const privacyHtml = renderPage({
             <li>Account login, security, and fraud prevention.</li>
             <li>Gameplay, matchmaking, leaderboards, and progress sync.</li>
             <li>Stability analysis and bug fixing.</li>
+            <li>Processing abuse reports, local block actions, and social safety controls.</li>
             <li>Purchase fulfilment, premium features, and ad delivery.</li>
             <li>Support and legal compliance.</li>
           </ul>
@@ -278,9 +281,9 @@ const privacyHtml = renderPage({
           <h2>Retention and deletion</h2>
           <ul>
             <li>Account, profile, gameplay, leaderboard, and avatar data: while your account is active. After account deletion, we usually delete these data immediately and no later than within 30 days unless legal or security reasons require temporary retention.</li>
-            <li>Guest mode data and app settings stored only on your device: until you clear app data or uninstall the app.</li>
+            <li>Guest mode data, local block-list entries, and app settings stored only on your device: until you clear app data, unblock users, or uninstall the app.</li>
             <li>Redacted diagnostics and crash logs: usually up to 90 days.</li>
-            <li>Support requests: until the request is resolved and then up to 24 months for follow-up.</li>
+            <li>Support requests and abuse reports: until the request is resolved and then up to 24 months for follow-up, moderation, or policy enforcement documentation.</li>
             <li>Billing, tax, anti-fraud, or security records that we must keep by law: up to 10 years where required.</li>
           </ul>
 
@@ -300,7 +303,7 @@ const privacyHtml = renderPage({
 
 const termsHtml = renderPage({
   title: `Terms - ${APP_NAME} by ${PUBLISHER_NAME}`,
-  heading: 'Terms / Nutzungsbedingungen',
+  heading: 'Terms',
   lead: `Official terms for the Google Play app ${APP_NAME} by ${PUBLISHER_NAME}.`,
   updatedAt: LAST_UPDATED,
   body: `          <p class="notice">
@@ -325,13 +328,21 @@ const termsHtml = renderPage({
           <ul>
             <li>You may use guest mode or create an account with email or supported sign-in providers.</li>
             <li>You are responsible for the security of your login credentials.</li>
-            <li>We may limit or suspend accounts in case of abuse, fraud, or violations of these terms.</li>
+            <li>You must confirm the current terms and privacy information before you create visible profile content such as usernames or profile photos.</li>
+            <li>We may limit, suspend, or remove accounts, content, scores, or social features in case of abuse, fraud, or violations of these terms.</li>
           </ul>
 
           <h2>Prohibited conduct</h2>
           <ul>
             <li>No abusive, hateful, sexual, violent, illegal, spammy, or impersonating usernames, profile photos, invites, or multiplayer behavior.</li>
             <li>No cheating, bots, score manipulation, or attacks against the app, infrastructure, or other users.</li>
+          </ul>
+
+          <h2>Reporting, blocking, and moderation</h2>
+          <ul>
+            <li>In supported profile views, you can report abusive usernames, profile photos, invites, or player behavior and block other users locally on your device.</li>
+            <li>Blocked users may be hidden from friend requests, friend lists, and related social interactions on that device.</li>
+            <li>Reports may be reviewed manually. We may remove content, limit social features, or suspend accounts if needed for user safety or policy compliance.</li>
           </ul>
 
           <h2>Purchases and advertising</h2>
@@ -375,6 +386,10 @@ const supportHtml = renderPage({
 
           <h2>Abuse reports</h2>
           <p>
+            In supported in-app profile views, you can use the report action and
+            local block action directly in the app.
+          </p>
+          <p>
             To report abusive usernames, profile photos, invites, or multiplayer
             behavior, email <a href="mailto:${LEGAL_CONTACT_EMAIL}">${LEGAL_CONTACT_EMAIL}</a>.
           </p>
@@ -386,7 +401,7 @@ const supportHtml = renderPage({
 
 const deleteAccountHtml = renderPage({
   title: `Delete Account - ${APP_NAME} by ${PUBLISHER_NAME}`,
-  heading: 'Delete account / Konto loeschen',
+  heading: 'Delete account',
   lead: `Official account deletion page for the Google Play app ${APP_NAME}, published by ${PUBLISHER_NAME}.`,
   updatedAt: LAST_UPDATED,
   body: `          <p class="notice">
@@ -404,20 +419,22 @@ const deleteAccountHtml = renderPage({
 
           <h2>Delete directly in the app</h2>
           <p>
-            If you still have access to ${APP_NAME} and are signed in, open the app and go to:
-            <strong>Settings &gt; Konto loeschen</strong>.
+            If you are signed in, open ${APP_NAME} and go to
+            <strong>Settings &gt; Delete account</strong>.
           </p>
           <p>
-            Tap <strong>Konto dauerhaft loeschen</strong> and confirm the final prompt.
+            Tap <strong>Delete account permanently</strong> and confirm once. Your
+            account can then be deleted directly by you in the app.
           </p>
 
-          <h2>Delete without the app</h2>
+          <h2>Only if you cannot access the app</h2>
           <p>
-            If you cannot access the app anymore, send a deletion request to
+            If you cannot access ${APP_NAME} anymore, send your deletion request to
             <a href="mailto:${LEGAL_CONTACT_EMAIL}?subject=${encodeURIComponent(`${APP_NAME} account deletion request`)}">${LEGAL_CONTACT_EMAIL}</a>.
           </p>
           <p>
-            Please send the request from the email address of your ${APP_NAME}
+            This email option is only the fallback path for cases where you cannot
+            log in anymore. Please use the email address of your ${APP_NAME}
             account whenever possible and include your username if available.
           </p>
 
@@ -432,7 +449,7 @@ const deleteAccountHtml = renderPage({
           <ul>
             <li>Store purchases may remain visible in your Google Play or App Store purchase history.</li>
             <li>Account, profile, gameplay, and avatar data are usually deleted immediately and no later than within 30 days after your deletion request is completed.</li>
-            <li>Billing, tax, anti-fraud, or security records may need to be retained for up to 10 years where legally required.</li>
+            <li>Some billing or security records may need to be retained temporarily where legally required.</li>
             <li>Account deletion is usually irreversible once completed.</li>
           </ul>
 

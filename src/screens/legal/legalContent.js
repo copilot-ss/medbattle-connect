@@ -4,7 +4,7 @@ const LEGAL_DOCS_DE = {
   privacy: {
     id: 'privacy',
     title: 'Datenschutz',
-    updatedAt: '2026-04-12',
+    updatedAt: '2026-04-13',
     intro:
       'MedQuiz ist eine Quiz-App fuer Medizinwissen. Diese Hinweise erklaeren, welche Daten wir verarbeiten und warum.',
     sections: [
@@ -24,7 +24,9 @@ const LEGAL_DOCS_DE = {
           'Geraete- und Nutzungsdaten: App-Version, Betriebssystem, redigierte Crash-Logs und Diagnosedaten.',
           'Werbe- und Kaufdaten: Werbe-IDs und Kauf- oder Entitlement-Metadaten, soweit relevant.',
           'Gastmodus-Daten: lokale Gast-ID und Einstellungen auf deinem Geraet.',
+          'Lokale Blocklisten- und Safety-Einstellungen auf deinem Geraet, wenn du andere Nutzer blockierst.',
           'Kommunikationsdaten: Inhalte von Support-Anfragen, die du an uns sendest.',
+          'Missbrauchsmeldungen, zum Beispiel gemeldete Nutzernamen, Screenshots und Moderationskontext.',
         ],
       },
       {
@@ -33,6 +35,7 @@ const LEGAL_DOCS_DE = {
           'Login, Account-Schutz und Sicherheit.',
           'Gameplay, Matchmaking, Ranglisten und Fortschritt.',
           'Fehleranalyse und App-Stabilitaet.',
+          'Bearbeitung von Missbrauchsmeldungen, lokalen Blockierungen und Social-Safety-Funktionen.',
           'Abrechnung von Premium/Kaeufen und Auslieferung von Werbung.',
           'Support und Bearbeitung deiner Anfragen.',
         ],
@@ -72,9 +75,9 @@ const LEGAL_DOCS_DE = {
         ],
         bullets: [
           'Account-, Profil-, Spiel-, Ranglisten- und Avatar-Daten: solange dein Konto aktiv ist. Nach einer Kontoloeschung loeschen wir diese Daten in der Regel sofort, spaetestens innerhalb von 30 Tagen, sofern keine gesetzlichen oder sicherheitsrelevanten Gruende entgegenstehen.',
-          'Gastmodus- und Einstellungsdaten, die nur lokal auf deinem Geraet liegen: bis du App-Daten loeschst oder die App deinstallierst.',
+          'Gastmodus-, lokale Blocklisten- und Einstellungsdaten, die nur lokal auf deinem Geraet liegen: bis du App-Daten loeschst, Nutzer entsperrst oder die App deinstallierst.',
           'Redigierte Crash- und Diagnosedaten: in der Regel bis zu 90 Tage.',
-          'Support-Anfragen: bis zur Bearbeitung und danach bis zu 24 Monate fuer Rueckfragen.',
+          'Support-Anfragen und Missbrauchsmeldungen: bis zur Bearbeitung und danach bis zu 24 Monate fuer Rueckfragen, Moderation oder Richtliniennachweise.',
           'Abrechnungs-, Steuer-, Betrugs- oder Sicherheitsnachweise, die wir rechtlich aufbewahren muessen: bis zu 10 Jahre.',
         ],
       },
@@ -115,7 +118,7 @@ const LEGAL_DOCS_DE = {
   terms: {
     id: 'terms',
     title: 'AGB',
-    updatedAt: '2026-04-12',
+    updatedAt: '2026-04-13',
     intro:
       'Diese Bedingungen regeln die Nutzung der MedQuiz App und der zugehoerigen Dienste.',
     sections: [
@@ -132,7 +135,8 @@ const LEGAL_DOCS_DE = {
         bullets: [
           'Die Anmeldung ist per E-Mail/Passwort oder OAuth moeglich.',
           'Du bist fuer die Sicherheit deiner Zugangsdaten verantwortlich.',
-          'Wir duerfen Accounts bei Verstoessen sperren.',
+          'Vor sichtbaren Profilinhalten wie Nutzername oder Profilfoto musst du die aktuellen AGB und Datenschutzhinweise bestaetigen.',
+          'Wir duerfen Accounts, Inhalte, Scores oder soziale Funktionen bei Verstoessen sperren, einschraenken oder entfernen.',
           'Der Gastmodus hat eingeschraenkte Funktionen und lokale Daten koennen verloren gehen.',
         ],
       },
@@ -144,6 +148,14 @@ const LEGAL_DOCS_DE = {
           'Kein Missbrauch von Multiplayer- oder Kommunikationsfunktionen.',
           'Keine beleidigenden, hasserfuellten, sexuellen, gewaltbezogenen, rechtswidrigen, spamartigen oder identitaetstaeuschenden Nutzernamen, Profilfotos, Einladungen oder Multiplayer-Inhalte.',
           'Kein Reverse Engineering, keine Bots und keine Angriffe auf Infrastruktur oder andere Nutzer.',
+        ],
+      },
+      {
+        heading: 'Melden, Blockieren und Moderation',
+        bullets: [
+          'In unterstuetzten Profilansichten kannst du missbraeuchliche Nutzernamen, Profilfotos, Einladungen oder Spielerinteraktionen direkt in der App melden und andere Nutzer lokal auf deinem Geraet blockieren.',
+          'Blockierte Nutzer koennen auf diesem Geraet in Freundeslisten, Freundesanfragen oder verwandten sozialen Interaktionen ausgeblendet werden.',
+          'Wir duerfen Meldungen manuell pruefen und Inhalte entfernen oder Accounts und Social-Features einschraenken, wenn dies fuer Nutzersicherheit oder Richtlinien-Compliance erforderlich ist.',
         ],
       },
       {
@@ -168,7 +180,7 @@ const LEGAL_DOCS_DE = {
   support: {
     id: 'support',
     title: 'Support',
-    updatedAt: '2026-04-12',
+    updatedAt: '2026-04-13',
     intro: 'Wir helfen dir gerne weiter.',
     sections: [
       {
@@ -191,6 +203,7 @@ const LEGAL_DOCS_DE = {
       {
         heading: 'Missbrauch melden',
         paragraphs: [
+          'In unterstuetzten Profilansichten innerhalb der App kannst du direkt die Melden- und Blockieren-Funktionen nutzen.',
           `Wenn du einen missbraeuchlichen Nutzernamen, ein Profilfoto, eine Einladung oder problematisches Multiplayer-Verhalten melden moechtest, schreibe uns an ${LEGAL_CONTACT_EMAIL}.`,
           'Bitte nenne den betroffenen Nutzernamen und fuege nach Moeglichkeit eine kurze Beschreibung sowie einen Screenshot bei.',
         ],
@@ -209,7 +222,7 @@ const LEGAL_DOCS_DE = {
   deleteAccount: {
     id: 'deleteAccount',
     title: 'Konto loeschen',
-    updatedAt: '2026-04-12',
+    updatedAt: '2026-04-13',
     intro:
       'Offizielle Loeschseite fuer die Google-Play-App MedQuiz von CoppiCodes.',
     sections: [
@@ -255,7 +268,7 @@ const LEGAL_DOCS_EN = {
   privacy: {
     id: 'privacy',
     title: 'Privacy Policy',
-    updatedAt: '2026-04-12',
+    updatedAt: '2026-04-13',
     intro:
       'MedQuiz is a quiz app for medical knowledge. This notice explains what data we process and why.',
     sections: [
@@ -275,7 +288,9 @@ const LEGAL_DOCS_EN = {
           'Device and usage data: app version, OS, redacted crash logs, and diagnostics.',
           'Advertising and purchase data: ad IDs and purchase or entitlement metadata where applicable.',
           'Guest mode data: local guest ID and settings on your device.',
+          'Local block-list and safety preferences on your device when you block other users.',
           'Communication data: the content of support requests you send us.',
+          'Abuse reports such as reported usernames, screenshots, and moderation context.',
         ],
       },
       {
@@ -284,6 +299,7 @@ const LEGAL_DOCS_EN = {
           'Login, account protection, and security.',
           'Gameplay, matchmaking, leaderboards, and progress.',
           'Error analysis and app stability.',
+          'Handling abuse reports, local block actions, and social safety controls.',
           'Billing for premium features or purchases and ad delivery.',
           'Support and handling of your requests.',
         ],
@@ -323,9 +339,9 @@ const LEGAL_DOCS_EN = {
         ],
         bullets: [
           'Account, profile, gameplay, leaderboard, and avatar data: while your account is active. After account deletion, we usually delete these data immediately and no later than within 30 days unless legal or security reasons require temporary retention.',
-          'Guest mode data and app settings stored only on your device: until you clear app data or uninstall the app.',
+          'Guest mode data, local block-list entries, and app settings stored only on your device: until you clear app data, unblock users, or uninstall the app.',
           'Redacted crash and diagnostics data: usually up to 90 days.',
-          'Support requests: until the request is resolved and then up to 24 months for follow-up.',
+          'Support requests and abuse reports: until the request is resolved and then up to 24 months for follow-up, moderation, or policy enforcement documentation.',
           'Billing, tax, anti-fraud, or security records that we must keep by law: up to 10 years where required.',
         ],
       },
@@ -366,7 +382,7 @@ const LEGAL_DOCS_EN = {
   terms: {
     id: 'terms',
     title: 'Terms of Service',
-    updatedAt: '2026-04-12',
+    updatedAt: '2026-04-13',
     intro: 'These terms govern the use of the MedQuiz app and related services.',
     sections: [
       {
@@ -382,7 +398,8 @@ const LEGAL_DOCS_EN = {
         bullets: [
           'Login is available with email/password or OAuth.',
           'You are responsible for keeping your credentials secure.',
-          'We may suspend accounts for violations.',
+          'You must confirm the current terms and privacy information before you create visible profile content such as usernames or profile photos.',
+          'We may suspend, restrict, or remove accounts, content, scores, or social features for violations.',
           'Guest mode has limited features and local data can be lost.',
         ],
       },
@@ -394,6 +411,14 @@ const LEGAL_DOCS_EN = {
           'Do not abuse multiplayer or communication features.',
           'Do not use abusive, hateful, sexual, violent, illegal, spammy, or impersonating usernames, profile photos, invites, or multiplayer content.',
           'No reverse engineering, bots, or attacks against infrastructure or users.',
+        ],
+      },
+      {
+        heading: 'Reporting, Blocking, and Moderation',
+        bullets: [
+          'In supported profile views, you can report abusive usernames, profile photos, invites, or player interactions directly in the app and block other users locally on your device.',
+          'Blocked users may be hidden from friend lists, friend requests, or related social interactions on that device.',
+          'We may review reports manually and remove content or limit accounts and social features if needed for user safety or policy compliance.',
         ],
       },
       {
@@ -418,7 +443,7 @@ const LEGAL_DOCS_EN = {
   support: {
     id: 'support',
     title: 'Support',
-    updatedAt: '2026-04-12',
+    updatedAt: '2026-04-13',
     intro: 'We are happy to help.',
     sections: [
       {
@@ -441,6 +466,7 @@ const LEGAL_DOCS_EN = {
       {
         heading: 'Report Abuse',
         paragraphs: [
+          'In supported profile views inside the app, you can use the report and local block actions directly.',
           `If you need to report an abusive username, profile photo, invite, or problematic multiplayer behavior, email ${LEGAL_CONTACT_EMAIL}.`,
           'Please include the reported username and, if possible, a short description and screenshot.',
         ],
@@ -459,7 +485,7 @@ const LEGAL_DOCS_EN = {
   deleteAccount: {
     id: 'deleteAccount',
     title: 'Delete Account',
-    updatedAt: '2026-04-12',
+    updatedAt: '2026-04-13',
     intro:
       'Official deletion page for the Google Play app MedQuiz by CoppiCodes.',
     sections: [
@@ -501,10 +527,8 @@ const LEGAL_DOCS_EN = {
   },
 };
 
-export function getLegalDocs(locale = 'de') {
-  const normalizedLocale =
-    typeof locale === 'string' ? locale.toLowerCase() : 'de';
-  return normalizedLocale.startsWith('de') ? LEGAL_DOCS_DE : LEGAL_DOCS_EN;
+export function getLegalDocs(locale = 'en') {
+  return LEGAL_DOCS_EN;
 }
 
-export const LEGAL_DOCS = LEGAL_DOCS_DE;
+export const LEGAL_DOCS = LEGAL_DOCS_EN;
