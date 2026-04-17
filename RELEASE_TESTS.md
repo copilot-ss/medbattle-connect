@@ -225,7 +225,7 @@ Note: Der Emulator zeigte zwischendurch `System UI isn't responding`; die App se
 - [x] Runtime-Check auf Realgeraet (2026-03-09, `c2ccd135`): kein `Cannot find native module 'ExpoIap'` / kein `ExpoTopicSubscriptionModule fehlt` / kein `ExpoAsset.downloadAsync`-Klassenfehler nach Neustart mit aktivem Metro.
 - [x] Coin-Produkt-IDs in `.env` gegen die aktuellen Play-Console-SKUs abgeglichen (2026-03-31): `buy_coins500`, `buy_coins1300`, `buy_coins2700`, `buy_coins7000`, `buy_coins1800`.
 - [ ] Store-Build mit diesen neuen Coin-SKUs neu bauen, hochladen und im Closed Test erneut pruefen.
-- Rewarded Ad: Abschluss gibt +5 Energie.
+- Rewarded Ad: Abschluss gibt +2 Energie.
 - Kauf-Flow: Premium setzt Werbung aus, Energie-Dialog passt.
 - [x] Consent-Nachweis (EWR) dokumentiert: Privacy-Text + Code sind konsistent (Rewarded Ads non-personalized, kein externer Telemetry-Provider).
 - [ ] Consent/Ad-Stichprobe auf Realgeraet im Store-Build bestaetigen (Produktiv-ID, EWR-Netz).

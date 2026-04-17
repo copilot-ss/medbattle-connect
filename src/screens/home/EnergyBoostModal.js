@@ -25,7 +25,7 @@ export default function EnergyBoostModal({
   const resolvedEnergy = Number.isFinite(energy) ? Math.max(0, energy) : 0;
   const resolvedCoins = Number.isFinite(coinsAvailable) ? Math.max(0, coinsAvailable) : 0;
   const resolvedRewardEnergy =
-    Number.isFinite(rewardEnergyAmount) && rewardEnergyAmount > 0 ? rewardEnergyAmount : 5;
+    Number.isFinite(rewardEnergyAmount) && rewardEnergyAmount > 0 ? rewardEnergyAmount : 2;
   const lightning = '\u26A1';
   const coinEmoji = '\u{1FA99}';
   const [timeLeftMs, setTimeLeftMs] = useState(null);

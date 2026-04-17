@@ -4,7 +4,6 @@ import {
   ENERGY_BASE_STORAGE_KEY,
   ENERGY_TIMESTAMP_KEY,
   ENERGY_VALUE_KEY,
-  MAX_ENERGY,
   MAX_ENERGY_CAP_BONUS,
   NEW_ACCOUNT_MAX_ENERGY,
   USER_STATS_STORAGE_KEY,
@@ -89,12 +88,11 @@ const isEnergyFullNow = async () => {
       AsyncStorage.getItem(ENERGY_TIMESTAMP_KEY),
       AsyncStorage.getItem(USER_STATS_STORAGE_KEY),
     ]);
-    const hasLegacySnapshot =
-      energyRaw !== null || tsRaw !== null || Boolean(userStatsRaw);
-    const energyBase = parseNonNegativeInt(
-      energyBaseRaw,
-      hasLegacySnapshot ? MAX_ENERGY : NEW_ACCOUNT_MAX_ENERGY
-    );
+    const parsedEnergyBase = parseNonNegativeInt(energyBaseRaw, 0);
+    const energyBase =
+      parsedEnergyBase > 0
+        ? Math.min(parsedEnergyBase, NEW_ACCOUNT_MAX_ENERGY)
+        : NEW_ACCOUNT_MAX_ENERGY;
     const energyValue = parseNonNegativeInt(energyRaw, energyBase);
     const timestamp = parseNonNegativeInt(tsRaw, Date.now());
 

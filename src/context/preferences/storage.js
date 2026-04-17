@@ -14,7 +14,6 @@ import {
   ENERGY_VALUE_KEY,
   FRIEND_REQUESTS_STORAGE_KEY,
   LEGACY_STREAK_STORAGE_KEYS,
-  MAX_ENERGY,
   MAX_ENERGY_CAP_BONUS,
   NEW_ACCOUNT_MAX_ENERGY,
   OWNED_FRAMES_KEY,
@@ -135,13 +134,18 @@ export async function loadPreferencesFromStorage() {
   ]);
 
   const parsedEnergyBase = parseInt(storedEnergyBase ?? '', 10);
+  let shouldPersistEnergyBase = storedEnergyBase === null;
   if (Number.isFinite(parsedEnergyBase) && parsedEnergyBase > 0) {
-    resolvedEnergyBase = parsedEnergyBase;
-  } else if (hasStoredUserStats || hasStoredEnergyValue || hasStoredEnergyTimestamp) {
-    resolvedEnergyBase = MAX_ENERGY;
+    // Collapse older default baselines onto the new 5-energy standard.
+    resolvedEnergyBase = Math.min(parsedEnergyBase, NEW_ACCOUNT_MAX_ENERGY);
+    shouldPersistEnergyBase =
+      shouldPersistEnergyBase || resolvedEnergyBase !== parsedEnergyBase;
+  } else {
+    resolvedEnergyBase = NEW_ACCOUNT_MAX_ENERGY;
+    shouldPersistEnergyBase = true;
   }
 
-  if (storedEnergyBase === null) {
+  if (shouldPersistEnergyBase) {
     try {
       await AsyncStorage.setItem(ENERGY_BASE_STORAGE_KEY, String(resolvedEnergyBase));
     } catch (err) {

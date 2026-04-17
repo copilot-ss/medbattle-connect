@@ -25,7 +25,8 @@ Kostenlose kompetitive Medizin-Quiz-App mit Supabase-Backend, Google-/E-Mail-Aut
 ## Produktregeln
 - Normales Solo-/Quick-Play-/Kategorie-Quiz hat `6` Fragen.
 - Multiplayer hat standardmaessig ebenfalls `6` Fragen, kann aber in der Lobby zwischen `3` und `20` liegen.
-- Rewarded Ads geben aktuell `+5` Energie.
+- Neue Accounts starten standardmaessig mit `5` Max-Energie.
+- Rewarded Ads geben aktuell `+2` Energie.
 - Coin-zu-Energie im leeren-Energie-Dialog ist auf `15 Coins pro 1 Energie` dargestellt.
 
 ## Release- und Build-Stand
