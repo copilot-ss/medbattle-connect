@@ -27,6 +27,7 @@ Basis: `TASKS.md`, `RELEASE_TESTS.md`
 - Monetarisierung / Werbung: Rewarded Ads und IAP sind im Code dokumentiert, aber der echte Store-Smoke fuer Ads/Kaeufe bleibt offen.
 - User Interaction / UGC: Freunde, Lobbys, frei waehlbare Nutzernamen und optionale Profilfotos sind vorhanden. Der aktuelle Repo-Stand enthaelt in-app Report-/Block-Funktionen ueber Public-Profile-Sheets und eine Terms-/Privacy-Bestaetigung im Auth-/Avatar-Flow. Operativ offen bleibt nur, dass Abuse-Reports ueber `medbattle1@gmail.com` zeitnah bearbeitet werden muessen.
 - Funktionalitaet / UX: stabiler Smoke gegen den wirklich ausgerollten Closed-Test-Build bleibt weiter Go/No-Go-Kriterium.
+- April-2026-Policy-Update: repo-seitig beruecksichtigt. Kontakte- und Standort-Permissions sind explizit blockiert/entfernt, Geofencing wird nicht genutzt, die Android-Galerie fuer optionale Avatar-Fotos laeuft ohne vorgelagerten breiten Medien-Permission-Request, und organisatorische Themen wie `Account Transfer policy` bleiben ausserhalb des App-Codes.
 
 ## Must-Pass Gates
 - [x] Play Store Assets vorbereitet (`STORE_ASSETS.md`)

@@ -28,6 +28,8 @@ tmp-uizard-preview.*
 /emulator_*.jpg
 /emulator_*.png
 /emulator_*.xml
+/temp_emu_*.png
+/temp_emu_*.xml
 /phone_*.jpg
 /phone_*.png
 /phone_*.xml

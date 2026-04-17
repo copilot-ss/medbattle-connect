@@ -5,7 +5,7 @@ import { usePreferences } from '../context/PreferencesContext';
 import usePremiumStatus from '../hooks/usePremiumStatus';
 import { calculateCoinReward } from '../services/quizService';
 import { calculateXpGain } from '../services/titleService';
-import { getCategoryMeta } from '../data/categoryMeta';
+import { getCategoryMeta } from '../data/categoryCatalog';
 import { CATEGORY_QUESTION_LIMIT } from '../config/quizLimits';
 import { colors } from '../styles/theme';
 import { useTranslation } from '../i18n/useTranslation';
@@ -19,11 +19,13 @@ export default function CategoryDetailScreen({ navigation, route }) {
     typeof route?.params?.category === 'string' ? route.params.category : null;
   const activeLobby = route?.params?.activeLobby ?? null;
   const categoryMeta = getCategoryMeta(categoryParam);
-  const categoryLabel = categoryParam || categoryMeta.label;
+  const categoryLabel = categoryMeta.label;
   const categoryDisplay = categoryLabel ? t(categoryLabel) : '';
-  const categoryDescription = categoryMeta?.description
-    ? t(categoryMeta.description)
+  const categoryDescription = categoryMeta?.descriptionKey
+    ? t(categoryMeta.descriptionKey)
     : '';
+  const categoryAvailable = categoryMeta?.isAvailable !== false;
+  const categoryMultiplayerAvailable = categoryMeta?.multiplayerAvailable !== false;
   const { isOnline } = useConnectivity();
   const { energy, energyMax } = usePreferences();
   const { premium } = usePremiumStatus();
@@ -41,7 +43,7 @@ export default function CategoryDetailScreen({ navigation, route }) {
   });
 
   function handleStartSolo() {
-    if (hasLobby) {
+    if (!categoryAvailable || hasLobby) {
       return;
     }
     if (!premium && energy <= 0) {
@@ -59,6 +61,9 @@ export default function CategoryDetailScreen({ navigation, route }) {
   }
 
   function handlePlayWithFriends() {
+    if (!categoryAvailable || !categoryMultiplayerAvailable) {
+      return;
+    }
     navigation.navigate('MultiplayerLobby', {
       mode: 'create',
       category: categoryLabel,
@@ -66,7 +71,6 @@ export default function CategoryDetailScreen({ navigation, route }) {
   }
 
   const energyLabel = premium ? `${energyMax}/${energyMax}` : `${energy}/${energyMax}`;
-
   const CategoryIcon = categoryMeta.iconFamily === 'fa5' ? FontAwesome5 : Ionicons;
 
   return (
@@ -97,20 +101,20 @@ export default function CategoryDetailScreen({ navigation, route }) {
               categoryMeta.accent ? { borderColor: `${categoryMeta.accent}55` } : null,
             ]}
           >
-            <CategoryIcon
-              name={categoryMeta.icon}
-              size={28}
-              color={categoryMeta.accent}
-            />
+            <CategoryIcon name={categoryMeta.icon} size={28} color={categoryMeta.accent} />
           </View>
           <Text style={styles.categoryTitle}>{categoryDisplay}</Text>
           <Text style={styles.categoryDescription}>{categoryDescription}</Text>
-          <Text style={styles.categoryReward}>
-            {t('+{xp} XP · +{coins} Coins', {
-              xp: rewardXp,
-              coins: rewardCoins,
-            })}
-          </Text>
+          {categoryAvailable ? (
+            <Text style={styles.categoryReward}>
+              {t('+{xp} XP · +{coins} Coins', {
+                xp: rewardXp,
+                coins: rewardCoins,
+              })}
+            </Text>
+          ) : (
+            <Text style={styles.categoryReward}>{t('category_available_soon')}</Text>
+          )}
         </View>
 
         <View>
@@ -119,15 +123,23 @@ export default function CategoryDetailScreen({ navigation, route }) {
               title={t('Solo-Spiel')}
               accent={colors.accentWarm}
               onPress={handleStartSolo}
-              disabled={hasLobby}
+              disabled={!categoryAvailable || hasLobby}
             />
             <ModeCard
               title={t('Lobby erstellen')}
               accent={colors.accentGreen}
               onPress={handlePlayWithFriends}
-              disabled={isOffline || hasLobby}
+              disabled={!categoryAvailable || !categoryMultiplayerAvailable || isOffline || hasLobby}
             />
           </View>
+          {!categoryAvailable ? (
+            <Text style={styles.categoryHint}>{t('category_coming_soon_detail')}</Text>
+          ) : null}
+          {categoryAvailable && !categoryMultiplayerAvailable ? (
+            <Text style={styles.categoryHint}>
+              {t('category_multiplayer_coming_soon_detail')}
+            </Text>
+          ) : null}
           {isOffline ? (
             <Text style={styles.categoryHint}>
               {t('Multiplayer benötigt eine Online-Verbindung.')}

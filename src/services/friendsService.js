@@ -12,7 +12,6 @@ const REQUESTS_STORAGE_PREFIX = 'medbattle_friend_requests';
 const GUEST_ID_STORAGE_KEY = 'medbattle_guest_id';
 const FRIENDS_RPC_TIMEOUT_MS = 20000;
 const FRIEND_REQUESTS_RPC_TIMEOUT_MS = 20000;
-const FRIEND_PROFILE_RPC_TIMEOUT_MS = 15000;
 const TIMEOUT_WARN_COOLDOWN_MS = 60 * 1000;
 const timeoutWarnByKey = new Map();
 
@@ -42,9 +41,6 @@ function warnWithTimeoutCooldown(key, message) {
   console.warn(message);
 }
 
-const FRIEND_PROFILE_CACHE_MS = 5 * 60 * 1000;
-const friendProfileCache = new Map();
-
 function sanitizeAvatarUrl(value) {
   if (typeof value !== 'string') {
     return null;
@@ -67,125 +63,6 @@ function sanitizeAvatarColor(value) {
   }
   const trimmed = value.trim();
   return trimmed || null;
-}
-
-async function enrichFriendsWithProfileData(friends = []) {
-  if (!Array.isArray(friends) || !friends.length) {
-    return [];
-  }
-
-  const now = Date.now();
-  const friendCodes = Array.from(
-    new Set(
-      friends
-        .map((friend) => normalizeCode(friend?.code ?? ''))
-        .filter(Boolean)
-    )
-  );
-  const cachedProfileByCode = new Map();
-  const missingCodes = [];
-
-  friendCodes.forEach((code) => {
-    const cached = friendProfileCache.get(code);
-    if (cached && cached.expiresAt > now) {
-      cachedProfileByCode.set(code, {
-        avatarUrl: sanitizeAvatarUrl(cached.avatarUrl),
-        avatarIcon: sanitizeAvatarIcon(cached.avatarIcon),
-        avatarColor: sanitizeAvatarColor(cached.avatarColor),
-      });
-      return;
-    }
-    missingCodes.push(code);
-  });
-
-  if (missingCodes.length) {
-    try {
-      const { data, error } = await runSupabaseRequest(
-        () =>
-          supabase
-            .from('profiles')
-            .select('friend_code, avatar_url, avatar_icon, avatar_color')
-            .in('friend_code', missingCodes),
-        {
-          label: 'friendsService.fetchFriendProfiles',
-          timeoutMs: FRIEND_PROFILE_RPC_TIMEOUT_MS,
-        }
-      );
-
-      if (error) {
-        throw error;
-      }
-
-      const fetchedCodes = new Set();
-      (Array.isArray(data) ? data : []).forEach((row) => {
-        const code = normalizeCode(row?.friend_code ?? '');
-        if (!code) {
-          return;
-        }
-        const avatarUrl = sanitizeAvatarUrl(row?.avatar_url);
-        const avatarIcon = sanitizeAvatarIcon(row?.avatar_icon);
-        const avatarColor = sanitizeAvatarColor(row?.avatar_color);
-        fetchedCodes.add(code);
-        cachedProfileByCode.set(code, {
-          avatarUrl,
-          avatarIcon,
-          avatarColor,
-        });
-        friendProfileCache.set(code, {
-          avatarUrl,
-          avatarIcon,
-          avatarColor,
-          expiresAt: now + FRIEND_PROFILE_CACHE_MS,
-        });
-      });
-
-      missingCodes.forEach((code) => {
-        if (fetchedCodes.has(code)) {
-          return;
-        }
-        cachedProfileByCode.set(code, {
-          avatarUrl: null,
-          avatarIcon: null,
-          avatarColor: null,
-        });
-        friendProfileCache.set(code, {
-          avatarUrl: null,
-          avatarIcon: null,
-          avatarColor: null,
-          expiresAt: now + FRIEND_PROFILE_CACHE_MS,
-        });
-      });
-    } catch (err) {
-      if (isSupabaseTimeoutError(err)) {
-        warnWithTimeoutCooldown(
-          'friends.profile.timeout',
-          `Konnte Freundesprofile nicht laden (Timeout, Fallback aktiv): ${err?.message}`
-        );
-      } else {
-        console.warn('Konnte Freundesprofile nicht laden:', err?.message);
-      }
-    }
-  }
-
-  return friends.map((friend) => {
-    const code = normalizeCode(friend?.code ?? '');
-    const cachedProfile = cachedProfileByCode.get(code) ?? null;
-    return {
-      ...friend,
-      avatarUrl:
-        sanitizeAvatarUrl(friend?.avatarUrl)
-        ?? sanitizeAvatarUrl(cachedProfile?.avatarUrl)
-        ?? null,
-      avatarIcon:
-        sanitizeAvatarIcon(friend?.avatarIcon)
-        ?? sanitizeAvatarIcon(cachedProfile?.avatarIcon)
-        ?? null,
-      avatarColor:
-        sanitizeAvatarColor(friend?.avatarColor)
-        ?? sanitizeAvatarColor(cachedProfile?.avatarColor)
-        ?? null,
-    };
-  });
 }
 
 function isDuplicatePendingRequestError(error) {
@@ -426,9 +303,8 @@ export async function fetchFriends(userId, options = {}) {
     }
 
     const friends = sanitizeFriends(Array.isArray(data) ? data : []);
-    const enrichedFriends = await enrichFriendsWithProfileData(friends);
-    await persistLocalFriends(resolvedUserId, enrichedFriends);
-    return enrichedFriends;
+    await persistLocalFriends(resolvedUserId, friends);
+    return friends;
   } catch (err) {
     const fallback = await loadLocalFriends(resolvedUserId);
     if (isSupabaseTimeoutError(err)) {
@@ -677,23 +553,6 @@ export async function migrateLocalFriends(fromUserId, toUserId) {
         nextList.forEach((f) => merged.set(f.code, f));
       }
     }
-  }
-
-  try {
-    const oldCode = deriveFriendCode(sourceId);
-    const newCode = deriveFriendCode(toUserId);
-    if (oldCode && newCode && oldCode !== newCode) {
-      await runSupabaseRequest(
-        () =>
-          supabase
-            .from('friends')
-            .update({ friend_code: newCode })
-            .eq('friend_code', oldCode),
-        { label: 'friendsService.migrateFriendCode' }
-      );
-    }
-  } catch (err) {
-    console.warn('Konnte Gast-Freunde nicht auf neuen Code umstellen:', err?.message);
   }
 
   await persistLocalFriends(sourceId, []);

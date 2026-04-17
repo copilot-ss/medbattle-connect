@@ -114,18 +114,15 @@ export default function AvatarEditScreen({ navigation }) {
   const openAvatarImagePicker = useCallback(async (source) => {
     setUploadingPhoto(true);
     try {
-      const permission =
-        source === 'camera'
-          ? await ImagePicker.requestCameraPermissionsAsync()
-          : await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert(
-          t('Berechtigung erforderlich'),
-          source === 'camera'
-            ? t('Bitte erlaube Zugriff auf die Kamera.')
-            : t('Bitte erlaube Zugriff auf deine Fotos.')
-        );
-        return;
+      if (source === 'camera') {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          Alert.alert(
+            t('Berechtigung erforderlich'),
+            t('Bitte erlaube Zugriff auf die Kamera.')
+          );
+          return;
+        }
       }
 
       const picker =

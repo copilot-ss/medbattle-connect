@@ -44,6 +44,14 @@ Empfehlung:
 Begruendung:
 
 - Laut aktueller Google-Play-Richtlinie fallen auch Apps mit gesundheitsbezogenen Informationen in diese Deklaration, selbst wenn sie kein Medizinprodukt sind.
+- MedQuiz nutzt keine Health Connect APIs und verarbeitet keine sensiblen Gesundheitsdaten wie Symptome, Zyklusdaten oder Versicherungs-/Beschaeftigungsbewertungen; der relevante Scope ist hier Lern-/Quiz-Content, nicht Health-Tracking.
+
+## April 2026 Policy Check
+
+- Contacts Permissions policy: nicht relevant, da keine Kontakte-Funktion und keine Kontakte-Permissions im Android-Stand.
+- Location Permissions policy / Geofencing: nicht relevant, da keine Standort-Funktion und kein Geofencing im Produkt.
+- Photo and Video Permissions clarification: relevant nur fuer optionale Avatar-Fotos; Android nutzt dafuer den System-Picker statt breiter Galerie-Rechte.
+- Account Transfer policy: nur Play-Console-/Account-Prozess, kein App-Content-Feld.
 
 ## User Interaction
 

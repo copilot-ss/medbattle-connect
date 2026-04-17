@@ -1,6 +1,6 @@
 # PLAY_DATA_SAFETY_DRAFT.md - MedQuiz
 
-Stand: 2026-04-10
+Stand: 2026-04-16
 
 Zweck:
 - Arbeitsvorlage fuer die Play Console `Data safety` Eingabe.
@@ -20,7 +20,7 @@ Zweck:
 - Auth (E-Mail, Google, Discord):
   - `src/screens/AuthScreen.js`
   - `src/screens/auth/authOAuth.js`
-- Profilfoto optional (Kamera/Galerie + Upload):
+- Profilfoto optional (Kamera/System-Picker fuer Galerie + Upload):
   - `src/screens/AvatarEditScreen.js`
   - `src/services/userService.js`
 - Ads (Rewarded, non-personalized request):
@@ -51,7 +51,7 @@ Hinweis:
 - Name/username: `Collected` (profile/display name)
 
 ### Photos and videos
-- Photos: `Collected` (optional nur wenn Nutzer ein Avatar-Foto waehlt)
+- Photos: `Collected` (optional nur wenn Nutzer ein Avatar-Foto waehlt und hochlaedt)
 - Videos: `Not collected`
 
 ### App activity
@@ -74,7 +74,7 @@ Hinweis:
 
 ## 5) Must-Check vor finalem Publish
 - Data Safety Eintrag passt exakt zu:
-  - Avatar-Foto (Kamera/Galerie) + Storage `avatars`
+  - Avatar-Foto (Kamera/System-Picker fuer Galerie) + Storage `avatars`
   - Ads (Rewarded, non-personalized request)
   - In-App-Kaeufe (Coin- und Boost-Produkte)
   - Crash-Logging ueber `client_logs` (redigiert)
@@ -82,4 +82,9 @@ Hinweis:
   - In-App-Kontoloeschung plus oeffentliche Delete-Account-URL
 - Privacy-URL, Delete-Account-URL und In-App-Legal-Text sind konsistent mit dem finalen Data-Safety-Formular.
 - Privacy-Text nennt explizit auch sichere Datenverarbeitung (HTTPS/TLS, redigierte Diagnosedaten, begrenzter Zugriff).
+- April-2026-Policy-Abgleich:
+  - Kontakte: nicht relevant, App fordert keine Kontakte-Permissions an.
+  - Standort / Geofencing: nicht relevant, App fordert keine Location-Permissions an und nutzt kein Geofencing.
+  - Fotos / Videos: Android-Galerieauswahl laeuft fuer den Avatar ueber den System-Picker statt ueber breite Medienrechte.
+  - Health-Richtlinien: App sammelt keine Health-Connect- oder sensiblen Gesundheitsdaten; `Health apps declaration` fuer den Lern-/Quiz-Kontext bleibt trotzdem manuell in Play Console offen.
 - Nach jedem Feature-Change Data Safety erneut gegenpruefen.

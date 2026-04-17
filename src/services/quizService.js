@@ -1,5 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabaseClient';
+import {
+  getVisibleCategoryCatalog,
+  resolveSourceCategories,
+  resolveVisibleCategoryKey,
+} from '../data/categoryCatalog';
 import OFFLINE_SEED_QUESTIONS from '../data/offlineSeedQuestions';
 import { runSupabaseRequest } from './supabaseRequest';
 import { getBoostPointPenalty, sanitizeBoostUsage } from '../utils/quizBoosts';
@@ -154,13 +159,45 @@ function normalizeCategoryList(source) {
     if (isBlockedCategory(value)) {
       return;
     }
-    const key = value.toLowerCase();
+    const normalizedValue = resolveVisibleCategoryKey(value) ?? value;
+    const key = normalizeCategoryKey(normalizedValue);
     if (!deduped.has(key)) {
-      deduped.set(key, value);
+      deduped.set(key, normalizedValue);
     }
   });
 
   return Array.from(deduped.values()).sort((a, b) => a.localeCompare(b));
+}
+
+function buildVisibleCategoryList(limit = null) {
+  const labels = getVisibleCategoryCatalog().map((entry) => entry.label);
+  if (!Number.isFinite(limit) || limit <= 0) {
+    return labels;
+  }
+  return labels.slice(0, limit);
+}
+
+function mergeVisibleCategoryList(source, limit = null) {
+  const merged = [...buildVisibleCategoryList(limit), ...normalizeCategoryList(source)];
+  const deduped = new Map();
+
+  merged.forEach((value) => {
+    const safeValue = typeof value === 'string' ? value.trim() : '';
+    if (!safeValue) {
+      return;
+    }
+
+    const key = normalizeCategoryKey(safeValue);
+    if (!deduped.has(key)) {
+      deduped.set(key, safeValue);
+    }
+  });
+
+  const categories = Array.from(deduped.values());
+  if (!Number.isFinite(limit) || limit <= 0) {
+    return categories;
+  }
+  return categories.slice(0, limit);
 }
 
 async function loadCachedCategories() {
@@ -182,10 +219,10 @@ async function loadCachedCategories() {
     ) {
       return [];
     }
-    return normalizeCategoryList(categories);
+    return mergeVisibleCategoryList(categories);
   } catch (err) {
     console.warn('Konnte Kategorien-Cache nicht lesen:', err);
-    return [];
+    return mergeVisibleCategoryList([]);
   }
 }
 
@@ -193,7 +230,7 @@ async function saveCachedCategories(categories) {
   try {
     const payload = {
       savedAt: new Date().toISOString(),
-      categories: normalizeCategoryList(categories),
+      categories: mergeVisibleCategoryList(categories),
     };
     await AsyncStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(payload));
   } catch (err) {
@@ -753,13 +790,16 @@ function buildOfflineSeedQuestions(limit, category, language) {
       !isBlockedCategory(question?.category) &&
       normalizeLanguage(question?.language ?? DEFAULT_LANGUAGE) === normalizedLanguage
   );
+  const sourceCategories = normalizedCategory
+    ? new Set(resolveSourceCategories(normalizedCategory))
+    : null;
 
-  const sameCategoryQuestions = normalizedCategory
-    ? languagePool.filter((question) => question?.category === normalizedCategory)
+  const sameCategoryQuestions = sourceCategories
+    ? languagePool.filter((question) => sourceCategories.has(question?.category))
     : languagePool;
 
-  if (normalizedCategory) {
-    // Keep category quizzes category-pure even when the app is offline.
+  if (sourceCategories) {
+    // Keep app-category quizzes inside their resolved source category pool when offline.
     return mergeQuestionPools(shuffleList(sameCategoryQuestions), [], limit);
   }
 
@@ -1296,7 +1336,7 @@ export async function fetchCategories({
   if (offline) {
     return cachedCategories.length
       ? { ok: true, categories: cachedCategories, cached: true }
-      : { ok: false, categories: [], error: new Error('Offline') };
+      : { ok: true, categories: buildVisibleCategoryList(normalizedLimit), static: true };
   }
 
   const loadFallback = async () => {
@@ -1318,10 +1358,10 @@ export async function fetchCategories({
       if (error) {
         throw error;
       }
-      return normalizeCategoryList(data);
+      return mergeVisibleCategoryList(data, normalizedLimit);
     } catch (err) {
       console.warn('Konnte Kategorien-Fallback nicht laden:', err?.message ?? err);
-      return [];
+      return mergeVisibleCategoryList([], normalizedLimit);
     }
   };
 
@@ -1342,7 +1382,7 @@ export async function fetchCategories({
       throw error;
     }
 
-    const normalized = normalizeCategoryList(data);
+    const normalized = mergeVisibleCategoryList(data, normalizedLimit);
     if (!normalized.length) {
       const fallback = await loadFallback();
       if (fallback.length) {
@@ -1490,57 +1530,18 @@ export async function fetchLeaderboard(limit = 20, { force = false } = {}) {
       return [];
     }
 
-    const userIds = Array.from(
-      new Set(
-        data
-          .map((item) => item?.user_id ?? item?.userId ?? item?.id ?? null)
-          .filter(Boolean)
-      )
-    );
-    const profileByUserId = new Map();
-
-    if (userIds.length) {
-      const profileResult = await runSupabaseRequest(
-        () =>
-          supabase
-            .from('profiles')
-            .select('id, avatar_url, avatar_icon, avatar_color, display_name')
-            .in('id', userIds),
-        {
-          label: 'quizService.getLeaderboardProfiles',
-          profile: 'ui',
-          dedupeKey: `profiles:${userIds.join(',')}`,
-        }
-      );
-
-      if (!profileResult.error && Array.isArray(profileResult.data)) {
-        profileResult.data.forEach((row) => {
-          if (!row?.id) {
-            return;
-          }
-          profileByUserId.set(row.id, row);
-        });
-      }
-    }
-
     const ranked = data.map((item) => ({
       id: item.id ?? item.user_id ?? item.userId ?? null,
       userId: item.user_id ?? item.userId ?? item.id ?? null,
       username:
         item.username
-        ?? profileByUserId.get(item.user_id ?? item.userId ?? item.id)?.display_name
+        ?? item.display_name
         ?? null,
       xp: Number.isFinite(item.xp) ? item.xp : sanitizeLeaderboardNumber(item.xp, null),
       points: sanitizeLeaderboardNumber(item.points ?? item.leaderboard_points, 0),
-      avatarUrl:
-        sanitizeAvatarUrl(item.avatar_url ?? item.avatarUrl)
-        ?? sanitizeAvatarUrl(profileByUserId.get(item.user_id ?? item.userId ?? item.id)?.avatar_url),
-      avatarIcon:
-        sanitizeAvatarIcon(item.avatar_icon ?? item.avatarIcon)
-        ?? sanitizeAvatarIcon(profileByUserId.get(item.user_id ?? item.userId ?? item.id)?.avatar_icon),
-      avatarColor:
-        sanitizeAvatarColor(item.avatar_color ?? item.avatarColor)
-        ?? sanitizeAvatarColor(profileByUserId.get(item.user_id ?? item.userId ?? item.id)?.avatar_color),
+      avatarUrl: sanitizeAvatarUrl(item.avatar_url ?? item.avatarUrl),
+      avatarIcon: sanitizeAvatarIcon(item.avatar_icon ?? item.avatarIcon),
+      avatarColor: sanitizeAvatarColor(item.avatar_color ?? item.avatarColor),
       createdAt: item.created_at ?? item.createdAt ?? null,
     }));
 

@@ -1,3 +1,5 @@
+import OFFLINE_GENERAL_KNOWLEDGE_PACK from './offlineGeneralKnowledgePack';
+import OFFLINE_EXPANDED_CATEGORY_PACK from './offlineExpandedCategoryPack';
 import PRECISE_OFFLINE_CATEGORY_PACK from './offlinePreciseCategoryPack';
 
 const OFFLINE_SEED_QUESTIONS = [
@@ -1043,5 +1045,10 @@ const OFFLINE_SEED_QUESTIONS = [
   },
 ];
 
-export default [...OFFLINE_SEED_QUESTIONS, ...PRECISE_OFFLINE_CATEGORY_PACK];
+export default [
+  ...OFFLINE_SEED_QUESTIONS,
+  ...PRECISE_OFFLINE_CATEGORY_PACK,
+  ...OFFLINE_GENERAL_KNOWLEDGE_PACK,
+  ...OFFLINE_EXPANDED_CATEGORY_PACK,
+];
 

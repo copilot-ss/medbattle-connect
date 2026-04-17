@@ -78,6 +78,15 @@ Wichtige Punkte:
 - User Interaction / UGC: Freunde, Multiplayer-Lobbys, Nutzernamen und optionale Profilfotos sind im Produkt vorhanden. Der aktuelle Repo-Stand bietet in Public-Profile-Sheets klar beschriftete `Report user/content`- und `Block`-Funktionen sowie eine Terms-/Privacy-Bestaetigung im Auth-/Avatar-Flow. Vor dem Submit trotzdem im Store-Build pruefen, dass diese Buttons sichtbar sind und Abuse-Mails unter `medbattle1@gmail.com` operativ bearbeitet werden.
 - Funktionalitaet / Nutzererfahrung: Store-Smoke fuer den tatsaechlich ausgerollten Closed-Test-Build bleibt Pflicht, weil Google funktionale und stabile Kernflows erwartet.
 
+## April 2026 Policy Delta
+
+- Contacts Permissions policy: fuer MedQuiz derzeit nicht relevant; der Repo-Stand blockt Kontakte-Permissions und nutzt keine Kontakte-Importe oder Contact-Picker-Flows.
+- Location Permissions policy / Geofencing: fuer MedQuiz derzeit nicht relevant; der Repo-Stand blockt Location-Permissions und nutzt weder Praezisionsstandort noch Geofencing.
+- Photo and Video Permissions clarification: optionales Avatar-Foto bleibt im Scope, aber die Android-Galerieauswahl laeuft jetzt ueber den System-Picker ohne vorgelagerten breiten Medien-Permission-Request.
+- Account Transfer policy: nur organisatorisch relevant, falls der Developer-Account spaeter den Besitzer wechseln soll; kein App-Code-Thema.
+- Health and Fitness reminder: keine Health-Connect-Integration, keine sensiblen Gesundheitsdaten, aber `Health apps declaration` in Play Console bleibt fuer den medizinischen Lern-/Quiz-Kontext manuell noetig.
+- Prediction markets / news-magazine self-declaration: fuer MedQuiz aktuell nicht relevant.
+
 ## Closed Test
 
 Fuer neue private Entwicklerkonten:

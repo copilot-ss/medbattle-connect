@@ -10,7 +10,7 @@ import {
 import useSupabaseUserId from '../hooks/useSupabaseUserId';
 import usePremiumStatus from '../hooks/usePremiumStatus';
 import { calculateCoinReward } from '../services/quizService';
-import { CATEGORY_META } from '../data/categoryMeta';
+import { getVisibleCategoryCatalog } from '../data/categoryCatalog';
 import { getAchievementProgress } from '../services/achievementService';
 import ActiveLobbyBanner from './home/ActiveLobbyBanner';
 import CategoryTile from './home/CategoryTile';
@@ -201,15 +201,16 @@ export default function HomeScreen({ navigation, route }) {
   const quickPlaySubtitle = `+${quickPlayCoinReward}`;
   const categoryTiles = useMemo(
     () =>
-      CATEGORY_META.map((category) => {
+      getVisibleCategoryCatalog().map((category) => {
         const style = category ?? {};
         return {
           key: style.key ?? style.label,
           label: style.label ? t(style.label) : '',
-          value: style.label,
+          value: style.key ?? style.label,
           icon: style.icon,
           iconFamily: style.iconFamily,
           accent: style.accent,
+          disabled: style.isAvailable === false,
         };
       }),
     [t]
@@ -351,10 +352,11 @@ export default function HomeScreen({ navigation, route }) {
                 iconFamily={tile.iconFamily}
                 accent={tile.accent}
                 onPress={() => handleSelectCategory(tile.value)}
-                disabled={false}
+                disabled={tile.disabled}
               />
             ))}
           </View>
+          <Text style={styles.categoryHint}>{t('category_more_soon')}</Text>
           <View style={styles.categoryFooterAction}>
             <ModeCard
               title={t('Lobby beitreten')}

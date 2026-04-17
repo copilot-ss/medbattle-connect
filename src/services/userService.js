@@ -6,8 +6,6 @@ import {
 } from '../utils/friendCode';
 import { runSupabaseRequest } from './supabaseRequest';
 
-const FRIEND_CODE_USER_ID_CACHE_MS = 2 * 60 * 1000;
-const friendCodeUserIdCache = new Map();
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MAX_LENGTH = 16;
 
@@ -22,61 +20,6 @@ export function sanitizeUsername(value, fallback) {
     .slice(0, USERNAME_MAX_LENGTH);
 
   return normalized || fallback;
-}
-
-async function resolveFriendUserIdByCode(friendCode) {
-  const normalizedCode = normalizeFriendCode(friendCode);
-  if (!normalizedCode) {
-    return null;
-  }
-
-  const now = Date.now();
-  const cached = friendCodeUserIdCache.get(normalizedCode);
-  if (cached && cached.expiresAt > now) {
-    return cached.userId;
-  }
-
-  const authUser = await getSessionUser();
-  const authUserId = authUser?.id ?? null;
-  if (!authUserId) {
-    return null;
-  }
-
-  const friendshipsResult = await runSupabaseRequest(
-    () =>
-      supabase
-        .from('friendships')
-        .select('user_id, friend_id, status')
-        .eq('status', 'accepted')
-        .or(`user_id.eq.${authUserId},friend_id.eq.${authUserId}`),
-    { label: 'userService.resolveFriendUserIdByCode.friendships' }
-  );
-  if (friendshipsResult.error) {
-    throw friendshipsResult.error;
-  }
-
-  const rows = Array.isArray(friendshipsResult.data) ? friendshipsResult.data : [];
-  for (const row of rows) {
-    const otherUserId =
-      row?.user_id === authUserId
-        ? row?.friend_id ?? null
-        : row?.friend_id === authUserId
-          ? row?.user_id ?? null
-          : null;
-    if (!otherUserId) {
-      continue;
-    }
-    if (deriveFriendCodeFromUserId(otherUserId) === normalizedCode) {
-      friendCodeUserIdCache.set(normalizedCode, {
-        userId: otherUserId,
-        expiresAt: now + FRIEND_CODE_USER_ID_CACHE_MS,
-      });
-      return otherUserId;
-    }
-  }
-
-  friendCodeUserIdCache.delete(normalizedCode);
-  return null;
 }
 
 function sanitizeAvatarUrl(value) {
@@ -261,25 +204,6 @@ function buildAvatarStoragePath(userId, mimeType) {
   return `${userId}/${timestamp}-${randomPart}.${extension}`;
 }
 
-function shouldIgnoreUserLookupError(error) {
-  if (!error) {
-    return false;
-  }
-
-  const code = typeof error.code === 'string' ? error.code.toUpperCase() : '';
-  if (code === '42501') {
-    return true;
-  }
-
-  const status = Number(error.status);
-  if (status === 401 || status === 403) {
-    return true;
-  }
-
-  const message = typeof error.message === 'string' ? error.message.toLowerCase() : '';
-  return message.includes('permission denied') || message.includes('not authorized');
-}
-
 function parseNonNegativeNumber(value) {
   if (value === null || value === undefined || value === '') {
     return null;
@@ -289,39 +213,6 @@ function parseNonNegativeNumber(value) {
   }
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
-}
-
-function mapPublicProfile({ userRow, profileRow, fallbackUserId = null, fallbackFriendCode = null }) {
-  const userId = userRow?.id ?? profileRow?.id ?? fallbackUserId ?? null;
-  const username = userRow?.username ?? null;
-  const displayName = profileRow?.display_name ?? null;
-  const name = displayName || username || null;
-  const friendCode =
-    deriveFriendCodeFromUserId(userId)
-    || normalizeFriendCode(profileRow?.friend_code ?? fallbackFriendCode ?? null)
-    || null;
-  const xp = parseNonNegativeNumber(userRow?.xp);
-  const coins = parseNonNegativeNumber(userRow?.coins);
-  const quizzes = parseNonNegativeNumber(userRow?.quizzes);
-  const correct = parseNonNegativeNumber(userRow?.correct);
-  const questions = parseNonNegativeNumber(userRow?.questions);
-
-  return {
-    userId,
-    username,
-    displayName,
-    name,
-    friendCode,
-    xp,
-    coins,
-    quizzes,
-    correct,
-    questions,
-    avatarUrl: sanitizeAvatarUrl(profileRow?.avatar_url),
-    avatarIcon: sanitizeAvatarIcon(profileRow?.avatar_icon),
-    avatarColor: sanitizeAvatarColor(profileRow?.avatar_color),
-    bio: profileRow?.bio ?? null,
-  };
 }
 
 function mapPublicProfileFromRpcRow(row, fallbackUserId = null, fallbackFriendCode = null) {
@@ -363,37 +254,6 @@ function mapPublicProfileFromRpcRow(row, fallbackUserId = null, fallbackFriendCo
     avatarColor: sanitizeAvatarColor(row.avatar_color ?? row.avatarColor),
     bio: row.bio ?? null,
   };
-}
-
-function isMissingPublicProfileRpcError(error) {
-  if (!error) {
-    return false;
-  }
-  const code = typeof error.code === 'string' ? error.code.toLowerCase() : '';
-  if (code === '42883') {
-    return true;
-  }
-  const message = typeof error.message === 'string' ? error.message.toLowerCase() : '';
-  return message.includes('fetch_public_profile') && message.includes('does not exist');
-}
-
-function isInvalidPublicProfileRpcResultError(error) {
-  if (!error) {
-    return false;
-  }
-  const code = typeof error.code === 'string' ? error.code.toLowerCase() : '';
-  if (code === '42804') {
-    return true;
-  }
-  const message = typeof error.message === 'string' ? error.message.toLowerCase() : '';
-  return message.includes('structure of query does not match function result type');
-}
-
-function isKnownPublicProfileRpcFallbackError(error) {
-  return (
-    isMissingPublicProfileRpcError(error) ||
-    isInvalidPublicProfileRpcResultError(error)
-  );
 }
 
 async function fetchPublicProfileViaRpc({ userId = null, friendCode = null } = {}) {
@@ -458,63 +318,7 @@ export async function fetchPublicProfileByUserId(userId) {
     return { ok: false, error: new Error('Kein Nutzer angegeben.') };
   }
 
-  try {
-    const rpcResult = await fetchPublicProfileViaRpc({ userId });
-    if (rpcResult.ok) {
-      return rpcResult;
-    }
-    if (!rpcResult.ok && !isKnownPublicProfileRpcFallbackError(rpcResult.error)) {
-      console.warn('Public-Profile-RPC fehlgeschlagen, nutze Tabellen-Fallback:', rpcResult.error);
-    }
-
-    const profileResult = await runSupabaseRequest(
-      () =>
-        supabase
-          .from('profiles')
-          .select('id, display_name, avatar_url, avatar_icon, avatar_color, bio, friend_code')
-          .eq('id', userId)
-          .maybeSingle(),
-      { label: 'userService.fetchPublicProfileByUserId.profiles' }
-    );
-
-    if (profileResult.error) {
-      throw profileResult.error;
-    }
-
-    const profileRow = profileResult.data ?? null;
-    let userRow = null;
-
-    const userResult = await runSupabaseRequest(
-      () =>
-        supabase
-          .from('users')
-          .select('id, username, xp, coins, quizzes, correct, questions')
-          .eq('id', userId)
-          .maybeSingle(),
-      { label: 'userService.fetchPublicProfileByUserId.users' }
-    );
-
-    if (userResult.error && !shouldIgnoreUserLookupError(userResult.error)) {
-      throw userResult.error;
-    }
-
-    userRow = userResult.data ?? null;
-
-    if (!userRow && !profileRow) {
-      return { ok: true, profile: null };
-    }
-
-    return {
-      ok: true,
-      profile: mapPublicProfile({
-        userRow,
-        profileRow,
-        fallbackUserId: userId,
-      }),
-    };
-  } catch (err) {
-    return { ok: false, error: err };
-  }
+  return fetchPublicProfileViaRpc({ userId });
 }
 
 export async function fetchPublicProfileByFriendCode(friendCode) {
@@ -523,86 +327,7 @@ export async function fetchPublicProfileByFriendCode(friendCode) {
     return { ok: false, error: new Error('Kein Freundescode angegeben.') };
   }
 
-  try {
-    const rpcResult = await fetchPublicProfileViaRpc({ friendCode: normalizedCode });
-    if (rpcResult.ok && rpcResult.profile) {
-      return rpcResult;
-    }
-    if (rpcResult.ok && !rpcResult.profile) {
-      try {
-        const resolvedUserId = await resolveFriendUserIdByCode(normalizedCode);
-        if (resolvedUserId) {
-          const byUserIdResult = await fetchPublicProfileByUserId(resolvedUserId);
-          if (byUserIdResult?.ok && byUserIdResult.profile) {
-            return {
-              ok: true,
-              profile: {
-                ...byUserIdResult.profile,
-                friendCode:
-                  byUserIdResult.profile.friendCode
-                  ?? normalizedCode,
-              },
-            };
-          }
-        }
-      } catch (resolveErr) {
-        console.warn(
-          'Friend-Code konnte nicht zu User-ID aufgelöst werden, nutze Tabellen-Fallback:',
-          resolveErr
-        );
-      }
-    }
-    if (!rpcResult.ok && !isKnownPublicProfileRpcFallbackError(rpcResult.error)) {
-      console.warn('Public-Profile-RPC fehlgeschlagen, nutze Tabellen-Fallback:', rpcResult.error);
-    }
-
-    const profileResult = await runSupabaseRequest(
-      () =>
-        supabase
-          .from('profiles')
-          .select('id, display_name, avatar_url, avatar_icon, avatar_color, bio, friend_code')
-          .eq('friend_code', normalizedCode)
-          .maybeSingle(),
-      { label: 'userService.fetchPublicProfileByFriendCode.profiles' }
-    );
-
-    if (profileResult.error) {
-      throw profileResult.error;
-    }
-
-    const profileRow = profileResult.data ?? null;
-
-    if (!profileRow) {
-      return { ok: true, profile: null };
-    }
-
-    let userRow = null;
-    const userResult = await runSupabaseRequest(
-      () =>
-        supabase
-          .from('users')
-          .select('id, username, xp, coins, quizzes, correct, questions')
-          .eq('id', profileRow.id)
-          .maybeSingle(),
-      { label: 'userService.fetchPublicProfileByFriendCode.users' }
-    );
-
-    if (userResult.error && !shouldIgnoreUserLookupError(userResult.error)) {
-      throw userResult.error;
-    }
-    userRow = userResult.data ?? null;
-
-    return {
-      ok: true,
-      profile: mapPublicProfile({
-        userRow,
-        profileRow,
-        fallbackFriendCode: normalizedCode,
-      }),
-    };
-  } catch (err) {
-    return { ok: false, error: err };
-  }
+  return fetchPublicProfileViaRpc({ friendCode: normalizedCode });
 }
 
 export async function updateUsername(userId, nextUsername) {
@@ -755,18 +480,19 @@ export async function syncProfileAvatar(
   const usesPhoto = Boolean(normalizedAvatarUrl);
 
   const payload = {
-    id: userId,
     avatar_url: usesPhoto ? normalizedAvatarUrl : null,
     avatar_icon: usesPhoto ? null : normalizedAvatarIcon,
     avatar_color: usesPhoto ? null : normalizedAvatarColor,
   };
 
   try {
-    const { error } = await runSupabaseRequest(
+    const { data, error } = await runSupabaseRequest(
       () =>
-        supabase
-          .from('profiles')
-          .upsert(payload, { onConflict: 'id' }),
+        supabase.rpc('sync_profile_avatar', {
+          p_avatar_url: payload.avatar_url,
+          p_avatar_icon: payload.avatar_icon,
+          p_avatar_color: payload.avatar_color,
+        }),
       { label: 'userService.syncProfileAvatar' }
     );
 
@@ -774,7 +500,16 @@ export async function syncProfileAvatar(
       throw error;
     }
 
-    return { ok: true, profile: payload };
+    const row = Array.isArray(data) ? data[0] ?? null : data ?? null;
+    return {
+      ok: true,
+      profile: {
+        id: userId,
+        avatar_url: sanitizeAvatarUrl(row?.avatar_url ?? payload.avatar_url),
+        avatar_icon: sanitizeAvatarIcon(row?.avatar_icon ?? payload.avatar_icon),
+        avatar_color: sanitizeAvatarColor(row?.avatar_color ?? payload.avatar_color),
+      },
+    };
   } catch (err) {
     return { ok: false, error: err };
   }

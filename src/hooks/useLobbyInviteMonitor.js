@@ -309,6 +309,5 @@ export default function useLobbyInviteMonitor({ onInviteAccepted } = {}) {
     inviteError,
     acceptInvite,
     declineInvite,
-    refreshLobbyInvites,
   };
 }

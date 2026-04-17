@@ -1,302 +1,264 @@
-# Jobcenter Gruendungsplan - Arbeitsdatei
+# Jobcenter Erstgespraech - Gruendungsmappe
 
-Diese Datei dient als gemeinsame Arbeitsgrundlage fuer das Foerdergespraech mit dem Jobcenter.
-Sie soll im Projekt fortlaufend ueberarbeitet werden.
+Diese Datei ist fuer das erste Gespraech mit dem Jobcenter vorbereitet.
+Ziel ist nicht, jedes Detail sofort zu entscheiden, sondern von Anfang an serioes, strukturiert und foerderfaehig aufzutreten.
 
-Wichtiger Hinweis:
-- Alle persoenlichen Angaben, konkreten Betraege und exakten Termine sind mit `[ERGAENZEN: ...]` markiert.
-- Aussagen zum Projekt beruhen auf dem aktuell erkennbaren Repo-Stand.
-- Wo wirtschaftliche Werte nicht sicher aus dem Projekt ableitbar sind, werden vorsichtige Annahmen genutzt.
+Wichtige Grundregel:
+- Foerderungen fuer die Gruendung muessen in der Regel beantragt werden, bevor die hauptberufliche Selbststaendigkeit aufgenommen wird oder bevor foerderfaehige Kosten entstehen.
 
----
+## Personendaten
 
-# 1. Version in einfacher Sprache
+- Name: `Simon Jigalin`
+- Anschrift: `Elbruchstr 18, 40589 Duesseldorf`
+- Kundennummer / BG-Nummer: `[ERGAENZEN: Nummer]`
+- geplanter Start der Selbststaendigkeit: `[ERGAENZEN: Datum]`
+- geplanter zeitlicher Umfang: `[ERGAENZEN: Stunden pro Woche, z. B. 30-40]`
 
-## Gruendungsvorhaben
+## 1. Ziel des ersten Gespraechs
 
-Ich moechte mich Schritt fuer Schritt mit App-Entwicklung selbststaendig machen.
-Dafuer habe ich bereits eine erste fast fertige App entwickelt: **MedQuiz**.
+Im ersten Termin sollte ich drei Dinge erreichen:
 
-MedQuiz ist eine Lern-App fuer medizinisches Wissen. Nutzer koennen kurze Quizrunden spielen, allein oder mit anderen. Die App ist fuer Menschen gedacht, die medizinische Inhalte ueben und wiederholen moechten.
+1. Mein Vorhaben als realistische und bereits weit fortgeschrittene Selbststaendigkeit darstellen.
+2. Klaeren, welche Unterlagen mein Jobcenter konkret fuer die weitere Pruefung verlangt.
+3. Fruehzeitig Foerdermoeglichkeiten ansprechen, insbesondere Einstiegsgeld, Beratung/Coaching und gegebenenfalls Zuschuss oder Darlehen fuer notwendige Sachmittel.
 
-## Was schon da ist
+## 2. Meine Kernbotschaft im Gespraech
 
-Die App ist nicht nur eine Idee. Es gibt bereits:
-- eine funktionsfaehige App-Struktur
-- Quiz, Kategorien und Fortschritt
-- Nutzerkonto und Gastzugang
-- Freundesystem und Mehrspieler-Modus
-- Shop, Werbung und In-App-Kaeufe
-- Datenschutz, Support und Kontoloeschung
-- Vorbereitungen fuer die Veroeffentlichung im Google Play Store
+Ich gruende nicht aus einer reinen Idee heraus, sondern auf Basis eines bereits weit entwickelten digitalen Produkts.
+Mit **MedQuiz** existiert bereits eine fast veroeffentlichungsreife App.
+Die Selbststaendigkeit soll bewusst vorsichtig aufgebaut werden:
 
-Das bedeutet: Die technische Hauptarbeit ist zum grossen Teil bereits erledigt.
+- zuerst ueber die Fertigstellung, Veroeffentlichung und Vermarktung der eigenen App
+- zusaetzlich ueber kleinere Entwicklungs- und Supportleistungen im Bereich App-Entwicklung
 
-## Wie ich damit Geld verdienen will
+Dadurch ist das Vorhaben realistischer, als nur auf spaetere App-Einnahmen zu hoffen.
 
-Am Anfang soll es zwei Wege geben:
+## 3. 30-Sekunden-Version fuer den Termin
 
-- eigene App-Einnahmen
-  - Werbung
-  - In-App-Kaeufe
-  - spaeter eventuell weitere Funktionen oder weitere Apps
+`Ich moechte mich im Bereich App-Entwicklung selbststaendig machen. Grundlage ist meine bereits weit entwickelte Lern-App MedQuiz, die technisch fast fertig ist und sich in der letzten Vorbereitungsphase fuer die Veroeffentlichung befindet. Ich will die Selbststaendigkeit schrittweise aufbauen: einerseits ueber die eigene App und andererseits ueber kleinere Entwicklungs- und Supportauftraege. Ich moechte heute klaeren, welche Unterlagen Sie fuer die weitere Pruefung benoetigen und welche Foerdermoeglichkeiten fuer die Startphase in Frage kommen.`
 
-- Dienstleistungen
-  - kleinere App-Projekte fuer Kunden
-  - technische Hilfe bei bestehenden Apps
-  - Prototypen, Fehlerbehebung und einfache mobile Anwendungen
+## 4. 2-Minuten-Version fuer den Termin
 
-Die App selbst wird am Anfang wahrscheinlich noch keine hohen Einnahmen bringen. Deshalb ist es realistischer, die Selbststaendigkeit mit **eigener App plus Dienstleistungen** aufzubauen.
+`Ich baue eine selbststaendige Taetigkeit im Bereich App-Entwicklung auf. Ausgangspunkt ist meine eigene App MedQuiz. Das ist eine mobile Lern-App fuer medizinisches Wissen mit Quiz, Fortschrittssystem, Nutzerkonto, Mehrspieler-Funktionen, Monetarisierung und den rechtlichen Pflichtseiten. Das Projekt ist also nicht nur eine Idee, sondern bereits konkret entwickelt worden.`
 
-## Warum das Vorhaben realistisch ist
+`Mein Plan ist, die Selbststaendigkeit bewusst nicht nur auf ungewisse App-Umsaetze zu stuetzen. Deshalb soll MedQuiz gleichzeitig mein erstes Produkt und mein Referenzprojekt sein, mit dem ich spaeter kleinere Entwicklungsauftraege, technische Ueberarbeitungen, Prototypen und Supportleistungen fuer andere anbieten kann.`
 
-Ich beginne nicht bei null.
-Mit MedQuiz habe ich bereits ein fast fertiges Produkt, das ich vorzeigen kann. Das ist ein Vorteil, weil ich damit meine Arbeit und meine Faehigkeiten belegen kann.
+`Ich erwarte keine sofort hohen Gewinne, sondern einen schrittweisen Aufbau. Genau deshalb moechte ich das Vorhaben sauber mit dem Jobcenter abstimmen und klaeren, welche Unterlagen, Nachweise und moeglichen Foerderungen fuer die Anlaufphase erforderlich sind.`
 
-Ausserdem sind die Startkosten im Vergleich zu vielen anderen Gruendungen eher ueberschaubar. Das Risiko besteht vor allem darin, dass der Aufbau von Nutzern und Einnahmen Zeit braucht. Genau deshalb ist eine schrittweise Gruendung sinnvoll.
+## 5. Sachstand des Projekts
 
-## Was noch fehlt
+Nach dem aktuellen Projektstand auf Basis der Unterlagen im Repo ist MedQuiz deutlich ueber die Ideenphase hinaus.
 
-Bis zur Veroeffentlichung sind noch einige letzte Schritte noetig:
-- Endtests der App
-- Abschluss der letzten Store-Einstellungen
-- Testphase mit Nutzern
-- Veroeffentlichung
-- erste Vermarktung
+Bereits vorhanden oder weit fortgeschritten sind:
 
-## Warum ich Unterstuetzung brauche
-
-In der Anfangsphase ist noch nicht mit sicheren Einnahmen zu rechnen.
-Ich halte deshalb Unterstuetzung fuer sinnvoll, damit ich die App fertig veroeffentlichen und die Selbststaendigkeit geordnet aufbauen kann.
-
-Sinnvoll waeren zum Beispiel:
-- Einstiegsgeld
-- Unterstuetzung in der Startphase
-- Beratung oder Coaching
-- Hilfe bei notwendigen Sachkosten
-
-## Persoenliche Ergaenzungen
-
-- Name: `[ERGAENZEN: Vor- und Nachname]`
-- Anschrift: `[ERGAENZEN: Adresse]`
-- geplanter Start: `[ERGAENZEN: Datum]`
-- woechentlicher Arbeitsumfang: `[ERGAENZEN: Stunden pro Woche]`
-- bisheriger Hintergrund: `[ERGAENZEN: Ausbildung / Beruf / Erfahrung]`
-
----
-
-# 2. Besonders formelle Version
-
-## Darstellung des Gruendungsvorhabens
-
-Ich beabsichtige, eine hauptberufliche selbststaendige Taetigkeit im Bereich **App-Entwicklung** aufzubauen. Ausgangspunkt dieser Taetigkeit ist meine bereits weit fortgeschrittene erste App **MedQuiz**.
-
-MedQuiz ist eine mobile Lernanwendung fuer medizinisches Wissen. Die App bietet kurze Quizformate, thematische Kategorien, Fortschrittsfunktionen sowie soziale und spielerische Elemente. Nach dem derzeitigen Stand ist das Projekt technisch weit entwickelt und befindet sich in einer spaeten Vorbereitungsphase vor der Veroeffentlichung.
-
-## Stand des Projekts
-
-Im Projekt bereits erkennbar sind insbesondere:
-- ein funktionsfaehiger App-Kern
-- Nutzerzugang mit Konto und Gastmodus
-- Quiz- und Fortschrittssystem
-- Mehrspieler- und Freundesfunktionen
-- Monetarisierungsbausteine wie Werbung und In-App-Kaeufe
-- rechtliche Pflichtseiten und Veroeffentlichungsunterlagen
-- Vorbereitungen fuer die Veroeffentlichung ueber Google Play
-
-Damit liegt kein blosses Konzept vor, sondern ein bereits konkret umgesetztes digitales Produkt.
-
-## Wirtschaftlicher Ansatz
-
-Die wirtschaftliche Grundlage soll bewusst vorsichtig und realistisch aufgebaut werden. Geplant ist eine Kombination aus:
-- Einnahmen aus der eigenen App, insbesondere ueber Werbung und In-App-Kaeufe
-- ergaenzenden Einnahmen aus appbezogenen Dienstleistungen
-
-Zu den geplanten Dienstleistungen koennen insbesondere kleinere Entwicklungsauftraege, technische Ueberarbeitungen, Prototypen, Fehlerbehebungen und individuelle mobile Anwendungen gehoeren.
-
-Diese Kombination erscheint wirtschaftlich sinnvoll, da neue Apps erfahrungsgemaess nicht sofort stabile Einnahmen erzielen. Die bereits entwickelte App dient dabei zugleich als Referenzprojekt fuer die angebotene Leistung.
-
-## Einschaetzung der Tragfaehigkeit
-
-Das Vorhaben erscheint grundsaetzlich tragfaehig, weil bereits ein weit fortgeschrittenes Produkt vorliegt und damit eine wesentliche Vorleistung erbracht wurde. Dies reduziert das typische Gruendungsrisiko eines rein theoretischen oder noch nicht umgesetzten Vorhabens.
-
-Gleichzeitig ist eine vorsichtige Einschaetzung geboten:
-- ein sofort tragfaehiger App-Umsatz ist nicht sicher zu erwarten
-- die Anfangsphase wird voraussichtlich durch Test, Veroeffentlichung, Nutzergewinnung und Optimierung gepraegt sein
-- ein schrittweiser Einkommensaufbau ist realistischer als ein sofortiger Vollerwerb
-
-Gerade deshalb ist eine Kombination aus Produktentwicklung und Dienstleistungserbringung betriebswirtschaftlich nachvollziehbar.
-
-## Foerderbedarf
-
-Fuer die Anfangsphase halte ich eine unterstuetzende Begleitung fuer sachgerecht. Diese kann insbesondere dazu dienen,
-- die noch offenen Schritte bis zur Veroeffentlichung abzuschliessen,
-- die Markteinfuehrung geordnet umzusetzen,
-- die wirtschaftliche Aufbauphase zu ueberbruecken.
-
-Sinnvoll erscheinen insbesondere:
-- Einstiegsgeld
-- Unterstuetzung in der Gruendungsanfangsphase
-- Beratung oder Coaching
-- Unterstuetzung bei notwendigen Sachmitteln
-
-## Persoenliche Angaben
-
-- Antragsteller: `[ERGAENZEN: Name]`
-- Anschrift: `[ERGAENZEN: Adresse]`
-- geplanter Beginn der Selbststaendigkeit: `[ERGAENZEN: Datum]`
-- geplanter zeitlicher Umfang: `[ERGAENZEN: Stunden pro Woche]`
-- beruflicher Hintergrund: `[ERGAENZEN: Ausbildung / Beruf / Vorerfahrung]`
-
----
-
-# 3. Version als direkte Grundlage fuer PDF / Word
-
-## Gruendungsvorhaben: Aufbau einer selbststaendigen Taetigkeit im Bereich App-Entwicklung
-
-**Name:** `[ERGAENZEN: Vor- und Nachname]`
-**Adresse:** `[ERGAENZEN: Strasse, Hausnummer, PLZ, Ort]`
-**Kundennummer / BG-Nummer:** `[ERGAENZEN: Nummer]`
-**Datum:** `[ERGAENZEN: Datum]`
-
-## 1. Vorhaben
-
-Ich beabsichtige, eine selbststaendige Taetigkeit im Bereich **App-Entwicklung** aufzubauen.
-Grundlage hierfuer ist meine erste fast fertige App **MedQuiz**.
-
-Neben der Veroeffentlichung dieser App moechte ich mittelfristig weitere Einnahmen durch appbezogene Dienstleistungen erzielen, insbesondere durch kleinere Entwicklungsauftraege, technische Unterstuetzung und individuelle mobile Anwendungen.
-
-## 2. Beschreibung des aktuellen Projekts
-
-**Produktname:** MedQuiz
-
-MedQuiz ist eine mobile Lern-App fuer medizinisches Wissen. Nutzer koennen kurze Quizrunden spielen, Lernkategorien auswaehlen und ihren Fortschritt verfolgen. Zusaetzlich gibt es soziale Funktionen wie Freundesystem und Mehrspieler-Modus.
-
-Nach dem aktuellen Stand ist die App technisch weit entwickelt. Bereits vorhanden sind unter anderem:
+- funktionsfaehige App-Struktur
 - Quiz- und Kategorienlogik
-- Nutzerkonto und Gastmodus
-- Fortschritt, Rangliste und Profil
-- Mehrspieler- und Freundesfunktionen
-- Shop, Werbung und In-App-Kaeufe
+- Nutzerkonto und Gastzugang
+- Fortschritts- und Profilfunktionen
+- Freundesystem und Mehrspieler-Modus
+- Werbung und In-App-Kaeufe
 - Datenschutz, Support und Kontoloeschung
-- Unterlagen und Vorbereitungen fuer die Veroeffentlichung im Google Play Store
+- Vorbereitung fuer die Veroeffentlichung im Google Play Store
 
-Bis zur endgueltigen Veroeffentlichung fehlen noch letzte Test- und Freigabeschritte.
+Stand laut Projektunterlagen:
 
-## 3. Geplantes Geschaeftsmodell
+- Android-Release befindet sich im Google-Play-Closed-Testing
+- wesentliche Kernfunktionen sind umgesetzt
+- offen sind vor allem letzte Tests, finale Store-Schritte und die Markteinfuehrung
 
-Das Vorhaben soll bewusst vorsichtig und realistisch aufgebaut werden.
+Gespaechsformel:
 
-### Geplante Einnahmequellen
+`Das Projekt ist technisch weit fortgeschritten. Ich habe also bereits erhebliche Eigenleistung erbracht und komme nicht mit einer bloessen Idee, sondern mit einem konkreten digitalen Produkt.`
 
-1. **Einnahmen aus der App**
-   - Werbung
-   - In-App-Kaeufe
-   - gegebenenfalls spaetere Erweiterungen
+## 6. Was ich beruflich mache
 
-2. **Einnahmen aus Dienstleistungen**
-   - kleinere App-Projekte
-   - technische Ueberarbeitung vorhandener Apps
-   - Prototypen
-   - Fehlerbehebung
-   - individuelle mobile Anwendungen
+### Kurzform
 
-Diese Kombination erscheint fuer die Startphase sinnvoll, da App-Einnahmen erfahrungsgemaess zunaechst langsam anlaufen.
+`Entwicklung und Programmierung von mobilen Anwendungen und Anwendungssoftware`
 
-## 4. Zielgruppe
+### Ausfuehrliche Form
 
-Die App richtet sich vor allem an Personen, die medizinisches Wissen ueben und wiederholen moechten.
+`Entwicklung, Programmierung, Test, Wartung und Weiterentwicklung von mobilen Anwendungen und sonstiger Anwendungssoftware einschliesslich Backend-Anbindung, Fehlerbehebung, technischer Betreuung, App-Store-Veroeffentlichung sowie Anpassung an Nutzer- oder Kundenanforderungen.`
 
-**Annahme:** besonders geeignet fuer medizinische Lernende und Personen in der Pruefungsvorbereitung.
+### Wirtschaftszweig
 
-Der Nutzen der App liegt darin, Lerninhalte in kurzen, regelmaessigen und motivierenden Einheiten zugaenglich zu machen.
+Wenn im Formular die aktuelle WZ 2025 verwendet wird:
 
-## 5. Stand der Entwicklung und naechste Schritte
+- `62.10.3 - Entwicklung und Programmierung von Anwendungssoftware`
 
-Die technische Hauptarbeit ist bereits zum grossen Teil geleistet.
-Das Projekt wirkt nach jetzigem Stand release-nah.
+Wenn noch die alte WZ 2008 verwendet wird:
 
-### Noch offene Schritte
-- letzte technische Endtests
-- Abschluss offener Store-Einstellungen
-- Testphase mit Nutzern
-- Veroeffentlichung
-- erste Vermarktung
+- `62.01.9 - Sonstige Softwareentwicklung`
 
-### Geplanter Ablauf
-- **Fertigstellung:** `[ERGAENZEN: Zeitraum]`
-- **Testphase:** `[ERGAENZEN: Zeitraum]`
-- **Veroeffentlichung:** `[ERGAENZEN: Zeitraum]`
-- **erste Vermarktung:** `[ERGAENZEN: Zeitraum]`
+## 7. Typische Fragen im Gespraech und gute Antworten
 
-## 6. Wirtschaftliche Einschaetzung
+### Was genau wollen Sie selbststaendig machen?
 
-Ich erwarte in der Anfangsphase keine hohen oder sofort sicheren Einnahmen.
-Das Vorhaben ist auf einen schrittweisen Aufbau ausgerichtet.
+`Ich moechte eine selbststaendige Taetigkeit im Bereich App-Entwicklung aufbauen. Grundlage ist meine bereits entwickelte Lern-App MedQuiz. Zusaetzlich moechte ich kleinere Entwicklungs- und Supportleistungen fuer mobile Anwendungen anbieten.`
 
-### Vorsichtige Beispielplanung
-- **App-Umsaetze in der Anfangsphase:** `[ERGAENZEN: vorsichtige Schaetzung]`
-- **moegliche erste Dienstleistungsumsaetze:** `[ERGAENZEN: vorsichtige Schaetzung]`
-- **monatlicher Mindestbedarf:** `[ERGAENZEN: Betrag]`
+### Warum ist das Vorhaben realistisch?
 
-## 7. Voraussichtliche Kosten
+`Weil die technische Hauptarbeit am ersten Produkt bereits weitgehend erledigt ist. Ich starte nicht mit einer Theorie, sondern mit einem fast fertigen Projekt. Ausserdem kombiniere ich die eigene App mit Dienstleistungsangeboten, damit ich nicht nur von spaeteren App-Umsaetzen abhaengig bin.`
 
-### Startkosten
-- Gewerbeanmeldung: `[ERGAENZEN: Betrag]`
-- Entwicklerkonto / technische Einrichtung: `[ERGAENZEN: Betrag]`
-- Domain / Webauftritt: `[ERGAENZEN: Betrag]`
-- Testgeraet / Sachmittel: `[ERGAENZEN: Betrag]`
+### Wie wollen Sie Geld verdienen?
 
-### Laufende Kosten
-- Hosting / Backend: `[ERGAENZEN: Betrag pro Monat]`
-- Domain / E-Mail: `[ERGAENZEN: Betrag pro Monat]`
-- Software / Tools: `[ERGAENZEN: Betrag pro Monat]`
-- Marketing: `[ERGAENZEN: Betrag pro Monat]`
+`Ueber mehrere Bausteine: Werbung und In-App-Kaeufe in der App, spaetere Erweiterungen des Produkts und parallel kleinere Entwicklungs-, Support- und Ueberarbeitungsauftraege im Bereich mobiler Anwendungen.`
 
-## 8. Warum das Vorhaben tragfaehig sein kann
+### Warum brauchen Sie Unterstuetzung?
 
-Das Vorhaben kann grundsaetzlich tragfaehig sein, weil bereits ein weit fortgeschrittenes Produkt vorhanden ist. Dadurch beginnt die Selbststaendigkeit nicht nur mit einer Idee, sondern mit einer fast fertigen ersten App.
+`Weil in der Anlaufphase erfahrungsgemaess noch keine stabilen Einnahmen entstehen, obwohl bereits viel Arbeit in das Projekt investiert wurde. Die Unterstuetzung wuerde helfen, die letzten Schritte bis zur Markteinfuehrung geordnet abzuschliessen und die Selbststaendigkeit tragfaehig aufzubauen.`
 
-Die vorhandene App ist zugleich ein Referenzprojekt fuer meine technische Leistungsfaehigkeit.
-Zusaetzlich soll die wirtschaftliche Basis nicht nur auf App-Einnahmen beruhen, sondern durch Dienstleistungen ergaenzt werden.
+### Warum nicht sofort eine normale Anstellung?
 
-## 9. Persoenliche Eignung
+`Ich verfolge ein konkretes und bereits vorbereitetes Gruendungsvorhaben mit einem vorhandenen Produkt. Das Ziel ist ein nachhaltiger Aufbau einer eigenen wirtschaftlichen Existenz. Gleichzeitig gehe ich dabei vorsichtig vor, weil ich die Selbststaendigkeit nicht nur auf eine einzige Einnahmequelle stuetze.`
 
-Ich entwickle das Projekt selbst und beherrsche die technische Umsetzung in wesentlichen Teilen eigenstaendig.
-Das Projekt zeigt, dass ich nicht nur an einer Idee arbeite, sondern ein konkretes Produkt bis in eine fortgeschrittene Phase entwickelt habe.
+### Wer sind Ihre Kunden?
 
-**Persoenliche Ergaenzung:**
-`[ERGAENZEN: Ausbildung, beruflicher Hintergrund, bisherige Erfahrung, Motivation, geplanter Arbeitsumfang]`
+`Bei der App sind es vor allem Menschen, die medizinisches Wissen trainieren und wiederholen moechten. Bei Dienstleistungen sind es kleinere Auftraggeber, die Unterstuetzung bei App-Projekten, Prototypen, Fehlerbehebungen oder technischer Ueberarbeitung benoetigen.`
 
-## 10. Unterstuetzungsbedarf
+### Was passiert, wenn die App am Anfang wenig einbringt?
 
-Fuer die Anfangsphase halte ich Unterstuetzung fuer sinnvoll, da noch keine stabilen Einnahmen vorliegen, das Vorhaben aber bereits weit fortgeschritten ist.
+`Davon gehe ich in der Startphase sogar aus. Genau deshalb ist mein Modell bewusst zweigleisig angelegt: eigene App plus Dienstleistungen. Dadurch sinkt das Risiko, nur auf eine Einnahmequelle angewiesen zu sein.`
 
-Ich bitte um Pruefung folgender Unterstuetzungsformen:
-- Einstiegsgeld
-- Foerderung der Startphase
-- Beratung oder Coaching
-- Unterstuetzung bei notwendigen Sachmitteln
+### Was haben Sie selbst schon geleistet?
 
-## 11. Schlussformulierung
+`Ich habe die Entwicklung des Projekts in wesentlichen Teilen eigenstaendig umgesetzt und das Produkt bis in eine spaete Vorbereitungsphase gebracht. Damit kann ich meine Faehigkeiten nicht nur behaupten, sondern anhand eines konkreten Projekts belegen.`
 
-Ich verfolge das Ziel, aus einem bereits weit fortgeschrittenen App-Projekt eine tragfaehige selbststaendige Taetigkeit aufzubauen. Das Vorhaben ist realistisch, schrittweise geplant und soll sowohl auf eigenen App-Einnahmen als auch auf ergaenzenden Dienstleistungen beruhen.
+## 8. Was ich im Gespraech aktiv fragen sollte
 
-**Unterschrift:** `[ERGAENZEN: Ort, Datum, Unterschrift]`
+Diese Fragen sollte ich selbst stellen, damit ich professionell wirke und nichts Wichtiges verpasse:
+
+1. `Welche Unterlagen benoetigen Sie konkret fuer die Pruefung meines Gruendungsvorhabens?`
+2. `Reicht fuer den naechsten Schritt zunaechst ein Geschaeftsplan oder benoetigen Sie bereits Kapitalbedarfsplan, Rentabilitaetsvorschau und Lebenslauf?`
+3. `Kommt in meinem Fall Einstiegsgeld in Betracht?`
+4. `Kommt zusaetzlich eine Foerderung nach 16c SGB II fuer notwendige Sachmittel in Betracht?`
+5. `Gibt es die Moeglichkeit eines Coachings oder einer fachkundigen Stellungnahme ueber das Jobcenter?`
+6. `Bis wann muss ich welche Unterlagen spaetestens einreichen?`
+7. `Soll ich mit der Gewerbeanmeldung noch warten, bis die Foerderfrage geklaert ist?`
+
+## 9. Unterlagen, die ich zum ersten oder spaetestens zum Folgetermin vorbereitet haben sollte
+
+Unbedingt sinnvoll:
+
+- diese Gruendungsmappe
+- tabellarischer Lebenslauf
+- kurze Beschreibung meiner beruflichen Vorerfahrung
+- Uebersicht ueber das Produkt MedQuiz
+- Screenshots, Demo oder kurze Funktionsuebersicht der App
+- grober Zeitplan fuer Fertigstellung, Veroeffentlichung und erste Auftragsakquise
+
+Sehr wahrscheinlich noetig fuer die weitere Pruefung:
+
+- ausformulierter Businessplan
+- Kapitalbedarfsplan
+- Finanzierungsplan
+- Umsatz- und Rentabilitaetsvorschau
+- Uebersicht zu privaten Lebenshaltungskosten
+- Nachweise ueber Kenntnisse, Erfahrung oder bisherige Projektarbeit
+- gegebenenfalls Stellungnahme einer fachkundigen Stelle, falls vom Jobcenter verlangt
+
+## 10. Meine Zahlen - hier muss ich sauber werden
+
+Diese Punkte sollte ich vor dem Folgetermin belastbar ausfuellen:
+
+- Startdatum der Selbststaendigkeit: `[ERGAENZEN]`
+- Wochenstunden: `[ERGAENZEN]`
+- monatlicher privater Mindestbedarf: `[ERGAENZEN]`
+- einmalige Startkosten: `[ERGAENZEN]`
+- laufende monatliche Betriebskosten: `[ERGAENZEN]`
+- vorsichtige Umsatzschaetzung Monat 1 bis 6: `[ERGAENZEN]`
+- vorsichtige Umsatzschaetzung Monat 7 bis 12: `[ERGAENZEN]`
+
+Wichtige Regel fuer die Zahlen:
+
+- lieber vorsichtig und nachvollziehbar als zu optimistisch
+- keine Fantasiewerte
+- jede Zahl kurz begruenden koennen
+
+## 11. So sollte ich mich im Gespraech positionieren
+
+Das sollte rueberkommen:
+
+- ich bin vorbereitet
+- ich habe schon viel Eigenleistung erbracht
+- ich denke wirtschaftlich und nicht nur technisch
+- ich gruende schrittweise und realistisch
+- ich will Foerderung nicht einfach nur bekommen, sondern sinnvoll einsetzen
+
+Das sollte ich vermeiden:
+
+- `Die App wird bestimmt schnell gross.`
+- `Ich probiere das einfach mal aus.`
+- `Ich brauche nur Geld, dann klappt das schon.`
+- `Genau rechnen kann ich das noch nicht.`
+
+Besser so:
+
+- `Ich plane bewusst vorsichtig.`
+- `Ich moechte die Unterlagen sauber vorbereiten und die Schritte mit Ihnen abstimmen.`
+- `Mir ist wichtig, dass die Gruendung tragfaehig und nachvollziehbar aufgebaut wird.`
+
+## 12. Meine Argumente fuer Foerderung
+
+Wenn nach dem Foerderbedarf gefragt wird, kann ich es so sagen:
+
+`Ich bitte nicht um Unterstuetzung fuer eine unklare Idee, sondern fuer die Anlaufphase eines bereits konkret entwickelten Vorhabens. Die Foerderung wuerde mir helfen, die letzten Schritte bis zur Veroeffentlichung, die geordnete Markteinfuehrung und den wirtschaftlichen Aufbau in einer Phase mit noch unsicheren Anfangseinnahmen abzusichern.`
+
+Wenn ich konkreter werden will:
+
+- `Einstiegsgeld` als Anreiz und Absicherung in der Anfangsphase
+- `Beratung oder Coaching` fuer Businessplan, Positionierung und Wirtschaftlichkeit
+- `Zuschuss oder Darlehen fuer notwendige Sachmittel` nur dann, wenn diese fuer die Ausuebung wirklich erforderlich und nachvollziehbar sind
+
+## 13. Offizielle Punkte, die ich kennen sollte
+
+Nach den Informationen der Bundesagentur fuer Arbeit gilt insbesondere:
+
+- Einstiegsgeld kann fuer die Aufnahme einer hauptberuflichen Selbststaendigkeit gewaehrt werden.
+- Voraussetzung ist unter anderem, dass das Vorhaben wirtschaftlich tragfaehig erscheint und zur Verringerung oder Ueberwindung der Hilfebeduerftigkeit beitragen kann.
+- Einstiegsgeld soll vor Aufnahme der selbststaendigen Taetigkeit beantragt werden.
+- Fuer notwendige Sachgueter koennen nach 16c SGB II Zuschuesse oder Darlehen moeglich sein.
+- Zuschuesse fuer Sachgueter sind laut Merkblatt bis `5.000 Euro` moeglich; Darlehen auch darueber hinaus.
+- Beratung und Vermittlung unternehmerischer Kenntnisse koennen ebenfalls gefoerdert werden.
+- Auf die Foerderung besteht kein automatischer Rechtsanspruch; die Entscheidung erfolgt im Einzelfall.
+- Notwendige Anschaffungen sollte ich nicht vor einer moeglichen Bewilligung taetigen, wenn genau diese Kosten gefoerdert werden sollen.
+
+## 14. Meine offene To-do-Liste vor dem Termin
+
+- Kundennummer / BG-Nummer eintragen
+- Startdatum festlegen
+- realistischen Wochenumfang festlegen
+- beruflichen Hintergrund ausformulieren
+- private Lebenshaltungskosten uebersichtlich auflisten
+- Start- und laufende Kosten realistisch berechnen
+- vorsichtige Umsatzvorschau erstellen
+- 3 bis 5 Screenshots oder eine kurze Demo der App bereitlegen
+- Lebenslauf bereitlegen
+
+## 15. Kurzfassung fuer die letzte Minute vor dem Termin
+
+`Ich habe ein bereits weit entwickeltes App-Projekt und moechte daraus eine realistische Selbststaendigkeit aufbauen. Ich plane vorsichtig, kombiniere Produkt und Dienstleistungen und moechte heute klaeren, welche Unterlagen und welche moeglichen Foerderungen fuer die Startphase in meinem Fall in Betracht kommen.`
+
+## 16. Quellen und Orientierung
+
+Offizielle Grundlage fuer die Foerderhinweise in dieser Datei:
+
+- Bundesagentur fuer Arbeit, Einstiegsgeld fuer Selbststaendigkeit:
+  `https://www.arbeitsagentur.de/arbeitslos-arbeit-finden/buergergeld/arbeit-finden/einstiegsgeld-fuer-selbststaendigkeit`
+- Bundesagentur fuer Arbeit, Merkblatt Foerdermoeglichkeiten und Dienstleistungen der Jobcenter:
+  `https://www.arbeitsagentur.de/datei/merkblatt-foerdermoeglichkeiten-und-dienstleistungen-der-jobcenter_ba146341.pdf`
+- Bundesportal, Abgrenzung Gewerbe / freier Beruf:
+  `https://verwaltung.bund.de/leistungsverzeichnis/DE/leistung/99102038000000/herausgeber/SH-9065001/region/01`
+- Destatis, Klassifikation der Wirtschaftszweige WZ 2025:
+  `https://www.destatis.de/DE/Methoden/Klassifikationen/Gueter-Wirtschaftsklassifikationen/klassifikation-wz-2025.html`
+- Destatis, Klassifikation der Wirtschaftszweige WZ 2008:
+  `https://www.destatis.de/DE/Methoden/Klassifikationen/Gueter-Wirtschaftsklassifikationen/Downloads/klassifikation-wz-2008-3100100089004-aktuell.pdf?__blob=publicationFile&v=2`
 
 ---
 
-# Felder, die auf jeden Fall ergaenzt werden sollten
+## Schnelle persoenliche Ergaenzungen
 
-- `[ERGAENZEN: Vor- und Nachname]`
-- `[ERGAENZEN: Adresse]`
-- `[ERGAENZEN: Kundennummer / BG-Nummer]`
-- `[ERGAENZEN: Datum]`
-- `[ERGAENZEN: Starttermin der Selbststaendigkeit]`
-- `[ERGAENZEN: Stunden pro Woche]`
-- `[ERGAENZEN: beruflicher Hintergrund]`
-- `[ERGAENZEN: vorsichtige Umsatzschaetzung]`
-- `[ERGAENZEN: monatlicher Mindestbedarf]`
-- `[ERGAENZEN: Startkosten]`
-- `[ERGAENZEN: laufende monatliche Kosten]`
-- `[ERGAENZEN: Zeitplan fuer Fertigstellung, Testphase, Veroeffentlichung]`
+- beruflicher Hintergrund: `[ERGAENZEN: Ausbildung, Berufserfahrung, relevante Projekte]`
+- persoenliche Motivation: `[ERGAENZEN: warum App-Entwicklung, warum jetzt, warum selbststaendig]`
+- private Mindestkosten pro Monat: `[ERGAENZEN]`
+- geplante ersten Einnahmequellen: `[ERGAENZEN]`

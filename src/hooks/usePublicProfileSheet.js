@@ -25,7 +25,6 @@ export default function usePublicProfileSheet() {
 
   return {
     selectedProfile,
-    setSelectedProfile,
     openProfile,
     closeProfile,
     sheetProps,
