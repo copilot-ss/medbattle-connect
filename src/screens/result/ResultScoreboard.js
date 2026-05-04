@@ -86,9 +86,6 @@ export default function ResultScoreboard({
                     <Text style={styles.scoreboardName} numberOfLines={1}>
                       {entry.name}
                     </Text>
-                    {entry.isSelf ? (
-                      <Text style={styles.scoreboardTag}>{t('Du')}</Text>
-                    ) : null}
                   </View>
                   {Array.isArray(entry.usedBoostIds) && entry.usedBoostIds.length ? (
                     <View style={styles.scoreboardBoostRow}>

@@ -92,7 +92,7 @@ const buildIapFailureMessage = (t, errorLike) => {
     message.includes('product is not available') ||
     message.includes('offer is not available')
   ) {
-    return 'Produkt ist im Store gerade nicht verfügbar.';
+    return t('Produkt ist im Store gerade nicht verfügbar.');
   }
 
   if (
@@ -101,7 +101,7 @@ const buildIapFailureMessage = (t, errorLike) => {
     message.includes('billing through google play') ||
     message.includes('this version of the application is not configured')
   ) {
-    return t('Kauf ist gerade nicht verfÃ¼gbar.');
+    return t('Kauf ist gerade nicht verfügbar.');
   }
 
   if (code.includes('service_disconnected') || code.includes('not_ready')) {
@@ -138,6 +138,27 @@ const buildFriendlyIapFailureMessage = (t, errorLike) => {
   }
 
   return t('Kauf fehlgeschlagen. Bitte später erneut.');
+};
+
+const SHOP_FREE_CLAIM_TIMEOUT_MS = 10000;
+
+const withTimeout = async (promise, timeoutMs, message) => {
+  let timeoutId = null;
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error(message));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
 };
 
 export default function ShopScreen() {
@@ -641,7 +662,7 @@ export default function ShopScreen() {
       return;
     }
     if (!iapProductsLoaded) {
-      setShopMessage('Google Play l\u00e4dt die Kaufprodukte gerade noch.');
+      setShopMessage(t('Google Play lädt die Kaufprodukte gerade noch.'));
       return;
     }
     const productAvailable = availableIapProductIds.includes(item.productId);
@@ -682,12 +703,26 @@ export default function ShopScreen() {
       return;
     }
 
-    await grantCoins(amount);
     const claimTimestamp = Date.now();
-    await persistDailyCoinsClaimDate(claimTimestamp);
-    setDailyClaimDate(String(claimTimestamp));
+    const serializedClaimTimestamp = String(claimTimestamp);
+    setDailyClaimDate(serializedClaimTimestamp);
     setShowClaimedDailyUntilLeave(true);
-    setPurchasingId(null);
+
+    try {
+      await withTimeout(
+        Promise.all([
+          grantCoins(amount),
+          persistDailyCoinsClaimDate(claimTimestamp),
+        ]),
+        SHOP_FREE_CLAIM_TIMEOUT_MS,
+        'Daily free coins claim timed out'
+      );
+    } catch (err) {
+      console.warn('Daily free coins claim did not finish cleanly:', err);
+      setShopMessage(t('Fehler: Bitte später erneut versuchen.'));
+    } finally {
+      setPurchasingId(null);
+    }
   };
 
   const sections = useShopSections({

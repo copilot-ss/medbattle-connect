@@ -1,16 +1,10 @@
-import { calculateCoinReward } from '../../services/quizService';
 import { IAP_PRODUCT_IDS } from '../../config/iapProductIds';
-import { SOLO_QUESTION_LIMIT } from '../../config/quizLimits';
+import { COIN_ENERGY_COST } from '../home/homeConfig';
 
 export const COIN_EMOJI = '\uD83E\uDE99';
 export const ENERGY_EMOJI = '\u26A1';
-const ENERGY_PRICE_PER_UNIT = calculateCoinReward({
-  correct: SOLO_QUESTION_LIMIT,
-  total: SOLO_QUESTION_LIMIT,
-  isMultiplayer: false,
-});
 const roundToFive = (value) => Math.max(5, Math.round(value / 5) * 5);
-const ENERGY_SINGLE_PRICE = Math.max(24, ENERGY_PRICE_PER_UNIT + 14);
+const ENERGY_SINGLE_PRICE = COIN_ENERGY_COST;
 
 export const SHOP_PRICES = Object.freeze({
   energy: {

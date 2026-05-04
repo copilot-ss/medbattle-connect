@@ -91,8 +91,7 @@ function StreakCard({
       safeValue,
       progressPercent,
       title: safeValue > 0 ? t('Streak {count}', { count: safeValue }) : t('Streak starten'),
-      subtitle:
-        safeValue > 0 ? t('Weiter so!') : t('Gewinne Quizze, um sie aufzubauen.'),
+      subtitle: null,
       progressLabel: nextTarget
         ? t('{current}/{target} bis zum nächsten Badge', {
             current: safeValue,
@@ -154,7 +153,9 @@ function StreakCard({
               </Text>
             </Pressable>
           </View>
-          <Text style={styles.streakSubtitle}>{streakSummary.subtitle}</Text>
+          {streakSummary.subtitle ? (
+            <Text style={styles.streakSubtitle}>{streakSummary.subtitle}</Text>
+          ) : null}
         </View>
         <View style={styles.streakIconWrap}>
           {showFlameAnimation ? (

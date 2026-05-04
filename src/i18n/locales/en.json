@@ -334,9 +334,22 @@
   "Knapp verloren. Hol dir direkt die naechste Runde.": "Close loss. Take the next round right away.",
   "Knapp verloren. Hol dir direkt die nächste Runde.": "Close loss. Take the next round right away.",
   "Unentschieden. Diese Runde war komplett ausgeglichen.": "Draw. This round was completely even.",
+  "Alltagswissen, Natur, Technik und grundlegende Fakten.": "General knowledge, nature, technology, and basic facts.",
+  "Brainrot": "Brainrot",
+  "Epochen, Ereignisse, Personen und historische Zusammenhaenge.": "Eras, events, people, and historical connections.",
+  "Geografie": "Geography",
+  "Geschichte": "History",
+  "Laender, Karten, Klima, Kontinente und Orientierung.": "Countries, maps, climate, continents, and orientation.",
   "Medizin": "Medicine",
+  "Medizinische Grundlagen, Koerper, Krankheiten und Versorgung.": "Medical basics, the body, diseases, and care.",
   "Medizinische Grundlagen und klinische Praxis.": "Medical fundamentals and clinical practice.",
+  "Memes, Internetkultur, Trends und schnelle Popkultur.": "Memes, internet culture, trends, and fast pop culture.",
   "Mikrobiologie": "Microbiology",
+  "Notlagen, Orientierung, Ausruestung und praktische Sicherheit.": "Emergencies, navigation, gear, and practical safety.",
+  "Politik": "Politics",
+  "Sachkunde": "General Knowledge",
+  "Staat, Demokratie, Wahlen und aktuelle Grundbegriffe.": "Government, democracy, elections, and basic civic terms.",
+  "Survival": "Survival",
   "Mindestens 12 Zeichen, Groß- und Kleinbuchstaben, Zahl und Sonderzeichen.": "At least 12 characters, upper/lowercase letters, a number, and a symbol.",
   "Mit Discord anmelden": "Sign in with Discord",
   "Mit Google anmelden": "Sign in with Google",
@@ -662,9 +675,11 @@
   "Tippe auf einen Spieler, um Antworten zu sehen.": "Tap a player to view answers.",
   "Warte auf Spieler": "Waiting for players",
   "Spieler wird gesucht ...": "Searching for player ...",
+  "Waiting": "Waiting",
   "Lade Status ...": "Loading status ...",
   "Antworten von {name}": "Answers from {name}",
   "Antwort von {name}": "Answer from {name}",
+  "Andere Antworten": "Other answers",
   "Wartet auf Rückkehr": "Waiting to return",
   "Naechste Challenge": "Next challenge",
   "Nächste Challenge": "Next challenge",
@@ -694,4 +709,66 @@
   ,"Blockierung aufheben": "Unblock"
   ,"Blockierung konnte nicht aufgehoben werden.": "The block could not be removed."
   ,"Nutzer konnte nicht blockiert werden.": "The user could not be blocked."
+  ,"Quote": "Accuracy"
+  ,"Blockieren": "Block"
+  ,"Supabase nicht erreichbar (Session setzen).": "Sign-in is not available right now. Please try again."
+  ,"Profilbild": "Profile picture"
+  ,"Tippe unten, um dein Bild zu ändern.": "Tap below to change your picture."
+  ,"Kein Schild": "No shield"
+  ,"Aktivieren": "Activate"
+  ,"Neues Match konnte nicht vorbereitet werden.": "New match could not be prepared."
+  ,"Freund einladen": "Invite friend"
+  ,"Joker benutzt": "Joker used"
+  ,"Freundesanfrage ablehnen": "Decline friend request"
+  ,"Freundesanfrage annehmen": "Accept friend request"
+  ,"Max-Level erreicht": "Max level reached"
+  ,"Level-Fortschritt": "Level progress"
+  ,"Dieser Nutzer ist blockiert.": "This user is blocked."
+  ,"Boost konnte nicht gekauft werden.": "Boost could not be purchased."
+  ,"Produkt ist im Store gerade nicht verfügbar.": "Product is not available in the store right now."
+  ,"Google Play lädt die Kaufprodukte gerade noch.": "Google Play is still loading purchase products."
+  ,"Link konnte nicht verarbeitet werden.": "The link could not be processed."
+  ,"Gastmodus ohne Supabase-Session aktiv. Multiplayer benötigt anonymes Login.": "Guest mode is active without a Supabase session. Multiplayer requires anonymous sign-in."
+  ,"Anonymes Login nicht verfügbar.": "Anonymous sign-in is not available."
+  ,"Offline. Match konnte nicht geladen werden.": "Offline. Match could not be loaded."
+  ,"Dieses Match gehört dir nicht oder ist nicht mehr verfügbar.": "This match does not belong to you or is no longer available."
+  ,"Offline. Antwort konnte nicht gesendet werden.": "Offline. Answer could not be sent."
+  ,"Match konnte nicht aktualisiert werden.": "Match could not be updated."
+  ,"Pruefe die Antwortoptionen und merke dir den Kernpunkt dieser Frage.": "Review the answer options and remember the key point of this question."
+  ,"Richtige Antwort: {answer}.": "Correct answer: {answer}."
+  ,"Keine aktive Einladung.": "No active invite."
+  ,"Match-Code fehlt.": "Match code is missing."
+  ,"Kein aktives Match vorhanden.": "No active match."
+  ,"Supabase nicht konfiguriert (.env fehlt).": "Supabase is not configured (.env missing)."
+  ,"Lobby wurde geschlossen.": "The lobby was closed."
+  ,"Du wurdest aus der Lobby entfernt.": "You were removed from the lobby."
+  ,"Lobby konnte nicht verlassen werden.": "Lobby could not be left."
+  ,"Match konnte nicht verlassen werden.": "Match could not be left."
+  ,"Name konnte nicht gespeichert werden.": "Name could not be saved."
+  ,"Aktive Session konnte nicht im Profil gespeichert werden.": "Active session could not be saved to the profile."
+  ,"Supabase-Session ist noch nicht vollstaendig bereit.": "Supabase session is not fully ready yet."
+  ,"Aktive Session konnte nicht gesetzt werden.": "Active session could not be set."
+  ,"Bitte gültigen Code angeben.": "Please enter a valid code."
+  ,"Ungültiger Freund.": "Invalid friend."
+  ,"Freundschaft konnte nicht entfernt werden.": "Friendship could not be removed."
+  ,"Gastmodus unterstützt keine Anfragen.": "Guest mode does not support requests."
+  ,"Kein Zielnutzer übergeben.": "No target user was provided."
+  ,"Match-ID fehlt.": "Match ID is missing."
+  ,"Empfänger-Code fehlt.": "Recipient code is missing."
+  ,"Kein Nutzer angemeldet.": "No user is signed in."
+  ,"Match nicht gefunden.": "Match not found."
+  ,"Match fehlt.": "Match is missing."
+  ,"Match konnte nicht aktualisiert werden. Bitte neu laden.": "Match could not be updated. Please reload."
+  ,"Keine Kategorien gefunden.": "No categories found."
+  ,"Gäste können keine Scores speichern.": "Guests cannot save scores."
+  ,"Kein Nutzer angegeben.": "No user was provided."
+  ,"Kein Freundescode angegeben.": "No friend code was provided."
+  ,"Bitte einen gültigen Nutzernamen eingeben.": "Please enter a valid username."
+  ,"Kein E-Mail-Wert gefunden. Bitte erneut anmelden.": "No email value was found. Please sign in again."
+  ,"Kein Bild ausgewählt.": "No image selected."
+  ,"Konnte öffentliche Avatar-URL nicht erstellen.": "Could not create the public avatar URL."
+  ,"Kein blockierbarer Nutzer gefunden.": "No blockable user found."
+  ,"Gastfortschritt vorhanden": "Guest progress found"
+  ,"Wenn du dich in einen bestehenden Account einloggst, wird dein Gastfortschritt auf diesem Geraet verworfen. Neue oder leere Accounts uebernehmen ihn.": "If you sign in to an existing account, your guest progress on this device will be discarded. New or empty accounts will import it."
+  ,"Account erstellt. Bitte bestaetige deine E-Mail. Dein Gastfortschritt wird beim ersten Login uebernommen.": "Account created. Please confirm your email. Your guest progress will be imported on your first sign-in."
 }

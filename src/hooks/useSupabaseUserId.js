@@ -1,6 +1,20 @@
 import { useEffect, useState } from 'react';
 import { getSessionUser, supabase } from '../lib/supabaseClient';
 
+function resolveAppUserId(user) {
+  if (!user?.id) {
+    return null;
+  }
+  if (
+    user.id === 'guest' ||
+    user.is_anonymous ||
+    user.user_metadata?.guest
+  ) {
+    return 'guest';
+  }
+  return user.id;
+}
+
 export default function useSupabaseUserId() {
   const [userId, setUserId] = useState(null);
 
@@ -10,7 +24,7 @@ export default function useSupabaseUserId() {
     getSessionUser()
       .then((user) => {
         if (active) {
-          setUserId(user?.id ?? null);
+          setUserId(resolveAppUserId(user));
         }
       })
       .catch((err) => {
@@ -24,7 +38,7 @@ export default function useSupabaseUserId() {
       if (!active) {
         return;
       }
-      setUserId(nextSession?.user?.id ?? null);
+      setUserId(resolveAppUserId(nextSession?.user));
     });
 
     return () => {

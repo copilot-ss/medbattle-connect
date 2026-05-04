@@ -5,6 +5,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "build": "vite build",
     "release:check": "node scripts/release/check.mjs",
     "release:android:aab": "node scripts/release/build-android-aab.mjs",
     "i18n:sync": "node scripts/i18n/sync.mjs",

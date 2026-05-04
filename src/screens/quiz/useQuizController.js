@@ -448,6 +448,7 @@ export default function useQuizController({ navigation, route }) {
         opponentName: matchOpponentState?.username ?? null,
         playerState: playerSnapshot,
         opponentState: opponentSnapshot,
+        matchStateSnapshot: matchData?.state ?? null,
         matchJoinCode: matchJoinCode ?? initialJoinCode ?? null,
         playerRole: matchRole,
       });
@@ -473,6 +474,7 @@ export default function useQuizController({ navigation, route }) {
       matchOpponentState?.username,
       matchRole,
       matchId,
+      matchData?.state,
       navigation,
       stopTimer,
       questionLimit,

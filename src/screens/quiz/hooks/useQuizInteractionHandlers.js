@@ -175,6 +175,14 @@ export default function useQuizInteractionHandlers({
           durationMs: timedOutTrigger ? TIMER_DURATION : elapsedMs,
           boostsUsed: currentQuestionBoostIds,
           explanation: questionSnapshot.explanation ?? null,
+          imageSource: questionSnapshot.image_asset ?? questionSnapshot.imageSource ?? null,
+          imageUrl: questionSnapshot.image_url ?? questionSnapshot.imageUrl ?? null,
+          imageAlt: questionSnapshot.image_alt ?? questionSnapshot.imageAlt ?? null,
+          imageOnly:
+            questionSnapshot.image_only === true ||
+            questionSnapshot.imageOnly === true ||
+            questionSnapshot.prompt_mode === 'image_only' ||
+            questionSnapshot.promptMode === 'image_only',
         });
       }
 

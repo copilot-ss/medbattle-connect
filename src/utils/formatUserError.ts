@@ -1,4 +1,4 @@
-import { t } from '../i18n';
+import { getLocale, t } from '../i18n';
 
 type FormatUserErrorOptions = {
   fallback?: string;
@@ -81,8 +81,21 @@ const TECHNICAL_ERROR_PATTERNS = [
   /content[- ]type/i,
 ];
 
+function looksGerman(value: string) {
+  return (
+    /[ÄÖÜäöüß]/.test(value) ||
+    /\b(bitte|konnte|nicht|kein|keine|fehler|verbindung|versuche|geladen|gerade|verfügbar|passwort|konto|freund|lobby|antwort|nutzer|anmeldung|session)\b/i.test(value)
+  );
+}
+
 function translateToString(value: string) {
   const translated = t(value);
+  if (typeof translated === 'string' && translated !== value) {
+    return translated;
+  }
+  if (getLocale() === 'en' && looksGerman(value)) {
+    return t(DEFAULT_GENERIC_MESSAGE);
+  }
   return typeof translated === 'string' ? translated : value;
 }
 
@@ -116,7 +129,7 @@ export function formatUserError(error: unknown, options: FormatUserErrorOptions 
   }
 
   if (NETWORK_ERROR_PATTERNS.some((pattern) => pattern.test(rawMessage))) {
-    return translateToString('Server nicht erreichbar. Bitte Verbindung pruefen.');
+    return translateToString('Server nicht erreichbar. Bitte Verbindung prüfen.');
   }
 
   let cleaned = String(rawMessage);

@@ -88,7 +88,7 @@ export default function LobbyParticipantsCard({
       <View style={styles.participantGrid}>
         {participants.map((participant) => {
           const canKick =
-            isHostWaiting && participant.key === 'guest' && !participant.isPending;
+            isHostWaiting && !participant.isHost && !participant.isPending;
           const isSelected = kickCandidateKey === participant.key;
           const canOpenProfile =
             typeof onOpenParticipantProfile === 'function' &&

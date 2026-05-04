@@ -11,6 +11,16 @@ import { resolveProgressiveMatch } from '../../../services/match/matchHelpers';
 const LOBBY_MATCH_SYNC_INTERVAL_MS = 2500;
 const COMPLETED_LOBBY_MATCH_SYNC_INTERVAL_MS = 900;
 
+function hasFinishedCurrentActiveMatch(match, role) {
+  if (!match || match.status !== 'active') {
+    return false;
+  }
+  if (!role) {
+    return false;
+  }
+  return Boolean(match.state?.[role]?.finished);
+}
+
 export default function useLobbyMatchState({
   navigation,
   userId,
@@ -123,6 +133,10 @@ export default function useLobbyMatchState({
     }
 
     if (currentMatch.status === 'active') {
+      if (hasFinishedCurrentActiveMatch(currentMatch, role)) {
+        return;
+      }
+
       if (handledActiveMatchIdRef.current === currentMatch.id) {
         return;
       }

@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   cardWrap: {
-    maxWidth: 420,
+    maxWidth: 460,
     position: 'relative',
     alignItems: 'center',
     alignSelf: 'stretch',
@@ -259,12 +259,24 @@ const styles = StyleSheet.create({
     marginTop: 6,
     flexDirection: 'row',
     alignItems: 'center',
-    columnGap: 10,
+    columnGap: 4,
   },
   multiplayerWaitingHint: {
     color: colors.textMuted,
     fontSize: 13,
     fontFamily: fonts.regular,
+  },
+  waitingDots: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    minWidth: 18,
+    height: 18,
+  },
+  waitingDot: {
+    color: colors.textMuted,
+    fontSize: 16,
+    lineHeight: 16,
+    fontFamily: fonts.bold,
   },
   multiplayerRewards: {
     flexDirection: 'row',
@@ -288,7 +300,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     borderRadius: radii.md,
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -306,7 +318,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(87, 199, 255, 0.16)',
   },
   scoreboardRank: {
-    width: 26,
+    width: 34,
     color: colors.textSecondary,
     fontFamily: fonts.medium,
   },
@@ -325,7 +337,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderWidth: 1,
     borderColor: colors.border,
-    marginRight: 12,
+    marginRight: 14,
   },
   scoreboardAvatarImage: {
     width: '100%',
@@ -343,7 +355,6 @@ const styles = StyleSheet.create({
   scoreboardNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    columnGap: 8,
     minWidth: 0,
   },
   scoreboardName: {
@@ -351,11 +362,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: fonts.medium,
     flexShrink: 1,
-  },
-  scoreboardTag: {
-    color: '#9EDCFF',
-    fontSize: 12,
-    fontFamily: fonts.regular,
   },
   scoreboardBoostRow: {
     flexDirection: 'row',
@@ -383,6 +389,7 @@ const styles = StyleSheet.create({
   },
   scoreboardScoreBox: {
     alignItems: 'flex-end',
+    minWidth: 48,
   },
   scoreboardScore: {
     color: colors.accent,
@@ -452,7 +459,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   reviewSection: {
-    maxWidth: 420,
+    maxWidth: 460,
     rowGap: 16,
     alignSelf: 'stretch',
   },
@@ -483,6 +490,12 @@ const styles = StyleSheet.create({
   reviewCardTimedOut: {
     backgroundColor: 'rgba(255, 178, 92, 0.07)',
     borderColor: 'rgba(255, 178, 92, 0.2)',
+  },
+  reviewCardInteractive: {
+    borderColor: 'rgba(158, 220, 255, 0.34)',
+  },
+  reviewCardPressed: {
+    transform: [{ scale: 0.995 }],
   },
   reviewHeader: {
     flexDirection: 'row',
@@ -515,6 +528,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: fonts.bold,
     lineHeight: 24,
+  },
+  reviewImage: {
+    width: '100%',
+    height: 150,
+    borderRadius: radii.md,
+    backgroundColor: colors.surface,
   },
   reviewAnswers: {
     rowGap: 4,
@@ -565,6 +584,48 @@ const styles = StyleSheet.create({
   reviewAnswerCorrect: {
     color: colors.success,
     fontFamily: fonts.medium,
+  },
+  reviewOtherAnswers: {
+    rowGap: 8,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  reviewOtherAnswersTitle: {
+    color: '#9EDCFF',
+    fontSize: 12,
+    fontFamily: fonts.medium,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  reviewOtherAnswerRow: {
+    rowGap: 4,
+    borderRadius: radii.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  reviewOtherAnswerMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    columnGap: 10,
+  },
+  reviewOtherAnswerName: {
+    flex: 1,
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontFamily: fonts.medium,
+  },
+  reviewOtherAnswerStatus: {
+    fontSize: 11,
+    fontFamily: fonts.bold,
+  },
+  reviewOtherAnswerText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+    fontFamily: fonts.regular,
   },
   reviewExplanationLabel: {
     color: colors.textMuted,

@@ -146,18 +146,25 @@ export default function useLobbyProfileActions({
     }
 
     return participants.some((participant) => (
-      participant.key === 'guest'
+      participant.key === selectedProfile?.lobbyParticipantKey
+      && !participant.isHost
       && participant.userId === selectedProfileUserId
       && !participant.isPending
     ));
-  }, [isHostWaiting, kickingPlayer, participants, selectedProfileUserId]);
+  }, [
+    isHostWaiting,
+    kickingPlayer,
+    participants,
+    selectedProfile?.lobbyParticipantKey,
+    selectedProfileUserId,
+  ]);
 
   const handleRemoveParticipantFromProfile = useCallback(async () => {
-    const didKick = await handleKickGuest();
+    const didKick = await handleKickGuest(selectedProfile?.lobbyParticipantKey);
     if (didKick) {
       closeProfile();
     }
-  }, [closeProfile, handleKickGuest]);
+  }, [closeProfile, handleKickGuest, selectedProfile?.lobbyParticipantKey]);
 
   const handleAddFriendFromProfile = useCallback(async (profileOverride = null) => {
     const resolvedProfile =

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Text, View, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/HomeScreen.styles';
 import { useConnectivity } from '../context/ConnectivityContext';
 import {
@@ -44,6 +45,7 @@ export default function HomeScreen({ navigation, route }) {
   const { t } = useTranslation();
   const routeLobby = route?.params?.activeLobby;
   const shouldOpenBoostModal = Boolean(route?.params?.showBoostModal);
+  const insets = useSafeAreaInsets();
   const { isOnline, isChecking, checkOnline } = useConnectivity();
   const isOffline = isOnline === false;
   const userId = useSupabaseUserId();
@@ -214,6 +216,13 @@ export default function HomeScreen({ navigation, route }) {
       }),
     [t]
   );
+  const scrollContentStyle = useMemo(
+    () => [
+      styles.scrollContent,
+      { paddingBottom: Math.max(insets.bottom + 88, 104) },
+    ],
+    [insets.bottom]
+  );
 
   async function handleGoOnline() {
     await checkOnline({ force: true });
@@ -276,8 +285,9 @@ export default function HomeScreen({ navigation, route }) {
       <View style={styles.backgroundGlowBottom} pointerEvents="none" />
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
       >
         <HomeHeader
           coins={coinsAvailable}

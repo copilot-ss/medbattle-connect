@@ -29,8 +29,218 @@ import {
   sanitizeStreakValue,
   sanitizeStringArray,
 } from './sanitize';
+import {
+  buildAccountStatePatch,
+  fetchAccountPreferences,
+  mergeAccountPreferencesState,
+} from '../../services/accountPreferencesService';
 
-export async function loadPreferencesFromStorage() {
+const GUEST_OWNER_KEY = 'guest';
+const GUEST_STORAGE_MIGRATED_KEY = 'medbattle_guest_storage_migrated_v1';
+const PENDING_GUEST_ACCOUNT_TRANSFER_KEY = 'medbattle_pending_guest_account_transfer';
+const DAILY_FREE_COINS_KEY = 'medbattle_daily_free_coins_claim';
+const ACCOUNT_STORAGE_KEYS = new Set([
+  AVATAR_STORAGE_KEY,
+  AVATAR_URI_KEY,
+  AVATAR_FRAME_KEY,
+  OWNED_FRAMES_KEY,
+  BOOSTS_STORAGE_KEY,
+  ACHIEVEMENTS_STORAGE_KEY,
+  STREAK_SHIELD_ACTIVE_KEY,
+  DOUBLE_XP_EXPIRES_KEY,
+  USER_STATS_STORAGE_KEY,
+  ENERGY_VALUE_KEY,
+  ENERGY_TIMESTAMP_KEY,
+  ENERGY_BASE_STORAGE_KEY,
+  DAILY_FREE_COINS_KEY,
+  ...Object.values(STREAK_STORAGE_KEYS),
+  ...LEGACY_STREAK_STORAGE_KEYS,
+]);
+const LEGACY_ACCOUNT_STORAGE_KEYS = [
+  AVATAR_STORAGE_KEY,
+  AVATAR_URI_KEY,
+  AVATAR_FRAME_KEY,
+  OWNED_FRAMES_KEY,
+  BOOSTS_STORAGE_KEY,
+  ACHIEVEMENTS_STORAGE_KEY,
+  STREAK_SHIELD_ACTIVE_KEY,
+  DOUBLE_XP_EXPIRES_KEY,
+  USER_STATS_STORAGE_KEY,
+  ENERGY_VALUE_KEY,
+  ENERGY_TIMESTAMP_KEY,
+  ENERGY_BASE_STORAGE_KEY,
+  DAILY_FREE_COINS_KEY,
+  ...Object.values(STREAK_STORAGE_KEYS),
+  ...LEGACY_STREAK_STORAGE_KEYS,
+];
+const REMOTE_STATE_KEY_BY_STORAGE_KEY = {
+  [AVATAR_STORAGE_KEY]: 'avatarId',
+  [AVATAR_URI_KEY]: 'avatarUri',
+  [AVATAR_FRAME_KEY]: 'avatarFrameId',
+  [OWNED_FRAMES_KEY]: 'ownedFrames',
+  [BOOSTS_STORAGE_KEY]: 'boosts',
+  [ACHIEVEMENTS_STORAGE_KEY]: 'claimedAchievements',
+  [STREAK_SHIELD_ACTIVE_KEY]: 'streakShieldActive',
+  [DOUBLE_XP_EXPIRES_KEY]: 'doubleXpExpiresAt',
+  [USER_STATS_STORAGE_KEY]: 'userStats',
+  [ENERGY_BASE_STORAGE_KEY]: 'energyBase',
+};
+let activeStorageOwner = { type: 'guest', key: GUEST_OWNER_KEY, userId: null };
+
+function normalizeStorageOwner(owner) {
+  if (owner?.type === 'user' && owner.userId) {
+    const userId = String(owner.userId);
+    return {
+      type: 'user',
+      key: `user:${userId}`,
+      userId,
+    };
+  }
+  return { type: 'guest', key: GUEST_OWNER_KEY, userId: null };
+}
+
+function sanitizeOwnerKey(value) {
+  return String(value || GUEST_OWNER_KEY).replace(/[^a-zA-Z0-9:_-]/g, '_');
+}
+
+function getScopedStorageKey(key, owner = activeStorageOwner) {
+  if (!ACCOUNT_STORAGE_KEYS.has(key)) {
+    return key;
+  }
+  return `medbattle:${sanitizeOwnerKey(owner.key)}:${key}`;
+}
+
+function isRemoteAccountOwner(owner = activeStorageOwner) {
+  return owner?.type === 'user' && Boolean(owner.userId);
+}
+
+async function getStoredItem(key, owner = activeStorageOwner) {
+  return AsyncStorage.getItem(getScopedStorageKey(key, owner));
+}
+
+async function setStoredItem(key, value, owner = activeStorageOwner) {
+  return AsyncStorage.setItem(getScopedStorageKey(key, owner), value);
+}
+
+async function removeStoredItem(key, owner = activeStorageOwner) {
+  return AsyncStorage.removeItem(getScopedStorageKey(key, owner));
+}
+
+async function multiRemoveStored(keys, owner = activeStorageOwner) {
+  return AsyncStorage.multiRemove(keys.map((key) => getScopedStorageKey(key, owner)));
+}
+
+async function persistAccountPatch(key, value) {
+  const owner = activeStorageOwner;
+  if (!isRemoteAccountOwner(owner)) {
+    return { ok: false, reason: 'guest' };
+  }
+  const stateKey = REMOTE_STATE_KEY_BY_STORAGE_KEY[key];
+  if (!stateKey) {
+    return { ok: false, reason: 'unsupported' };
+  }
+  return mergeAccountPreferencesState(
+    owner.userId,
+    buildAccountStatePatch(stateKey, value)
+  );
+}
+
+async function persistAccountStatePatch(patch) {
+  const owner = activeStorageOwner;
+  if (!isRemoteAccountOwner(owner)) {
+    return { ok: false, reason: 'guest' };
+  }
+  return mergeAccountPreferencesState(owner.userId, patch);
+}
+
+async function ensureGuestStorageMigrated() {
+  const migrated = await AsyncStorage.getItem(GUEST_STORAGE_MIGRATED_KEY);
+  if (migrated === 'true') {
+    return;
+  }
+
+  const guestOwner = normalizeStorageOwner({ type: 'guest' });
+  const pairs = await AsyncStorage.multiGet(LEGACY_ACCOUNT_STORAGE_KEYS);
+  const writes = [];
+
+  for (const [legacyKey, value] of pairs) {
+    if (value === null) {
+      continue;
+    }
+    const scopedKey = getScopedStorageKey(legacyKey, guestOwner);
+    const existing = await AsyncStorage.getItem(scopedKey);
+    if (existing === null) {
+      writes.push([scopedKey, value]);
+    }
+  }
+
+  if (writes.length) {
+    await AsyncStorage.multiSet(writes);
+  }
+
+  await AsyncStorage.multiRemove(LEGACY_ACCOUNT_STORAGE_KEYS);
+  await AsyncStorage.setItem(GUEST_STORAGE_MIGRATED_KEY, 'true');
+}
+
+export function setPreferencesStorageOwner(owner) {
+  activeStorageOwner = normalizeStorageOwner(owner);
+  return activeStorageOwner;
+}
+
+export function getPreferencesStorageOwner() {
+  return activeStorageOwner;
+}
+
+async function loadDeviceSettings() {
+  const [storedPush, storedRequests] = await Promise.all([
+    AsyncStorage.getItem(PUSH_STORAGE_KEY),
+    AsyncStorage.getItem(FRIEND_REQUESTS_STORAGE_KEY),
+  ]);
+  return {
+    pushEnabled: storedPush === null ? true : storedPush === 'true',
+    friendRequestsEnabled:
+      storedRequests === null ? true : storedRequests === 'true',
+  };
+}
+
+async function loadRemoteAccountPreferences(owner) {
+  const deviceSettings = await loadDeviceSettings();
+  const result = await fetchAccountPreferences(owner.userId);
+  if (!result.ok) {
+    throw result.error ?? new Error('Account preferences could not be loaded.');
+  }
+  const loaded = result.state;
+  const energyCapBonus = sanitizeStatNumber(loaded.userStats?.energyCapBonus);
+  const maxEnergy = loaded.energyBase + Math.min(energyCapBonus, MAX_ENERGY_CAP_BONUS);
+  const recalc = recalcEnergy(loaded.energy, loaded.energyTimestamp, maxEnergy);
+
+  return {
+    ...deviceSettings,
+    avatarId: loaded.avatarId,
+    avatarUri: loaded.avatarUri,
+    avatarFrameId: loaded.avatarFrameId,
+    ownedFrames: loaded.ownedFrames,
+    boosts: loaded.boosts,
+    streakShieldActive: Boolean(loaded.streakShieldActive),
+    doubleXpExpiresAt: loaded.doubleXpExpiresAt ?? null,
+    claimedAchievements: loaded.claimedAchievements,
+    streaks: loaded.streaks,
+    userStats: loaded.userStats,
+    energyBase: loaded.energyBase,
+    energy: recalc.energy,
+    energyTimestamp: recalc.ts,
+    nextEnergyAt: recalc.nextAt,
+  };
+}
+
+export async function loadPreferencesFromStorage(ownerArg) {
+  const owner = normalizeStorageOwner(ownerArg ?? activeStorageOwner);
+  setPreferencesStorageOwner(owner);
+  if (isRemoteAccountOwner(owner)) {
+    return loadRemoteAccountPreferences(owner);
+  }
+  await ensureGuestStorageMigrated();
+
   const nextStreaks = { ...DEFAULT_STREAKS };
   let nextUserStats = { ...DEFAULT_USER_STATS };
   let boosts = { ...DEFAULT_BOOSTS };
@@ -45,8 +255,6 @@ export async function loadPreferencesFromStorage() {
   let hasStoredEnergyTimestamp = false;
 
   const [
-    storedPush,
-    storedRequests,
     storedAvatar,
     storedAvatarUri,
     storedAvatarFrame,
@@ -57,26 +265,24 @@ export async function loadPreferencesFromStorage() {
     storedClaimedAchievements,
     storedEnergyBase,
   ] = await Promise.all([
-    AsyncStorage.getItem(PUSH_STORAGE_KEY),
-    AsyncStorage.getItem(FRIEND_REQUESTS_STORAGE_KEY),
-    AsyncStorage.getItem(AVATAR_STORAGE_KEY),
-    AsyncStorage.getItem(AVATAR_URI_KEY),
-    AsyncStorage.getItem(AVATAR_FRAME_KEY),
-    AsyncStorage.getItem(OWNED_FRAMES_KEY),
-    AsyncStorage.getItem(BOOSTS_STORAGE_KEY),
-    AsyncStorage.getItem(STREAK_SHIELD_ACTIVE_KEY),
-    AsyncStorage.getItem(DOUBLE_XP_EXPIRES_KEY),
-    AsyncStorage.getItem(ACHIEVEMENTS_STORAGE_KEY),
-    AsyncStorage.getItem(ENERGY_BASE_STORAGE_KEY),
+    getStoredItem(AVATAR_STORAGE_KEY, owner),
+    getStoredItem(AVATAR_URI_KEY, owner),
+    getStoredItem(AVATAR_FRAME_KEY, owner),
+    getStoredItem(OWNED_FRAMES_KEY, owner),
+    getStoredItem(BOOSTS_STORAGE_KEY, owner),
+    getStoredItem(STREAK_SHIELD_ACTIVE_KEY, owner),
+    getStoredItem(DOUBLE_XP_EXPIRES_KEY, owner),
+    getStoredItem(ACHIEVEMENTS_STORAGE_KEY, owner),
+    getStoredItem(ENERGY_BASE_STORAGE_KEY, owner),
   ]);
 
   await Promise.all([
     ...Object.entries(STREAK_STORAGE_KEYS).map(async ([streakKey, key]) => {
       try {
         const [raw, ...legacyValues] = await Promise.all([
-          AsyncStorage.getItem(key),
+          getStoredItem(key, owner),
           ...LEGACY_STREAK_STORAGE_KEYS.map((legacyKey) =>
-            AsyncStorage.getItem(legacyKey)
+            getStoredItem(legacyKey, owner)
           ),
         ]);
         const value = raw ? sanitizeStreakValue(raw) : 0;
@@ -93,7 +299,7 @@ export async function loadPreferencesFromStorage() {
     }),
     (async () => {
       try {
-        const rawStats = await AsyncStorage.getItem(USER_STATS_STORAGE_KEY);
+        const rawStats = await getStoredItem(USER_STATS_STORAGE_KEY, owner);
         hasStoredUserStats = Boolean(rawStats);
         if (rawStats) {
           const parsed = JSON.parse(rawStats);
@@ -115,8 +321,8 @@ export async function loadPreferencesFromStorage() {
     })(),
     (async () => {
       try {
-        const rawEnergy = await AsyncStorage.getItem(ENERGY_VALUE_KEY);
-        const rawTs = await AsyncStorage.getItem(ENERGY_TIMESTAMP_KEY);
+        const rawEnergy = await getStoredItem(ENERGY_VALUE_KEY, owner);
+        const rawTs = await getStoredItem(ENERGY_TIMESTAMP_KEY, owner);
         if (rawEnergy !== null) {
           hasStoredEnergyValue = true;
           loadedEnergy = sanitizeStatNumber(rawEnergy);
@@ -143,7 +349,7 @@ export async function loadPreferencesFromStorage() {
 
   if (storedEnergyBase === null) {
     try {
-      await AsyncStorage.setItem(ENERGY_BASE_STORAGE_KEY, String(resolvedEnergyBase));
+      await setStoredItem(ENERGY_BASE_STORAGE_KEY, String(resolvedEnergyBase), owner);
     } catch (err) {
       console.warn('Konnte Energie-Basis nicht speichern:', err);
     }
@@ -201,9 +407,7 @@ export async function loadPreferencesFromStorage() {
   }
 
   return {
-    pushEnabled: storedPush === null ? true : storedPush === 'true',
-    friendRequestsEnabled:
-      storedRequests === null ? true : storedRequests === 'true',
+    ...(await loadDeviceSettings()),
     avatarId: storedAvatar || null,
     avatarUri: storedAvatarUri || null,
     avatarFrameId: storedAvatarFrame || null,
@@ -230,11 +434,15 @@ export async function persistBooleanValue(key, value) {
 }
 
 export async function persistAvatarId(value) {
+  if (isRemoteAccountOwner()) {
+    await persistAccountPatch(AVATAR_STORAGE_KEY, value || null);
+    return;
+  }
   try {
     if (value) {
-      await AsyncStorage.setItem(AVATAR_STORAGE_KEY, value);
+      await setStoredItem(AVATAR_STORAGE_KEY, value);
     } else {
-      await AsyncStorage.removeItem(AVATAR_STORAGE_KEY);
+      await removeStoredItem(AVATAR_STORAGE_KEY);
     }
   } catch (err) {
     console.warn('Konnte Avatar nicht speichern:', err);
@@ -242,11 +450,15 @@ export async function persistAvatarId(value) {
 }
 
 export async function persistAvatarUri(value) {
+  if (isRemoteAccountOwner()) {
+    await persistAccountPatch(AVATAR_URI_KEY, value || null);
+    return;
+  }
   try {
     if (value) {
-      await AsyncStorage.setItem(AVATAR_URI_KEY, value);
+      await setStoredItem(AVATAR_URI_KEY, value);
     } else {
-      await AsyncStorage.removeItem(AVATAR_URI_KEY);
+      await removeStoredItem(AVATAR_URI_KEY);
     }
   } catch (err) {
     console.warn('Konnte Avatar-Foto nicht speichern:', err);
@@ -254,11 +466,15 @@ export async function persistAvatarUri(value) {
 }
 
 export async function persistAvatarFrameId(value) {
+  if (isRemoteAccountOwner()) {
+    await persistAccountPatch(AVATAR_FRAME_KEY, value || null);
+    return;
+  }
   try {
     if (value) {
-      await AsyncStorage.setItem(AVATAR_FRAME_KEY, value);
+      await setStoredItem(AVATAR_FRAME_KEY, value);
     } else {
-      await AsyncStorage.removeItem(AVATAR_FRAME_KEY);
+      await removeStoredItem(AVATAR_FRAME_KEY);
     }
   } catch (err) {
     console.warn('Konnte Avatar-Rahmen nicht speichern:', err);
@@ -266,16 +482,24 @@ export async function persistAvatarFrameId(value) {
 }
 
 export async function persistOwnedFrames(frames) {
+  if (isRemoteAccountOwner()) {
+    await persistAccountPatch(OWNED_FRAMES_KEY, frames || []);
+    return;
+  }
   try {
-    await AsyncStorage.setItem(OWNED_FRAMES_KEY, JSON.stringify(frames || []));
+    await setStoredItem(OWNED_FRAMES_KEY, JSON.stringify(frames || []));
   } catch (err) {
     console.warn('Konnte Rahmen nicht speichern:', err);
   }
 }
 
 export async function persistBoosts(nextBoosts) {
+  if (isRemoteAccountOwner()) {
+    await persistAccountPatch(BOOSTS_STORAGE_KEY, nextBoosts || DEFAULT_BOOSTS);
+    return;
+  }
   try {
-    await AsyncStorage.setItem(
+    await setStoredItem(
       BOOSTS_STORAGE_KEY,
       JSON.stringify(nextBoosts || DEFAULT_BOOSTS)
     );
@@ -285,8 +509,12 @@ export async function persistBoosts(nextBoosts) {
 }
 
 export async function persistStreakShieldActive(value) {
+  if (isRemoteAccountOwner()) {
+    await persistAccountPatch(STREAK_SHIELD_ACTIVE_KEY, Boolean(value));
+    return;
+  }
   try {
-    await AsyncStorage.setItem(
+    await setStoredItem(
       STREAK_SHIELD_ACTIVE_KEY,
       value ? 'true' : 'false'
     );
@@ -296,8 +524,12 @@ export async function persistStreakShieldActive(value) {
 }
 
 export async function persistClaimedAchievements(value) {
+  if (isRemoteAccountOwner()) {
+    await persistAccountPatch(ACHIEVEMENTS_STORAGE_KEY, value || []);
+    return;
+  }
   try {
-    await AsyncStorage.setItem(
+    await setStoredItem(
       ACHIEVEMENTS_STORAGE_KEY,
       JSON.stringify(value || [])
     );
@@ -307,11 +539,18 @@ export async function persistClaimedAchievements(value) {
 }
 
 export async function persistDoubleXpExpiresAt(value) {
+  if (isRemoteAccountOwner()) {
+    await persistAccountPatch(
+      DOUBLE_XP_EXPIRES_KEY,
+      Number.isFinite(value) && value > 0 ? value : null
+    );
+    return;
+  }
   try {
     if (Number.isFinite(value) && value > 0) {
-      await AsyncStorage.setItem(DOUBLE_XP_EXPIRES_KEY, String(value));
+      await setStoredItem(DOUBLE_XP_EXPIRES_KEY, String(value));
     } else {
-      await AsyncStorage.removeItem(DOUBLE_XP_EXPIRES_KEY);
+      await removeStoredItem(DOUBLE_XP_EXPIRES_KEY);
     }
   } catch (err) {
     console.warn('Konnte Doppel-XP nicht speichern:', err);
@@ -319,18 +558,29 @@ export async function persistDoubleXpExpiresAt(value) {
 }
 
 export async function persistUserStats(stats) {
+  if (isRemoteAccountOwner()) {
+    await persistAccountPatch(USER_STATS_STORAGE_KEY, stats || DEFAULT_USER_STATS);
+    return;
+  }
   try {
-    await AsyncStorage.setItem(USER_STATS_STORAGE_KEY, JSON.stringify(stats));
+    await setStoredItem(USER_STATS_STORAGE_KEY, JSON.stringify(stats));
   } catch (err) {
     console.warn('Konnte User-Stats nicht speichern:', err);
   }
 }
 
 export async function persistEnergy(energyValue, timestamp) {
+  if (isRemoteAccountOwner()) {
+    await persistAccountStatePatch({
+      energy: sanitizeStatNumber(energyValue),
+      energyTimestamp: Number.isFinite(timestamp) ? timestamp : Date.now(),
+    });
+    return;
+  }
   try {
     await AsyncStorage.multiSet([
-      [ENERGY_VALUE_KEY, String(energyValue)],
-      [ENERGY_TIMESTAMP_KEY, String(timestamp)],
+      [getScopedStorageKey(ENERGY_VALUE_KEY), String(energyValue)],
+      [getScopedStorageKey(ENERGY_TIMESTAMP_KEY), String(timestamp)],
     ]);
   } catch (err) {
     console.warn('Konnte Energie nicht speichern:', err);
@@ -338,16 +588,45 @@ export async function persistEnergy(energyValue, timestamp) {
 }
 
 export async function persistStreakValue(key, value) {
+  if (isRemoteAccountOwner()) {
+    const streakEntry = Object.entries(STREAK_STORAGE_KEYS).find(([, storageKey]) => storageKey === key);
+    const streakKey = streakEntry?.[0] ?? 'standard';
+    await persistAccountStatePatch({
+      streaks: {
+        [streakKey]: sanitizeStreakValue(value),
+      },
+    });
+    return;
+  }
   try {
-    await AsyncStorage.setItem(key, String(value));
+    await setStoredItem(key, String(value));
   } catch (err) {
     console.warn(`Konnte Streak fuer ${key} nicht speichern:`, err);
   }
 }
 
 export async function clearAccountPreferencesStorage() {
+  if (isRemoteAccountOwner()) {
+    await persistAccountStatePatch({
+      avatarId: null,
+      avatarUri: null,
+      avatarFrameId: null,
+      ownedFrames: [],
+      boosts: { ...DEFAULT_BOOSTS },
+      claimedAchievements: [],
+      streakShieldActive: false,
+      doubleXpExpiresAt: null,
+      userStats: { ...DEFAULT_USER_STATS },
+      energyBase: NEW_ACCOUNT_MAX_ENERGY,
+      energy: NEW_ACCOUNT_MAX_ENERGY,
+      energyTimestamp: Date.now(),
+      streaks: { ...DEFAULT_STREAKS },
+      dailyFreeCoinsClaim: null,
+    });
+    return;
+  }
   try {
-    await AsyncStorage.multiRemove([
+    await multiRemoveStored([
       AVATAR_STORAGE_KEY,
       AVATAR_URI_KEY,
       AVATAR_FRAME_KEY,
@@ -360,10 +639,62 @@ export async function clearAccountPreferencesStorage() {
       ENERGY_VALUE_KEY,
       ENERGY_TIMESTAMP_KEY,
       ENERGY_BASE_STORAGE_KEY,
+      DAILY_FREE_COINS_KEY,
       ...Object.values(STREAK_STORAGE_KEYS),
       ...LEGACY_STREAK_STORAGE_KEYS,
     ]);
   } catch (err) {
     console.warn('Konnte kontobezogene Einstellungen nicht loeschen:', err);
+  }
+}
+
+export async function clearGuestPreferencesStorage() {
+  const previousOwner = activeStorageOwner;
+  const guestOwner = setPreferencesStorageOwner({ type: 'guest' });
+  try {
+    await clearAccountPreferencesStorage();
+    await AsyncStorage.multiRemove(LEGACY_ACCOUNT_STORAGE_KEYS);
+  } finally {
+    activeStorageOwner = previousOwner ?? guestOwner;
+  }
+}
+
+export async function savePendingGuestAccountTransfer(snapshot, metadata = {}) {
+  if (!snapshot || typeof snapshot !== 'object') {
+    return;
+  }
+  try {
+    await AsyncStorage.setItem(
+      PENDING_GUEST_ACCOUNT_TRANSFER_KEY,
+      JSON.stringify({
+        snapshot,
+        metadata,
+        createdAt: new Date().toISOString(),
+      })
+    );
+  } catch (err) {
+    console.warn('Konnte Gast-Transfer nicht vormerken:', err);
+  }
+}
+
+export async function loadPendingGuestAccountTransfer() {
+  try {
+    const raw = await AsyncStorage.getItem(PENDING_GUEST_ACCOUNT_TRANSFER_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (err) {
+    console.warn('Konnte Gast-Transfer nicht laden:', err);
+    return null;
+  }
+}
+
+export async function clearPendingGuestAccountTransfer() {
+  try {
+    await AsyncStorage.removeItem(PENDING_GUEST_ACCOUNT_TRANSFER_KEY);
+  } catch (err) {
+    console.warn('Konnte Gast-Transfer nicht loeschen:', err);
   }
 }

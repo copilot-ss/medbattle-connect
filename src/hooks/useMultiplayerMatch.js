@@ -10,7 +10,10 @@ import {
   subscribeToMatch,
   updateMatchProgress,
 } from '../services/matchService';
-import { resolveProgressiveMatch } from '../services/match/matchHelpers';
+import {
+  getMatchPlayerEntries,
+  resolveProgressiveMatch,
+} from '../services/match/matchHelpers';
 
 const MATCH_STATE_SYNC_INTERVAL_MS = 2500;
 const MULTIPLAYER_POINTS_PER_CORRECT_ANSWER = 3;
@@ -61,6 +64,11 @@ function ensurePlayerState(match, role) {
     avatarColor: state.avatar_color ?? state.avatarColor ?? null,
     gaveUp: Boolean(state.gaveUp),
   };
+}
+
+function resolveOpponentState(match, role) {
+  const opponent = getMatchPlayerEntries(match).find((entry) => entry.role !== role);
+  return ensurePlayerState(match, opponent?.role ?? null);
 }
 
 export default function useMultiplayerMatch(matchId, userId, options = {}) {
@@ -350,11 +358,9 @@ export default function useMultiplayerMatch(matchId, userId, options = {}) {
     [role, state.match]
   );
 
-  const opponentRole = role === 'host' ? 'guest' : 'host';
-
   const opponentState = useMemo(
-    () => ensurePlayerState(state.match, opponentRole),
-    [opponentRole, state.match]
+    () => resolveOpponentState(state.match, role),
+    [role, state.match]
   );
 
   const recordAnswer = useCallback(

@@ -1,10 +1,15 @@
 import { ActivityIndicator, View } from 'react-native';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { ConnectivityProvider } from './context/ConnectivityContext';
-import { PreferencesProvider } from './context/PreferencesContext';
+import { PreferencesProvider, usePreferences } from './context/PreferencesContext';
+import {
+  clearGuestPreferencesStorage,
+  clearPendingGuestAccountTransfer,
+  loadPendingGuestAccountTransfer,
+} from './context/preferences/storage';
 import useAuthCallbackLinking from './hooks/useAuthCallbackLinking';
 import useAuthSession from './hooks/useAuthSession';
 import useLobbyInviteMonitor from './hooks/useLobbyInviteMonitor';
@@ -21,6 +26,12 @@ import ResultScreen from './screens/ResultScreen';
 import SettingsHelpScreen from './screens/SettingsHelpScreen';
 import UsernameSetupScreen from './screens/UsernameSetupScreen';
 import MainTabs from './navigation/MainTabs';
+import {
+  applyGuestPreferencesToAccount,
+  fetchAccountPreferences,
+  hasMeaningfulAccountProgress,
+  hasRemoteUserProgress,
+} from './services/accountPreferencesService';
 import { setGameplayNotificationSuppressed } from './services/notificationsService';
 import styles from './screens/styles/AppNavigator.styles';
 
@@ -37,18 +48,49 @@ function getActiveRouteName(state) {
   return activeRoute?.name ?? null;
 }
 
+function getPreferencesOwnerForAuth(session, isGuestSession) {
+  if (!session?.user?.id || isGuestSession) {
+    return { type: 'guest' };
+  }
+  return { type: 'user', userId: session.user.id };
+}
+
+function getPreferencesOwnerKey(owner) {
+  return owner?.type === 'user' && owner.userId
+    ? `user:${owner.userId}`
+    : 'guest';
+}
+
 function AppNavigatorInner() {
   const {
+    session,
     isAuthenticated,
+    isGuestSession,
     needsUsernameSetup,
     initializing,
     setGuestSession,
     clearSession,
   } = useAuthSession();
+  const {
+    switchAccountOwner,
+    accountOwnerKey,
+    loading: preferencesLoading,
+  } = usePreferences();
   useOfflineSync();
   const navigationRef = useRef(null);
+  const [preferencesSwitching, setPreferencesSwitching] = useState(false);
+  const [guestTransferLoading, setGuestTransferLoading] = useState(false);
+  const transferInFlightRef = useRef(false);
+  const targetOwner = useMemo(
+    () => getPreferencesOwnerForAuth(session, isGuestSession),
+    [isGuestSession, session?.user?.id]
+  );
+  const targetOwnerKey = useMemo(
+    () => getPreferencesOwnerKey(targetOwner),
+    [targetOwner]
+  );
   const navigatorKey = isAuthenticated
-    ? `authenticated-${needsUsernameSetup ? 'username' : 'ready'}`
+    ? `authenticated-${needsUsernameSetup ? 'username' : 'ready'}-${targetOwnerKey}`
     : 'unauthenticated';
 
   const handleInviteAccepted = useCallback((match) => {
@@ -78,6 +120,110 @@ function AppNavigatorInner() {
   });
   useAuthCallbackLinking({ navigationRef });
 
+  useEffect(() => {
+    if (initializing || accountOwnerKey === targetOwnerKey) {
+      return undefined;
+    }
+
+    let active = true;
+    setPreferencesSwitching(true);
+
+    switchAccountOwner(targetOwner)
+      .catch((err) => {
+        console.warn('Konnte Account-Speicher nicht wechseln:', err);
+      })
+      .finally(() => {
+        if (active) {
+          setPreferencesSwitching(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [
+    accountOwnerKey,
+    initializing,
+    switchAccountOwner,
+    targetOwner,
+    targetOwnerKey,
+  ]);
+
+  useEffect(() => {
+    if (
+      initializing ||
+      isGuestSession ||
+      !session?.user?.id ||
+      accountOwnerKey !== targetOwnerKey ||
+      transferInFlightRef.current
+    ) {
+      return undefined;
+    }
+
+    let active = true;
+    const userId = session.user.id;
+    transferInFlightRef.current = true;
+
+    async function processPendingGuestTransfer() {
+      const pendingTransfer = await loadPendingGuestAccountTransfer();
+      const guestSnapshot = pendingTransfer?.snapshot;
+
+      if (!hasMeaningfulAccountProgress(guestSnapshot)) {
+        await clearPendingGuestAccountTransfer();
+        return;
+      }
+
+      setGuestTransferLoading(true);
+
+      try {
+        const remote = await fetchAccountPreferences(userId);
+        if (!remote.ok) {
+          throw remote.error ?? new Error('Account progress could not be loaded.');
+        }
+
+        const accountAlreadyHasProgress =
+          hasRemoteUserProgress(remote.progress) ||
+          hasMeaningfulAccountProgress(remote.state);
+
+        if (!accountAlreadyHasProgress) {
+          const transferResult = await applyGuestPreferencesToAccount(
+            userId,
+            guestSnapshot
+          );
+          if (!transferResult.ok) {
+            throw transferResult.error ?? new Error('Guest progress could not be transferred.');
+          }
+        }
+
+        await clearGuestPreferencesStorage();
+        await clearPendingGuestAccountTransfer();
+        await switchAccountOwner({ type: 'user', userId }, { force: true });
+      } catch (err) {
+        console.warn('Gastfortschritt konnte nicht verarbeitet werden:', err);
+      } finally {
+        if (active) {
+          setGuestTransferLoading(false);
+        }
+      }
+    }
+
+    processPendingGuestTransfer()
+      .finally(() => {
+        transferInFlightRef.current = false;
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [
+    accountOwnerKey,
+    initializing,
+    isGuestSession,
+    session?.user?.id,
+    switchAccountOwner,
+    targetOwnerKey,
+  ]);
+
   const handleNavigationStateChange = useCallback((state) => {
     const activeRouteName = getActiveRouteName(state);
     const isGameplayRoute = activeRouteName === 'Quiz';
@@ -90,7 +236,13 @@ function AppNavigatorInner() {
     };
   }, []);
 
-  if (initializing) {
+  if (
+    initializing ||
+    preferencesLoading ||
+    preferencesSwitching ||
+    guestTransferLoading ||
+    accountOwnerKey !== targetOwnerKey
+  ) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#2563EB" />

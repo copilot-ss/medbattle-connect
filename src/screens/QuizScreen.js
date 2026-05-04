@@ -201,6 +201,15 @@ export default function QuizScreen({ navigation, route }) {
         activeIndex={activeIndex}
         totalQuestions={totalQuestions}
         question={currentQuestion.question}
+        imageSource={currentQuestion.image_asset ?? currentQuestion.imageSource}
+        imageUrl={currentQuestion.image_url ?? currentQuestion.imageUrl}
+        imageAlt={currentQuestion.image_alt ?? currentQuestion.imageAlt}
+        imageOnly={
+          currentQuestion.image_only === true ||
+          currentQuestion.imageOnly === true ||
+          currentQuestion.prompt_mode === 'image_only' ||
+          currentQuestion.promptMode === 'image_only'
+        }
         showProgress
       />
 

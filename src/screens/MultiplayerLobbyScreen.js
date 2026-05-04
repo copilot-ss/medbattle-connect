@@ -66,6 +66,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     existingMatch,
     allowCompletedLobby,
     suppressActiveNavigation,
+    suppressActiveNavigationUntilWaiting,
     initialCategory,
     isCreateOnly,
     isJoinOnly,
@@ -83,6 +84,10 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   const [shouldSuppressActiveNavigation, setShouldSuppressActiveNavigation] = useState(
     suppressActiveNavigation
   );
+  const [
+    shouldSuppressActiveNavigationUntilWaiting,
+    setShouldSuppressActiveNavigationUntilWaiting,
+  ] = useState(suppressActiveNavigationUntilWaiting);
   const navigateToQuiz = useCallback(
     ({ match, role, preloadedMatch }) => {
       navigation.replace('Quiz', {
@@ -292,14 +297,26 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   useEffect(() => {
     const nextStatus = currentMatch?.status ?? null;
 
-    if (
-      shouldSuppressActiveNavigation &&
-      nextStatus &&
-      nextStatus !== 'completed'
-    ) {
+    if (!shouldSuppressActiveNavigation || !nextStatus) {
+      return;
+    }
+
+    if (shouldSuppressActiveNavigationUntilWaiting) {
+      if (nextStatus === 'waiting') {
+        setShouldSuppressActiveNavigationUntilWaiting(false);
+        setShouldSuppressActiveNavigation(false);
+      }
+      return;
+    }
+
+    if (nextStatus !== 'completed') {
       setShouldSuppressActiveNavigation(false);
     }
-  }, [currentMatch?.status, shouldSuppressActiveNavigation]);
+  }, [
+    currentMatch?.status,
+    shouldSuppressActiveNavigation,
+    shouldSuppressActiveNavigationUntilWaiting,
+  ]);
   useLobbyBackHandler({
     currentMatch,
     onLeaveLobby: handleLeaveLobby,

@@ -334,9 +334,22 @@
   "Knapp verloren. Hol dir direkt die naechste Runde.": "Knapp verloren. Hol dir direkt die nächste Runde.",
   "Knapp verloren. Hol dir direkt die nächste Runde.": "Knapp verloren. Hol dir direkt die nächste Runde.",
   "Unentschieden. Diese Runde war komplett ausgeglichen.": "Unentschieden. Diese Runde war komplett ausgeglichen.",
+  "Alltagswissen, Natur, Technik und grundlegende Fakten.": "Alltagswissen, Natur, Technik und grundlegende Fakten.",
+  "Brainrot": "Brainrot",
+  "Epochen, Ereignisse, Personen und historische Zusammenhaenge.": "Epochen, Ereignisse, Personen und historische Zusammenhaenge.",
+  "Geografie": "Geografie",
+  "Geschichte": "Geschichte",
+  "Laender, Karten, Klima, Kontinente und Orientierung.": "Laender, Karten, Klima, Kontinente und Orientierung.",
   "Medizin": "Medizin",
+  "Medizinische Grundlagen, Koerper, Krankheiten und Versorgung.": "Medizinische Grundlagen, Koerper, Krankheiten und Versorgung.",
   "Medizinische Grundlagen und klinische Praxis.": "Medizinische Grundlagen und klinische Praxis.",
+  "Memes, Internetkultur, Trends und schnelle Popkultur.": "Memes, Internetkultur, Trends und schnelle Popkultur.",
   "Mikrobiologie": "Mikrobiologie",
+  "Notlagen, Orientierung, Ausruestung und praktische Sicherheit.": "Notlagen, Orientierung, Ausruestung und praktische Sicherheit.",
+  "Politik": "Politik",
+  "Sachkunde": "Sachkunde",
+  "Staat, Demokratie, Wahlen und aktuelle Grundbegriffe.": "Staat, Demokratie, Wahlen und aktuelle Grundbegriffe.",
+  "Survival": "Survival",
   "Mindestens 12 Zeichen, Groß- und Kleinbuchstaben, Zahl und Sonderzeichen.": "Mindestens 12 Zeichen, Groß- und Kleinbuchstaben, Zahl und Sonderzeichen.",
   "Mit Discord anmelden": "Mit Discord anmelden",
   "Mit Google anmelden": "Mit Google anmelden",
@@ -662,9 +675,11 @@
   "Tippe auf einen Spieler, um Antworten zu sehen.": "Tippe auf einen Spieler, um Antworten zu sehen.",
   "Warte auf Spieler": "Warte auf Spieler",
   "Spieler wird gesucht ...": "Spieler wird gesucht ...",
+  "Waiting": "Waiting",
   "Lade Status ...": "Lade Status ...",
   "Antworten von {name}": "Antworten von {name}",
   "Antwort von {name}": "Antwort von {name}",
+  "Andere Antworten": "Andere Antworten",
   "Wartet auf Rückkehr": "Wartet auf Rückkehr",
   "Naechste Challenge": "Nächste Challenge",
   "Nächste Challenge": "Nächste Challenge",
@@ -694,4 +709,66 @@
   ,"Blockierung aufheben": "Blockierung aufheben"
   ,"Blockierung konnte nicht aufgehoben werden.": "Blockierung konnte nicht aufgehoben werden."
   ,"Nutzer konnte nicht blockiert werden.": "Nutzer konnte nicht blockiert werden."
+  ,"Quote": "Quote"
+  ,"Blockieren": "Blockieren"
+  ,"Supabase nicht erreichbar (Session setzen).": "Anmeldung gerade nicht möglich. Bitte versuche es erneut."
+  ,"Profilbild": "Profilbild"
+  ,"Tippe unten, um dein Bild zu ändern.": "Tippe unten, um dein Bild zu ändern."
+  ,"Kein Schild": "Kein Schild"
+  ,"Aktivieren": "Aktivieren"
+  ,"Neues Match konnte nicht vorbereitet werden.": "Neues Match konnte nicht vorbereitet werden."
+  ,"Freund einladen": "Freund einladen"
+  ,"Joker benutzt": "Joker benutzt"
+  ,"Freundesanfrage ablehnen": "Freundesanfrage ablehnen"
+  ,"Freundesanfrage annehmen": "Freundesanfrage annehmen"
+  ,"Max-Level erreicht": "Max-Level erreicht"
+  ,"Level-Fortschritt": "Level-Fortschritt"
+  ,"Dieser Nutzer ist blockiert.": "Dieser Nutzer ist blockiert."
+  ,"Boost konnte nicht gekauft werden.": "Boost konnte nicht gekauft werden."
+  ,"Produkt ist im Store gerade nicht verfügbar.": "Produkt ist im Store gerade nicht verfügbar."
+  ,"Google Play lädt die Kaufprodukte gerade noch.": "Google Play lädt die Kaufprodukte gerade noch."
+  ,"Link konnte nicht verarbeitet werden.": "Link konnte nicht verarbeitet werden."
+  ,"Gastmodus ohne Supabase-Session aktiv. Multiplayer benötigt anonymes Login.": "Gastmodus ohne Supabase-Session aktiv. Multiplayer benötigt anonymes Login."
+  ,"Anonymes Login nicht verfügbar.": "Anonymes Login nicht verfügbar."
+  ,"Offline. Match konnte nicht geladen werden.": "Offline. Match konnte nicht geladen werden."
+  ,"Dieses Match gehört dir nicht oder ist nicht mehr verfügbar.": "Dieses Match gehört dir nicht oder ist nicht mehr verfügbar."
+  ,"Offline. Antwort konnte nicht gesendet werden.": "Offline. Antwort konnte nicht gesendet werden."
+  ,"Match konnte nicht aktualisiert werden.": "Match konnte nicht aktualisiert werden."
+  ,"Pruefe die Antwortoptionen und merke dir den Kernpunkt dieser Frage.": "Prüfe die Antwortoptionen und merke dir den Kernpunkt dieser Frage."
+  ,"Richtige Antwort: {answer}.": "Richtige Antwort: {answer}."
+  ,"Keine aktive Einladung.": "Keine aktive Einladung."
+  ,"Match-Code fehlt.": "Match-Code fehlt."
+  ,"Kein aktives Match vorhanden.": "Kein aktives Match vorhanden."
+  ,"Supabase nicht konfiguriert (.env fehlt).": "Supabase nicht konfiguriert (.env fehlt)."
+  ,"Lobby wurde geschlossen.": "Lobby wurde geschlossen."
+  ,"Du wurdest aus der Lobby entfernt.": "Du wurdest aus der Lobby entfernt."
+  ,"Lobby konnte nicht verlassen werden.": "Lobby konnte nicht verlassen werden."
+  ,"Match konnte nicht verlassen werden.": "Match konnte nicht verlassen werden."
+  ,"Name konnte nicht gespeichert werden.": "Name konnte nicht gespeichert werden."
+  ,"Aktive Session konnte nicht im Profil gespeichert werden.": "Aktive Session konnte nicht im Profil gespeichert werden."
+  ,"Supabase-Session ist noch nicht vollstaendig bereit.": "Supabase-Session ist noch nicht vollständig bereit."
+  ,"Aktive Session konnte nicht gesetzt werden.": "Aktive Session konnte nicht gesetzt werden."
+  ,"Bitte gültigen Code angeben.": "Bitte gültigen Code angeben."
+  ,"Ungültiger Freund.": "Ungültiger Freund."
+  ,"Freundschaft konnte nicht entfernt werden.": "Freundschaft konnte nicht entfernt werden."
+  ,"Gastmodus unterstützt keine Anfragen.": "Gastmodus unterstützt keine Anfragen."
+  ,"Kein Zielnutzer übergeben.": "Kein Zielnutzer übergeben."
+  ,"Match-ID fehlt.": "Match-ID fehlt."
+  ,"Empfänger-Code fehlt.": "Empfänger-Code fehlt."
+  ,"Kein Nutzer angemeldet.": "Kein Nutzer angemeldet."
+  ,"Match nicht gefunden.": "Match nicht gefunden."
+  ,"Match fehlt.": "Match fehlt."
+  ,"Match konnte nicht aktualisiert werden. Bitte neu laden.": "Match konnte nicht aktualisiert werden. Bitte neu laden."
+  ,"Keine Kategorien gefunden.": "Keine Kategorien gefunden."
+  ,"Gäste können keine Scores speichern.": "Gäste können keine Scores speichern."
+  ,"Kein Nutzer angegeben.": "Kein Nutzer angegeben."
+  ,"Kein Freundescode angegeben.": "Kein Freundescode angegeben."
+  ,"Bitte einen gültigen Nutzernamen eingeben.": "Bitte einen gültigen Nutzernamen eingeben."
+  ,"Kein E-Mail-Wert gefunden. Bitte erneut anmelden.": "Kein E-Mail-Wert gefunden. Bitte erneut anmelden."
+  ,"Kein Bild ausgewählt.": "Kein Bild ausgewählt."
+  ,"Konnte öffentliche Avatar-URL nicht erstellen.": "Konnte öffentliche Avatar-URL nicht erstellen."
+  ,"Kein blockierbarer Nutzer gefunden.": "Kein blockierbarer Nutzer gefunden."
+  ,"Gastfortschritt vorhanden": "Gastfortschritt vorhanden"
+  ,"Wenn du dich in einen bestehenden Account einloggst, wird dein Gastfortschritt auf diesem Geraet verworfen. Neue oder leere Accounts uebernehmen ihn.": "Wenn du dich in einen bestehenden Account einloggst, wird dein Gastfortschritt auf diesem Geraet verworfen. Neue oder leere Accounts uebernehmen ihn."
+  ,"Account erstellt. Bitte bestaetige deine E-Mail. Dein Gastfortschritt wird beim ersten Login uebernommen.": "Account erstellt. Bitte bestaetige deine E-Mail. Dein Gastfortschritt wird beim ersten Login uebernommen."
 }

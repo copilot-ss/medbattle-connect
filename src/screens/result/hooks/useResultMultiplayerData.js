@@ -7,6 +7,10 @@ import {
   getAvatarPresetSource,
   isRemoteAvatarUrl,
 } from '../../../utils/avatarUtils';
+import {
+  getMatchPlayerEntries,
+  getMatchPlayerRoleOrder,
+} from '../../../services/match/matchHelpers';
 
 function normalizeUserId(value) {
   if (typeof value !== 'string') {
@@ -41,6 +45,53 @@ function getQuestionMeta(map, questionId) {
   return map.get(questionId) ?? map.get(String(questionId)) ?? null;
 }
 
+function getQuestionKey(item, fallbackIndex = 0) {
+  const key = item?.questionId ?? item?.id ?? item?.index ?? fallbackIndex;
+  return String(key);
+}
+
+function findMatchingReviewItem(items, targetItem, targetIndex) {
+  const source = Array.isArray(items) ? items : [];
+  const targetKey = getQuestionKey(targetItem, targetIndex);
+  const targetOrder = getReviewOrderIndex(targetItem);
+
+  return source.find((candidate, candidateIndex) => {
+    if (getQuestionKey(candidate, candidateIndex) === targetKey) {
+      return true;
+    }
+    return getReviewOrderIndex(candidate) === targetOrder;
+  }) ?? null;
+}
+
+function getDisplayName(playerState, fallback) {
+  const name =
+    typeof playerState?.username === 'string' ? playerState.username.trim() : '';
+  return name || fallback;
+}
+
+function buildFallbackPlayerEntries({
+  playerRole,
+  playerState,
+  opponentState,
+  matchStateSnapshot,
+}) {
+  const snapshotEntries = getMatchPlayerEntries(matchStateSnapshot);
+  if (snapshotEntries.length) {
+    return snapshotEntries;
+  }
+
+  const selfRole = playerRole || 'host';
+  const opponentRole = selfRole === 'host' ? 'guest' : 'host';
+  return [
+    playerState
+      ? { role: selfRole, state: playerState }
+      : null,
+    opponentState
+      ? { role: opponentRole, state: opponentState }
+      : null,
+  ].filter((entry) => entry?.state);
+}
+
 export default function useResultMultiplayerData({
   isMultiplayer,
   matchId,
@@ -55,6 +106,7 @@ export default function useResultMultiplayerData({
   opponentName,
   playerState,
   opponentState,
+  matchStateSnapshot,
   answerHistory,
   liveMatch,
   liveMatchStatus,
@@ -77,85 +129,109 @@ export default function useResultMultiplayerData({
     );
   }, []);
 
-  const resolvedPlayerState = useMemo(() => {
-    if (isMultiplayer && liveMatch) {
-      return livePlayerState ?? null;
-    }
-    return playerState ?? null;
-  }, [isMultiplayer, liveMatch, livePlayerState, playerState]);
-
-  const resolvedOpponentState = useMemo(() => {
-    if (isMultiplayer && liveMatch) {
-      return liveOpponentState ?? null;
-    }
-    return opponentState ?? null;
-  }, [isMultiplayer, liveMatch, liveOpponentState, opponentState]);
-
   const resolvedMatchStatus =
     liveMatch?.status ?? liveMatchStatus ?? matchStatus ?? null;
   const routeUserId = useMemo(
     () => normalizeUserId(userId),
     [userId]
   );
-  const selfUserId = useMemo(
-    () => normalizeUserId(resolvedPlayerState?.userId) ?? routeUserId,
-    [resolvedPlayerState?.userId, routeUserId]
-  );
-  const opponentUserId = useMemo(
-    () => normalizeUserId(resolvedOpponentState?.userId),
-    [resolvedOpponentState?.userId]
-  );
-  const opponentStateAvatarUrl = useMemo(() => {
-    if (!isRemoteAvatarUrl(resolvedOpponentState?.avatarUrl)) {
-      return null;
+  const resolvedPlayerEntries = useMemo(() => {
+    if (!isMultiplayer) {
+      return [];
     }
-    return resolvedOpponentState.avatarUrl.trim();
-  }, [resolvedOpponentState?.avatarUrl]);
-  const hasCachedOpponentProfile = useMemo(
-    () => (
-      opponentUserId
-        ? Object.prototype.hasOwnProperty.call(participantProfiles, opponentUserId)
-        : false
-    ),
-    [opponentUserId, participantProfiles]
+    const liveEntries = getMatchPlayerEntries(liveMatch);
+    if (liveEntries.length) {
+      return liveEntries;
+    }
+    return buildFallbackPlayerEntries({
+      playerRole,
+      playerState,
+      opponentState,
+      matchStateSnapshot,
+    });
+  }, [
+    isMultiplayer,
+    liveMatch,
+    matchStateSnapshot,
+    opponentState,
+    playerRole,
+    playerState,
+  ]);
+  const selfPlayerEntry = useMemo(() => {
+    return (
+      resolvedPlayerEntries.find((entry) => (
+        normalizeUserId(entry?.state?.userId) === routeUserId
+      )) ??
+      resolvedPlayerEntries.find((entry) => entry.role === playerRole) ??
+      null
+    );
+  }, [playerRole, resolvedPlayerEntries, routeUserId]);
+  const opponentPlayerEntries = useMemo(
+    () => resolvedPlayerEntries.filter((entry) => entry !== selfPlayerEntry),
+    [resolvedPlayerEntries, selfPlayerEntry]
   );
+  const resolvedPlayerState = selfPlayerEntry?.state ?? (
+    liveMatch ? livePlayerState ?? null : playerState ?? null
+  );
+  const resolvedOpponentState =
+    opponentPlayerEntries[0]?.state ??
+    (liveMatch ? liveOpponentState ?? null : opponentState ?? null);
+  const selfUserId = normalizeUserId(resolvedPlayerState?.userId) ?? routeUserId;
+  const profileTargetUserIds = useMemo(() => {
+    return Array.from(
+      new Set(
+        opponentPlayerEntries
+          .map((entry) => normalizeUserId(entry?.state?.userId))
+          .filter(Boolean)
+      )
+    );
+  }, [opponentPlayerEntries]);
 
   useEffect(() => {
-    if (
-      !opponentUserId ||
-      opponentStateAvatarUrl ||
-      hasCachedOpponentProfile
-    ) {
+    const missingUserIds = profileTargetUserIds.filter(
+      (participantUserId) =>
+        !Object.prototype.hasOwnProperty.call(participantProfiles, participantUserId)
+    );
+
+    if (missingUserIds.length === 0) {
       return undefined;
     }
 
     let active = true;
 
     (async () => {
-      let nextProfile = null;
-      try {
-        const result = await fetchPublicProfileByUserId(opponentUserId);
-        nextProfile = result?.ok ? result.profile ?? null : null;
-      } catch {
-        nextProfile = null;
-      }
+      const entries = await Promise.all(
+        missingUserIds.map(async (participantUserId) => {
+          let nextProfile = null;
+          try {
+            const result = await fetchPublicProfileByUserId(participantUserId);
+            nextProfile = result?.ok ? result.profile ?? null : null;
+          } catch {
+            nextProfile = null;
+          }
+          return [participantUserId, nextProfile];
+        })
+      );
+
       if (!active) {
         return;
       }
 
-      setParticipantProfiles((prev) => ({
-        ...prev,
-        [opponentUserId]: nextProfile,
-      }));
+      setParticipantProfiles((prev) => {
+        const next = { ...prev };
+        entries.forEach(([participantUserId, profile]) => {
+          next[participantUserId] = profile;
+        });
+        return next;
+      });
     })();
 
     return () => {
       active = false;
     };
   }, [
-    hasCachedOpponentProfile,
-    opponentUserId,
-    opponentStateAvatarUrl,
+    participantProfiles,
+    profileTargetUserIds,
   ]);
 
   const currentAvatarUri = useMemo(() => {
@@ -167,9 +243,6 @@ export default function useResultMultiplayerData({
       : null;
   }, [avatarSource]);
 
-  const opponentProfile = opponentUserId
-    ? participantProfiles[opponentUserId] ?? null
-    : null;
   const selfAvatarUrl = resolvedPlayerState?.avatarUrl ?? currentAvatarUri ?? null;
   const selfAvatarIcon = selfAvatarUrl ? null : avatarIcon ?? resolvedPlayerState?.avatarIcon ?? null;
   const selfAvatarSource = selfAvatarUrl
@@ -177,75 +250,104 @@ export default function useResultMultiplayerData({
     : avatarSource ?? getAvatarPresetSource(selfAvatarIcon);
   const selfAvatarColor =
     resolvedPlayerState?.avatarColor ?? currentAvatarColor ?? null;
-  const opponentProfileAvatarUrl = isRemoteAvatarUrl(opponentProfile?.avatarUrl)
-    ? opponentProfile.avatarUrl.trim()
-    : null;
-  const opponentAvatarUrl = opponentProfileAvatarUrl ?? opponentStateAvatarUrl ?? null;
-  const opponentAvatarIcon =
-    opponentAvatarUrl
-      ? null
-      : resolvedOpponentState?.avatarIcon ?? opponentProfile?.avatarIcon ?? null;
-  const opponentAvatarSource = opponentAvatarUrl
-    ? null
-    : getAvatarPresetSource(opponentAvatarIcon);
-  const opponentAvatarColor =
-    resolvedOpponentState?.avatarColor ?? opponentProfile?.avatarColor ?? null;
+
+  const playerPresentationEntries = useMemo(() => {
+    const entries = resolvedPlayerEntries.length
+      ? resolvedPlayerEntries
+      : [
+          resolvedPlayerState
+            ? { role: playerRole ?? 'host', state: resolvedPlayerState }
+            : null,
+          resolvedOpponentState
+            ? { role: playerRole === 'host' ? 'guest' : 'host', state: resolvedOpponentState }
+            : null,
+        ].filter(Boolean);
+
+    return entries
+      .slice()
+      .sort((a, b) => getMatchPlayerRoleOrder(a.role) - getMatchPlayerRoleOrder(b.role))
+      .map((entry) => {
+        const entryUserId = normalizeUserId(entry?.state?.userId);
+        const isSelf = Boolean(entryUserId && entryUserId === selfUserId);
+        const profile = !isSelf && entryUserId
+          ? participantProfiles[entryUserId] ?? null
+          : null;
+        const stateAvatarUrl = isRemoteAvatarUrl(entry?.state?.avatarUrl)
+          ? entry.state.avatarUrl.trim()
+          : null;
+        const profileAvatarUrl = isRemoteAvatarUrl(profile?.avatarUrl)
+          ? profile.avatarUrl.trim()
+          : null;
+        const resolvedAvatarUrl = isSelf
+          ? selfAvatarUrl
+          : profileAvatarUrl ?? stateAvatarUrl ?? null;
+        const resolvedAvatarIcon = resolvedAvatarUrl
+          ? null
+          : isSelf
+            ? selfAvatarIcon
+            : entry?.state?.avatarIcon ?? profile?.avatarIcon ?? null;
+        return {
+          role: entry.role,
+          state: entry.state,
+          userId: entryUserId,
+          key: entryUserId ?? entry.role,
+          isSelf,
+          name: getDisplayName(entry.state, isSelf ? t('Spieler') : opponentName ?? t('Gegner')),
+          avatarUrl: resolvedAvatarUrl,
+          avatarSource: resolvedAvatarUrl
+            ? null
+            : isSelf
+              ? selfAvatarSource
+              : getAvatarPresetSource(resolvedAvatarIcon),
+          avatarIcon: resolvedAvatarIcon,
+          avatarColor: isSelf
+            ? selfAvatarColor
+            : entry?.state?.avatarColor ?? profile?.avatarColor ?? null,
+        };
+      });
+  }, [
+    opponentName,
+    participantProfiles,
+    playerRole,
+    resolvedOpponentState,
+    resolvedPlayerEntries,
+    resolvedPlayerState,
+    selfAvatarColor,
+    selfAvatarIcon,
+    selfAvatarSource,
+    selfAvatarUrl,
+    selfUserId,
+    t,
+  ]);
 
   const reviewItems = useMemo(() => {
     return sortReviewItemsByIndex(answerHistory);
   }, [answerHistory]);
 
-  const selfBaseName = useMemo(() => {
-    const name =
-      typeof resolvedPlayerState?.username === 'string'
-        ? resolvedPlayerState.username.trim()
-        : '';
-    return name || t('Du');
-  }, [resolvedPlayerState?.username, t]);
-
-  const selfDisplayName =
-    selfUserId &&
-    routeUserId &&
-    selfUserId === routeUserId &&
-    selfBaseName !== t('Du')
-      ? `${selfBaseName} (${t('Du')})`
-      : selfBaseName;
-
-  const opponentDisplayName = useMemo(() => {
-    if (
-      typeof resolvedOpponentState?.username === 'string' &&
-      resolvedOpponentState.username.trim()
-    ) {
-      return resolvedOpponentState.username.trim();
-    }
-    if (opponentName && typeof opponentName === 'string') {
-      return opponentName;
-    }
-    return t('Gegner');
-  }, [opponentName, resolvedOpponentState?.username, t]);
-
-  const opponentScoreValue = resolveScoreValue(
-    resolvedOpponentState?.score,
-    opponentScore
-  );
   const selfScoreValue = resolveScoreValue(
     resolvedPlayerState?.score,
     score
   ) ?? 0;
+  const opponentScoreValue = useMemo(() => {
+    const scores = playerPresentationEntries
+      .filter((entry) => !entry.isSelf)
+      .map((entry) => resolveScoreValue(entry.state?.score))
+      .filter(Number.isFinite);
+    if (scores.length) {
+      return Math.max(...scores);
+    }
+    return resolveScoreValue(resolvedOpponentState?.score, opponentScore);
+  }, [
+    opponentScore,
+    playerPresentationEntries,
+    resolvedOpponentState?.score,
+  ]);
 
   const hasOpponent = useMemo(() => {
     if (!isMultiplayer) {
       return false;
     }
-    if (opponentUserId) {
-      return true;
-    }
-    const expectedOpponentId =
-      playerRole === 'guest' ? liveMatch?.host_id : liveMatch?.guest_id;
-    if (expectedOpponentId) {
-      return true;
-    }
-    if (opponentState?.userId) {
+    if (playerPresentationEntries.some((entry) => !entry.isSelf)) {
       return true;
     }
     if (typeof opponentName === 'string' && opponentName.trim()) {
@@ -254,24 +356,19 @@ export default function useResultMultiplayerData({
     return Number.isFinite(opponentScoreValue);
   }, [
     isMultiplayer,
-    liveMatch?.guest_id,
-    liveMatch?.host_id,
     opponentName,
     opponentScoreValue,
-    opponentState?.userId,
-    opponentUserId,
-    playerRole,
+    playerPresentationEntries,
   ]);
 
   const selfPlayerKey = selfUserId ?? 'self';
-  const opponentPlayerKey = opponentUserId ?? 'opponent';
 
   const allPlayersFinished = Boolean(
     isMultiplayer &&
       (resolvedMatchStatus === 'completed' ||
         (hasOpponent &&
-          resolvedPlayerState?.finished &&
-          resolvedOpponentState?.finished))
+          playerPresentationEntries.length > 1 &&
+          playerPresentationEntries.every((entry) => entry.state?.finished)))
   );
   const showMultiplayerWaiting = isMultiplayer && !allPlayersFinished;
 
@@ -285,22 +382,14 @@ export default function useResultMultiplayerData({
       }
       return [];
     }
-    const next = [];
-    if (!resolvedPlayerState?.finished) {
-      next.push(selfDisplayName);
-    }
-    if (!resolvedOpponentState?.finished) {
-      next.push(opponentDisplayName);
-    }
-    return next;
+    return playerPresentationEntries
+      .filter((entry) => !entry.state?.finished)
+      .map((entry) => entry.name);
   }, [
     hasOpponent,
     isMultiplayer,
-    opponentDisplayName,
     opponentName,
-    resolvedOpponentState?.finished,
-    resolvedPlayerState?.finished,
-    selfDisplayName,
+    playerPresentationEntries,
   ]);
 
   const waitingPlayersLabel = waitingPlayers.length
@@ -356,6 +445,14 @@ export default function useResultMultiplayerData({
             durationMs: Number.isFinite(entry?.durationMs) ? entry.durationMs : null,
             boostsUsed: sanitizeBoostUsage(entry?.boostsUsed),
             explanation: question?.explanation ?? null,
+            imageSource: question?.image_asset ?? question?.imageSource ?? null,
+            imageUrl: question?.image_url ?? question?.imageUrl ?? null,
+            imageAlt: question?.image_alt ?? question?.imageAlt ?? null,
+            imageOnly:
+              question?.image_only === true ||
+              question?.imageOnly === true ||
+              question?.prompt_mode === 'image_only' ||
+              question?.promptMode === 'image_only',
           };
         });
     },
@@ -370,74 +467,47 @@ export default function useResultMultiplayerData({
   const selfReviewItems =
     reviewItems.length > 0 ? reviewItems : selfFallbackReviewItems;
 
-  const opponentReviewItems = useMemo(
-    () => mapAnswersToReview(resolvedOpponentState?.answers),
-    [mapAnswersToReview, resolvedOpponentState?.answers]
-  );
-
   const reviewByPlayerKey = useMemo(() => {
     const map = new Map();
-    map.set(selfPlayerKey, selfReviewItems);
-    if (hasOpponent) {
-      map.set(opponentPlayerKey, opponentReviewItems);
+    playerPresentationEntries.forEach((entry) => {
+      map.set(
+        entry.key,
+        entry.isSelf ? selfReviewItems : mapAnswersToReview(entry.state?.answers)
+      );
+    });
+    if (!map.has(selfPlayerKey)) {
+      map.set(selfPlayerKey, selfReviewItems);
     }
     return map;
   }, [
-    hasOpponent,
-    opponentPlayerKey,
-    opponentReviewItems,
+    mapAnswersToReview,
+    playerPresentationEntries,
     selfPlayerKey,
     selfReviewItems,
   ]);
-  const selfBoostIds = useMemo(
-    () => collectUsedBoostIds(selfReviewItems),
-    [collectUsedBoostIds, selfReviewItems]
-  );
-  const opponentBoostIds = useMemo(
-    () => collectUsedBoostIds(opponentReviewItems),
-    [collectUsedBoostIds, opponentReviewItems]
-  );
 
   const multiplayerEntries = useMemo(() => {
     if (!isMultiplayer) {
       return [];
     }
-    const entries = [
-      {
-        key: selfPlayerKey,
-        name: selfDisplayName,
-        username: resolvedPlayerState?.username ?? null,
-        title: resolvedPlayerState?.title ?? null,
-        userId: selfUserId,
-        score: selfScoreValue,
-        isSelf: true,
-        avatarSource: selfAvatarSource,
-        avatarUrl: selfAvatarUrl,
-        avatarIcon: selfAvatarIcon,
-        avatarColor: selfAvatarColor,
-        initials: getInitials(selfDisplayName),
-        usedBoostIds: selfBoostIds,
-      },
-    ];
-
-    if (hasOpponent) {
-      entries.push({
-        key: opponentPlayerKey,
-        name: opponentDisplayName,
-        username: resolvedOpponentState?.username ?? null,
-        title: resolvedOpponentState?.title ?? null,
-        userId: opponentUserId,
-        score: opponentScoreValue,
-        isSelf: false,
-        avatarSource: opponentAvatarSource,
-        avatarUrl: opponentAvatarUrl,
-        avatarIcon: opponentAvatarIcon,
-        avatarColor: opponentAvatarColor,
-        initials: getInitials(opponentDisplayName),
-        usedBoostIds: opponentBoostIds,
-      });
-    }
-
+    const entries = playerPresentationEntries.map((entry) => ({
+      key: entry.key,
+      name: entry.name,
+      username: entry.state?.username ?? null,
+      title: entry.state?.title ?? null,
+      userId: entry.userId,
+      score: resolveScoreValue(
+        entry.isSelf ? resolvedPlayerState?.score : entry.state?.score,
+        entry.isSelf ? score : null
+      ),
+      isSelf: entry.isSelf,
+      avatarSource: entry.avatarSource,
+      avatarUrl: entry.avatarUrl,
+      avatarIcon: entry.avatarIcon,
+      avatarColor: entry.avatarColor,
+      initials: getInitials(entry.name),
+      usedBoostIds: collectUsedBoostIds(reviewByPlayerKey.get(entry.key)),
+    }));
     const scoreValue = (value) => (Number.isFinite(value) ? value : -1);
     return entries
       .sort((a, b) => {
@@ -458,33 +528,12 @@ export default function useResultMultiplayerData({
         rank: index + 1,
       }));
   }, [
-    hasOpponent,
+    collectUsedBoostIds,
     isMultiplayer,
-    opponentBoostIds,
-    opponentAvatarColor,
-    opponentAvatarIcon,
-    opponentAvatarSource,
-    opponentAvatarUrl,
-    opponentDisplayName,
-    opponentProfile?.avatarColor,
-    opponentProfile?.avatarIcon,
-    opponentProfile?.avatarUrl,
-    opponentPlayerKey,
-    opponentScoreValue,
-    opponentUserId,
-    resolvedOpponentState?.title,
-    resolvedOpponentState?.username,
-    resolvedPlayerState?.title,
-    resolvedPlayerState?.username,
-    selfBoostIds,
-    selfAvatarColor,
-    selfAvatarIcon,
-    selfAvatarSource,
-    selfAvatarUrl,
-    selfDisplayName,
-    selfPlayerKey,
-    selfScoreValue,
-    selfUserId,
+    playerPresentationEntries,
+    resolvedPlayerState?.score,
+    reviewByPlayerKey,
+    score,
   ]);
 
   const handleOpenScoreProfile = useCallback((entry) => {
@@ -515,16 +564,54 @@ export default function useResultMultiplayerData({
     if (!isMultiplayer) {
       return reviewItems;
     }
-    if (!selectedScorePlayerKey) {
-      return selfReviewItems;
+    const activePlayerKey = selectedScorePlayerKey ?? selfPlayerKey;
+    const activeItems = reviewByPlayerKey.get(activePlayerKey) ?? [];
+
+    if (!allPlayersFinished) {
+      return activeItems;
     }
-    return reviewByPlayerKey.get(selectedScorePlayerKey) ?? [];
+
+    return activeItems.map((item, index) => {
+      const otherPlayerAnswers = multiplayerEntries
+        .filter((entry) => entry.key !== activePlayerKey)
+        .map((entry) => {
+          const matchingReviewItem = findMatchingReviewItem(
+            reviewByPlayerKey.get(entry.key),
+            item,
+            index
+          );
+
+          if (!matchingReviewItem) {
+            return null;
+          }
+
+          return {
+            key: entry.key,
+            name: entry.name,
+            selectedOption: matchingReviewItem.timedOut
+              ? t('Zeit abgelaufen')
+              : matchingReviewItem.selectedOption ?? t('Keine Antwort'),
+            isCorrect: Boolean(matchingReviewItem.isCorrect),
+            timedOut: Boolean(matchingReviewItem.timedOut),
+          };
+        })
+        .filter(Boolean);
+
+      return {
+        ...item,
+        otherPlayerAnswers,
+      };
+    });
   }, [
+    allPlayersFinished,
     isMultiplayer,
+    multiplayerEntries,
     reviewByPlayerKey,
     reviewItems,
     selectedScorePlayerKey,
+    selfPlayerKey,
     selfReviewItems,
+    t,
   ]);
 
   const selectedReviewTitle = useMemo(() => {
@@ -548,77 +635,77 @@ export default function useResultMultiplayerData({
     if (!isMultiplayer || !matchId) {
       return null;
     }
-    const selfSnapshot = {
-      userId: selfUserId,
-      username: resolvedPlayerState?.username ?? null,
-      title: resolvedPlayerState?.title ?? null,
-      score: selfScoreValue,
-      finished: Boolean(resolvedPlayerState?.finished),
-      answers: Array.isArray(resolvedPlayerState?.answers)
-        ? resolvedPlayerState.answers
-        : [],
-      avatarUrl: selfAvatarUrl,
-      avatarIcon: selfAvatarIcon,
-      avatarColor: selfAvatarColor,
-    };
-    const opponentSnapshot = {
-      userId: opponentUserId,
-      username: resolvedOpponentState?.username ?? opponentName ?? null,
-      title: resolvedOpponentState?.title ?? null,
-      score: opponentScoreValue,
-      finished: Boolean(resolvedOpponentState?.finished),
-      answers: Array.isArray(resolvedOpponentState?.answers)
-        ? resolvedOpponentState.answers
-        : [],
-      avatarUrl: opponentAvatarUrl,
-      avatarIcon: opponentAvatarIcon,
-      avatarColor: opponentAvatarColor,
-    };
-    const resolvedRole = playerRole === 'guest' ? 'guest' : 'host';
-    const hostState = resolvedRole === 'host' ? selfSnapshot : opponentSnapshot;
-    const guestState = resolvedRole === 'guest' ? selfSnapshot : opponentSnapshot;
+    const nextState = playerPresentationEntries.reduce((acc, entry) => {
+      acc[entry.role] = {
+        userId: entry.userId,
+        username: entry.state?.username ?? null,
+        title: entry.state?.title ?? null,
+        score: resolveScoreValue(entry.state?.score, entry.isSelf ? selfScoreValue : null),
+        finished: Boolean(entry.state?.finished),
+        answers: Array.isArray(entry.state?.answers) ? entry.state.answers : [],
+        avatarUrl: entry.avatarUrl ?? null,
+        avatarIcon: entry.avatarIcon ?? null,
+        avatarColor: entry.avatarColor ?? null,
+      };
+      return acc;
+    }, {});
+    if (!nextState.host && resolvedPlayerState) {
+      nextState.host = {
+        userId: selfUserId,
+        username: resolvedPlayerState?.username ?? null,
+        title: resolvedPlayerState?.title ?? null,
+        score: selfScoreValue,
+        finished: Boolean(resolvedPlayerState?.finished),
+        answers: Array.isArray(resolvedPlayerState?.answers)
+          ? resolvedPlayerState.answers
+          : [],
+        avatarUrl: selfAvatarUrl,
+        avatarIcon: selfAvatarIcon,
+        avatarColor: selfAvatarColor,
+      };
+    }
+    if (!nextState.guest) {
+      nextState.guest = {
+        userId: null,
+        username: null,
+        title: null,
+        score: 0,
+        finished: false,
+        answers: [],
+        avatarUrl: null,
+        avatarIcon: null,
+        avatarColor: null,
+      };
+    }
     return {
       id: matchId,
       code: matchJoinCode ?? null,
       status: resolvedMatchStatus,
       category: liveMatch?.category ?? category ?? null,
       question_limit: liveMatch?.question_limit ?? questionLimit ?? null,
-      host_id: hostState?.userId ?? null,
-      guest_id: guestState?.userId ?? null,
-      state: {
-        host: hostState,
-        guest: guestState,
-      },
+      host_id: nextState.host?.userId ?? null,
+      guest_id: nextState.guest?.userId ?? null,
+      state: nextState,
     };
   }, [
+    category,
     isMultiplayer,
+    questionLimit,
+    liveMatch?.category,
+    liveMatch?.question_limit,
     matchId,
     matchJoinCode,
-    category,
-    questionLimit,
-    opponentName,
-    opponentAvatarColor,
-    opponentAvatarIcon,
-    opponentAvatarUrl,
-    opponentScoreValue,
-    opponentUserId,
-    playerRole,
-    resolvedMatchStatus,
-    resolvedOpponentState?.finished,
-    resolvedOpponentState?.answers,
-    resolvedOpponentState?.title,
-    resolvedOpponentState?.username,
+    playerPresentationEntries,
     resolvedPlayerState?.answers,
-    resolvedPlayerState?.title,
     resolvedPlayerState?.finished,
+    resolvedPlayerState?.title,
     resolvedPlayerState?.username,
-    selfScoreValue,
     selfAvatarColor,
     selfAvatarIcon,
     selfAvatarUrl,
-    liveMatch?.category,
-    liveMatch?.question_limit,
+    selfScoreValue,
     selfUserId,
+    resolvedMatchStatus,
   ]);
 
   useEffect(() => {

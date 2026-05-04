@@ -1,8 +1,10 @@
 import { MAX_PLAYERS } from './lobbyConstants';
+import { getMatchPlayerEntries } from '../../services/match/matchHelpers';
 
 export function parseLobbyRouteConfig(route) {
   const existingMatch = route?.params?.existingMatch ?? null;
   const keepCompleted = Boolean(route?.params?.keepCompleted);
+  const suppressActiveNavigationParam = Boolean(route?.params?.suppressActiveNavigation);
   const initialCategory =
     typeof route?.params?.category === 'string'
       ? route.params.category
@@ -19,7 +21,8 @@ export function parseLobbyRouteConfig(route) {
   return {
     existingMatch,
     allowCompletedLobby: keepCompleted,
-    suppressActiveNavigation: keepCompleted,
+    suppressActiveNavigation: keepCompleted || suppressActiveNavigationParam,
+    suppressActiveNavigationUntilWaiting: suppressActiveNavigationParam,
     initialCategory,
     isCreateOnly: normalizedMode === 'create',
     isJoinOnly: normalizedMode === 'join',
@@ -36,11 +39,7 @@ export function buildActiveLobbyPayload(match, capacity = MAX_PLAYERS) {
     return null;
   }
 
-  const players = match.state
-    ? [match.state.host, match.state.guest].filter(
-        (participant) => participant?.userId
-      ).length
-    : 0;
+  const players = getMatchPlayerEntries(match).length;
 
   return {
     code: match.code ?? null,

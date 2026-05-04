@@ -19,6 +19,16 @@ function resolveQuizNavigator(navigation) {
   return navigation.navigate.bind(navigation);
 }
 
+function hasFinishedCurrentActiveMatch(match, role) {
+  if (!match || match.status !== 'active') {
+    return false;
+  }
+  if (!role) {
+    return false;
+  }
+  return Boolean(match.state?.[role]?.finished);
+}
+
 export default function useHomeActiveLobbyStart({
   activeLobby,
   navigation,
@@ -64,6 +74,10 @@ export default function useHomeActiveLobbyStart({
 
       const role = deriveMatchRole(match, userId);
       if (!role) {
+        return;
+      }
+
+      if (hasFinishedCurrentActiveMatch(match, role)) {
         return;
       }
 

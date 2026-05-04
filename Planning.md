@@ -6,8 +6,8 @@ Kostenlose kompetitive Medizin-Quiz-App mit Supabase-Backend, Google-/E-Mail-Aut
 ## Aktueller Stand
 - Fokus ist Android Release ueber Google Play Closed testing.
 - Neuester hochgeladener Store-Build ist `versionCode 42` (`1.0.1`) im Closed-Test-Track.
-- Neuester lokal gebauter Store-Build ist `versionCode 44` (`1.0.1`), erstellt am `2026-03-31`.
-- Dieses lokale Release-AAB `42` entspricht dem aktuellen Repo-Stand und liegt jetzt auch im Closed-Test-Track; fuer einen echten Store-Install auf Emulator oder Realgeraet muss dieses Geraet jetzt genau diesen Store-Build ueber Google Play beziehen.
+- Neuester lokal gebauter Store-Build ist `versionCode 51` (`1.0.1`), erstellt am `2026-05-03`.
+- Das lokale Release-AAB `51` liegt unter `android/app/build/outputs/bundle/release/app-release.aab` und ist fuer den naechsten Play-Store-Upload vorbereitet; der aktuell hochgeladene Closed-Test-Track bleibt `versionCode 42`.
 - Das angeschlossene Realgeraet `c2ccd135` liegt noch auf `versionCode 35`; der gestartete Emulator kann lokal wieder mit `x86_64`-Builds getestet werden, fuer den Play-Store-Pfad braucht er aber den ausgerollten Store-Build.
 - Android-15-Systemleistenwarnung aus der Play Console ist im Repo adressiert: App-seitige Status-/Navigationsleistenaufrufe wurden reduziert, Edge-to-Edge ist lokal deaktiviert und React Native `0.83.2` wird per Patch an den Android-15-APIs vorbeigefuehrt.
 
@@ -26,14 +26,14 @@ Kostenlose kompetitive Medizin-Quiz-App mit Supabase-Backend, Google-/E-Mail-Aut
 - Normales Solo-/Quick-Play-/Kategorie-Quiz hat `6` Fragen.
 - Multiplayer hat standardmaessig ebenfalls `6` Fragen, kann aber in der Lobby zwischen `3` und `20` liegen.
 - Rewarded Ads geben aktuell `+5` Energie.
-- Coin-zu-Energie im leeren-Energie-Dialog ist auf `15 Coins pro 1 Energie` dargestellt.
+- Coin-zu-Energie ist in Shop und leerem-Energie-Dialog einheitlich auf `24 Coins pro 1 Energie` gesetzt.
 
 ## Release- und Build-Stand
-- `app.json` nutzt Android `versionCode 44`, `versionName 1.0.1`.
+- `app.json` nutzt Android `versionCode 51`, `versionName 1.0.1`.
 - Expo Updates laufen ueber den `production`-Kanal mit `runtimeVersion 55.0.0`.
 - Release-Builds sind mit Minify, Resource Shrinking und Hermes konfiguriert.
 - Das Repo ist aktuell fuer `armeabi-v7a`, `arm64-v8a` und `x86_64` konfiguriert.
-- Das letzte lokale Store-Artefakt `44` liegt unter `android/app/build/outputs/bundle/release/app-release.aab`; damit ist der aktuelle Repo-Stand fuer den naechsten Upload gebaut.
+- Das letzte lokale Store-Artefakt `51` liegt unter `android/app/build/outputs/bundle/release/app-release.aab`; damit ist der aktuelle Repo-Stand fuer den naechsten Upload gebaut.
 
 ## Auth / Ads Besonderheiten
 - Google-/Supabase-OAuth wurde gegen spaet ankommende Sessions gehaertet, damit der erste Login nach Neuinstallation nicht mehr vorschnell mit `Supabase nicht erreichbar (Session setzen)` fehlschlaegt.

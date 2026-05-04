@@ -1,10 +1,15 @@
 import { supabase } from '../lib/supabaseClient';
-import { MULTIPLAYER_DEFAULT_QUESTION_LIMIT } from '../config/quizLimits';
+import {
+  MULTIPLAYER_DEFAULT_QUESTION_LIMIT,
+  MULTIPLAYER_MAX_PLAYERS,
+} from '../config/quizLimits';
 import { runSupabaseRequest } from './supabaseRequest';
 import {
   LOBBY_IDLE_TIMEOUT_MINUTES,
   MATCH_CACHE_TTL,
   MATCH_STATUS,
+  getMatchPlayerEntries,
+  isMatchPlayerRole,
   normalizeMatchRow,
   sanitizeAnswer,
 } from './match/matchHelpers';
@@ -122,6 +127,13 @@ export function deriveMatchRole(match, userId) {
 
   if (match.guest_id === userId) {
     return 'guest';
+  }
+
+  const participant = getMatchPlayerEntries(match).find(
+    (entry) => entry.state?.userId === userId
+  );
+  if (participant?.role) {
+    return participant.role;
   }
 
   return null;
@@ -428,40 +440,16 @@ export async function fetchOpenMatches({ force = false, excludeHostId = null } =
     let data = null;
     let error = null;
 
-    if (normalizedExcludeHostId) {
-      let query = supabase
-        .from('matches')
-        .select('id, code, question_limit, created_at, host_id, state')
-        .eq('status', MATCH_STATUS.WAITING)
-        .is('guest_id', null)
-        .neq('host_id', normalizedExcludeHostId)
-        .order('created_at', { ascending: true })
-        .limit(24);
-
-      const directResult = await runSupabaseRequest(
-        () => query,
-        {
-          label: 'matchService.fetchOpenMatches.direct',
-          profile: 'lobby',
-          dedupeKey: cacheKey,
-        }
-      );
-      data = directResult.data;
-      error = directResult.error;
-    }
-
-    if (!normalizedExcludeHostId || error) {
-      const rpcResult = await runSupabaseRequest(
-        () => supabase.rpc('get_open_matches'),
-        {
-          label: 'matchService.getOpenMatches',
-          profile: 'lobby',
-          dedupeKey: cacheKey,
-        }
-      );
-      data = rpcResult.data;
-      error = rpcResult.error;
-    }
+    const rpcResult = await runSupabaseRequest(
+      () => supabase.rpc('get_open_matches'),
+      {
+        label: 'matchService.getOpenMatches',
+        profile: 'lobby',
+        dedupeKey: cacheKey,
+      }
+    );
+    data = rpcResult.data;
+    error = rpcResult.error;
 
     if (error) {
       console.warn('Konnte offene Matches nicht laden:', error.message);
@@ -480,13 +468,14 @@ export async function fetchOpenMatches({ force = false, excludeHostId = null } =
                 code: row.code,
                 createdAt: row.created_at ?? null,
                 category: row.category ?? row?.state?.category ?? null,
-                players:
-                  Number.isFinite(row.players)
-                    ? row.players
-                    : row?.state
-                      ? [row.state.host, row.state.guest].filter(Boolean).length
-                      : 1,
-                capacity: Number.isFinite(row.capacity) ? row.capacity : 2,
+                players: Number.isFinite(row.players)
+                  ? row.players
+                  : row?.state
+                    ? Math.max(getMatchPlayerEntries(row.state).length, 1)
+                    : 1,
+                capacity: Number.isFinite(row.capacity)
+                  ? row.capacity
+                  : MULTIPLAYER_MAX_PLAYERS,
                 questionLimit: Number.isFinite(row.question_limit)
                   ? Math.max(1, row.question_limit)
                   : MULTIPLAYER_DEFAULT_QUESTION_LIMIT,
@@ -777,7 +766,7 @@ export async function updateMatchProgress({
     return { ok: false, error: new Error('Match fehlt.') };
   }
 
-  const playerRole = role === 'host' || role === 'guest' ? role : null;
+  const playerRole = isMatchPlayerRole(role) ? role : null;
 
   if (!playerRole) {
     return { ok: false, error: new Error('Ungültige Spielerrolle.') };
@@ -821,8 +810,12 @@ export async function updateMatchProgress({
   }
 }
 
-export async function kickMatchGuest({ matchId, userId } = {}) {
+export async function kickMatchGuest({ matchId, userId, playerKey = 'guest' } = {}) {
   const hostId = typeof userId === 'string' ? userId : null;
+  const targetPlayerKey =
+    typeof playerKey === 'string' && playerKey.trim()
+      ? playerKey.trim()
+      : 'guest';
 
   if (!matchId) {
     return { ok: false, error: new Error('Match-ID fehlt.') };
@@ -837,6 +830,7 @@ export async function kickMatchGuest({ matchId, userId } = {}) {
       () =>
         supabase.rpc('kick_match_guest', {
           p_match_id: matchId,
+          p_player_key: targetPlayerKey,
         }),
       { label: 'matchService.kickMatchGuest' }
     );
@@ -859,7 +853,7 @@ export async function markPlayerFinished({ match, role } = {}) {
     return { ok: false, error: new Error('Match fehlt.') };
   }
 
-  const playerRole = role === 'host' || role === 'guest' ? role : null;
+  const playerRole = isMatchPlayerRole(role) ? role : null;
 
   if (!playerRole) {
     return { ok: false, error: new Error('Ungültige Spielerrolle.') };
@@ -892,7 +886,7 @@ export async function abandonMatch({ match, role } = {}) {
     return { ok: false, error: new Error('Match fehlt.') };
   }
 
-  const playerRole = role === 'host' || role === 'guest' ? role : null;
+  const playerRole = isMatchPlayerRole(role) ? role : null;
 
   if (!playerRole) {
     return { ok: false, error: new Error('Ungültige Spielerrolle.') };

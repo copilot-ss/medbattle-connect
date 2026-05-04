@@ -66,6 +66,7 @@ const SUPABASE_ANON_KEY = sanitizeEnv(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY)
 const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 let authAppStateSubscription = null;
 const SESSION_USER_CACHE_TTL_MS = 750;
+const SESSION_USER_REQUEST_TIMEOUT_MS = 5000;
 const sessionUserCache = {
   user: null,
   expiresAt: 0,
@@ -180,6 +181,31 @@ function primeSessionUserCache(user, ttlMs = SESSION_USER_CACHE_TTL_MS) {
   sessionUserCache.expiresAt = Date.now() + ttlMs;
 }
 
+function createSessionUserTimeoutError() {
+  const error = new Error(
+    `Supabase session user request timed out after ${SESSION_USER_REQUEST_TIMEOUT_MS}ms.`
+  );
+  error.name = 'SupabaseSessionUserTimeoutError';
+  error.code = 'SUPABASE_SESSION_USER_TIMEOUT';
+  return error;
+}
+
+function withSessionUserTimeout(promise) {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(createSessionUserTimeoutError());
+    }, SESSION_USER_REQUEST_TIMEOUT_MS);
+  });
+
+  return Promise.race([
+    Promise.resolve(promise),
+    timeoutPromise,
+  ]).finally(() => {
+    clearTimeout(timeoutId);
+  });
+}
+
 if (hasSupabaseConfig && typeof supabase.auth.onAuthStateChange === 'function') {
   supabase.auth.onAuthStateChange((_event, session) => {
     primeSessionUserCache(session?.user ?? null);
@@ -196,14 +222,22 @@ export async function getSessionUser({ allowCached = true } = {}) {
   }
 
   sessionUserCache.inFlight = (async () => {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) {
-      throw error;
-    }
+    try {
+      const { data, error } = await withSessionUserTimeout(supabase.auth.getSession());
+      if (error) {
+        throw error;
+      }
 
-    const user = data?.session?.user ?? null;
-    primeSessionUserCache(user);
-    return user;
+      const user = data?.session?.user ?? null;
+      primeSessionUserCache(user);
+      return user;
+    } catch (err) {
+      if (sessionUserCache.user?.id) {
+        console.warn('Nutze gecachten Session-User nach Supabase-Timeout:', err?.message ?? err);
+        return sessionUserCache.user;
+      }
+      throw err;
+    }
   })();
 
   try {

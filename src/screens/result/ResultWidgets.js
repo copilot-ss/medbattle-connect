@@ -87,6 +87,69 @@ export function Sparkle({ size, top, left, opacity, rotate = '0deg', color }) {
   );
 }
 
+export function WaitingDots({ delay = 0 }) {
+  const dots = useRef([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+  ]).current;
+
+  useEffect(() => {
+    const animations = dots.map((dot, index) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(Math.max(0, delay + index * 140)),
+          Animated.timing(dot, {
+            toValue: 1,
+            duration: 180,
+            useNativeDriver: true,
+          }),
+          Animated.timing(dot, {
+            toValue: 0,
+            duration: 240,
+            useNativeDriver: true,
+          }),
+          Animated.delay(260),
+        ])
+      )
+    );
+
+    animations.forEach((animation) => animation.start());
+    return () => {
+      animations.forEach((animation) => animation.stop());
+    };
+  }, [delay, dots]);
+
+  return (
+    <View style={styles.waitingDots} accessibilityLabel="...">
+      {dots.map((dot, index) => (
+        <Animated.Text
+          key={`waiting-dot-${index}`}
+          style={[
+            styles.waitingDot,
+            {
+              opacity: dot.interpolate({
+                inputRange: [0, 0.25, 1],
+                outputRange: [0.35, 1, 0.75],
+              }),
+              transform: [
+                {
+                  translateY: dot.interpolate({
+                    inputRange: [0, 0.45, 1],
+                    outputRange: [0, -4, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          .
+        </Animated.Text>
+      ))}
+    </View>
+  );
+}
+
 export function RewardSummary({ items = [], delay = 0, direction = 'row' }) {
   const scale = useRef(new Animated.Value(0.96)).current;
   const opacity = useRef(new Animated.Value(0)).current;

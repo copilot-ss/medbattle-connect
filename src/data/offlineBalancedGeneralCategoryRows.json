@@ -1,0 +1,686 @@
+[
+  {
+    "slug": "balanced-medizin-01",
+    "category": "Medizin",
+    "de": {
+      "question": "Welche Kombination passt am ehesten zu einem Volumenmangelschock?",
+      "options": ["Kaltschweissig und blass", "Warme Haut und Bradykardie", "Hoher Druck und rote Haut", "Langsamer Puls im Schlaf"],
+      "correct_answer": "Kaltschweissig und blass",
+      "explanation": "Bei Volumenmangel versucht der Koerper die Durchblutung zentraler Organe zu sichern. Kalte, blasse Haut und Schweiss sind typische Warnzeichen."
+    },
+    "en": {
+      "question": "Which finding best fits hypovolemic shock?",
+      "options": ["Cold clammy pale skin", "Warm skin with bradycardia", "High pressure and flushing", "Slow pulse during sleep"],
+      "correct_answer": "Cold clammy pale skin",
+      "explanation": "In volume loss, the body preserves flow to vital organs. Cold pale skin and sweating are typical warning signs."
+    }
+  },
+  {
+    "slug": "balanced-medizin-02",
+    "category": "Medizin",
+    "de": {
+      "question": "Wofuer steht FAST beim Schlaganfall-Screening?",
+      "options": ["Gesicht, Arm, Sprache, Zeit", "Fieber, Atemnot, Schwindel, Test", "Fokus, Auge, Sensorik, Tonus", "Fluessigkeit, Atemweg, Sauerstoff, Temperatur"],
+      "correct_answer": "Gesicht, Arm, Sprache, Zeit",
+      "explanation": "FAST prueft haeufige Schlaganfallzeichen: Gesichtshaelfte, Armschwaeche, Sprachstoerung und schnelles Handeln."
+    },
+    "en": {
+      "question": "What does FAST screen for in suspected stroke?",
+      "options": ["Face, arm, speech, time", "Fever, airway, sugar, test", "Focus, eye, sensation, tone", "Fluid, oxygen, seizure, temp"],
+      "correct_answer": "Face, arm, speech, time",
+      "explanation": "FAST checks common stroke signs: facial droop, arm weakness, speech trouble, and the need to act quickly."
+    }
+  },
+  {
+    "slug": "balanced-medizin-03",
+    "category": "Medizin",
+    "de": {
+      "question": "Welches Medikament ist bei schwerer Anaphylaxie zentral?",
+      "options": ["Adrenalin i.m.", "Ibuprofen oral", "Furosemid i.v.", "Insulin s.c."],
+      "correct_answer": "Adrenalin i.m.",
+      "explanation": "Adrenalin intramuskulaer wirkt gegen Bronchospasmus, Gefaessweitstellung und Kreislaufabfall bei schwerer Anaphylaxie."
+    },
+    "en": {
+      "question": "Which drug is central in severe anaphylaxis?",
+      "options": ["IM epinephrine", "Oral ibuprofen", "IV furosemide", "SC insulin"],
+      "correct_answer": "IM epinephrine",
+      "explanation": "Intramuscular epinephrine treats bronchospasm, vasodilation, and circulatory collapse in severe anaphylaxis."
+    }
+  },
+  {
+    "slug": "balanced-medizin-04",
+    "category": "Medizin",
+    "de": {
+      "question": "Welche Frequenz gilt als Zielbereich fuer Thoraxkompressionen bei Erwachsenen?",
+      "options": ["100 bis 120 pro Minute", "40 bis 60 pro Minute", "150 bis 170 pro Minute", "20 bis 30 pro Minute"],
+      "correct_answer": "100 bis 120 pro Minute",
+      "explanation": "Bei Erwachsenen wird fuer Herzdruckmassage meist ein Tempo von 100 bis 120 Kompressionen pro Minute empfohlen."
+    },
+    "en": {
+      "question": "Which rate is the usual adult chest compression target?",
+      "options": ["100 to 120 per minute", "40 to 60 per minute", "150 to 170 per minute", "20 to 30 per minute"],
+      "correct_answer": "100 to 120 per minute",
+      "explanation": "Adult CPR usually targets 100 to 120 chest compressions per minute."
+    }
+  },
+  {
+    "slug": "balanced-medizin-05",
+    "category": "Medizin",
+    "de": {
+      "question": "Welcher Befund passt eher zu relevanter Dehydratation?",
+      "options": ["Trockene Schleimhaeute", "Feuchte Lippen und Traenen", "Warme Haut nach Dusche", "Kurzes Gaehnen nach Schlaf"],
+      "correct_answer": "Trockene Schleimhaeute",
+      "explanation": "Trockene Schleimhaeute, Durst, stehende Hautfalten oder wenig Urin koennen Hinweise auf Fluessigkeitsmangel sein."
+    },
+    "en": {
+      "question": "Which finding better fits clinically relevant dehydration?",
+      "options": ["Dry mucous membranes", "Moist lips with tears", "Warm skin after shower", "Brief yawning after sleep"],
+      "correct_answer": "Dry mucous membranes",
+      "explanation": "Dry mucous membranes, thirst, poor skin turgor, or low urine output can suggest fluid deficit."
+    }
+  },
+  {
+    "slug": "balanced-medizin-06",
+    "category": "Medizin",
+    "de": {
+      "question": "Welche Zellen produzieren Insulin?",
+      "options": ["Beta-Zellen im Pankreas", "Kupffer-Zellen der Leber", "Osteoklasten im Knochen", "Gliazellen im Gehirn"],
+      "correct_answer": "Beta-Zellen im Pankreas",
+      "explanation": "Insulin wird in Beta-Zellen der Langerhans-Inseln im Pankreas gebildet und senkt den Blutzucker."
+    },
+    "en": {
+      "question": "Which cells produce insulin?",
+      "options": ["Pancreatic beta cells", "Kupffer cells in liver", "Osteoclasts in bone", "Glial cells in brain"],
+      "correct_answer": "Pancreatic beta cells",
+      "explanation": "Insulin is produced by beta cells in the pancreatic islets and lowers blood glucose."
+    }
+  },
+  {
+    "slug": "balanced-geschichte-01",
+    "category": "Geschichte",
+    "de": {
+      "question": "Was staerkte der Westfaelische Frieden 1648 besonders?",
+      "options": ["Rechte der Reichsstaende", "Direkte Kaiserherrschaft", "Einheitliche Reichskirche", "Kolonien in Amerika"],
+      "correct_answer": "Rechte der Reichsstaende",
+      "explanation": "Der Westfaelische Frieden bestaetigte viele Rechte der Reichsstaende und schwaechte die Idee einer einheitlichen kaiserlichen Zentralmacht."
+    },
+    "en": {
+      "question": "What did the Peace of Westphalia especially strengthen?",
+      "options": ["Rights of imperial estates", "Direct imperial rule", "One imperial church", "Colonies in America"],
+      "correct_answer": "Rights of imperial estates",
+      "explanation": "The Peace of Westphalia confirmed many rights of imperial estates and weakened the idea of direct imperial central power."
+    }
+  },
+  {
+    "slug": "balanced-geschichte-02",
+    "category": "Geschichte",
+    "de": {
+      "question": "Welches Ziel passt zur Meiji-Restauration in Japan?",
+      "options": ["Zentraler moderner Staat", "Rueckkehr zur Isolation", "Spanische Kolonialmacht", "Aufloesung der Armee"],
+      "correct_answer": "Zentraler moderner Staat",
+      "explanation": "Die Meiji-Regierung zentralisierte Verwaltung, Armee und Wirtschaft, um Japan schneller zu modernisieren."
+    },
+    "en": {
+      "question": "Which goal fits the Meiji Restoration in Japan?",
+      "options": ["Central modern state", "Return to isolation", "Spanish colonial rule", "Dissolving the army"],
+      "correct_answer": "Central modern state",
+      "explanation": "The Meiji government centralized administration, military, and economy to modernize Japan rapidly."
+    }
+  },
+  {
+    "slug": "balanced-geschichte-03",
+    "category": "Geschichte",
+    "de": {
+      "question": "Worum ging es bei der Berliner Luftbruecke 1948/49?",
+      "options": ["Versorgung West-Berlins", "Evakuierung aus Paris", "Grenzziehung in Afrika", "Besetzung von Wien"],
+      "correct_answer": "Versorgung West-Berlins",
+      "explanation": "West-Berlin wurde waehrend der sowjetischen Blockade ueber Luftkorridore mit Lebensmitteln, Kohle und Guetern versorgt."
+    },
+    "en": {
+      "question": "What was the Berlin Airlift of 1948/49 about?",
+      "options": ["Supplying West Berlin", "Evacuating Paris", "Drawing African borders", "Occupying Vienna"],
+      "correct_answer": "Supplying West Berlin",
+      "explanation": "During the Soviet blockade, West Berlin was supplied by air corridors with food, coal, and other goods."
+    }
+  },
+  {
+    "slug": "balanced-geschichte-04",
+    "category": "Geschichte",
+    "de": {
+      "question": "Was beschreibt Columbian Exchange am besten?",
+      "options": ["Kontinenten-Austausch", "Wahlrecht in Kolumbien", "Ende des Roemischen Reichs", "Bau der Seidenstrasse"],
+      "correct_answer": "Kontinenten-Austausch",
+      "explanation": "Nach 1492 wurden Pflanzen, Tiere, Krankheiten und Menschen zwischen Europa, Afrika und Amerika in grossem Umfang bewegt."
+    },
+    "en": {
+      "question": "What best describes the Columbian Exchange?",
+      "options": ["Exchange between continents", "Voting rights in Colombia", "End of the Roman Empire", "Building the Silk Road"],
+      "correct_answer": "Exchange between continents",
+      "explanation": "After 1492, plants, animals, diseases, and people moved on a large scale between Europe, Africa, and the Americas."
+    }
+  },
+  {
+    "slug": "balanced-geschichte-05",
+    "category": "Geschichte",
+    "de": {
+      "question": "Welches Prinzip praegte den Wiener Kongress?",
+      "options": ["Machtgleichgewicht", "Weltraumvertrag", "Abschaffung aller Grenzen", "Industrieplanwirtschaft"],
+      "correct_answer": "Machtgleichgewicht",
+      "explanation": "Der Wiener Kongress ordnete Europa nach Napoleon neu und setzte stark auf Restauration und Gleichgewicht der Maechte."
+    },
+    "en": {
+      "question": "Which principle shaped the Congress of Vienna?",
+      "options": ["Balance of power", "Outer space treaty", "Abolishing all borders", "Industrial planning"],
+      "correct_answer": "Balance of power",
+      "explanation": "The Congress of Vienna reordered Europe after Napoleon and emphasized restoration and a balance among powers."
+    }
+  },
+  {
+    "slug": "balanced-geschichte-06",
+    "category": "Geschichte",
+    "de": {
+      "question": "Warum waren roemische Strassen strategisch wichtig?",
+      "options": ["Militaer und Verwaltung", "Nur private Spazierwege", "Verbotener Seehandel", "Schneller Buchdruck"],
+      "correct_answer": "Militaer und Verwaltung",
+      "explanation": "Roemische Strassen halfen Legionen, Handel, Nachrichten und Verwaltung, grosse Gebiete besser zu verbinden."
+    },
+    "en": {
+      "question": "Why were Roman roads strategically important?",
+      "options": ["Military and administration", "Only private walking paths", "Banned maritime trade", "Faster printing presses"],
+      "correct_answer": "Military and administration",
+      "explanation": "Roman roads helped armies, trade, messages, and administration connect large territories more effectively."
+    }
+  },
+  {
+    "slug": "balanced-sachkunde-01",
+    "category": "Sachkunde",
+    "de": {
+      "question": "Welches Prinzip nutzt ein Induktionskochfeld direkt?",
+      "options": ["Magnetisches Wechselfeld", "Radioaktiver Zerfall", "Luftdruck im Topf", "Sonnenlicht im Glas"],
+      "correct_answer": "Magnetisches Wechselfeld",
+      "explanation": "Ein wechselndes Magnetfeld erzeugt Wirbelstroeme im geeigneten Kochgeschirr. Dadurch wird der Topf selbst warm."
+    },
+    "en": {
+      "question": "Which principle does an induction cooktop use directly?",
+      "options": ["Magnetic induction", "Radioactive decay", "Air pressure in the pot", "Sunlight inside glass"],
+      "correct_answer": "Magnetic induction",
+      "explanation": "A changing magnetic field induces currents in suitable cookware. The pot itself heats up."
+    }
+  },
+  {
+    "slug": "balanced-sachkunde-02",
+    "category": "Sachkunde",
+    "de": {
+      "question": "Was passiert beim Treibhauseffekt vereinfacht?",
+      "options": ["Teilweiser Waermestau", "Schwerkraft verschwindet", "Sauerstoff wird zu Metall", "Meere frieren sofort"],
+      "correct_answer": "Teilweiser Waermestau",
+      "explanation": "Treibhausgase lassen viel Sonnenlicht hinein, halten aber einen Teil der abgegebenen Waermestrahlung zurueck."
+    },
+    "en": {
+      "question": "What roughly happens in the greenhouse effect?",
+      "options": ["Partial heat trapping", "Gravity disappears", "Oxygen turns into metal", "Oceans freeze at once"],
+      "correct_answer": "Partial heat trapping",
+      "explanation": "Greenhouse gases let much sunlight in but retain part of the outgoing heat radiation."
+    }
+  },
+  {
+    "slug": "balanced-sachkunde-03",
+    "category": "Sachkunde",
+    "de": {
+      "question": "Was macht eine Sicherung bei zu hohem Strom?",
+      "options": ["Stromkreis trennen", "Spannung verdoppeln", "Kabel aktiv kuehlen", "Magnetfeld loeschen"],
+      "correct_answer": "Stromkreis trennen",
+      "explanation": "Eine Sicherung unterbricht den Stromkreis, wenn zu viel Strom fliesst. So sinkt das Brand- und Schadensrisiko."
+    },
+    "en": {
+      "question": "What does a fuse do when current is too high?",
+      "options": ["Breaks the circuit", "Doubles the voltage", "Actively cools cables", "Deletes magnetic fields"],
+      "correct_answer": "Breaks the circuit",
+      "explanation": "A fuse interrupts the circuit when too much current flows, reducing fire and damage risk."
+    }
+  },
+  {
+    "slug": "balanced-sachkunde-04",
+    "category": "Sachkunde",
+    "de": {
+      "question": "Welcher pH-Wert gilt bei Wasser als neutral?",
+      "options": ["pH 7", "pH 1", "pH 14", "pH 0"],
+      "correct_answer": "pH 7",
+      "explanation": "Neutral bedeutet, dass Saeure- und Basenwirkung ausgeglichen sind. Reines Wasser liegt bei Raumtemperatur etwa bei pH 7."
+    },
+    "en": {
+      "question": "Which pH value is neutral for water?",
+      "options": ["pH 7", "pH 1", "pH 14", "pH 0"],
+      "correct_answer": "pH 7",
+      "explanation": "Neutral means acid and base effects are balanced. Pure water at room temperature is around pH 7."
+    }
+  },
+  {
+    "slug": "balanced-sachkunde-05",
+    "category": "Sachkunde",
+    "de": {
+      "question": "Was ist die Grundidee eines Hebels?",
+      "options": ["Kraft gegen Weg tauschen", "Masse vollstaendig loeschen", "Waerme in Salz verwandeln", "Strom ohne Kreis erzeugen"],
+      "correct_answer": "Kraft gegen Weg tauschen",
+      "explanation": "Ein Hebel kann eine kleinere Kraft ueber einen laengeren Weg in eine groessere Kraft ueber einen kuerzeren Weg uebersetzen."
+    },
+    "en": {
+      "question": "What is the basic idea of a lever?",
+      "options": ["Trade force for distance", "Erase mass completely", "Turn heat into salt", "Make current without a circuit"],
+      "correct_answer": "Trade force for distance",
+      "explanation": "A lever can trade a smaller force over a longer path for a larger force over a shorter path."
+    }
+  },
+  {
+    "slug": "balanced-sachkunde-06",
+    "category": "Sachkunde",
+    "de": {
+      "question": "Warum kuehlt Verdunstung die Haut?",
+      "options": ["Verdunstung entzieht Waerme", "Wasser erzeugt neuen Strom", "Luft wird sofort schwerer", "Salz blockiert Licht"],
+      "correct_answer": "Verdunstung entzieht Waerme",
+      "explanation": "Beim Verdunsten gehen Molekuele in den Gaszustand ueber und nehmen Energie mit. Diese Energie fehlt dann als Waerme."
+    },
+    "en": {
+      "question": "Why does evaporation cool the skin?",
+      "options": ["Evaporation removes heat", "Water creates new current", "Air gets heavy instantly", "Salt blocks light"],
+      "correct_answer": "Evaporation removes heat",
+      "explanation": "When molecules evaporate, they enter the gas phase and carry energy away. That energy is no longer heat on the skin."
+    }
+  },
+  {
+    "slug": "balanced-politik-01",
+    "category": "Politik",
+    "de": {
+      "question": "Was verlangt ein konstruktives Misstrauensvotum?",
+      "options": ["Neuer Kanzler zugleich", "Neuer Bundesadler", "Neue Laendergrenzen", "Neue Amtskleidung"],
+      "correct_answer": "Neuer Kanzler zugleich",
+      "explanation": "Der Bundestag kann den Kanzler nur abwaehlen, wenn gleichzeitig eine neue Person mit Mehrheit gewaehlt wird."
+    },
+    "en": {
+      "question": "What does a constructive no-confidence vote require?",
+      "options": ["New chancellor at once", "New federal eagle", "New state borders", "New official clothes"],
+      "correct_answer": "New chancellor at once",
+      "explanation": "The Bundestag can remove a chancellor only by electing a replacement with a majority at the same time."
+    }
+  },
+  {
+    "slug": "balanced-politik-02",
+    "category": "Politik",
+    "de": {
+      "question": "Was meint Foederalismus im Kern?",
+      "options": ["Macht wird verteilt", "Wahlen werden verboten", "Gerichte werden privat", "Parteien verschwinden"],
+      "correct_answer": "Macht wird verteilt",
+      "explanation": "Foederalismus verteilt staatliche Aufgaben und Macht zwischen Bund und Laendern."
+    },
+    "en": {
+      "question": "What is the core idea of federalism?",
+      "options": ["Power is divided", "Elections are banned", "Courts become private", "Parties disappear"],
+      "correct_answer": "Power is divided",
+      "explanation": "Federalism divides state tasks and power between national and regional levels."
+    }
+  },
+  {
+    "slug": "balanced-politik-03",
+    "category": "Politik",
+    "de": {
+      "question": "Was trennen Erst- und Zweitstimme grob?",
+      "options": ["Person und Partei", "Gericht und Polizei", "Steuer und Zoll", "Kanzler und Koenig"],
+      "correct_answer": "Person und Partei",
+      "explanation": "Die Erststimme waehlt eine Direktkandidatur im Wahlkreis, die Zweitstimme praegt die Sitzverteilung der Parteien."
+    },
+    "en": {
+      "question": "What do Germany's first and second votes roughly separate?",
+      "options": ["Person and party", "Court and police", "Tax and customs", "Chancellor and king"],
+      "correct_answer": "Person and party",
+      "explanation": "The first vote chooses a district candidate, while the second vote strongly shapes party seat distribution."
+    }
+  },
+  {
+    "slug": "balanced-politik-04",
+    "category": "Politik",
+    "de": {
+      "question": "Was bedeutet Rechtsstaatlichkeit besonders?",
+      "options": ["Gesetze binden den Staat", "Regierung steht ueber Recht", "Gerichte stimmen Gesetze", "Wahlen ersetzen Verfahren"],
+      "correct_answer": "Gesetze binden den Staat",
+      "explanation": "Im Rechtsstaat ist staatliches Handeln an Recht, Verfahren und gerichtliche Kontrolle gebunden."
+    },
+    "en": {
+      "question": "What does rule of law especially mean?",
+      "options": ["Law binds the state", "Government outranks law", "Courts vote on laws", "Elections replace process"],
+      "correct_answer": "Law binds the state",
+      "explanation": "Under the rule of law, state action is bound by law, procedure, and judicial review."
+    }
+  },
+  {
+    "slug": "balanced-politik-05",
+    "category": "Politik",
+    "de": {
+      "question": "Welche Rolle hat der Bundesrat grob?",
+      "options": ["Laender wirken mit", "Kanzler direkt waehlen", "Gerichte besetzen", "Parteien verbieten"],
+      "correct_answer": "Laender wirken mit",
+      "explanation": "Der Bundesrat vertritt die Laender und beteiligt sie an vielen Gesetzgebungsverfahren des Bundes."
+    },
+    "en": {
+      "question": "What is the broad role of the Bundesrat?",
+      "options": ["States take part", "Elects chancellor directly", "Staffs the courts", "Bans all parties"],
+      "correct_answer": "States take part",
+      "explanation": "The Bundesrat represents the federal states and involves them in many national legislative procedures."
+    }
+  },
+  {
+    "slug": "balanced-politik-06",
+    "category": "Politik",
+    "de": {
+      "question": "Was will Verhaeltniswahl abbilden?",
+      "options": ["Stimmenanteile der Parteien", "Alter aller Kandidaten", "Laenge der Wahlzettel", "Groesse der Wahllokale"],
+      "correct_answer": "Stimmenanteile der Parteien",
+      "explanation": "Bei Verhaeltniswahl sollen Sitze moeglichst proportional zu den Stimmenanteilen der Parteien vergeben werden."
+    },
+    "en": {
+      "question": "What does proportional representation try to reflect?",
+      "options": ["Parties' vote shares", "Age of all candidates", "Length of ballot papers", "Size of polling places"],
+      "correct_answer": "Parties' vote shares",
+      "explanation": "Proportional representation aims to allocate seats roughly according to parties' shares of the vote."
+    }
+  },
+  {
+    "slug": "balanced-geografie-01",
+    "category": "Geografie",
+    "de": {
+      "question": "Was ist ein Regenschatten?",
+      "options": ["Trockene Leeseite", "Nebel im Erdinneren", "Fluss ohne Muendung", "Insel aus Meereis"],
+      "correct_answer": "Trockene Leeseite",
+      "explanation": "Feuchte Luft regnet an der Luvseite eines Gebirges ab. Auf der Leeseite kommt oft trockenere Luft an."
+    },
+    "en": {
+      "question": "What is a rain shadow?",
+      "options": ["Dry leeward side", "Fog inside Earth", "River without a mouth", "Island made of sea ice"],
+      "correct_answer": "Dry leeward side",
+      "explanation": "Moist air rains out on the windward side of mountains. Drier air often reaches the leeward side."
+    }
+  },
+  {
+    "slug": "balanced-geografie-02",
+    "category": "Geografie",
+    "de": {
+      "question": "Wie entsteht ein Flussdelta meist?",
+      "options": ["Sedimente lagern sich ab", "Lava verdampft im Fluss", "Wind hebt Berge an", "Eis loest Salz auf"],
+      "correct_answer": "Sedimente lagern sich ab",
+      "explanation": "Wenn ein Fluss langsamer wird, besonders an der Muendung, koennen Sand, Schluff und andere Sedimente abgelagert werden."
+    },
+    "en": {
+      "question": "How does a river delta usually form?",
+      "options": ["Sediment is deposited", "Lava evaporates in rivers", "Wind lifts mountains", "Ice dissolves salt"],
+      "correct_answer": "Sediment is deposited",
+      "explanation": "When a river slows, especially near its mouth, sand, silt, and other sediment can be deposited."
+    }
+  },
+  {
+    "slug": "balanced-geografie-03",
+    "category": "Geografie",
+    "de": {
+      "question": "Wo entstehen viele starke Erdbeben?",
+      "options": ["An Plattengrenzen", "Im Zentrum ruhiger Seen", "Nur ueber Sandduenen", "Ausschliesslich am Pol"],
+      "correct_answer": "An Plattengrenzen",
+      "explanation": "An Plattengrenzen bauen sich Spannungen auf. Wenn sie sich ruckartig loesen, kann ein starkes Erdbeben entstehen."
+    },
+    "en": {
+      "question": "Where do many strong earthquakes occur?",
+      "options": ["At plate boundaries", "At centers of calm lakes", "Only above sand dunes", "Only at the pole"],
+      "correct_answer": "At plate boundaries",
+      "explanation": "Stress builds up at plate boundaries. When it releases suddenly, strong earthquakes can occur."
+    }
+  },
+  {
+    "slug": "balanced-geografie-04",
+    "category": "Geografie",
+    "de": {
+      "question": "Was ist das Grundproblem jeder Weltkarte?",
+      "options": ["Verzerrung durch Projektion", "Fehlende Nordrichtung", "Unsichtbare Laendernamen", "Nur eine erlaubte Farbe"],
+      "correct_answer": "Verzerrung durch Projektion",
+      "explanation": "Die gekruemmte Erdoberflaeche wird auf eine Ebene uebertragen. Dabei werden Flaechen, Formen, Winkel oder Distanzen verzerrt."
+    },
+    "en": {
+      "question": "What is the basic problem of every world map?",
+      "options": ["Distortion from projection", "Missing north direction", "Invisible country names", "Only one allowed color"],
+      "correct_answer": "Distortion from projection",
+      "explanation": "A curved Earth surface is transferred to a plane, which distorts area, shape, angles, or distance."
+    }
+  },
+  {
+    "slug": "balanced-geografie-05",
+    "category": "Geografie",
+    "de": {
+      "question": "Was praegt den Monsun besonders?",
+      "options": ["Jahreszeitlicher Windwechsel", "Dauerfrost am Aequator", "Taeglicher Vulkanausbruch", "Stillstand der Ozeane"],
+      "correct_answer": "Jahreszeitlicher Windwechsel",
+      "explanation": "Monsune entstehen durch jahreszeitliche Druck- und Temperaturunterschiede zwischen Land und Meer."
+    },
+    "en": {
+      "question": "What especially shapes a monsoon?",
+      "options": ["Seasonal wind reversal", "Permanent equator frost", "Daily volcanic eruption", "Oceans standing still"],
+      "correct_answer": "Seasonal wind reversal",
+      "explanation": "Monsoons arise from seasonal pressure and temperature differences between land and sea."
+    }
+  },
+  {
+    "slug": "balanced-geografie-06",
+    "category": "Geografie",
+    "de": {
+      "question": "Warum gibt es Zeitzonen?",
+      "options": ["Rotation und Sonnenstand", "Mondphasen und Gezeiten", "Vulkane und Erdbeben", "Grenzen und Flaggen"],
+      "correct_answer": "Rotation und Sonnenstand",
+      "explanation": "Durch die Erdrotation ist Mittag nicht ueberall gleichzeitig. Zeitzonen ordnen diese Unterschiede praktisch."
+    },
+    "en": {
+      "question": "Why do time zones exist?",
+      "options": ["Rotation and sun angle", "Moon phases and tides", "Volcanoes and earthquakes", "Borders and flags"],
+      "correct_answer": "Rotation and sun angle",
+      "explanation": "Because Earth rotates, noon does not happen everywhere at once. Time zones organize those differences practically."
+    }
+  },
+  {
+    "slug": "balanced-brainrot-01",
+    "category": "Brainrot",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Keyboard_Close_Up.jpg/960px-Keyboard_Close_Up.jpg",
+    "image_alt": "Close-up photo of computer keyboard keys",
+    "de": {
+      "question": "Welcher Meme-Begriff passt am ehesten zu kopiertem Tastatur-Text?",
+      "options": ["Copypasta", "Ratio", "NPC Stream", "Sigma Face"],
+      "correct_answer": "Copypasta",
+      "explanation": "Copypasta bezeichnet Textbloecke, die immer wieder kopiert und in Posts oder Kommentaren eingefuegt werden."
+    },
+    "en": {
+      "question": "Which meme term best fits copied keyboard text?",
+      "options": ["Copypasta", "Ratio", "NPC Stream", "Sigma Face"],
+      "correct_answer": "Copypasta",
+      "explanation": "Copypasta means text blocks that are repeatedly copied and pasted into posts or comments."
+    }
+  },
+  {
+    "slug": "balanced-brainrot-02",
+    "category": "Brainrot",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/0/0a/Basking_Shark.jpg",
+    "image_alt": "Photo of a basking shark underwater",
+    "de": {
+      "question": "Welcher Italian-Brainrot-Name wird durch den Hai am ehesten angedeutet?",
+      "options": ["Tralalero Tralala", "Bombardiro Crocodilo", "Ballerina Cappuccina", "Tung Tung Sahur"],
+      "correct_answer": "Tralalero Tralala",
+      "explanation": "Tralalero Tralala wird im Brainrot-Kontext oft mit einem Hai-Motiv verbunden, hier aber ohne geschuetztes Meme-Bild dargestellt."
+    },
+    "en": {
+      "question": "Which Italian-brainrot name is hinted at by the shark?",
+      "options": ["Tralalero Tralala", "Bombardiro Crocodilo", "Ballerina Cappuccina", "Tung Tung Sahur"],
+      "correct_answer": "Tralalero Tralala",
+      "explanation": "In brainrot context, Tralalero Tralala is often linked to a shark motif, shown here without using protected meme artwork."
+    }
+  },
+  {
+    "slug": "balanced-brainrot-03",
+    "category": "Brainrot",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ed/Drumstick_pair.jpg/960px-Drumstick_pair.jpg",
+    "image_alt": "Photo of two wooden drumsticks",
+    "de": {
+      "question": "Welcher Brainrot-Name passt am besten zum Trommelstock-Motiv?",
+      "options": ["Tung Tung Sahur", "Tralalero Tralala", "Skibidi Toilet", "Sigma Face"],
+      "correct_answer": "Tung Tung Sahur",
+      "explanation": "Tung Tung Sahur spielt klanglich auf rhythmisches Klopfen an und passt daher besser zum Trommelstock-Motiv."
+    },
+    "en": {
+      "question": "Which brainrot name best fits the drumstick motif?",
+      "options": ["Tung Tung Sahur", "Tralalero Tralala", "Skibidi Toilet", "Sigma Face"],
+      "correct_answer": "Tung Tung Sahur",
+      "explanation": "Tung Tung Sahur evokes rhythmic knocking, so it fits the drumstick motif better than the other choices."
+    }
+  },
+  {
+    "slug": "balanced-brainrot-04",
+    "category": "Brainrot",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/c/c3/Greek_sigma.png",
+    "image_alt": "Greek sigma letters on a white background",
+    "de": {
+      "question": "Welcher Meme-Typ wird durch das Sigma-Zeichen angedeutet?",
+      "options": ["Sigma Face", "NPC Stream", "Corecore", "Ratio"],
+      "correct_answer": "Sigma Face",
+      "explanation": "Sigma-Memes ueberzeichnen eine unbeeindruckte Einzelgaenger-Persona und werden haeufig ironisch benutzt."
+    },
+    "en": {
+      "question": "Which meme type is hinted at by the sigma symbol?",
+      "options": ["Sigma Face", "NPC Stream", "Corecore", "Ratio"],
+      "correct_answer": "Sigma Face",
+      "explanation": "Sigma memes exaggerate an unimpressed loner persona and are often used ironically."
+    }
+  },
+  {
+    "slug": "balanced-brainrot-05",
+    "category": "Brainrot",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Old_camera_%28Unsplash%29.jpg/1280px-Old_camera_%28Unsplash%29.jpg",
+    "image_alt": "Photo of an old camera with a screen",
+    "de": {
+      "question": "Was bedeutet POV in vielen Meme-Captions?",
+      "options": ["Point of view", "Proof of vote", "Private online value", "Pixel over volume"],
+      "correct_answer": "Point of view",
+      "explanation": "POV rahmt ein Meme so, als wuerde man eine Szene selbst oder aus einer bestimmten Rolle heraus erleben."
+    },
+    "en": {
+      "question": "What does POV mean in many meme captions?",
+      "options": ["Point of view", "Proof of vote", "Private online value", "Pixel over volume"],
+      "correct_answer": "Point of view",
+      "explanation": "POV frames a meme as if the viewer experiences the scene directly or from a specific role."
+    }
+  },
+  {
+    "slug": "balanced-brainrot-06",
+    "category": "Brainrot",
+    "image_url": "https://openclipart.org/image/2000px/172636",
+    "image_alt": "Illustration of a retro game controller",
+    "de": {
+      "question": "Was imitiert ein NPC-Stream meistens?",
+      "options": ["Spielfigur-Reaktionen", "Klassische Nachrichten", "Stille Diashow", "Normales Wetterradar"],
+      "correct_answer": "Spielfigur-Reaktionen",
+      "explanation": "NPC-Streams nutzen wiederholbare Posen, kurze Sprueche und Trigger-Reaktionen, die an Figuren in Spielen erinnern."
+    },
+    "en": {
+      "question": "What does an NPC stream usually imitate?",
+      "options": ["Game-character reactions", "Classic news broadcast", "Silent photo slideshow", "Normal weather radar"],
+      "correct_answer": "Game-character reactions",
+      "explanation": "NPC streams use repeatable poses, short phrases, and trigger reactions that resemble characters in games."
+    }
+  },
+  {
+    "slug": "balanced-survival-01",
+    "category": "Survival",
+    "de": {
+      "question": "Welches Zeichen passt zu beginnender Unterkuehlung?",
+      "options": ["Zittern und Ungeschick", "Starker Sonnenbrand", "Sofortiger Durststopp", "Besseres Nachtsehen"],
+      "correct_answer": "Zittern und Ungeschick",
+      "explanation": "Zittern und schlechtere Koordination koennen fruehe Warnzeichen sein, wenn Kaelte dem Koerper Waerme entzieht."
+    },
+    "en": {
+      "question": "Which sign fits early hypothermia?",
+      "options": ["Shivering and clumsiness", "Severe sunburn pain", "Instant thirst stop", "Better night vision"],
+      "correct_answer": "Shivering and clumsiness",
+      "explanation": "Shivering and declining coordination can be early warnings when cold conditions draw heat from the body."
+    }
+  },
+  {
+    "slug": "balanced-survival-02",
+    "category": "Survival",
+    "de": {
+      "question": "Wie wird unsicheres Wasser im Camp verlaesslicher sicherer?",
+      "options": ["Filtern, dann abkochen", "Nur klar stehen lassen", "Mit Erde verruehren", "In Schatten giessen"],
+      "correct_answer": "Filtern, dann abkochen",
+      "explanation": "Filtern entfernt Partikel, Abkochen reduziert viele Krankheitserreger. Klares Aussehen allein beweist keine Sicherheit."
+    },
+    "en": {
+      "question": "How can unsafe camp water be made more reliably safer?",
+      "options": ["Filter, then boil", "Let it stand clear", "Mix it with soil", "Pour it into shade"],
+      "correct_answer": "Filter, then boil",
+      "explanation": "Filtering removes particles, and boiling reduces many pathogens. Clear appearance alone does not prove safety."
+    }
+  },
+  {
+    "slug": "balanced-survival-03",
+    "category": "Survival",
+    "de": {
+      "question": "Was braucht ein Feuerdreieck?",
+      "options": ["Waerme, Brennstoff, O2", "Sand, Eis, Schatten", "Salz, Metall, Wasser", "Wind, Karte, Messer"],
+      "correct_answer": "Waerme, Brennstoff, O2",
+      "explanation": "Feuer braucht Waerme, brennbares Material und Sauerstoff. Fehlt eines davon, kann die Flamme nicht stabil bleiben."
+    },
+    "en": {
+      "question": "What does the fire triangle need?",
+      "options": ["Heat, fuel, oxygen", "Sand, ice, shade", "Salt, metal, water", "Wind, map, knife"],
+      "correct_answer": "Heat, fuel, oxygen",
+      "explanation": "Fire needs heat, combustible material, and oxygen. If one is missing, the flame cannot remain stable."
+    }
+  },
+  {
+    "slug": "balanced-survival-04",
+    "category": "Survival",
+    "de": {
+      "question": "Was meint Missweisung beim Kompass?",
+      "options": ["Versatz zu echtem Nord", "Anzeige der Batterieladung", "Laenge einer Wanderpause", "Hoehe des Wasserstands"],
+      "correct_answer": "Versatz zu echtem Nord",
+      "explanation": "Ein Kompass zeigt magnetisch Nord. Die Abweichung zu geografisch Nord heisst Missweisung und kann bei Navigation wichtig sein."
+    },
+    "en": {
+      "question": "What is compass declination?",
+      "options": ["Offset from true north", "Battery level display", "Length of a hiking break", "Height of water level"],
+      "correct_answer": "Offset from true north",
+      "explanation": "A compass points to magnetic north. The offset from true north is declination and can matter for navigation."
+    }
+  },
+  {
+    "slug": "balanced-survival-05",
+    "category": "Survival",
+    "de": {
+      "question": "Was ist fuer einen Biwakplatz meist sinnvoll?",
+      "options": ["Windschutz und Drainage", "Tiefste Mulde im Bachbett", "Lose Steine ueber Kopf", "Direkt unter Totholz"],
+      "correct_answer": "Windschutz und Drainage",
+      "explanation": "Ein guter Platz meidet Wasseransammlungen, Wind und offensichtliche Gefahren wie Totholz oder Steinschlagbereiche."
+    },
+    "en": {
+      "question": "What is usually sensible for a bivouac site?",
+      "options": ["Wind shelter and drainage", "Lowest hollow in a streambed", "Loose rocks overhead", "Directly under deadwood"],
+      "correct_answer": "Wind shelter and drainage",
+      "explanation": "A good site avoids water pooling, wind exposure, and obvious hazards such as deadwood or rockfall areas."
+    }
+  },
+  {
+    "slug": "balanced-survival-06",
+    "category": "Survival",
+    "de": {
+      "question": "Was ist eine Grundidee von Leave No Trace?",
+      "options": ["Spuren klein halten", "Muellsack verstecken", "Pfade breit treten", "Feuerstellen sammeln"],
+      "correct_answer": "Spuren klein halten",
+      "explanation": "Leave No Trace zielt darauf, Natur und andere Besucher moeglichst wenig zu belasten."
+    },
+    "en": {
+      "question": "What is a basic idea of Leave No Trace?",
+      "options": ["Keep impact small", "Hide trash bags", "Widen every trail", "Collect fire rings"],
+      "correct_answer": "Keep impact small",
+      "explanation": "Leave No Trace aims to reduce impact on nature and on other visitors as much as practical."
+    }
+  }
+]

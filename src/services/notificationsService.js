@@ -1,15 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import {
-  ENERGY_BASE_STORAGE_KEY,
-  ENERGY_TIMESTAMP_KEY,
-  ENERGY_VALUE_KEY,
-  MAX_ENERGY,
   MAX_ENERGY_CAP_BONUS,
   NEW_ACCOUNT_MAX_ENERGY,
-  USER_STATS_STORAGE_KEY,
 } from '../context/preferences/constants';
-import { recalcEnergy } from '../context/preferences/energyUtils';
+import {
+  getPreferencesStorageOwner,
+  loadPreferencesFromStorage,
+} from '../context/preferences/storage';
 
 let Notifications = null;
 const NOTIFICATIONS_MISSING_WARN_KEY =
@@ -83,34 +81,20 @@ const parseNonNegativeInt = (value, fallback = 0) => {
 
 const isEnergyFullNow = async () => {
   try {
-    const [energyBaseRaw, energyRaw, tsRaw, userStatsRaw] = await Promise.all([
-      AsyncStorage.getItem(ENERGY_BASE_STORAGE_KEY),
-      AsyncStorage.getItem(ENERGY_VALUE_KEY),
-      AsyncStorage.getItem(ENERGY_TIMESTAMP_KEY),
-      AsyncStorage.getItem(USER_STATS_STORAGE_KEY),
-    ]);
-    const hasLegacySnapshot =
-      energyRaw !== null || tsRaw !== null || Boolean(userStatsRaw);
+    const owner = getPreferencesStorageOwner();
+    const preferences = await loadPreferencesFromStorage(owner);
     const energyBase = parseNonNegativeInt(
-      energyBaseRaw,
-      hasLegacySnapshot ? MAX_ENERGY : NEW_ACCOUNT_MAX_ENERGY
+      preferences?.energyBase,
+      NEW_ACCOUNT_MAX_ENERGY
     );
-    const energyValue = parseNonNegativeInt(energyRaw, energyBase);
-    const timestamp = parseNonNegativeInt(tsRaw, Date.now());
+    const energyValue = parseNonNegativeInt(preferences?.energy, energyBase);
 
-    let energyCapBonus = 0;
-    if (userStatsRaw) {
-      try {
-        const parsed = JSON.parse(userStatsRaw);
-        energyCapBonus = parseNonNegativeInt(parsed?.energyCapBonus, 0);
-      } catch (err) {
-        console.warn('Konnte User-Stats für Notification-Check nicht parsen:', err);
-      }
-    }
-
+    const energyCapBonus = parseNonNegativeInt(
+      preferences?.userStats?.energyCapBonus,
+      0
+    );
     const maxEnergy = energyBase + Math.min(energyCapBonus, MAX_ENERGY_CAP_BONUS);
-    const recalc = recalcEnergy(energyValue, timestamp, maxEnergy);
-    return recalc.energy >= maxEnergy;
+    return energyValue >= maxEnergy;
   } catch (err) {
     console.warn('Konnte Energie-Status für Notification-Check nicht laden:', err);
     return true;

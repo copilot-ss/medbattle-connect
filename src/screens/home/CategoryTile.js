@@ -36,13 +36,25 @@ function CategoryTile({
           selected ? { backgroundColor: selectedBackground, borderColor: selectedBorder } : null,
         ]}
       >
-        {iconFamily === 'fa5' ? (
+        {iconFamily === 'emoji' ? (
+          <Text style={styles.categoryEmoji} allowFontScaling={false}>
+            {icon}
+          </Text>
+        ) : iconFamily === 'fa5' ? (
           <FontAwesome5 name={icon} size={20} color={accent} />
         ) : (
           <Ionicons name={icon} size={20} color={accent} />
         )}
       </View>
-      <Text style={styles.categoryLabel}>{label}</Text>
+      <Text
+        style={styles.categoryLabel}
+        numberOfLines={1}
+        ellipsizeMode="tail"
+        adjustsFontSizeToFit
+        minimumFontScale={0.85}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }

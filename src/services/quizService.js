@@ -34,6 +34,20 @@ const MAX_RECENT_QUESTION_IDS = 72;
 const MIN_SERVER_QUESTION_POOL = 18;
 const DEFAULT_LANGUAGE = 'en';
 const BLOCKED_CATEGORY_KEYS = new Set(['fussball', 'football']);
+const MEDICAL_CATEGORY_KEYS = new Set([
+  'anatomie',
+  'physiologie',
+  'pathologie',
+  'pharmakologie',
+  'mikrobiologie',
+  'biochemie',
+  'immunologie',
+  'genetik',
+  'radiologie',
+  'chirurgie',
+  'medizin',
+  'medicine',
+]);
 const questionCacheSyncTimes = new Map();
 const recentQuestionIdsCache = new Map();
 const POINTS_PER_CORRECT_ANSWER = 3;
@@ -50,7 +64,7 @@ const AUTOGEN_TEXT_PATTERNS = [
   'to ensure at least',
   'to complete 50 questions',
 ];
-const QUESTION_POOL_KEY = 'all';
+const QUESTION_POOL_KEY = 'all-v6';
 
 function normalizeCategoryKey(value) {
   if (typeof value !== 'string') {
@@ -66,6 +80,15 @@ function normalizeCategoryKey(value) {
 
 function isBlockedCategory(value) {
   return BLOCKED_CATEGORY_KEYS.has(normalizeCategoryKey(value));
+}
+
+function isMedicineCategory(value) {
+  const normalized = normalizeCategoryKey(value);
+  return normalized === 'medizin' || normalized === 'medicine';
+}
+
+function isMedicalQuestionCategory(value) {
+  return MEDICAL_CATEGORY_KEYS.has(normalizeCategoryKey(value));
 }
 
 function sanitizeAvatarUrl(value) {
@@ -485,6 +508,34 @@ function mergeQuestionPools(primary, fallback, limit) {
   return merged.slice(0, maxItems);
 }
 
+function normalizeQuestionImageUrl(question) {
+  if (!question) {
+    return null;
+  }
+  const rawUrl =
+    typeof question.image_url === 'string'
+      ? question.image_url
+      : typeof question.imageUrl === 'string'
+      ? question.imageUrl
+      : '';
+  const trimmed = rawUrl.trim();
+  return /^https?:\/\//i.test(trimmed) ? trimmed : null;
+}
+
+function normalizeQuestionImageAlt(question) {
+  if (!question) {
+    return null;
+  }
+  const rawAlt =
+    typeof question.image_alt === 'string'
+      ? question.image_alt
+      : typeof question.imageAlt === 'string'
+      ? question.imageAlt
+      : '';
+  const trimmed = rawAlt.trim();
+  return trimmed || null;
+}
+
 function normalizeQuestionList(rows) {
   const source = Array.isArray(rows) ? rows : [];
   return source
@@ -495,6 +546,8 @@ function normalizeQuestionList(rows) {
       return {
         ...question,
         explanation: ensureQuestionExplanation(question),
+        image_url: normalizeQuestionImageUrl(question),
+        image_alt: normalizeQuestionImageAlt(question),
         options: normalizeOptions(question.options, question.correct_answer),
       };
     })
@@ -699,8 +752,8 @@ function buildPreferredQuestionOrder(list, recentQuestionIds) {
 
   return [
     ...freshPreferred,
-    ...freshBiased,
     ...repeatedPreferred,
+    ...freshBiased,
     ...repeatedBiased,
   ];
 }
@@ -745,6 +798,9 @@ function buildOfflineSeedQuestions(limit, category, language) {
   const normalizedLanguage = normalizeLanguage(language);
   const normalizedCategory =
     typeof category === 'string' && category.trim() ? category.trim() : null;
+  const includeMedicalBundle = normalizedCategory
+    ? isMedicineCategory(normalizedCategory)
+    : false;
   if (normalizedCategory && isBlockedCategory(normalizedCategory)) {
     return [];
   }
@@ -755,7 +811,11 @@ function buildOfflineSeedQuestions(limit, category, language) {
   );
 
   const sameCategoryQuestions = normalizedCategory
-    ? languagePool.filter((question) => question?.category === normalizedCategory)
+    ? languagePool.filter((question) =>
+        includeMedicalBundle
+          ? isMedicalQuestionCategory(question?.category)
+          : question?.category === normalizedCategory
+      )
     : languagePool;
 
   if (normalizedCategory) {
@@ -764,6 +824,24 @@ function buildOfflineSeedQuestions(limit, category, language) {
   }
 
   return mergeQuestionPools(shuffleList(languagePool), [], limit);
+}
+
+function buildFeaturedOfflineQuestions(limit, category, language) {
+  const normalizedLanguage = normalizeLanguage(language);
+  const normalizedCategory =
+    typeof category === 'string' && category.trim() ? category.trim() : null;
+  const normalizedLimit =
+    Number.isFinite(limit) && limit > 0 ? Math.max(1, Math.floor(limit)) : 0;
+  if (normalizedLimit <= 0 || normalizeCategoryKey(normalizedCategory) !== 'brainrot') {
+    return [];
+  }
+
+  return OFFLINE_SEED_QUESTIONS.filter(
+    (question) =>
+      normalizeCategoryKey(question?.category) === 'brainrot' &&
+      normalizeLanguage(question?.language ?? DEFAULT_LANGUAGE) === normalizedLanguage &&
+      normalizeQuestionImageUrl(question)
+  );
 }
 
 async function readPendingScores() {
@@ -1102,11 +1180,17 @@ export async function fetchQuestions(
   const now = Date.now();
 
   const finalizeQuestions = (questions) => {
+    const featured = buildPreferredQuestionOrder(
+      normalizeQuestionList(
+        buildFeaturedOfflineQuestions(normalizedLimit, normalizedCategory, normalizedLanguage)
+      ),
+      recentQuestionIds
+    );
     const ordered = buildPreferredQuestionOrder(
       normalizeQuestionList(questions),
       recentQuestionIds
     );
-    const resolved = mergeQuestionPools(ordered, [], normalizedLimit);
+    const resolved = mergeQuestionPools(featured, ordered, normalizedLimit);
     if (!resolved.length) {
       return [];
     }
@@ -1141,9 +1225,15 @@ export async function fetchQuestions(
   }
 
   const topUpWithOfflineSeeds = (baseQuestions, resultLimit = normalizedLimit) => {
+    const featured = buildPreferredQuestionOrder(
+      normalizeQuestionList(
+        buildFeaturedOfflineQuestions(resultLimit, normalizedCategory, normalizedLanguage)
+      ),
+      recentQuestionIds
+    );
     const primary = mergeQuestionPools(
+      featured,
       buildPreferredQuestionOrder(normalizeQuestionList(baseQuestions), recentQuestionIds),
-      [],
       resultLimit
     );
     if (primary.length >= resultLimit) {
@@ -1152,11 +1242,11 @@ export async function fetchQuestions(
 
     const seedPool = buildPreferredQuestionOrder(
       normalizeQuestionList(
-      buildOfflineSeedQuestions(
+        buildOfflineSeedQuestions(
           Math.max(resultLimit * 3, MIN_SERVER_QUESTION_POOL),
-        normalizedCategory,
-        normalizedLanguage
-      )
+          normalizedCategory,
+          normalizedLanguage
+        )
       ),
       recentQuestionIds
     );

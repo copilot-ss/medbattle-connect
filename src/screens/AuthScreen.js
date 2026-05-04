@@ -1,9 +1,20 @@
-import { useEffect, useState } from 'react';
-import { View, Text, TextInput, Pressable, ActivityIndicator } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  ActivityIndicator,
+  Modal,
+} from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 
+import { usePreferences } from '../context/PreferencesContext';
+import { savePendingGuestAccountTransfer } from '../context/preferences/storage';
 import { supabase } from '../lib/supabaseClient';
 import { claimActiveSessionOrThrow } from '../services/activeSessionService';
+import { hasMeaningfulAccountProgress } from '../services/accountPreferencesService';
+import { loadDailyCoinsClaimDate } from '../services/dailyRewardsService';
 import { loadRememberMe, saveRememberMe } from '../utils/authPersistence';
 import { formatUserError } from '../utils/formatUserError';
 import {
@@ -29,6 +40,7 @@ import { useTranslation } from '../i18n/useTranslation';
 
 export default function AuthScreen({ route, navigation, onGuest }) {
   const { t } = useTranslation();
+  const { accountOwnerKey, getAccountDataSnapshot } = usePreferences();
   const initialMode = route?.params?.mode ?? 'signIn';
   const initialEmail = route?.params?.emailPreset ?? '';
   const initialMessage = route?.params?.authMessage ?? null;
@@ -43,6 +55,8 @@ export default function AuthScreen({ route, navigation, onGuest }) {
   const [message, setMessage] = useState(initialMessage);
   const [rememberMe, setRememberMe] = useState(true);
   const [userContentPolicyAccepted, setUserContentPolicyAccepted] = useState(false);
+  const [guestProgressPromptVisible, setGuestProgressPromptVisible] = useState(false);
+  const guestProgressPromptResolverRef = useRef(null);
 
   const isSignUp = mode === 'signUp';
   const isRecovery = mode === 'recovery';
@@ -108,19 +122,67 @@ export default function AuthScreen({ route, navigation, onGuest }) {
     };
   }, []);
 
-  function ensureUserContentPolicyAccepted() {
+  useEffect(() => {
+    return () => {
+      if (guestProgressPromptResolverRef.current) {
+        guestProgressPromptResolverRef.current(false);
+        guestProgressPromptResolverRef.current = null;
+      }
+    };
+  }, []);
+
+  async function markUserContentPolicyAccepted() {
     if (userContentPolicyAccepted) {
-      return true;
+      return;
     }
-    setMessage(t('Bitte akzeptiere zuerst AGB und Datenschutz.'));
-    return false;
+    setUserContentPolicyAccepted(true);
+    await saveUserContentPolicyAccepted(true);
+  }
+
+  function confirmExistingAccountLoginWithGuestProgress() {
+    return new Promise((resolve) => {
+      if (guestProgressPromptResolverRef.current) {
+        guestProgressPromptResolverRef.current(false);
+      }
+      guestProgressPromptResolverRef.current = resolve;
+      setGuestProgressPromptVisible(true);
+    });
+  }
+
+  function resolveGuestProgressPrompt(confirmed) {
+    const resolve = guestProgressPromptResolverRef.current;
+    guestProgressPromptResolverRef.current = null;
+    setGuestProgressPromptVisible(false);
+    if (resolve) {
+      resolve(Boolean(confirmed));
+    }
+  }
+
+  async function getGuestTransferSnapshot({ warnExistingLogin = false } = {}) {
+    if (accountOwnerKey !== 'guest') {
+      return null;
+    }
+
+    const snapshot = getAccountDataSnapshot();
+    if (!hasMeaningfulAccountProgress(snapshot)) {
+      return null;
+    }
+
+    if (warnExistingLogin) {
+      const confirmed = await confirmExistingAccountLoginWithGuestProgress();
+      if (!confirmed) {
+        return false;
+      }
+    }
+
+    const dailyFreeCoinsClaim = await loadDailyCoinsClaimDate();
+    return {
+      ...snapshot,
+      dailyFreeCoinsClaim,
+    };
   }
 
   async function handleSubmit() {
-    if (!isRecovery && !ensureUserContentPolicyAccepted()) {
-      return;
-    }
-
     if (!email || !password) {
       setMessage(t('Bitte E-Mail und Passwort eingeben.'));
       return;
@@ -140,11 +202,29 @@ export default function AuthScreen({ route, navigation, onGuest }) {
       return;
     }
 
-    setLoading(true);
-    setMessage(null);
-
     try {
       const trimmedEmail = normalizeEmail(email);
+      const guestSnapshot = await getGuestTransferSnapshot({
+        warnExistingLogin: !isSignUp,
+      });
+
+      if (guestSnapshot === false) {
+        return;
+      }
+
+      setLoading(true);
+      setMessage(null);
+
+      if (!isRecovery) {
+        await markUserContentPolicyAccepted();
+      }
+
+      if (guestSnapshot) {
+        await savePendingGuestAccountTransfer(guestSnapshot, {
+          flow: isSignUp ? 'signUp' : 'signIn',
+          email: trimmedEmail,
+        });
+      }
 
       if (isSignUp) {
         const { data, error } = await withTimeout(
@@ -172,7 +252,9 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
         if (!data.session) {
           setMessage(
-            t('Account erstellt. Bitte bestätige deine E-Mail, bevor du dich einloggst.')
+            guestSnapshot
+              ? t('Account erstellt. Bitte bestaetige deine E-Mail. Dein Gastfortschritt wird beim ersten Login uebernommen.')
+              : t('Account erstellt. Bitte bestätige deine E-Mail, bevor du dich einloggst.')
           );
         }
       } else {
@@ -234,12 +316,6 @@ export default function AuthScreen({ route, navigation, onGuest }) {
     const next = !rememberMe;
     setRememberMe(next);
     await saveRememberMe(next);
-  }
-
-  async function handleUserContentPolicyToggle() {
-    const next = !userContentPolicyAccepted;
-    setUserContentPolicyAccepted(next);
-    await saveUserContentPolicyAccepted(next);
   }
 
   function handleBackToLogin() {
@@ -330,16 +406,24 @@ export default function AuthScreen({ route, navigation, onGuest }) {
   }
 
   async function handleGuestStart() {
-    if (!ensureUserContentPolicyAccepted()) {
-      return;
-    }
+    await markUserContentPolicyAccepted();
     await handleGuest();
   }
 
   async function handleOAuthLogin(provider) {
-    if (!ensureUserContentPolicyAccepted()) {
+    const guestSnapshot = await getGuestTransferSnapshot({
+      warnExistingLogin: true,
+    });
+    if (guestSnapshot === false) {
       return;
     }
+    if (guestSnapshot) {
+      await savePendingGuestAccountTransfer(guestSnapshot, {
+        flow: 'oauth',
+        provider,
+      });
+    }
+    await markUserContentPolicyAccepted();
     await loginOAuth(provider, setMessage, setLoading);
   }
 
@@ -402,50 +486,6 @@ export default function AuthScreen({ route, navigation, onGuest }) {
             </View>
             <Text style={styles.rememberLabel}>{t('Angemeldet bleiben')}</Text>
           </Pressable>
-        ) : null}
-
-        {!isRecovery ? (
-          <View style={styles.consentWrap}>
-            <Pressable
-              onPress={handleUserContentPolicyToggle}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: userContentPolicyAccepted }}
-              style={styles.consentRow}
-            >
-              <View
-                style={[
-                  styles.rememberBox,
-                  userContentPolicyAccepted ? styles.rememberBoxChecked : null,
-                ]}
-              >
-                {userContentPolicyAccepted ? (
-                  <FontAwesome5 name="check" size={12} color="#0F172A" />
-                ) : null}
-              </View>
-              <View style={styles.consentTextWrap}>
-                <Text style={styles.consentLabel}>
-                  {t('Ich akzeptiere die AGB und habe die Datenschutzerklaerung gelesen.')}
-                </Text>
-                <Text style={styles.consentHint}>
-                  {t('Nutzernamen, Profilbilder und soziale Interaktionen muessen unsere App-Regeln beachten.')}
-                </Text>
-              </View>
-            </Pressable>
-            <View style={styles.consentLinksRow}>
-              <Pressable
-                onPress={() => navigation.navigate('Legal', { doc: 'terms' })}
-                style={styles.consentLinkButton}
-              >
-                <Text style={styles.consentLinkText}>{t('AGB')}</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => navigation.navigate('Legal', { doc: 'privacy' })}
-                style={styles.consentLinkButton}
-              >
-                <Text style={styles.consentLinkText}>{t('Datenschutz')}</Text>
-              </Pressable>
-            </View>
-          </View>
         ) : null}
 
         {message ? <Text style={styles.message}>{message}</Text> : null}
@@ -520,6 +560,49 @@ export default function AuthScreen({ route, navigation, onGuest }) {
           </View>
         ) : null}
       </View>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={guestProgressPromptVisible}
+        onRequestClose={() => resolveGuestProgressPrompt(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.guestProgressModal}>
+            <View style={styles.guestProgressIconWrap}>
+              <FontAwesome5 name="user-clock" size={22} color="#081019" />
+            </View>
+            <Text style={styles.guestProgressTitle}>
+              {t('Gastfortschritt vorhanden')}
+            </Text>
+            <Text style={styles.guestProgressMessage}>
+              {t('Wenn du dich in einen bestehenden Account einloggst, wird dein Gastfortschritt auf diesem Geraet verworfen. Neue oder leere Accounts uebernehmen ihn.')}
+            </Text>
+            <View style={styles.guestProgressActions}>
+              <Pressable
+                onPress={() => resolveGuestProgressPrompt(false)}
+                style={({ pressed }) => [
+                  styles.guestProgressButton,
+                  styles.guestProgressCancelButton,
+                  pressed ? styles.guestProgressButtonPressed : null,
+                ]}
+              >
+                <Text style={styles.guestProgressCancelText}>{t('Abbrechen')}</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => resolveGuestProgressPrompt(true)}
+                style={({ pressed }) => [
+                  styles.guestProgressButton,
+                  styles.guestProgressConfirmButton,
+                  pressed ? styles.guestProgressButtonPressed : null,
+                ]}
+              >
+                <Text style={styles.guestProgressConfirmText}>{t('Einloggen')}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

@@ -54,9 +54,24 @@ cd android
 - Wenn Live-Ads auf einem Geraet als Test-Ad ausgeliefert werden sollen, die echte Testgeraete-ID aus Logcat in `EXPO_PUBLIC_ADMOB_TEST_DEVICE_IDS_ANDROID` eintragen.
 - Die Android `App ID` muss im Manifest vorhanden sein, sonst kann das Mobile-Ads-SDK abstuerzen.
 
+## app-ads.txt
+
+- Die Datei liegt jetzt unter `public/app-ads.txt`, damit sie bei Vite/Vercel direkt als `/app-ads.txt` ausgeliefert wird.
+- Inhalt:
+
+```txt
+google.com, pub-8212642377810191, DIRECT, f08c47fec0942fa0
+```
+
+- Fuer AdMob muss die Datei oeffentlich unter `/app-ads.txt` auf der Developer-Website erreichbar sein.
+- Wichtig: Die in Google Play hinterlegte `Website` muss auf dieselbe Domain zeigen, auf der `https://DEINE-DOMAIN/app-ads.txt` auslieferbar ist.
+- Wenn die aktuelle GitHub-Pages-URL nur unter einem Projekt-Unterpfad laeuft, die finale AdMob-Verifikation notfalls ueber eine echte Root-Domain oder Firebase Hosting abschliessen.
+
 ## Offizielle Referenzen
 
 - AdMob Android Quick Start:
   `https://developers.google.com/admob/android/quick-start`
 - Test Ads / Demo Ad Units:
   `https://developers.google.com/admob/android/test-ads`
+- app-ads.txt:
+  `https://developers.google.com/admob/android/app-ads`

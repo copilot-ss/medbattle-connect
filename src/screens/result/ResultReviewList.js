@@ -1,4 +1,6 @@
-import { View, Text, Image } from 'react-native';
+import { useState } from 'react';
+import { View, Text, Image, Pressable } from 'react-native';
+import { getQuestionImageAsset } from '../../data/questionImageAssets';
 import { useTranslation } from '../../i18n/useTranslation';
 import { BubbleReveal } from './ResultWidgets';
 import styles from '../styles/ResultScreen.styles';
@@ -15,6 +17,37 @@ function getBoostLabel(boostId, t) {
   return null;
 }
 
+function resolveImageSource(item) {
+  const imageSource = item?.imageSource ?? item?.image_asset ?? null;
+  if (typeof imageSource === 'number') {
+    return imageSource;
+  }
+  if (imageSource && typeof imageSource === 'object') {
+    return imageSource;
+  }
+  if (typeof item?.imageUrl === 'string') {
+    const trimmed = item.imageUrl.trim();
+    const localAsset = getQuestionImageAsset(trimmed);
+    if (localAsset) {
+      return localAsset;
+    }
+    if (/^https?:\/\//i.test(trimmed)) {
+      return { uri: trimmed };
+    }
+  }
+  if (typeof item?.image_url === 'string') {
+    const trimmed = item.image_url.trim();
+    const localAsset = getQuestionImageAsset(trimmed);
+    if (localAsset) {
+      return localAsset;
+    }
+    if (/^https?:\/\//i.test(trimmed)) {
+      return { uri: trimmed };
+    }
+  }
+  return null;
+}
+
 export default function ResultReviewList({
   items,
   title = null,
@@ -26,6 +59,7 @@ export default function ResultReviewList({
   const safeItems = Array.isArray(items) ? items : [];
   const resolvedTitle = title || t('Quiz Zusammenfassung');
   const resolvedAnswerLabel = answerLabel || t('Deine Antwort');
+  const [expandedQuestionKey, setExpandedQuestionKey] = useState(null);
 
   if (!safeItems.length) {
     return null;
@@ -55,27 +89,74 @@ export default function ResultReviewList({
             ? item.explanation
             : t('Noch keine Erklärung hinterlegt.');
 
+        const imageSource = resolveImageSource(item);
+        const imageAlt =
+          typeof item.imageAlt === 'string' && item.imageAlt.trim()
+            ? item.imageAlt.trim()
+            : typeof item.image_alt === 'string' && item.image_alt.trim()
+            ? item.image_alt.trim()
+            : item.question;
+        const imageOnly =
+          item.imageOnly === true ||
+          item.image_only === true ||
+          item.promptMode === 'image_only' ||
+          item.prompt_mode === 'image_only';
+        const visibleQuestion =
+          typeof item.question === 'string' && item.question.trim()
+            ? item.question.trim()
+            : '';
+        const shouldShowQuestion = Boolean(visibleQuestion && !(imageOnly && imageSource));
+        const otherPlayerAnswers = Array.isArray(item.otherPlayerAnswers)
+          ? item.otherPlayerAnswers
+          : [];
+        const hasOtherPlayerAnswers = otherPlayerAnswers.length > 0;
+        const questionKey = String(item.questionId ?? item.index ?? idx);
+        const isExpanded = expandedQuestionKey === questionKey;
+        const handleToggleOtherAnswers = hasOtherPlayerAnswers
+          ? () => {
+              setExpandedQuestionKey((prev) => (prev === questionKey ? null : questionKey));
+            }
+          : undefined;
+
         return (
           <BubbleReveal
-            key={item.questionId ?? `${idx}`}
+            key={questionKey}
             delay={baseDelay + 90 * (idx + 1)}
             resetKey={`${entranceKey}:review-card:${idx}`}
-            style={[
-              styles.reviewCard,
-              item.timedOut
-                ? styles.reviewCardTimedOut
-                : item.isCorrect
-                  ? styles.reviewCardCorrect
-                  : styles.reviewCardWrong,
-            ]}
           >
+            <Pressable
+              onPress={handleToggleOtherAnswers}
+              disabled={!hasOtherPlayerAnswers}
+              accessibilityRole={hasOtherPlayerAnswers ? 'button' : undefined}
+              accessibilityState={hasOtherPlayerAnswers ? { expanded: isExpanded } : undefined}
+              style={({ pressed }) => [
+                styles.reviewCard,
+                item.timedOut
+                  ? styles.reviewCardTimedOut
+                  : item.isCorrect
+                    ? styles.reviewCardCorrect
+                    : styles.reviewCardWrong,
+                hasOtherPlayerAnswers ? styles.reviewCardInteractive : null,
+                pressed ? styles.reviewCardPressed : null,
+              ]}
+            >
             <View style={styles.reviewHeader}>
               <Text style={styles.reviewIndex}>
                 {t('Frage {index}', { index: idx + 1 })}
               </Text>
               <Text style={[styles.reviewStatus, statusStyle]}>{statusLabel}</Text>
             </View>
-            <Text style={styles.reviewQuestion}>{item.question}</Text>
+            {imageSource ? (
+              <Image
+                source={imageSource}
+                style={styles.reviewImage}
+                resizeMode="contain"
+                accessibilityLabel={imageAlt}
+              />
+            ) : null}
+            {shouldShowQuestion ? (
+              <Text style={styles.reviewQuestion}>{visibleQuestion}</Text>
+            ) : null}
             <View style={styles.reviewAnswers}>
               <Text style={styles.reviewLabel}>{resolvedAnswerLabel}</Text>
               <View style={styles.reviewAnswerRow}>
@@ -116,8 +197,44 @@ export default function ResultReviewList({
                 </>
               ) : null}
             </View>
+            {isExpanded ? (
+              <View style={styles.reviewOtherAnswers}>
+                <Text style={styles.reviewOtherAnswersTitle}>
+                  {t('Andere Antworten')}
+                </Text>
+                {otherPlayerAnswers.map((answer) => {
+                  const otherStatusLabel = answer.timedOut
+                    ? t('Timeout')
+                    : answer.isCorrect
+                      ? t('Richtig')
+                      : t('Falsch');
+                  const otherStatusStyle = answer.timedOut
+                    ? styles.reviewStatusTimedOut
+                    : answer.isCorrect
+                      ? styles.reviewStatusCorrect
+                      : styles.reviewStatusWrong;
+
+                  return (
+                    <View key={`${questionKey}-${answer.key}`} style={styles.reviewOtherAnswerRow}>
+                      <View style={styles.reviewOtherAnswerMeta}>
+                        <Text style={styles.reviewOtherAnswerName} numberOfLines={1}>
+                          {answer.name}
+                        </Text>
+                        <Text style={[styles.reviewOtherAnswerStatus, otherStatusStyle]}>
+                          {otherStatusLabel}
+                        </Text>
+                      </View>
+                      <Text style={styles.reviewOtherAnswerText}>
+                        {answer.selectedOption ?? t('Keine Antwort')}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : null}
             <Text style={styles.reviewExplanationLabel}>{t('Erklärung')}</Text>
             <Text style={styles.reviewExplanationText}>{explanationText}</Text>
+            </Pressable>
           </BubbleReveal>
         );
       })}

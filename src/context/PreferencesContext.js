@@ -20,6 +20,7 @@ import {
 } from './preferences/sanitize';
 import {
   clearAccountPreferencesStorage,
+  getPreferencesStorageOwner,
   loadPreferencesFromStorage,
   persistAvatarId,
   persistAvatarFrameId,
@@ -33,6 +34,7 @@ import {
   persistStreakShieldActive,
   persistStreakValue,
   persistUserStats,
+  setPreferencesStorageOwner,
 } from './preferences/storage';
 import { APP_DEFAULT_LOCALE, setLocale, t as translate } from '../i18n';
 import { getDefaultAppLocale } from '../i18n/deviceLocale';
@@ -64,6 +66,7 @@ export function PreferencesProvider({ children }) {
   const [energy, setEnergyState] = useState(NEW_ACCOUNT_MAX_ENERGY);
   const [nextEnergyAt, setNextEnergyAt] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [accountOwnerKey, setAccountOwnerKey] = useState(() => getPreferencesStorageOwner().key);
   const energyTimestampRef = useRef(Date.now());
   const energyRef = useRef(energy);
   const energyMaxRef = useRef(NEW_ACCOUNT_MAX_ENERGY);
@@ -83,6 +86,31 @@ export function PreferencesProvider({ children }) {
     () => (language || APP_DEFAULT_LOCALE).toLowerCase(),
     [language]
   );
+  const applyLoadedPreferences = useCallback((loaded) => {
+    setPushEnabledState(loaded.pushEnabled);
+    setFriendRequestsEnabledState(loaded.friendRequestsEnabled);
+    setAvatarIdState(loaded.avatarId);
+    setAvatarUriState(loaded.avatarUri);
+    setAvatarFrameIdState(loaded.avatarFrameId);
+    setOwnedFramesState(loaded.ownedFrames);
+    setBoostsState(loaded.boosts);
+    setClaimedAchievementsState(loaded.claimedAchievements);
+    setStreakShieldActiveState(Boolean(loaded.streakShieldActive));
+    setDoubleXpExpiresAtState(loaded.doubleXpExpiresAt ?? null);
+    setStreaksState(loaded.streaks);
+    setUserStatsState(loaded.userStats);
+    setEnergyBaseState(loaded.energyBase ?? NEW_ACCOUNT_MAX_ENERGY);
+    energyTimestampRef.current = loaded.energyTimestamp;
+    setEnergyState(loaded.energy);
+    setNextEnergyAt(loaded.nextEnergyAt);
+    energyRef.current = loaded.energy;
+    energyMaxRef.current =
+      (loaded.energyBase ?? NEW_ACCOUNT_MAX_ENERGY) +
+      Math.min(
+        sanitizeStatNumber(loaded.userStats?.energyCapBonus),
+        MAX_ENERGY_CAP_BONUS
+      );
+  }, []);
 
   useEffect(() => {
     syncDeviceLanguage();
@@ -109,22 +137,7 @@ export function PreferencesProvider({ children }) {
           return;
         }
 
-        setPushEnabledState(loaded.pushEnabled);
-        setFriendRequestsEnabledState(loaded.friendRequestsEnabled);
-        setAvatarIdState(loaded.avatarId);
-        setAvatarUriState(loaded.avatarUri);
-        setAvatarFrameIdState(loaded.avatarFrameId);
-        setOwnedFramesState(loaded.ownedFrames);
-        setBoostsState(loaded.boosts);
-        setClaimedAchievementsState(loaded.claimedAchievements);
-        setStreakShieldActiveState(Boolean(loaded.streakShieldActive));
-        setDoubleXpExpiresAtState(loaded.doubleXpExpiresAt ?? null);
-        setStreaksState(loaded.streaks);
-        setUserStatsState(loaded.userStats);
-        setEnergyBaseState(loaded.energyBase ?? NEW_ACCOUNT_MAX_ENERGY);
-        energyTimestampRef.current = loaded.energyTimestamp;
-        setEnergyState(loaded.energy);
-        setNextEnergyAt(loaded.nextEnergyAt);
+        applyLoadedPreferences(loaded);
       } catch (err) {
         if (active) {
           console.warn('Konnte Nutzer-Präferenzen nicht laden:', err);
@@ -142,7 +155,63 @@ export function PreferencesProvider({ children }) {
     return () => {
       active = false;
     };
-  }, [syncDeviceLanguage]);
+  }, [applyLoadedPreferences, syncDeviceLanguage]);
+
+  const switchAccountOwner = useCallback(
+    async (owner, { force = false } = {}) => {
+      const previousOwner = getPreferencesStorageOwner();
+      const nextOwner = setPreferencesStorageOwner(owner);
+      if (!force && nextOwner.key === accountOwnerKey) {
+        return { ok: true, skipped: true, owner: nextOwner };
+      }
+
+      setLoading(true);
+      try {
+        const loaded = await loadPreferencesFromStorage(nextOwner);
+        applyLoadedPreferences(loaded);
+        setAccountOwnerKey(nextOwner.key);
+        return { ok: true, owner: nextOwner };
+      } catch (err) {
+        console.warn('Konnte Account-Daten nicht laden:', err);
+        setPreferencesStorageOwner(previousOwner);
+        setAccountOwnerKey(previousOwner.key);
+        return { ok: false, error: err, owner: nextOwner };
+      } finally {
+        syncDeviceLanguage();
+        setLoading(false);
+      }
+    },
+    [accountOwnerKey, applyLoadedPreferences, syncDeviceLanguage]
+  );
+
+  const getAccountDataSnapshot = useCallback(() => ({
+    avatarId,
+    avatarUri,
+    avatarFrameId,
+    ownedFrames,
+    boosts,
+    claimedAchievements,
+    streakShieldActive,
+    doubleXpExpiresAt,
+    streaks,
+    userStats,
+    energyBase,
+    energy,
+    energyTimestamp: energyTimestampRef.current,
+  }), [
+    avatarFrameId,
+    avatarId,
+    avatarUri,
+    boosts,
+    claimedAchievements,
+    doubleXpExpiresAt,
+    energy,
+    energyBase,
+    ownedFrames,
+    streakShieldActive,
+    streaks,
+    userStats,
+  ]);
 
   useEffect(() => {
     energyRef.current = energy;
@@ -561,12 +630,17 @@ export function PreferencesProvider({ children }) {
       boostEnergy,
       addEnergy,
       resetAccountData,
+      switchAccountOwner,
+      getAccountDataSnapshot,
+      accountOwnerKey,
       loading,
     }),
     [
       addEnergy,
+      accountOwnerKey,
       boostEnergy,
       consumeEnergy,
+      getAccountDataSnapshot,
       refreshEnergy,
       resetAccountData,
       loading,
@@ -602,6 +676,7 @@ export function PreferencesProvider({ children }) {
       doubleXpExpiresAt,
       setDoubleXpExpiresAt,
       language,
+      switchAccountOwner,
       streaks,
     ]
   );

@@ -116,7 +116,6 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
         setError(
           t('Rangliste konnte nicht geladen werden. Bitte versuche es später erneut.')
         );
-        setError('Rangliste konnte nicht geladen werden. Bitte versuche es spaeter erneut.');
       } finally {
         setLoading(false);
         setRefreshing(false);

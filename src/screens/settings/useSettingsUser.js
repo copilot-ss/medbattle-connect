@@ -4,6 +4,15 @@ import { fetchUserProfile } from '../../services/userService';
 import { getFriendCodeForUser, getOrCreateGuestId } from '../../services/friendsService';
 import { getStoredGuestName, loadGuestMode } from '../../utils/guestProfile';
 
+function isGuestAuthUser(user, guestMode = false) {
+  return (
+    Boolean(guestMode) ||
+    user?.id === 'guest' ||
+    Boolean(user?.is_anonymous) ||
+    Boolean(user?.user_metadata?.guest)
+  );
+}
+
 export default function useSettingsUser() {
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState(null);
@@ -35,6 +44,7 @@ export default function useSettingsUser() {
       const guestId = await getOrCreateGuestId();
       const guestName = await getStoredGuestName();
       const storedGuestMode = await loadGuestMode();
+      const isGuest = isGuestAuthUser(user, storedGuestMode);
       if (!active) {
         return;
       }
@@ -60,7 +70,7 @@ export default function useSettingsUser() {
         user?.user_metadata?.full_name ?? user?.user_metadata?.display_name;
       let profileName = metaName || null;
 
-      if (id) {
+      if (id && !isGuest) {
         const { ok, profile } = await fetchUserProfile(id);
         if (ok && profile) {
           profileName = profile.username || profileName;
@@ -68,10 +78,10 @@ export default function useSettingsUser() {
       }
 
       setUserName(profileName || guestName || 'Gast');
-      setAuthUserId(id);
+      setAuthUserId(isGuest ? null : id);
       setLocalGuestId(guestId);
-      setUserId(id || guestId);
-      setGuestMode(Boolean(storedGuestMode));
+      setUserId(isGuest ? guestId : id || guestId);
+      setGuestMode(isGuest);
       setAuthResolved(true);
     }
 

@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { abandonMatch, deriveMatchRole } from '../../../services/matchService';
+import {
+  abandonMatch,
+  deriveMatchRole,
+  leaveMatchLobby,
+} from '../../../services/matchService';
 import { clearActiveLobby } from '../../../utils/activeLobbyStorage';
 import { buildActiveLobbyPayload } from '../lobbyUtils';
 
@@ -32,9 +36,14 @@ export default function useLobbyLeaveActions({
     setShowLeaveConfirm(false);
 
     try {
-      if (currentMatch && currentMatch.status === 'waiting') {
+      if (
+        currentMatch &&
+        (currentMatch.status === 'waiting' || currentMatch.status === 'completed')
+      ) {
+        await leaveMatchLobby({ matchId: currentMatch.id });
+      } else if (currentMatch) {
         const role = deriveMatchRole(currentMatch, userId);
-        if (role === 'host' || role === 'guest') {
+        if (role) {
           await abandonMatch({ match: currentMatch, role });
         }
       }

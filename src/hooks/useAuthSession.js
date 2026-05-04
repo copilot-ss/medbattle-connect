@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
+import { t as translate } from '../i18n';
 import { supabase } from '../lib/supabaseClient';
 import {
   checkCurrentSessionOwnership,
@@ -72,6 +73,16 @@ function createGuestSession(guestName) {
       user_metadata: { username: guestName },
     },
   };
+}
+
+function isGuestAuthSession(session, guestMode = false) {
+  const user = session?.user;
+  return (
+    Boolean(guestMode) ||
+    user?.id === 'guest' ||
+    Boolean(user?.is_anonymous) ||
+    Boolean(user?.user_metadata?.guest)
+  );
 }
 
 function coerceSession(next, previous, guestMode) {
@@ -153,7 +164,7 @@ export default function useAuthSession() {
   const guestModeRef = useRef(false);
   const forcedSingleSessionSignOutRef = useRef(false);
 
-  const isGuestSession = guestMode || session?.user?.id === 'guest';
+  const isGuestSession = isGuestAuthSession(session, guestMode);
   const isAuthenticated = Boolean(session) || isGuestSession;
 
   const needsUsernameSetup = useMemo(() => {
@@ -199,7 +210,7 @@ export default function useAuthSession() {
   const verifyActiveSession = useCallback(async (options = {}) => {
     const nextSession = options.sessionOverride ?? session;
 
-    if (!nextSession?.user?.id || guestModeRef.current || nextSession.user.id === 'guest') {
+    if (!nextSession?.user?.id || isGuestAuthSession(nextSession, guestModeRef.current)) {
       return { ok: true, skipped: true };
     }
 
@@ -271,8 +282,9 @@ export default function useAuthSession() {
       return {
         ok: false,
         error,
-        message:
-          'Gastmodus ohne Supabase-Session aktiv. Multiplayer benötigt anonymes Login (Supabase Auth: Anonymous Sign-ins aktivieren).',
+        message: translate(
+          'Gastmodus ohne Supabase-Session aktiv. Multiplayer benötigt anonymes Login.'
+        ),
       };
     }
 
@@ -282,9 +294,10 @@ export default function useAuthSession() {
 
     return {
       ok: false,
-      error: new Error('Anonymes Login nicht verfügbar.'),
-      message:
-        'Gastmodus ohne Supabase-Session aktiv. Multiplayer benötigt anonymes Login (Supabase Auth: Anonymous Sign-ins aktivieren).',
+      error: new Error(translate('Anonymes Login nicht verfügbar.')),
+      message: translate(
+        'Gastmodus ohne Supabase-Session aktiv. Multiplayer benötigt anonymes Login.'
+      ),
     };
   }, []);
 

@@ -1,4 +1,6 @@
 import PRECISE_OFFLINE_CATEGORY_PACK from './offlinePreciseCategoryPack';
+import GENERAL_OFFLINE_CATEGORY_PACK from './offlineGeneralCategoryPack';
+import BALANCED_GENERAL_CATEGORY_PACK from './offlineBalancedGeneralCategoryPack';
 
 const OFFLINE_SEED_QUESTIONS = [
   {
@@ -1043,5 +1045,10 @@ const OFFLINE_SEED_QUESTIONS = [
   },
 ];
 
-export default [...OFFLINE_SEED_QUESTIONS, ...PRECISE_OFFLINE_CATEGORY_PACK];
+export default [
+  ...OFFLINE_SEED_QUESTIONS,
+  ...PRECISE_OFFLINE_CATEGORY_PACK,
+  ...GENERAL_OFFLINE_CATEGORY_PACK,
+  ...BALANCED_GENERAL_CATEGORY_PACK,
+];
 

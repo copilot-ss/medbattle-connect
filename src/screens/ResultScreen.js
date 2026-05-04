@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   View,
   Text,
@@ -26,11 +25,17 @@ import {
   deriveMatchRole,
   leaveMatchLobby,
 } from '../services/matchService';
+import { isMatchPlayerRole } from '../services/match/matchHelpers';
 import { colors } from '../styles/theme';
 import { findBadge } from './result/resultConstants';
 import ResultScoreboard from './result/ResultScoreboard';
 import ResultReviewList from './result/ResultReviewList';
-import { BubbleReveal, RewardSummary, Sparkle } from './result/ResultWidgets';
+import {
+  BubbleReveal,
+  RewardSummary,
+  Sparkle,
+  WaitingDots,
+} from './result/ResultWidgets';
 import useResultMultiplayerData from './result/hooks/useResultMultiplayerData';
 import useResultScoreAnimations from './result/hooks/useResultScoreAnimations';
 import useResultEntranceAnimations from './result/hooks/useResultEntranceAnimations';
@@ -138,6 +143,7 @@ export default function ResultScreen({ route, navigation }) {
     opponentName = null,
     playerState = null,
     opponentState = null,
+    matchStateSnapshot = null,
     matchJoinCode = null,
     playerRole = null,
     mode = 'standard',
@@ -154,7 +160,6 @@ export default function ResultScreen({ route, navigation }) {
   const { premium } = usePremiumStatus();
   const returnHomeInFlightRef = useRef(false);
   const {
-    loading: liveMatchLoading,
     match: liveMatch,
     status: liveMatchStatus,
     questions: liveQuestions,
@@ -263,6 +268,7 @@ export default function ResultScreen({ route, navigation }) {
     opponentName,
     playerState,
     opponentState,
+    matchStateSnapshot,
     answerHistory,
     liveMatch,
     liveMatchStatus,
@@ -435,7 +441,7 @@ export default function ResultScreen({ route, navigation }) {
         } else {
           const resolvedRole =
             deriveMatchRole(multiplayerResultMatch, userId)
-            ?? (playerRole === 'host' || playerRole === 'guest' ? playerRole : null);
+            ?? (isMatchPlayerRole(playerRole) ? playerRole : null);
 
           if (resolvedRole) {
             const abandonResult = await abandonMatch({
@@ -496,7 +502,8 @@ export default function ResultScreen({ route, navigation }) {
     navigation.replace('MultiplayerLobby', {
       mode: 'hub',
       existingMatch: returnLobbyMatch,
-      keepCompleted: returnLobbyMatch.status === 'completed',
+      keepCompleted: true,
+      suppressActiveNavigation: true,
     });
   }, [handleReturnHome, isMultiplayer, navigation, returnLobbyMatch]);
   const handleReplayQuiz = useCallback(() => {
@@ -673,10 +680,10 @@ export default function ResultScreen({ route, navigation }) {
                           {waitingPlayersLabel}
                         </Text>
                         <View style={styles.multiplayerWaitingLoader}>
-                          <ActivityIndicator size="small" color={colors.accent} />
                           <Text style={styles.multiplayerWaitingHint}>
-                            {liveMatchLoading ? t('Lade Status ...') : t('Wird geladen...')}
+                            {t('Waiting')}
                           </Text>
+                          <WaitingDots />
                         </View>
                       </View>
                     </BubbleReveal>

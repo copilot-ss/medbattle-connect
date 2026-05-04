@@ -19,13 +19,24 @@ function sanitizeStatNumber(value) {
 
 export default function useOfflineSync() {
   const { isOnline } = useConnectivity();
-  const { updateUserStats, language } = usePreferences();
+  const {
+    updateUserStats,
+    language,
+    loading: preferencesLoading,
+    accountOwnerKey,
+  } = usePreferences();
   const userId = useSupabaseUserId();
   const syncingRef = useRef(false);
   const questionSyncRef = useRef(false);
 
   useEffect(() => {
-    if (!isOnline || !userId || userId === 'guest') {
+    if (
+      !isOnline ||
+      preferencesLoading ||
+      !userId ||
+      userId === 'guest' ||
+      accountOwnerKey !== `user:${userId}`
+    ) {
       return;
     }
     if (syncingRef.current) {
@@ -73,7 +84,7 @@ export default function useOfflineSync() {
       .finally(() => {
         syncingRef.current = false;
       });
-  }, [isOnline, updateUserStats, userId]);
+  }, [accountOwnerKey, isOnline, preferencesLoading, updateUserStats, userId]);
 
   useEffect(() => {
     if (!isOnline) {

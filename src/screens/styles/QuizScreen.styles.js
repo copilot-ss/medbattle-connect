@@ -189,6 +189,17 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     marginBottom: 28,
   },
+  questionImage: {
+    width: '100%',
+    height: 190,
+    borderRadius: radii.md,
+    backgroundColor: colors.surfaceAlt,
+    marginBottom: 16,
+  },
+  questionImageOnly: {
+    height: 250,
+    marginBottom: 0,
+  },
   boostRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',

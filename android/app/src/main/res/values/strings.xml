@@ -1,5 +1,5 @@
 <resources>
   <string name="app_name">MedQuiz</string>
-  <string name="expo_runtime_version">55.0.0</string>
+  <string name="expo_runtime_version">55.0.0-imagefix-20260503</string>
   <string name="expo_updates_request_headers">{\"expo-channel-name\":\"production\"}</string>
 </resources>

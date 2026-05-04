@@ -15,20 +15,22 @@ export default function useLobbyKickGuest({
 
   const handleSelectParticipant = useCallback(
     (participantKey) => {
-      if (!isHostWaiting || participantKey !== 'guest') {
+      const participant = participants.find((item) => item.key === participantKey);
+      if (!isHostWaiting || !participant || participant.isHost || participant.isPending) {
         return;
       }
       setKickCandidateKey((prev) => (
         prev === participantKey ? null : participantKey
       ));
     },
-    [isHostWaiting]
+    [isHostWaiting, participants]
   );
 
-  const handleKickGuest = useCallback(async () => {
+  const handleKickGuest = useCallback(async (participantKey = null) => {
     if (!currentMatch || !isHostWaiting || kickingPlayer) {
       return false;
     }
+    const targetKey = participantKey ?? kickCandidateKey ?? 'guest';
 
     setKickingPlayer(true);
     setMatchesError(null);
@@ -37,6 +39,7 @@ export default function useLobbyKickGuest({
       const result = await kickMatchGuest({
         matchId: currentMatch.id,
         userId,
+        playerKey: targetKey,
       });
 
       if (!result.ok) {
@@ -56,6 +59,7 @@ export default function useLobbyKickGuest({
   }, [
     currentMatch,
     isHostWaiting,
+    kickCandidateKey,
     kickingPlayer,
     setCurrentMatch,
     setMatchesError,

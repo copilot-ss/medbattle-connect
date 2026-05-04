@@ -1,5 +1,10 @@
 import AVATARS from '../settings/avatars';
 import {
+  getMatchPlayerEntries,
+  getMatchPlayerRoleOrder,
+  isMatchPlayerRole,
+} from '../../services/match/matchHelpers';
+import {
   getAvatarPresetSource,
   isRemoteAvatarUrl,
 } from '../../utils/avatarUtils';
@@ -122,14 +127,16 @@ function buildParticipantEntry({
 }
 
 export function getPresenceParticipantCount(match) {
-  if (!match?.state) {
-    return 1;
+  const players = getMatchPlayerEntries(match);
+  return players.length || 1;
+}
+
+function getRoleFallbackName(role, hostLabel, guestLabel) {
+  if (role === 'host') {
+    return hostLabel;
   }
-
-  const hostPresent = Boolean(match.state.host?.userId ?? match.host_id);
-  const guestPresent = Boolean(match.state.guest?.userId ?? match.guest_id);
-
-  return [hostPresent, guestPresent].filter(Boolean).length || 1;
+  const order = getMatchPlayerRoleOrder(role);
+  return order > 1 ? `${guestLabel} ${order}` : guestLabel;
 }
 
 export function buildLobbyParticipants({
@@ -148,8 +155,7 @@ export function buildLobbyParticipants({
     return [];
   }
 
-  const hostState = currentMatch.state.host ?? {};
-  const guestState = currentMatch.state.guest ?? {};
+  const playerEntries = getMatchPlayerEntries(currentMatch);
 
   const presenceByUserId = new Map(
     (lobbyParticipants ?? [])
@@ -157,83 +163,45 @@ export function buildLobbyParticipants({
       .map((entry) => [entry.userId, entry])
   );
 
-  const hostIsSelf = currentMatch.host_id === userId || hostState.userId === userId;
-  const guestIsSelf = currentMatch.guest_id === userId || guestState.userId === userId;
-
-  const hostUserId = hostState.userId ?? currentMatch.host_id ?? null;
-  const guestUserId = guestState.userId ?? currentMatch.guest_id ?? null;
-
-  const hostPresence = hostUserId ? presenceByUserId.get(hostUserId) : null;
-  const guestPresence = guestUserId ? presenceByUserId.get(guestUserId) : null;
-
-  const hostPresenceAvatar = getPresenceAvatar({
-    isSelf: hostIsSelf,
-    avatarId: hostPresence?.avatarId,
-  });
-  const guestPresenceAvatar = getPresenceAvatar({
-    isSelf: guestIsSelf,
-    avatarId: guestPresence?.avatarId,
-  });
-
   const matchStatus = currentMatch.status ?? null;
-  const hostLobbyState = resolveParticipantLobbyState({
-    isSelf: hostIsSelf,
-    presence: hostPresence,
-    matchStatus,
-    pendingQuizLabel,
-    pendingReturnLabel,
-  });
-  const guestLobbyState = resolveParticipantLobbyState({
-    isSelf: guestIsSelf,
-    presence: guestPresence,
-    matchStatus,
-    pendingQuizLabel,
-    pendingReturnLabel,
-  });
+  return playerEntries
+    .filter((entry) => isMatchPlayerRole(entry.role))
+    .map(({ role, state }) => {
+      const resolvedUserId = state.userId ?? (
+        role === 'host' ? currentMatch.host_id : role === 'guest' ? currentMatch.guest_id : null
+      );
+      const isSelf = resolvedUserId === userId;
+      const presence = resolvedUserId ? presenceByUserId.get(resolvedUserId) : null;
+      const presenceAvatar = getPresenceAvatar({
+        isSelf,
+        avatarId: presence?.avatarId,
+      });
+      const lobbyState = resolveParticipantLobbyState({
+        isSelf,
+        presence,
+        matchStatus,
+        pendingQuizLabel,
+        pendingReturnLabel,
+      });
+      const fallbackName = getRoleFallbackName(role, hostLabel, guestLabel);
 
-  const items = [
-    buildParticipantEntry({
-      key: 'host',
-      isHost: true,
-      role: hostLabel,
-      fallbackName: hostLabel,
-      state: hostState,
-      presence: hostPresence,
-      presenceAvatar: hostPresenceAvatar,
-      isSelf: hostIsSelf,
-      resolvedUserId: hostUserId,
-      activity: hostLobbyState.activity,
-      inCurrentLobby: hostLobbyState.inCurrentLobby,
-      isPending: hostLobbyState.isPending,
-      pendingStatusLabel: hostLobbyState.statusLabel,
-      activeAvatarColor,
-      activeAvatarSource,
-      activeAvatarIcon,
-    }),
-  ];
-
-  if (guestState?.username || currentMatch.guest_id) {
-    items.push(
-      buildParticipantEntry({
-        key: 'guest',
-        isHost: false,
-        role: guestLabel,
-        fallbackName: guestLabel,
-        state: guestState,
-        presence: guestPresence,
-        presenceAvatar: guestPresenceAvatar,
-        isSelf: guestIsSelf,
-        resolvedUserId: guestUserId,
-        activity: guestLobbyState.activity,
-        inCurrentLobby: guestLobbyState.inCurrentLobby,
-        isPending: guestLobbyState.isPending,
-        pendingStatusLabel: guestLobbyState.statusLabel,
+      return buildParticipantEntry({
+        key: role,
+        isHost: role === 'host',
+        role: fallbackName,
+        fallbackName,
+        state,
+        presence,
+        presenceAvatar,
+        isSelf,
+        resolvedUserId,
+        activity: lobbyState.activity,
+        inCurrentLobby: lobbyState.inCurrentLobby,
+        isPending: lobbyState.isPending,
+        pendingStatusLabel: lobbyState.statusLabel,
         activeAvatarColor,
         activeAvatarSource,
         activeAvatarIcon,
-      })
-    );
-  }
-
-  return items;
+      });
+    });
 }

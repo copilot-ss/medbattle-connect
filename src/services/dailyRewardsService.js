@@ -1,8 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getPreferencesStorageOwner } from '../context/preferences/storage';
+import {
+  fetchAccountPreferences,
+  mergeAccountPreferencesState,
+} from './accountPreferencesService';
 
 export const DAILY_FREE_COINS = 5;
 const DAILY_FREE_COINS_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 const DAILY_FREE_COINS_KEY = 'medbattle_daily_free_coins_claim';
+const DAILY_FREE_COINS_MIGRATED_KEY = 'medbattle_daily_free_coins_migrated_v1';
 const dailyCoinsClaimListeners = new Set();
 const LEGACY_DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const NUMERIC_PATTERN = /^\d+$/;
@@ -92,9 +98,49 @@ function notifyDailyCoinsClaimDate(claimDate) {
   });
 }
 
+function sanitizeOwnerKey(value) {
+  return String(value || 'guest').replace(/[^a-zA-Z0-9:_-]/g, '_');
+}
+
+function getScopedDailyKey(owner) {
+  return `medbattle:${sanitizeOwnerKey(owner?.key ?? 'guest')}:${DAILY_FREE_COINS_KEY}`;
+}
+
+async function ensureGuestDailyClaimMigrated(owner) {
+  if (owner?.type === 'user') {
+    return;
+  }
+
+  const migrated = await AsyncStorage.getItem(DAILY_FREE_COINS_MIGRATED_KEY);
+  if (migrated === 'true') {
+    return;
+  }
+
+  const scopedKey = getScopedDailyKey(owner);
+  const [legacyValue, scopedValue] = await Promise.all([
+    AsyncStorage.getItem(DAILY_FREE_COINS_KEY),
+    AsyncStorage.getItem(scopedKey),
+  ]);
+
+  if (legacyValue && scopedValue === null) {
+    await AsyncStorage.setItem(scopedKey, legacyValue);
+  }
+
+  await AsyncStorage.removeItem(DAILY_FREE_COINS_KEY);
+  await AsyncStorage.setItem(DAILY_FREE_COINS_MIGRATED_KEY, 'true');
+}
+
 export const loadDailyCoinsClaimDate = async () => {
+  const owner = getPreferencesStorageOwner();
+
   try {
-    return await AsyncStorage.getItem(DAILY_FREE_COINS_KEY);
+    if (owner?.type === 'user' && owner.userId) {
+      const result = await fetchAccountPreferences(owner.userId);
+      return result.ok ? result.state?.dailyFreeCoinsClaim ?? null : null;
+    }
+
+    await ensureGuestDailyClaimMigrated(owner);
+    return await AsyncStorage.getItem(getScopedDailyKey(owner));
   } catch (err) {
     console.warn('Konnte Daily-Reward nicht laden:', err);
     return null;
@@ -102,14 +148,30 @@ export const loadDailyCoinsClaimDate = async () => {
 };
 
 export const persistDailyCoinsClaimDate = async (claimValue) => {
+  const owner = getPreferencesStorageOwner();
+
   try {
     if (claimValue) {
       const serializedValue = String(claimValue);
-      await AsyncStorage.setItem(DAILY_FREE_COINS_KEY, serializedValue);
+      if (owner?.type === 'user' && owner.userId) {
+        await mergeAccountPreferencesState(owner.userId, {
+          dailyFreeCoinsClaim: serializedValue,
+        });
+      } else {
+        await ensureGuestDailyClaimMigrated(owner);
+        await AsyncStorage.setItem(getScopedDailyKey(owner), serializedValue);
+      }
       notifyDailyCoinsClaimDate(serializedValue);
       return;
     }
-    await AsyncStorage.removeItem(DAILY_FREE_COINS_KEY);
+    if (owner?.type === 'user' && owner.userId) {
+      await mergeAccountPreferencesState(owner.userId, {
+        dailyFreeCoinsClaim: null,
+      });
+    } else {
+      await ensureGuestDailyClaimMigrated(owner);
+      await AsyncStorage.removeItem(getScopedDailyKey(owner));
+    }
     notifyDailyCoinsClaimDate(null);
   } catch (err) {
     console.warn('Konnte Daily-Reward nicht speichern:', err);

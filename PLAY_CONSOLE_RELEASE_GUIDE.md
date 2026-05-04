@@ -17,6 +17,7 @@ Diese Datei buendelt die Werte, die du manuell in der Play Console brauchst. Sie
 - Terms: `https://copilot-ss.github.io/medbattle-connect/legal-static/terms.html`
 - Support: `https://copilot-ss.github.io/medbattle-connect/legal-static/support.html`
 - Delete account: `https://copilot-ss.github.io/medbattle-connect/legal-static/delete-account.html`
+- app-ads.txt im Repo: `public/app-ads.txt`
 - Kontakt: `medbattle1@gmail.com`
 - Privacy update for Play review (2026-04-12): the privacy page now includes explicit retention periods. In Play Console, open `App content > Privacy policy`, save the same URL again if needed, then resubmit the changes for review.
 
@@ -75,6 +76,7 @@ Wichtige Punkte:
 - Nutzerdaten / Privacy Policy: Privacy- und Delete-Account-Seiten enthalten seit `2026-04-12` explizite Aufbewahrungsfristen und sichere Datenverarbeitung. In Play Console die Privacy-URL erneut speichern und zur Pruefung einreichen.
 - Gesundheitsbezogene Inhalte: MedQuiz muss ueberall klar als Lern-/Quiz-App bleiben. Keine diagnostischen, therapeutischen oder irrefuehrenden Heilversprechen in Store-Texten, In-App-Texten oder Screenshots. Zusaetzlich die `Health apps declaration` in Play Console ausfuellen und den Hinweis auf qualifiziertes Fachpersonal im Store-Text beibehalten.
 - Monetarisierung / Werbung: Rewarded Ads laufen als non-personalized, IAP ueber Store-Billing. Vor dem Release den echten Closed-Test-Store-Build gegen Ad-/Kauf-Flow smoke-testen.
+- app-ads.txt / Developer Website: Die Seller-Datei ist im Repo vorbereitet. Fuer die AdMob-Verifikation muss die in Google Play hinterlegte `Website` auf genau die Domain zeigen, die `https://<domain>/app-ads.txt` am Root ausliefert. Ein Projekt-Unterpfad allein ist dafuer nicht die sichere Endkonfiguration.
 - User Interaction / UGC: Freunde, Multiplayer-Lobbys, Nutzernamen und optionale Profilfotos sind im Produkt vorhanden. Der aktuelle Repo-Stand bietet in Public-Profile-Sheets klar beschriftete `Report user/content`- und `Block`-Funktionen sowie eine Terms-/Privacy-Bestaetigung im Auth-/Avatar-Flow. Vor dem Submit trotzdem im Store-Build pruefen, dass diese Buttons sichtbar sind und Abuse-Mails unter `medbattle1@gmail.com` operativ bearbeitet werden.
 - Funktionalitaet / Nutzererfahrung: Store-Smoke fuer den tatsaechlich ausgerollten Closed-Test-Build bleibt Pflicht, weil Google funktionale und stabile Kernflows erwartet.
 

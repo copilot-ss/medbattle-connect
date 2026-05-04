@@ -1,4 +1,5 @@
 import { MULTIPLAYER_DEFAULT_QUESTION_LIMIT } from '../../config/quizLimits';
+import { t } from '../../i18n';
 import { sanitizeBoostUsage } from '../../utils/quizBoosts';
 
 const MATCH_CACHE_TTL = 15 * 1000;
@@ -16,6 +17,56 @@ const MATCH_STATUS_ORDER = {
   [MATCH_STATUS.COMPLETED]: 3,
   [MATCH_STATUS.CANCELLED]: 3,
 };
+
+const EMPTY_PLAYER_STATE = {
+  userId: null,
+  username: null,
+  title: null,
+  index: 0,
+  score: 0,
+  finished: false,
+  answers: [],
+  ready: false,
+  avatarUrl: null,
+  avatarIcon: null,
+  avatarColor: null,
+};
+
+function isMatchPlayerRole(role) {
+  return role === 'host' || role === 'guest' || /^guest\d+$/.test(String(role));
+}
+
+function getMatchPlayerRoleOrder(role) {
+  if (role === 'host') {
+    return 0;
+  }
+  if (role === 'guest') {
+    return 1;
+  }
+  const match = /^guest(\d+)$/.exec(String(role));
+  if (!match) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+  const index = Number.parseInt(match[1], 10);
+  return Number.isFinite(index) ? index : Number.MAX_SAFE_INTEGER;
+}
+
+function getSortedMatchPlayerRoles(state) {
+  if (!state || typeof state !== 'object') {
+    return ['host', 'guest'];
+  }
+
+  const roles = Object.keys(state).filter(isMatchPlayerRole);
+  if (!roles.includes('host')) {
+    roles.push('host');
+  }
+  if (!roles.includes('guest')) {
+    roles.push('guest');
+  }
+  return roles.sort(
+    (a, b) => getMatchPlayerRoleOrder(a) - getMatchPlayerRoleOrder(b)
+  );
+}
 
 function nowIso() {
   return new Date().toISOString();
@@ -37,10 +88,10 @@ function ensureQuestionExplanation(question) {
       ? question.correct_answer.trim()
       : '';
   if (!correctAnswer) {
-    return 'Pruefe die Antwortoptionen und merke dir den Kernpunkt dieser Frage.';
+    return t('Pruefe die Antwortoptionen und merke dir den Kernpunkt dieser Frage.');
   }
 
-  return `Richtige Antwort: ${correctAnswer}.`;
+  return t('Richtige Antwort: {answer}.', { answer: correctAnswer });
 }
 
 function sanitizeQuestionsForMatch(questions) {
@@ -71,6 +122,20 @@ function sanitizeQuestionsForMatch(questions) {
         question: question.question ?? '',
         correct_answer: question.correct_answer ?? null,
         explanation: ensureQuestionExplanation(question),
+        image_url:
+          typeof question.image_url === 'string' &&
+          /^https?:\/\//i.test(question.image_url.trim())
+            ? question.image_url.trim()
+            : typeof question.imageUrl === 'string' &&
+              /^https?:\/\//i.test(question.imageUrl.trim())
+            ? question.imageUrl.trim()
+            : null,
+        image_alt:
+          typeof question.image_alt === 'string' && question.image_alt.trim()
+            ? question.image_alt.trim()
+            : typeof question.imageAlt === 'string' && question.imageAlt.trim()
+            ? question.imageAlt.trim()
+            : null,
         options: uniqueOptions,
       };
     })
@@ -141,34 +206,38 @@ function sanitizeAvatarColor(value) {
   return null;
 }
 
+function normalizePlayerState(roleState = {}) {
+  return {
+    userId: roleState.userId ?? EMPTY_PLAYER_STATE.userId,
+    username: sanitizeOptionalText(roleState.username) ?? EMPTY_PLAYER_STATE.username,
+    title: sanitizeOptionalText(roleState.title) ?? EMPTY_PLAYER_STATE.title,
+    index: Number.isFinite(roleState.index) ? Math.max(roleState.index, 0) : 0,
+    score: Number.isFinite(roleState.score) ? Math.max(roleState.score, 0) : 0,
+    finished: Boolean(roleState.finished),
+    ready: Boolean(roleState.ready),
+    answers: Array.isArray(roleState.answers)
+      ? roleState.answers
+          .map(sanitizeAnswer)
+          .filter(Boolean)
+          .slice(-50)
+      : [],
+    avatarUrl:
+      sanitizeAvatarUrl(roleState.avatarUrl ?? roleState.avatar_url)
+      ?? EMPTY_PLAYER_STATE.avatarUrl,
+    avatarIcon:
+      sanitizeAvatarIcon(roleState.avatarIcon ?? roleState.avatar_icon)
+      ?? EMPTY_PLAYER_STATE.avatarIcon,
+    avatarColor:
+      sanitizeAvatarColor(roleState.avatarColor ?? roleState.avatar_color)
+      ?? EMPTY_PLAYER_STATE.avatarColor,
+    gaveUp: Boolean(roleState.gaveUp),
+  };
+}
+
 function normalizeMatchState(state) {
   const base = {
-    host: {
-      userId: null,
-      username: null,
-      title: null,
-      index: 0,
-      score: 0,
-      finished: false,
-      answers: [],
-      ready: false,
-      avatarUrl: null,
-      avatarIcon: null,
-      avatarColor: null,
-    },
-    guest: {
-      userId: null,
-      username: null,
-      title: null,
-      index: 0,
-      score: 0,
-      finished: false,
-      answers: [],
-      ready: false,
-      avatarUrl: null,
-      avatarIcon: null,
-      avatarColor: null,
-    },
+    host: { ...EMPTY_PLAYER_STATE },
+    guest: { ...EMPTY_PLAYER_STATE },
     history: [],
   };
 
@@ -178,32 +247,9 @@ function normalizeMatchState(state) {
 
   const next = { ...base };
 
-  for (const roleKey of ['host', 'guest']) {
+  for (const roleKey of getSortedMatchPlayerRoles(state)) {
     const roleState = state[roleKey] ?? {};
-    next[roleKey] = {
-      userId: roleState.userId ?? base[roleKey].userId,
-      username: sanitizeOptionalText(roleState.username) ?? base[roleKey].username,
-      title: sanitizeOptionalText(roleState.title) ?? base[roleKey].title,
-      index: Number.isFinite(roleState.index) ? Math.max(roleState.index, 0) : 0,
-      score: Number.isFinite(roleState.score) ? Math.max(roleState.score, 0) : 0,
-      finished: Boolean(roleState.finished),
-      ready: Boolean(roleState.ready),
-      answers: Array.isArray(roleState.answers)
-        ? roleState.answers
-            .map(sanitizeAnswer)
-            .filter(Boolean)
-            .slice(-50)
-        : [],
-      avatarUrl:
-        sanitizeAvatarUrl(roleState.avatarUrl ?? roleState.avatar_url)
-        ?? base[roleKey].avatarUrl,
-      avatarIcon:
-        sanitizeAvatarIcon(roleState.avatarIcon ?? roleState.avatar_icon)
-        ?? base[roleKey].avatarIcon,
-      avatarColor:
-        sanitizeAvatarColor(roleState.avatarColor ?? roleState.avatar_color)
-        ?? base[roleKey].avatarColor,
-    };
+    next[roleKey] = normalizePlayerState(roleState);
   }
 
   next.history = Array.isArray(state.history)
@@ -217,7 +263,7 @@ function normalizeMatchState(state) {
             return null;
           }
           const player =
-            entry.player === 'host' || entry.player === 'guest'
+            isMatchPlayerRole(entry.player)
               ? entry.player
               : null;
           if (!player) {
@@ -230,6 +276,23 @@ function normalizeMatchState(state) {
     : [];
 
   return next;
+}
+
+function getMatchPlayerEntries(matchOrState) {
+  const state = matchOrState?.state && typeof matchOrState.state === 'object'
+    ? matchOrState.state
+    : matchOrState;
+
+  if (!state || typeof state !== 'object') {
+    return [];
+  }
+
+  return getSortedMatchPlayerRoles(state)
+    .map((role) => ({
+      role,
+      state: normalizePlayerState(state[role] ?? {}),
+    }))
+    .filter((entry) => entry.state.userId);
 }
 
 function normalizeMatchRow(row) {
@@ -291,6 +354,9 @@ export {
   MATCH_CACHE_TTL,
   LOBBY_IDLE_TIMEOUT_MINUTES,
   MATCH_STATUS,
+  getMatchPlayerEntries,
+  getMatchPlayerRoleOrder,
+  isMatchPlayerRole,
   sanitizeAnswer,
   normalizeMatchRow,
   resolveProgressiveMatch,

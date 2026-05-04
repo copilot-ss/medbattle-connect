@@ -74,6 +74,14 @@ const styles = StyleSheet.create({
     borderColor: colors.borderStrong,
     backgroundColor: colors.surfaceHigh,
   },
+  categoryEmoji: {
+    width: 56,
+    color: colors.textPrimary,
+    fontSize: 28,
+    lineHeight: 34,
+    textAlign: 'center',
+    letterSpacing: 0,
+  },
   categoryTitle: {
     color: colors.textPrimary,
     fontSize: 28,

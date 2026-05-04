@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../integrations/supabase/client';
-import { formatUserError } from '../utils/formatUserError';
+import { formatWebAuthError } from './formatWebAuthError';
 
 type AuthMode = 'login' | 'signup' | 'forgot';
 
@@ -58,7 +58,7 @@ const Auth = () => {
     } catch (error: any) {
       setMessage({
         type: 'error',
-        text: formatUserError(error, {
+        text: formatWebAuthError(error, {
           supabaseUrl: supabaseUrlHint,
           fallback: 'Unbekannter Fehler.',
         }),
@@ -87,7 +87,7 @@ const Auth = () => {
     } catch (error: any) {
       setMessage({
         type: 'error',
-        text: formatUserError(error, {
+        text: formatWebAuthError(error, {
           supabaseUrl: supabaseUrlHint,
           fallback: 'Unbekannter Fehler.',
         }),

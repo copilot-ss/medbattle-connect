@@ -17,6 +17,7 @@ android/.gradle/
 android/.cxx/
 *.keystore
 dist/
+.vercel/
 emulator_screen.jpg
 emulator_screen.png
 emulator_ui.xml
@@ -33,3 +34,4 @@ tmp-uizard-preview.*
 /phone_*.xml
 /tmp_emulator_*.xml
 /tmp_phone_*.xml
+.vercel

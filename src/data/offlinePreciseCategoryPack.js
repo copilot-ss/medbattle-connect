@@ -974,6 +974,96 @@ const PRECISE_CATEGORY_PACK_ROWS = [
         'C3b coats pathogen surfaces and facilitates phagocytosis. It is the classic opsonin of the complement system.',
     },
   },
+  {
+    id: 'seed-praezise-immunologie-02',
+    category: 'Immunologie',
+    de: {
+      question:
+        'Welcher Antikoerper ist bei der Primaerantwort typischerweise zuerst nachweisbar?',
+      options: ['IgM', 'IgA', 'IgG', 'IgE'],
+      correct_answer: 'IgM',
+      explanation:
+        'IgM wird bei der Primaerantwort zuerst gebildet. Erst im weiteren Verlauf erfolgt der Klassenwechsel zu anderen Immunglobulinen wie IgG oder IgA.',
+    },
+    en: {
+      question:
+        'Which antibody is typically detectable first during the primary immune response?',
+      options: ['IgM', 'IgA', 'IgG', 'IgE'],
+      correct_answer: 'IgM',
+      explanation:
+        'IgM is produced first during the primary immune response. Class switching to other immunoglobulins such as IgG or IgA occurs later.',
+    },
+  },
+  {
+    id: 'seed-praezise-immunologie-03',
+    category: 'Immunologie',
+    de: {
+      question:
+        'Welche Zellen praesentieren Antigene ueber MHC-II besonders effizient an naive T-Helferzellen?',
+      options: [
+        'Dendritische Zellen',
+        'Erythrozyten',
+        'Fibroblasten',
+        'Thrombozyten',
+      ],
+      correct_answer: 'Dendritische Zellen',
+      explanation:
+        'Dendritische Zellen sind professionelle antigenpraesentierende Zellen. Sie aktivieren naive CD4-positive T-Zellen besonders effizient ueber MHC-II.',
+    },
+    en: {
+      question:
+        'Which cells are especially efficient at presenting antigen via MHC II to naive helper T cells?',
+      options: [
+        'Dendritic cells',
+        'Erythrocytes',
+        'Fibroblasts',
+        'Platelets',
+      ],
+      correct_answer: 'Dendritic cells',
+      explanation:
+        'Dendritic cells are professional antigen-presenting cells. They are particularly effective at activating naive CD4-positive T cells through MHC II.',
+    },
+  },
+  {
+    id: 'seed-praezise-immunologie-04',
+    category: 'Immunologie',
+    de: {
+      question:
+        'Welches Zytokin foerdert besonders die Differenzierung von T-Zellen in Richtung Th1-Antwort?',
+      options: ['IL-12', 'IL-4', 'IL-5', 'IL-10'],
+      correct_answer: 'IL-12',
+      explanation:
+        'IL-12 foerdert die Th1-Polarisation und damit zellulaere Immunantworten gegen intrazellulaere Erreger. IL-4 beguenstigt dagegen eher die Th2-Antwort.',
+    },
+    en: {
+      question:
+        'Which cytokine especially promotes T-cell differentiation toward a Th1 response?',
+      options: ['IL-12', 'IL-4', 'IL-5', 'IL-10'],
+      correct_answer: 'IL-12',
+      explanation:
+        'IL-12 promotes Th1 polarization and therefore cellular immune responses against intracellular pathogens. IL-4 instead favors a Th2 response.',
+    },
+  },
+  {
+    id: 'seed-praezise-immunologie-05',
+    category: 'Immunologie',
+    de: {
+      question:
+        'Welche Ueberempfindlichkeitsreaktion liegt typischerweise einer anaphylaktischen Sofortreaktion zugrunde?',
+      options: ['Typ I', 'Typ II', 'Typ III', 'Typ IV'],
+      correct_answer: 'Typ I',
+      explanation:
+        'Die anaphylaktische Sofortreaktion ist eine IgE-vermittelte Ueberempfindlichkeitsreaktion vom Typ I. Dabei werden Mastzellen rasch degranuliert.',
+    },
+    en: {
+      question:
+        'Which hypersensitivity reaction typically underlies an immediate anaphylactic reaction?',
+      options: ['Type I', 'Type II', 'Type III', 'Type IV'],
+      correct_answer: 'Type I',
+      explanation:
+        'Immediate anaphylactic reactions are IgE-mediated type I hypersensitivity reactions. They cause rapid mast-cell degranulation.',
+    },
+  },
 
   // Genetik
   {

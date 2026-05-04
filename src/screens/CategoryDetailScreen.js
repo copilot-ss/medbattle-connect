@@ -67,6 +67,7 @@ export default function CategoryDetailScreen({ navigation, route }) {
 
   const energyLabel = premium ? `${energyMax}/${energyMax}` : `${energy}/${energyMax}`;
 
+  const isEmojiIcon = categoryMeta.iconFamily === 'emoji';
   const CategoryIcon = categoryMeta.iconFamily === 'fa5' ? FontAwesome5 : Ionicons;
 
   return (
@@ -97,11 +98,17 @@ export default function CategoryDetailScreen({ navigation, route }) {
               categoryMeta.accent ? { borderColor: `${categoryMeta.accent}55` } : null,
             ]}
           >
-            <CategoryIcon
-              name={categoryMeta.icon}
-              size={28}
-              color={categoryMeta.accent}
-            />
+            {isEmojiIcon ? (
+              <Text style={styles.categoryEmoji} allowFontScaling={false}>
+                {categoryMeta.icon}
+              </Text>
+            ) : (
+              <CategoryIcon
+                name={categoryMeta.icon}
+                size={28}
+                color={categoryMeta.accent}
+              />
+            )}
           </View>
           <Text style={styles.categoryTitle}>{categoryDisplay}</Text>
           <Text style={styles.categoryDescription}>{categoryDescription}</Text>
