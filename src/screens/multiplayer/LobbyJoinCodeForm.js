@@ -1,4 +1,11 @@
-import { Animated, Pressable, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Animated,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/MultiplayerLobbyScreen.styles';
 
@@ -44,9 +51,11 @@ export default function LobbyJoinCodeForm({
           ]}
           disabled={joining || !joinCode.trim()}
         >
-          <Text style={styles.joinButtonText}>
-            {joining ? t('Beitreten...') : t('Go')}
-          </Text>
+          {joining ? (
+            <ActivityIndicator size="small" color="#081019" />
+          ) : (
+            <Text style={styles.joinButtonText}>{t('Go')}</Text>
+          )}
         </AnimatedPressable>
       </View>
     </View>

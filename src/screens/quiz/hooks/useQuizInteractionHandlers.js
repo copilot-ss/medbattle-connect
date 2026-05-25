@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TIMER_DURATION } from './useQuizConfig';
 import { getBoostPointPenalty } from '../../../utils/quizBoosts';
+import { clearActiveLobby } from '../../../utils/activeLobbyStorage';
 
 const MULTIPLAYER_POINTS_PER_CORRECT_ANSWER = 3;
 
@@ -61,10 +62,18 @@ export default function useQuizInteractionHandlers({
     setShowExitConfirm(true);
   }, [resetQuestionState]);
 
-  const resetToHome = useCallback(() => {
+  const resetToHome = useCallback((homeParams = {}) => {
     navigation.reset({
       index: 0,
-      routes: [{ name: 'MainTabs', params: { screen: 'Home' } }],
+      routes: [
+        {
+          name: 'MainTabs',
+          params: {
+            screen: 'Home',
+            params: homeParams,
+          },
+        },
+      ],
     });
   }, [navigation]);
 
@@ -79,9 +88,18 @@ export default function useQuizInteractionHandlers({
     resetQuestionState();
     setShowExitConfirm(false);
     if (isMultiplayer) {
-      surrenderMatch().finally(() => {
-        resetToHome();
-      });
+      surrenderMatch()
+        .catch((err) => {
+          console.warn(
+            'Konnte Multiplayer-Match nicht sauber abbrechen:',
+            err?.message ?? err
+          );
+        })
+        .finally(() => {
+          clearActiveLobby().finally(() => {
+            resetToHome({ activeLobby: null, lobbyClosed: true });
+          });
+        });
       return;
     }
     resetToHome();

@@ -28,7 +28,6 @@ function renderBoostChip(boostId, entryKey) {
 
 export default function ResultScoreboard({
   entries,
-  selectedEntryKey,
   onSelectEntry,
   onOpenProfile,
   entranceKey = '',
@@ -56,11 +55,17 @@ export default function ResultScoreboard({
               style={[
                 styles.scoreboardRow,
                 isInteractive ? styles.scoreboardRowInteractive : null,
-                selectedEntryKey === entry.key ? styles.scoreboardRowSelected : null,
-                entry.isSelf ? styles.scoreboardRowSelf : null,
+                entry.hasLeft ? styles.scoreboardRowLeft : null,
               ]}
             >
-              <Text style={styles.scoreboardRank}>{entry.rank}.</Text>
+              <Text
+                style={[
+                  styles.scoreboardRank,
+                  entry.hasLeft ? styles.scoreboardRankLeft : null,
+                ]}
+              >
+                {entry.rank}.
+              </Text>
               <Pressable
                 onPress={
                   canOpenProfile && !entry.isSelf && entry.userId
@@ -76,26 +81,50 @@ export default function ResultScoreboard({
                   icon={entry.avatarIcon ?? null}
                   color={entry.avatarColor || '#9EDCFF'}
                   initials={entry.initials}
-                  circleStyle={styles.scoreboardAvatar}
+                  circleStyle={[
+                    styles.scoreboardAvatar,
+                    entry.hasLeft ? styles.scoreboardAvatarLeft : null,
+                  ]}
                   imageStyle={styles.scoreboardAvatarImage}
                   iconSize={20}
                   textStyle={styles.scoreboardAvatarText}
                 />
                 <View style={styles.scoreboardMeta}>
                   <View style={styles.scoreboardNameRow}>
-                    <Text style={styles.scoreboardName} numberOfLines={1}>
+                    <Text
+                      style={[
+                        styles.scoreboardName,
+                        entry.isSelf ? styles.scoreboardNameSelf : null,
+                        entry.hasLeft ? styles.scoreboardNameLeft : null,
+                      ]}
+                      numberOfLines={1}
+                    >
                       {entry.name}
                     </Text>
                   </View>
-                  {Array.isArray(entry.usedBoostIds) && entry.usedBoostIds.length ? (
+                  {entry.hasLeft ? (
+                    <Text style={styles.scoreboardLeftLabel}>
+                      {t('Verlassen_Status')}
+                    </Text>
+                  ) : Array.isArray(entry.usedBoostIds) && entry.usedBoostIds.length ? (
                     <View style={styles.scoreboardBoostRow}>
                       {entry.usedBoostIds.map((boostId) => renderBoostChip(boostId, entry.key))}
                     </View>
                   ) : null}
                 </View>
               </Pressable>
-              <View style={styles.scoreboardScoreBox}>
-                <Text style={styles.scoreboardScore}>
+              <View
+                style={[
+                  styles.scoreboardScoreBox,
+                  entry.hasLeft ? styles.scoreboardScoreBoxLeft : null,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.scoreboardScore,
+                    entry.hasLeft ? styles.scoreboardScoreLeft : null,
+                  ]}
+                >
                   {Number.isFinite(entry.score) ? entry.score : '-'}
                 </Text>
               </View>

@@ -16,7 +16,11 @@ import { useTranslation } from '../i18n/useTranslation';
 
 export default function QuizScreen({ navigation, route }) {
   const { t } = useTranslation();
-  useQuizPresence();
+  const routeParams = route?.params ?? {};
+  useQuizPresence({
+    matchId: typeof routeParams.matchId === 'string' ? routeParams.matchId : null,
+    joinCode: typeof routeParams.joinCode === 'string' ? routeParams.joinCode : null,
+  });
   const { isOnline, isChecking, checkOnline } = useConnectivity();
   const isOffline = isOnline === false;
   const {

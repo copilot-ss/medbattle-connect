@@ -23,6 +23,7 @@ const openMatchesCache = {
 const DEFAULT_LANGUAGE = 'en';
 const MATCH_REALTIME_RETRY_BASE_MS = 2000;
 const MATCH_REALTIME_RETRY_MAX_MS = 15000;
+const LOBBY_CLEANUP_FORCE_MIN_INTERVAL_MS = 30 * 1000;
 
 function normalizeLanguage(value) {
   if (typeof value !== 'string') {
@@ -47,7 +48,9 @@ function normalizeLanguageOrNull(value) {
 }
 
 let initialLobbyCleanupPromise = null;
+let lobbyCleanupPromise = null;
 let lastIdleCleanupAt = 0;
+let lastIdleCleanupAttemptAt = 0;
 
 async function closeWaitingMatches({ includeAllOpen = false } = {}) {
   try {
@@ -56,7 +59,11 @@ async function closeWaitingMatches({ includeAllOpen = false } = {}) {
         supabase.rpc('close_waiting_matches', {
           p_include_all: includeAllOpen,
         }),
-      { label: 'matchService.closeWaitingMatches' }
+      {
+        label: 'matchService.closeWaitingMatches',
+        profile: 'cleanup',
+        dedupeKey: includeAllOpen ? 'all-open' : 'stale',
+      }
     );
 
     if (error) {
@@ -76,9 +83,36 @@ async function closeWaitingMatches({ includeAllOpen = false } = {}) {
   }
 }
 
+async function runLobbyCleanup({ force = false } = {}) {
+  const now = Date.now();
+  const minInterval = force
+    ? LOBBY_CLEANUP_FORCE_MIN_INTERVAL_MS
+    : LOBBY_IDLE_TIMEOUT_MINUTES * 60 * 1000;
+
+  if (lobbyCleanupPromise) {
+    return lobbyCleanupPromise;
+  }
+
+  if (now - lastIdleCleanupAttemptAt < minInterval) {
+    return 0;
+  }
+
+  lastIdleCleanupAttemptAt = now;
+  lobbyCleanupPromise = closeWaitingMatches()
+    .then((count) => {
+      lastIdleCleanupAt = Date.now();
+      return count;
+    })
+    .finally(() => {
+      lobbyCleanupPromise = null;
+    });
+
+  return lobbyCleanupPromise;
+}
+
 async function ensureInitialLobbyCleanup() {
   if (!initialLobbyCleanupPromise) {
-    initialLobbyCleanupPromise = closeWaitingMatches({ includeAllOpen: true }).catch(
+    initialLobbyCleanupPromise = runLobbyCleanup({ force: true }).catch(
       (err) => {
         console.warn('Initiales Lobby-Cleanup fehlgeschlagen:', err?.message ?? err);
         return 0;
@@ -96,8 +130,13 @@ async function ensureLobbyCleanup({ force = false } = {}) {
     return;
   }
 
-  await closeWaitingMatches();
-  lastIdleCleanupAt = now;
+  await runLobbyCleanup({ force });
+}
+
+function scheduleLobbyCleanup({ force = false } = {}) {
+  ensureLobbyCleanup({ force }).catch((err) => {
+    console.warn('Lobby-Cleanup im Hintergrund fehlgeschlagen:', err?.message ?? err);
+  });
 }
 
 function invalidateOpenMatchesCache() {
@@ -166,7 +205,7 @@ export async function createMatch({
     : MULTIPLAYER_DEFAULT_QUESTION_LIMIT;
 
   try {
-    await ensureLobbyCleanup({ force: true });
+    scheduleLobbyCleanup({ force: true });
 
     const basePayload = {
       p_question_limit: limit,
@@ -184,7 +223,7 @@ export async function createMatch({
 
     let { data, error } = await runSupabaseRequest(
       () => supabase.rpc('create_match', payload),
-      { label: 'matchService.createMatch' }
+      { label: 'matchService.createMatch', profile: 'lobbyAction' }
     );
 
     if (
@@ -199,7 +238,7 @@ export async function createMatch({
         }
         const legacy = await runSupabaseRequest(
           () => supabase.rpc('create_match', legacyPayload),
-          { label: 'matchService.createMatch.legacy' }
+          { label: 'matchService.createMatch.legacy', profile: 'lobbyAction' }
         );
         if (!legacy.error) {
           data = legacy.data;
@@ -212,7 +251,10 @@ export async function createMatch({
       if (error && normalizedCategory) {
         const legacy = await runSupabaseRequest(
           () => supabase.rpc('create_match', basePayload),
-          { label: 'matchService.createMatch.legacyMinimal' }
+          {
+            label: 'matchService.createMatch.legacyMinimal',
+            profile: 'lobbyAction',
+          }
         );
         if (!legacy.error) {
           data = legacy.data;
@@ -251,14 +293,14 @@ export async function joinMatch({ code, userId } = {}) {
   }
 
   try {
-    await ensureLobbyCleanup({ force: true });
+    scheduleLobbyCleanup({ force: true });
 
     const { data, error } = await runSupabaseRequest(
       () =>
         supabase.rpc('join_match', {
           p_code: sanitizedCode,
         }),
-      { label: 'matchService.joinMatch' }
+      { label: 'matchService.joinMatch', profile: 'lobbyAction' }
     );
 
     if (error) {
@@ -289,7 +331,7 @@ export async function startMatch({ matchId, userId } = {}) {
         supabase.rpc('start_match', {
           p_match_id: matchId,
         }),
-      { label: 'matchService.startMatch' }
+      { label: 'matchService.startMatch', profile: 'lobbyAction' }
     );
 
     if (error) {
@@ -381,7 +423,7 @@ export async function updateMatchSettings({
 
     let { data, error } = await runSupabaseRequest(
       () => supabase.rpc('update_match_settings', payload),
-      { label: 'matchService.updateMatchSettings' }
+      { label: 'matchService.updateMatchSettings', profile: 'lobbyAction' }
     );
 
     if (
@@ -391,7 +433,10 @@ export async function updateMatchSettings({
       if (payload.p_language || payload.p_fallback_language !== undefined) {
         const legacy = await runSupabaseRequest(
           () => supabase.rpc('update_match_settings', basePayload),
-          { label: 'matchService.updateMatchSettings.legacy' }
+          {
+            label: 'matchService.updateMatchSettings.legacy',
+            profile: 'lobbyAction',
+          }
         );
         if (!legacy.error) {
           data = legacy.data;
@@ -416,7 +461,7 @@ export async function updateMatchSettings({
 }
 
 export async function fetchOpenMatches({ force = false, excludeHostId = null } = {}) {
-  await ensureLobbyCleanup({ force });
+  scheduleLobbyCleanup({ force });
 
   const normalizedExcludeHostId =
     typeof excludeHostId === 'string' && excludeHostId.trim()
@@ -543,7 +588,7 @@ export async function restartMatchLobby({
 
     const { data, error } = await runSupabaseRequest(
       () => supabase.rpc('restart_match_lobby', payload),
-      { label: 'matchService.restartMatchLobby' }
+      { label: 'matchService.restartMatchLobby', profile: 'lobbyAction' }
     );
 
     if (error) {

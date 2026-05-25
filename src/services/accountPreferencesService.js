@@ -274,6 +274,49 @@ export async function mergeAccountPreferencesState(userId, patch) {
   }
 }
 
+export async function claimAccountAchievementReward(
+  userId,
+  { achievementKey, rewardXp = 0, rewardCoins = 0 } = {}
+) {
+  if (!userId || userId === 'guest' || !achievementKey) {
+    return { ok: false, reason: 'invalid' };
+  }
+
+  try {
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('claim_user_achievement', {
+          p_user_id: userId,
+          p_achievement_key: achievementKey,
+          p_reward_xp: sanitizeStatNumber(rewardXp),
+          p_reward_coins: sanitizeStatNumber(rewardCoins),
+        }),
+      { label: 'accountPreferences.claimAchievement' }
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) {
+      throw new Error('Achievement claim did not return data.');
+    }
+
+    return {
+      ok: true,
+      claimed: row?.claimed === true,
+      progress: {
+        xp: sanitizeStatNumber(row?.xp),
+        coins: sanitizeStatNumber(row?.coins),
+      },
+      claimedAchievements: sanitizeStringArray(row?.claimed_achievements),
+    };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
 export async function applyGuestPreferencesToAccount(userId, snapshot) {
   if (!userId || userId === 'guest' || !snapshot) {
     return { ok: false, reason: 'invalid' };

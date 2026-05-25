@@ -1,6 +1,55 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 
+function normalizePresenceString(value) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function normalizePresenceCode(value) {
+  const normalized = normalizePresenceString(value);
+  return normalized ? normalized.toUpperCase() : null;
+}
+
+function normalizeTrackedAt(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function getPresencePriority(entry) {
+  if (entry?.activity === 'quiz' && entry.inCurrentMatch) {
+    return 40;
+  }
+  if (entry?.inCurrentLobby) {
+    return 30;
+  }
+  if (entry?.activity === 'quiz') {
+    return 20;
+  }
+  return 10;
+}
+
+function shouldUsePresenceEntry(currentEntry, nextEntry) {
+  if (!currentEntry) {
+    return true;
+  }
+
+  const currentTrackedAt = normalizeTrackedAt(currentEntry.trackedAt);
+  const nextTrackedAt = normalizeTrackedAt(nextEntry.trackedAt);
+  if (currentTrackedAt || nextTrackedAt) {
+    if (nextTrackedAt !== currentTrackedAt) {
+      return nextTrackedAt > currentTrackedAt;
+    }
+  }
+
+  return getPresencePriority(nextEntry) > getPresencePriority(currentEntry);
+}
+
 export default function useLobbyPresence({
   userId,
   userCode,
@@ -11,6 +60,7 @@ export default function useLobbyPresence({
   avatarIcon,
   avatarColor,
   currentJoinCode,
+  currentMatchId,
   participantCount,
   maxPlayers,
   friends,
@@ -53,6 +103,7 @@ export default function useLobbyPresence({
       const next = [];
       const participantsByUser = new Map();
       const normalizedJoinCode = String(currentJoinCode).trim().toUpperCase();
+      const normalizedCurrentMatchId = normalizePresenceString(currentMatchId);
 
       Object.values(state).forEach((entries) => {
         (entries || []).forEach((entry) => {
@@ -69,8 +120,15 @@ export default function useLobbyPresence({
             typeof meta.activity === 'string'
               ? meta.activity.trim().toLowerCase()
               : '';
+          const matchId = normalizePresenceString(meta.matchId);
+          const matchCode = normalizePresenceCode(meta.matchCode);
+          const trackedAt = normalizeTrackedAt(meta.trackedAt);
+          const isQuizActivity = activityValue === 'quiz';
           const isInCurrentLobby =
             Boolean(lobbyCode) && lobbyCode === normalizedJoinCode;
+          const isInCurrentMatch =
+            Boolean(normalizedCurrentMatchId && matchId === normalizedCurrentMatchId) ||
+            Boolean(matchCode && matchCode === normalizedJoinCode);
           const normalizedEntry = {
             userId: meta.userId,
             code,
@@ -93,20 +151,25 @@ export default function useLobbyPresence({
                 ? meta.avatarColor.trim()
                 : null,
             lobby: lobbyCode,
-            activity: isInCurrentLobby ? 'lobby' : activityValue || 'online',
-            inCurrentLobby: isInCurrentLobby,
+            matchId,
+            matchCode,
+            activity: isQuizActivity
+              ? 'quiz'
+              : isInCurrentLobby
+                ? 'lobby'
+                : activityValue || 'online',
+            inCurrentLobby: isInCurrentLobby && !isQuizActivity,
+            inCurrentMatch: isInCurrentMatch,
+            trackedAt,
           };
           const existingParticipant = participantsByUser.get(meta.userId);
-          if (
-            !existingParticipant ||
-            (!existingParticipant.inCurrentLobby && normalizedEntry.inCurrentLobby)
-          ) {
+          if (shouldUsePresenceEntry(existingParticipant, normalizedEntry)) {
             participantsByUser.set(meta.userId, normalizedEntry);
           }
           if (meta.userId === userId) {
             return;
           }
-          if (isInCurrentLobby) {
+          if (isInCurrentLobby || isInCurrentMatch) {
             return;
           }
           if (!code || !friendCodes.has(code) || seen.has(code)) {
@@ -154,8 +217,11 @@ export default function useLobbyPresence({
             avatarIcon: avatarIcon ?? null,
             avatarColor: avatarColor ?? null,
             lobby: currentJoinCode,
+            matchId: currentMatchId ?? null,
+            matchCode: currentJoinCode,
             lobbyPlayers: participantCount,
             lobbyCapacity: maxPlayers,
+            trackedAt: Date.now(),
           })
           .catch((err) => {
             console.warn('Konnte Presence nicht tracken:', err);
@@ -171,7 +237,16 @@ export default function useLobbyPresence({
       supabase.removeChannel(channel);
       presenceChannelRef.current = null;
     };
-  }, [currentJoinCode, friends, maxPlayers, userCode, userId, userTitle, username]);
+  }, [
+    currentJoinCode,
+    currentMatchId,
+    friends,
+    maxPlayers,
+    userCode,
+    userId,
+    userTitle,
+    username,
+  ]);
 
   useEffect(() => {
     const channel = presenceChannelRef.current;
@@ -195,8 +270,11 @@ export default function useLobbyPresence({
       avatarIcon: avatarIcon ?? null,
       avatarColor: avatarColor ?? null,
       lobby: currentJoinCode,
+      matchId: currentMatchId ?? null,
+      matchCode: currentJoinCode,
       lobbyPlayers: participantCount,
       lobbyCapacity: maxPlayers,
+      trackedAt: Date.now(),
     };
 
     const prev = lastPresencePayloadRef.current;
@@ -212,6 +290,8 @@ export default function useLobbyPresence({
       prev.avatarIcon === nextPayload.avatarIcon &&
       prev.avatarColor === nextPayload.avatarColor &&
       prev.lobby === nextPayload.lobby &&
+      prev.matchId === nextPayload.matchId &&
+      prev.matchCode === nextPayload.matchCode &&
       prev.lobbyPlayers === nextPayload.lobbyPlayers &&
       prev.lobbyCapacity === nextPayload.lobbyCapacity;
 
@@ -229,6 +309,7 @@ export default function useLobbyPresence({
     avatarId,
     avatarUri,
     currentJoinCode,
+    currentMatchId,
     maxPlayers,
     participantCount,
     userCode,

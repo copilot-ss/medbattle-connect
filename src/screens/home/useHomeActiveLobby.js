@@ -6,6 +6,13 @@ import {
   shouldPersistActiveLobby,
 } from '../multiplayer/lobbyUtils';
 
+function hasPlayerAbandonedMatch(match, role) {
+  if (!match?.state || !role) {
+    return false;
+  }
+  return Boolean(match.state?.[role]?.gaveUp);
+}
+
 export default function useHomeActiveLobby({
   routeLobby,
   isOffline,
@@ -74,6 +81,11 @@ export default function useHomeActiveLobby({
 
       const role = deriveMatchRole(result.match, userId);
       if (!role) {
+        await clearActiveLobby();
+        return;
+      }
+
+      if (hasPlayerAbandonedMatch(result.match, role)) {
         await clearActiveLobby();
         return;
       }

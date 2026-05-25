@@ -4,7 +4,7 @@ import useSupabaseUserId from '../../hooks/useSupabaseUserId';
 import { getSessionUser, supabase } from '../../lib/supabaseClient';
 import { getFriendCodeForUser } from '../../services/friendsService';
 
-export default function useQuizPresence() {
+export default function useQuizPresence({ matchId = null, joinCode = null } = {}) {
   const userId = useSupabaseUserId();
   const isFocused = useIsFocused();
 
@@ -20,6 +20,12 @@ export default function useQuizPresence() {
 
     let cancelled = false;
     let channel = null;
+    const normalizedMatchId =
+      typeof matchId === 'string' && matchId.trim() ? matchId.trim() : null;
+    const normalizedJoinCode =
+      typeof joinCode === 'string' && joinCode.trim()
+        ? joinCode.trim().toUpperCase()
+        : null;
 
     async function attachPresence() {
       let username = 'MedQuiz';
@@ -57,8 +63,11 @@ export default function useQuizPresence() {
           title: null,
           activity: 'quiz',
           lobby: null,
+          matchId: normalizedMatchId,
+          matchCode: normalizedJoinCode,
           lobbyPlayers: null,
           lobbyCapacity: null,
+          trackedAt: Date.now(),
         }).catch((err) => {
           console.warn('Konnte Quiz-Presence nicht tracken:', err);
         });
@@ -73,5 +82,5 @@ export default function useQuizPresence() {
         supabase.removeChannel(channel);
       }
     };
-  }, [isFocused, userId]);
+  }, [isFocused, joinCode, matchId, userId]);
 }

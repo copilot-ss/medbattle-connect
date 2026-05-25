@@ -2,6 +2,8 @@ const DEFAULT_TIMEOUT_MS = 10000;
 const REQUEST_TIMEOUT_PROFILES = {
   ui: 4500,
   lobby: 6500,
+  cleanup: 2500,
+  lobbyAction: 18000,
   background: 9000,
   auth: 15000,
   default: DEFAULT_TIMEOUT_MS,
@@ -92,6 +94,34 @@ function createTimeoutError(label, timeoutMs) {
   return error;
 }
 
+function createAbortController() {
+  if (typeof AbortController !== 'function') {
+    return null;
+  }
+
+  try {
+    return new AbortController();
+  } catch {
+    return null;
+  }
+}
+
+function attachAbortSignal(candidate, signal) {
+  if (!signal || !candidate || typeof candidate !== 'object') {
+    return candidate;
+  }
+
+  if (typeof candidate.abortSignal !== 'function') {
+    return candidate;
+  }
+
+  try {
+    return candidate.abortSignal(signal);
+  } catch {
+    return candidate;
+  }
+}
+
 function trackRequestStart(record) {
   inflightRequests.set(record.requestId, record);
 }
@@ -155,18 +185,23 @@ export async function runSupabaseRequest(requestFn, options = {}) {
     trackRequestStart(record);
 
     let timeoutHandle;
+    const abortController = createAbortController();
+    const signal = abortController?.signal ?? null;
     const timeoutPromise = new Promise((resolve) => {
       timeoutHandle = setTimeout(() => {
+        if (abortController && !signal?.aborted) {
+          abortController.abort();
+        }
         resolve({ data: null, error: createTimeoutError(label, timeoutMs) });
       }, timeoutMs);
     });
+    const requestPromise = Promise.resolve()
+      .then(() => ({ candidate: requestFn(signal) }))
+      .then(({ candidate }) => attachAbortSignal(candidate, signal));
 
     let response;
     try {
-      const candidate = await Promise.race([
-        Promise.resolve().then(requestFn),
-        timeoutPromise,
-      ]);
+      const candidate = await Promise.race([requestPromise, timeoutPromise]);
 
       if (
         candidate &&

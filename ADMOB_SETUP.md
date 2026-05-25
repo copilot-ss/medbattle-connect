@@ -64,8 +64,10 @@ google.com, pub-8212642377810191, DIRECT, f08c47fec0942fa0
 ```
 
 - Fuer AdMob muss die Datei oeffentlich unter `/app-ads.txt` auf der Developer-Website erreichbar sein.
-- Wichtig: Die in Google Play hinterlegte `Website` muss auf dieselbe Domain zeigen, auf der `https://DEINE-DOMAIN/app-ads.txt` auslieferbar ist.
-- Wenn die aktuelle GitHub-Pages-URL nur unter einem Projekt-Unterpfad laeuft, die finale AdMob-Verifikation notfalls ueber eine echte Root-Domain oder Firebase Hosting abschliessen.
+- Aktueller Production-Host fuer die Verifikation: `https://medquiz-web.vercel.app/`
+- Direktcheck: `https://medquiz-web.vercel.app/app-ads.txt`
+- Wichtig: Die in Google Play hinterlegte `Website` muss auf `https://medquiz-web.vercel.app/` zeigen, damit AdMob genau diese Root-Domain crawlt.
+- Wenn die aktuelle GitHub-Pages-URL nur unter einem Projekt-Unterpfad laeuft, ist sie fuer die finale AdMob-Verifikation nicht die sichere Endkonfiguration.
 
 ## Offizielle Referenzen
 

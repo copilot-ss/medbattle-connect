@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/useTranslation';
 import AvatarView from '../../components/avatar/AvatarView';
 import { getAvatarInitials } from '../../utils/avatarUtils';
+import { getCategoryMeta } from '../../data/categoryMeta';
 import styles from '../styles/MultiplayerLobbyScreen.styles';
 import LobbyCodeActionsRow from './LobbyCodeActionsRow';
 import LobbyOnlineFriendsSection from './LobbyOnlineFriendsSection';
@@ -48,9 +49,10 @@ export default function LobbyParticipantsCard({
     typeof categoryLabel === 'string' && categoryLabel.trim()
       ? t(categoryLabel.trim())
       : null;
+  const categoryIcon = categoryLabel ? getCategoryMeta(categoryLabel).icon : null;
   const titleText = resolvedCategoryLabel
-    ? `${resolvedCategoryLabel} - ${t('Lobby')}`
-    : t('Lobby');
+    ? [resolvedCategoryLabel, categoryIcon].filter(Boolean).join(' ')
+    : t('Multiplayer');
 
   return (
     <View style={styles.lobbyCard}>
@@ -124,6 +126,7 @@ export default function LobbyParticipantsCard({
                 <View
                   style={[
                     styles.participantAvatar,
+                    participant.isSelf ? styles.participantAvatarSelf : null,
                     participant.isPlaceholder ? styles.participantAvatarGhost : null,
                     participant.isPending ? styles.participantAvatarPending : null,
                     canKick && isSelected ? styles.participantAvatarKick : null,

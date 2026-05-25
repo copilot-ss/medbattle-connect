@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 
 import AvatarView from '../components/avatar/AvatarView';
@@ -24,29 +24,13 @@ import usePublicProfileSheet from '../hooks/usePublicProfileSheet';
 import { getAvatarInitials, getAvatarPresetSource } from '../utils/avatarUtils';
 import { buildPublicProfilePayload } from '../utils/publicProfile';
 
-const TOP_RANK_CONFIGS = [
-  {
-    color: '#F4D06A',
-    badgeBackground: '#F4D06A',
-    badgeBorder: '#F7DE8B',
-    cardBackground: 'rgba(244, 208, 106, 0.12)',
-    cardBorder: 'rgba(244, 208, 106, 0.28)',
-  },
-  {
-    color: '#D7DEEE',
-    badgeBackground: '#D7DEEE',
-    badgeBorder: '#E6ECF8',
-    cardBackground: 'rgba(215, 222, 238, 0.1)',
-    cardBorder: 'rgba(215, 222, 238, 0.24)',
-  },
-  {
-    color: '#E3A271',
-    badgeBackground: '#E3A271',
-    badgeBorder: '#EDB487',
-    cardBackground: 'rgba(227, 162, 113, 0.1)',
-    cardBorder: 'rgba(227, 162, 113, 0.24)',
-  },
-];
+const FIRST_RANK_CONFIG = {
+  color: '#FFD84D',
+  badgeBackground: '#FFD84D',
+  badgeBorder: '#FFF3A3',
+  cardBackground: 'rgba(255, 216, 77, 0.2)',
+  cardBorder: '#FFD84D',
+};
 
 function formatUserId(value, t) {
   if (!value) {
@@ -167,14 +151,13 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
   }, [loadLeaderboard]);
 
   function renderItem({ item, index }) {
-    const topRankConfig = TOP_RANK_CONFIGS[index] ?? null;
-    const highlightColors = [colors.highlight, colors.accent, colors.accentPink];
-    const accent = topRankConfig?.color ?? highlightColors[index] ?? colors.accent;
+    const isFirstRank = index === 0;
+    const topRankConfig = isFirstRank ? FIRST_RANK_CONFIG : null;
+    const accent = topRankConfig?.color ?? colors.accent;
     const isCurrent = currentUserId && item.userId === currentUserId;
     const containerBackground = topRankConfig?.cardBackground ?? 'rgba(18, 18, 28, 0.9)';
-    const borderColor = isCurrent
-      ? accent
-      : (topRankConfig?.cardBorder ?? 'rgba(117, 117, 138, 0.45)');
+    const borderColor = topRankConfig?.cardBorder
+      ?? (isCurrent ? accent : 'rgba(117, 117, 138, 0.45)');
     const resolvedXp = isCurrent && Number.isFinite(currentUserXp)
       ? currentUserXp
       : item.xp;
@@ -219,6 +202,7 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
         disabled={isCurrent}
         style={[
           styles.entry,
+          isFirstRank ? styles.entryFirst : null,
           isCurrent && styles.entryCurrent,
           {
             backgroundColor: containerBackground,
@@ -231,6 +215,7 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
             <View
               style={[
                 styles.rankBadge,
+                styles.rankBadgeFirst,
                 {
                   backgroundColor: topRankConfig.badgeBackground,
                   borderColor: topRankConfig.badgeBorder,
@@ -245,19 +230,33 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
             <Text style={[styles.entryRank, { color: accent }]}>{index + 1}.</Text>
           )}
         </View>
-        <AvatarView
-          uri={avatarUriValue}
-          source={avatarSource}
-          icon={avatarIcon}
-          color={avatarColor}
-          initials={initials}
-          circleStyle={styles.entryAvatar}
-          imageStyle={styles.entryAvatarImage}
-          iconSize={20}
-          textStyle={styles.entryAvatarText}
-        />
+        <View style={[styles.entryAvatarWrap, isFirstRank ? styles.entryAvatarWrapFirst : null]}>
+          {isFirstRank ? (
+            <View style={styles.entryAvatarCrown}>
+              <FontAwesome5 name="crown" size={16} color="#FFF3A3" />
+            </View>
+          ) : null}
+          <AvatarView
+            uri={avatarUriValue}
+            source={avatarSource}
+            icon={avatarIcon}
+            color={avatarColor}
+            initials={initials}
+            circleStyle={[
+              styles.entryAvatar,
+              isFirstRank ? styles.entryAvatarFirst : null,
+            ]}
+            imageStyle={styles.entryAvatarImage}
+            iconSize={20}
+            textStyle={styles.entryAvatarText}
+          />
+        </View>
         <View style={styles.entryMeta}>
-          <Text style={styles.entryName} numberOfLines={1} ellipsizeMode="tail">
+          <Text
+            style={[styles.entryName, isFirstRank ? styles.entryNameFirst : null]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {name}
           </Text>
           <Text style={styles.entryTitle} numberOfLines={1} ellipsizeMode="tail">
@@ -265,7 +264,15 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
           </Text>
         </View>
         <View style={styles.entryScoreWrap}>
-          <Text style={[styles.entryScore, { color: accent }]}>{item.points}</Text>
+          <Text
+            style={[
+              styles.entryScore,
+              isFirstRank ? styles.entryScoreFirst : null,
+              { color: accent },
+            ]}
+          >
+            {item.points}
+          </Text>
           <Text style={styles.entryScoreLabel}>{t('Punkte')}</Text>
         </View>
       </Pressable>

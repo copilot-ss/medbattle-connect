@@ -36,6 +36,9 @@ export default function ModeCard({
   onPress,
   disabled = false,
   titleMeta = null,
+  containerStyle = null,
+  pressableStyle = null,
+  titleStyle = null,
 }) {
   const glow = useRef(new Animated.Value(0)).current;
   const glowColors = useMemo(
@@ -64,17 +67,21 @@ export default function ModeCard({
 
   return (
     <Animated.View
-      style={getModeCardContainerStyle(accent, glow, glowColors)}
+      style={[getModeCardContainerStyle(accent, glow, glowColors), containerStyle]}
     >
       <Pressable
-        style={[styles.modeCardPressable, disabled ? styles.modeCardDisabled : null]}
+        style={[
+          styles.modeCardPressable,
+          pressableStyle,
+          disabled ? styles.modeCardDisabled : null,
+        ]}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         onPress={disabled ? undefined : onPress}
         disabled={disabled}
       >
         <View style={styles.modeCardTitleRow}>
-          <Text style={getModeCardTitleStyle(accent)}>{title}</Text>
+          <Text style={[getModeCardTitleStyle(accent), titleStyle]}>{title}</Text>
           {titleMeta ? (
             <View style={styles.modeCardTitleMeta}>{titleMeta}</View>
           ) : null}

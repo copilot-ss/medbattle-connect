@@ -9,6 +9,7 @@ import {
 import { resolveProgressiveMatch } from '../../../services/match/matchHelpers';
 
 const LOBBY_MATCH_SYNC_INTERVAL_MS = 2500;
+const ACTIVE_LOBBY_MATCH_SYNC_INTERVAL_MS = 1200;
 const COMPLETED_LOBBY_MATCH_SYNC_INTERVAL_MS = 900;
 
 function hasFinishedCurrentActiveMatch(match, role) {
@@ -19,6 +20,13 @@ function hasFinishedCurrentActiveMatch(match, role) {
     return false;
   }
   return Boolean(match.state?.[role]?.finished);
+}
+
+function hasCurrentPlayerAbandonedMatch(match, role) {
+  if (!match?.state || !role) {
+    return false;
+  }
+  return Boolean(match.state?.[role]?.gaveUp);
 }
 
 export default function useLobbyMatchState({
@@ -179,18 +187,31 @@ export default function useLobbyMatchState({
 
   useEffect(() => {
     const shouldSyncWaitingLobby = currentMatch?.status === 'waiting';
+    const shouldSyncActiveLobby =
+      suppressActiveNavigation && currentMatch?.status === 'active';
     const shouldSyncCompletedLobby =
       allowCompletedLobby && currentMatch?.status === 'completed';
 
     if (
       !currentMatch ||
-      (!shouldSyncWaitingLobby && !shouldSyncCompletedLobby) ||
+      (
+        !shouldSyncWaitingLobby &&
+        !shouldSyncActiveLobby &&
+        !shouldSyncCompletedLobby
+      ) ||
       isOffline
     ) {
       return undefined;
     }
 
     let active = true;
+    const syncIntervalMs = shouldSyncActiveLobby
+      ? ACTIVE_LOBBY_MATCH_SYNC_INTERVAL_MS
+      : shouldSyncCompletedLobby
+        ? COMPLETED_LOBBY_MATCH_SYNC_INTERVAL_MS
+        : realtimeStatus === 'ready'
+          ? LOBBY_MATCH_SYNC_INTERVAL_MS
+          : 1800;
     const intervalId = setInterval(async () => {
       await refreshCurrentMatch(
         currentMatch.id,
@@ -199,11 +220,7 @@ export default function useLobbyMatchState({
       if (!active) {
         return;
       }
-    }, shouldSyncCompletedLobby
-      ? COMPLETED_LOBBY_MATCH_SYNC_INTERVAL_MS
-      : realtimeStatus === 'ready'
-        ? LOBBY_MATCH_SYNC_INTERVAL_MS
-        : 1800);
+    }, syncIntervalMs);
 
     return () => {
       active = false;
@@ -215,6 +232,7 @@ export default function useLobbyMatchState({
     isOffline,
     realtimeStatus,
     refreshCurrentMatch,
+    suppressActiveNavigation,
   ]);
 
   useEffect(() => {
@@ -255,6 +273,12 @@ export default function useLobbyMatchState({
 
   useEffect(() => {
     if (!currentMatch?.id || !userId) {
+      return;
+    }
+
+    const role = deriveMatchRole(currentMatch, userId);
+    if (!role || hasCurrentPlayerAbandonedMatch(currentMatch, role)) {
+      clearActiveLobby();
       return;
     }
 
@@ -329,6 +353,25 @@ export default function useLobbyMatchState({
       setMatchesError(new Error('Du wurdest aus der Lobby entfernt.'));
     }
   }, [closingRef, currentMatch, setMatchesError, userId]);
+
+  useEffect(() => {
+    if (!currentMatch || !userId) {
+      return;
+    }
+
+    const role = deriveMatchRole(currentMatch, userId);
+    if (!role || !hasCurrentPlayerAbandonedMatch(currentMatch, role)) {
+      return;
+    }
+
+    clearActiveLobby();
+    if (subscriptionRef.current) {
+      subscriptionRef.current();
+      subscriptionRef.current = null;
+    }
+    attachedMatchIdRef.current = null;
+    setCurrentMatch(null);
+  }, [currentMatch, userId]);
 
   return {
     currentMatch,

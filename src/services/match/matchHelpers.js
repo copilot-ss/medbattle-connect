@@ -18,6 +18,24 @@ const MATCH_STATUS_ORDER = {
   [MATCH_STATUS.CANCELLED]: 3,
 };
 
+function isRematchStatusTransition(prevMatch, nextMatch) {
+  if (prevMatch?.status !== MATCH_STATUS.COMPLETED) {
+    return false;
+  }
+
+  if (
+    nextMatch?.status !== MATCH_STATUS.WAITING &&
+    nextMatch?.status !== MATCH_STATUS.ACTIVE
+  ) {
+    return false;
+  }
+
+  const prevUpdatedAt = Date.parse(prevMatch.updated_at ?? prevMatch.updatedAt ?? '') || 0;
+  const nextUpdatedAt = Date.parse(nextMatch.updated_at ?? nextMatch.updatedAt ?? '') || 0;
+
+  return nextUpdatedAt > 0 && prevUpdatedAt > 0 && nextUpdatedAt >= prevUpdatedAt;
+}
+
 const EMPTY_PLAYER_STATE = {
   userId: null,
   username: null,
@@ -322,6 +340,10 @@ function resolveProgressiveMatch(prevMatch, nextMatch) {
   }
 
   if (prevMatch.id && nextMatch.id && prevMatch.id !== nextMatch.id) {
+    return nextMatch;
+  }
+
+  if (isRematchStatusTransition(prevMatch, nextMatch)) {
     return nextMatch;
   }
 

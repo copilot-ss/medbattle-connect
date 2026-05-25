@@ -3,6 +3,8 @@ import * as Clipboard from 'expo-clipboard';
 import { sendLobbyInvite } from '../../../services/lobbyInviteService';
 import { sanitizeFriendCode } from '../../../utils/friendCode';
 
+const SENT_INVITE_VISIBLE_MS = 60 * 1000;
+
 function normalizeFriendCode(value) {
   return sanitizeFriendCode(value) || null;
 }
@@ -12,12 +14,23 @@ export default function useLobbyShareActions({ currentJoinCode, currentMatchId, 
   const [invitingFriendCodes, setInvitingFriendCodes] = useState({});
   const copiedTimeoutRef = useRef(null);
   const invitingFriendCodesRef = useRef({});
+  const sentInviteTimeoutsRef = useRef({});
 
-  const setInvitingState = useCallback((recipientCode, isInviting) => {
+  const clearSentInviteTimeout = useCallback((recipientCode) => {
+    const timeoutId = sentInviteTimeoutsRef.current[recipientCode];
+    if (!timeoutId) {
+      return;
+    }
+
+    clearTimeout(timeoutId);
+    delete sentInviteTimeoutsRef.current[recipientCode];
+  }, []);
+
+  const setInviteState = useCallback((recipientCode, nextState) => {
     setInvitingFriendCodes((prev) => {
       const next = { ...prev };
-      if (isInviting) {
-        next[recipientCode] = true;
+      if (nextState) {
+        next[recipientCode] = nextState;
       } else {
         delete next[recipientCode];
       }
@@ -26,6 +39,18 @@ export default function useLobbyShareActions({ currentJoinCode, currentMatchId, 
     });
   }, []);
 
+  const markInviteSent = useCallback(
+    (recipientCode) => {
+      clearSentInviteTimeout(recipientCode);
+      setInviteState(recipientCode, 'sent');
+      sentInviteTimeoutsRef.current[recipientCode] = setTimeout(() => {
+        delete sentInviteTimeoutsRef.current[recipientCode];
+        setInviteState(recipientCode, null);
+      }, SENT_INVITE_VISIBLE_MS);
+    },
+    [clearSentInviteTimeout, setInviteState]
+  );
+
   const clearCopiedTimeout = useCallback(() => {
     if (copiedTimeoutRef.current) {
       clearTimeout(copiedTimeoutRef.current);
@@ -33,7 +58,25 @@ export default function useLobbyShareActions({ currentJoinCode, currentMatchId, 
     }
   }, []);
 
-  useEffect(() => clearCopiedTimeout, [clearCopiedTimeout]);
+  useEffect(
+    () => () => {
+      clearCopiedTimeout();
+      Object.values(sentInviteTimeoutsRef.current).forEach((timeoutId) => {
+        clearTimeout(timeoutId);
+      });
+      sentInviteTimeoutsRef.current = {};
+    },
+    [clearCopiedTimeout]
+  );
+
+  useEffect(() => {
+    Object.values(sentInviteTimeoutsRef.current).forEach((timeoutId) => {
+      clearTimeout(timeoutId);
+    });
+    sentInviteTimeoutsRef.current = {};
+    invitingFriendCodesRef.current = {};
+    setInvitingFriendCodes({});
+  }, [currentMatchId]);
 
   const handleCopyCode = useCallback(async () => {
     if (!currentJoinCode) {
@@ -68,7 +111,8 @@ export default function useLobbyShareActions({ currentJoinCode, currentMatchId, 
         return false;
       }
 
-      setInvitingState(recipientCode, true);
+      clearSentInviteTimeout(recipientCode);
+      setInviteState(recipientCode, 'sending');
 
       try {
         const result = await sendLobbyInvite({
@@ -79,15 +123,22 @@ export default function useLobbyShareActions({ currentJoinCode, currentMatchId, 
         if (!result.ok) {
           throw result.error ?? new Error(t('Einladung konnte nicht gesendet werden.'));
         }
+        markInviteSent(recipientCode);
         return true;
       } catch (err) {
         console.warn('Lobby-Einladung konnte nicht gesendet werden:', err?.message ?? err);
+        setInviteState(recipientCode, null);
         return false;
-      } finally {
-        setInvitingState(recipientCode, false);
       }
     },
-    [currentJoinCode, currentMatchId, setInvitingState, t]
+    [
+      clearSentInviteTimeout,
+      currentJoinCode,
+      currentMatchId,
+      markInviteSent,
+      setInviteState,
+      t,
+    ]
   );
 
   return {

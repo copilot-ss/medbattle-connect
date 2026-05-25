@@ -7,7 +7,7 @@ import {
   getAchievementByKey,
   getAchievementProgress,
 } from '../../services/achievementService';
-import { syncUserProgressDelta } from '../../services/userProgressService';
+import { claimAccountAchievementReward } from '../../services/accountPreferencesService';
 import { syncProfileAvatar } from '../../services/userService';
 import useLeaderboardRank from './useLeaderboardRank';
 import useSettingsAuth from './useSettingsAuth';
@@ -28,6 +28,7 @@ export default function useSettingsController({ navigation, route, onClearSessio
     userStats,
     boosts,
     claimedAchievements,
+    setClaimedAchievements,
     claimAchievement,
     doubleXpExpiresAt,
     updateUserStats,
@@ -119,7 +120,6 @@ export default function useSettingsController({ navigation, route, onClearSessio
   const friendsCount = Array.isArray(friends) ? friends.length : 0;
   const [claimingAchievement, setClaimingAchievement] = useState(null);
   const [claimRewardAnimation, setClaimRewardAnimation] = useState(null);
-  const allowAchievementReplay = true;
 
   const achievementStats = useMemo(
     () => ({
@@ -143,11 +143,8 @@ export default function useSettingsController({ navigation, route, onClearSessio
       getAchievementProgress({
         stats: achievementStats,
         claimed: claimedAchievements,
-      }).map((achievement) => ({
-        ...achievement,
-        canReplay: allowAchievementReplay && achievement.isClaimed,
-      })),
-    [achievementStats, allowAchievementReplay, claimedAchievements]
+      }),
+    [achievementStats, claimedAchievements]
   );
 
   const handleClaimAchievement = useCallback(async (achievementKey) => {
@@ -166,42 +163,69 @@ export default function useSettingsController({ navigation, route, onClearSessio
       return;
     }
     const alreadyClaimed = claimedAchievements.includes(achievement.key);
-    if (alreadyClaimed && !allowAchievementReplay) {
+    if (alreadyClaimed) {
       return;
     }
-    const isReplayClaim = alreadyClaimed && allowAchievementReplay;
 
     const rewardXp = sanitizeStatNumber(achievement.reward?.xp);
     const rewardCoins = sanitizeStatNumber(achievement.reward?.coins);
     const beforeXp = sanitizeStatNumber(xp);
     const beforeCoins = sanitizeStatNumber(coins);
-    const afterXp = beforeXp + rewardXp;
-    const afterCoins = beforeCoins + rewardCoins;
 
     setClaimingAchievement(achievement.key);
 
     try {
-      await updateUserStats((current) => ({
-        ...current,
-        xp: sanitizeStatNumber(current?.xp) + rewardXp,
-        coins: sanitizeStatNumber(current?.coins) + rewardCoins,
-      }));
-      if (!isReplayClaim) {
-        await claimAchievement(achievement.key);
+      let afterXp = beforeXp + rewardXp;
+      let afterCoins = beforeCoins + rewardCoins;
+
+      if (authUserId) {
+        const claimResult = await claimAccountAchievementReward(authUserId, {
+          achievementKey: achievement.key,
+          rewardXp,
+          rewardCoins,
+        });
+        if (!claimResult.ok) {
+          throw claimResult.error ?? new Error('Achievement claim failed.');
+        }
+
+        if (!claimResult.claimed) {
+          if (claimResult.claimedAchievements?.length) {
+            await setClaimedAchievements(claimResult.claimedAchievements);
+          }
+          return;
+        }
+
+        afterXp = sanitizeStatNumber(claimResult.progress?.xp);
+        afterCoins = sanitizeStatNumber(claimResult.progress?.coins);
+        await setClaimedAchievements(
+          claimResult.claimedAchievements?.length
+            ? claimResult.claimedAchievements
+            : [...claimedAchievements, achievement.key]
+        );
+        await updateUserStats((current) => ({
+          ...current,
+          xp: afterXp,
+          coins: afterCoins,
+        }));
+      } else {
+        const didClaim = await claimAchievement(achievement.key);
+        if (!didClaim) {
+          return;
+        }
+        await updateUserStats((current) => ({
+          ...current,
+          xp: sanitizeStatNumber(current?.xp) + rewardXp,
+          coins: sanitizeStatNumber(current?.coins) + rewardCoins,
+        }));
       }
+
       setClaimRewardAnimation({
-        id: `${achievement.key}-${isReplayClaim ? 'replay-' : ''}${Date.now()}`,
+        id: `${achievement.key}-${Date.now()}`,
         fromXp: beforeXp,
         toXp: afterXp,
         fromCoins: beforeCoins,
         toCoins: afterCoins,
       });
-      if (authUserId && (rewardXp > 0 || rewardCoins !== 0)) {
-        await syncUserProgressDelta(authUserId, {
-          xp: rewardXp,
-          coins: rewardCoins,
-        });
-      }
     } catch (err) {
       Alert.alert(t('Fehler'), t('Belohnung konnte nicht abgeholt werden.'));
     } finally {
@@ -210,11 +234,11 @@ export default function useSettingsController({ navigation, route, onClearSessio
   }, [
     achievementStats,
     authUserId,
-    allowAchievementReplay,
     claimAchievement,
     claimedAchievements,
     claimingAchievement,
     coins,
+    setClaimedAchievements,
     xp,
     updateUserStats,
     t,

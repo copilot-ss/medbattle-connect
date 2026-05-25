@@ -289,8 +289,7 @@ export default function ProfileSection({
           <View style={styles.profileAchievementList}>
             {achievements.map((achievement) => {
               const isClaiming = claimingAchievement === achievement.key;
-              const canReplay = achievement.canReplay === true;
-              const canTriggerClaim = achievement.canClaim || canReplay;
+              const canTriggerClaim = achievement.canClaim;
               const showStatus = achievement.isClaimed || canTriggerClaim;
               const statusLabel = t('Erhalten');
               const progressLabel = `${formatThousands(

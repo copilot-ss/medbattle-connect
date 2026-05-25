@@ -225,7 +225,7 @@ export default function EnergyBoostModal({
       visible={visible}
       animationType="fade"
       presentationStyle="fullScreen"
-      transparent={false}
+      transparent
       onRequestClose={() => {
         if (!isBoostBusy) {
           onClose?.();

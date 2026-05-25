@@ -490,27 +490,36 @@ export default function useResultMultiplayerData({
     if (!isMultiplayer) {
       return [];
     }
-    const entries = playerPresentationEntries.map((entry) => ({
-      key: entry.key,
-      name: entry.name,
-      username: entry.state?.username ?? null,
-      title: entry.state?.title ?? null,
-      userId: entry.userId,
-      score: resolveScoreValue(
-        entry.isSelf ? resolvedPlayerState?.score : entry.state?.score,
-        entry.isSelf ? score : null
-      ),
-      isSelf: entry.isSelf,
-      avatarSource: entry.avatarSource,
-      avatarUrl: entry.avatarUrl,
-      avatarIcon: entry.avatarIcon,
-      avatarColor: entry.avatarColor,
-      initials: getInitials(entry.name),
-      usedBoostIds: collectUsedBoostIds(reviewByPlayerKey.get(entry.key)),
-    }));
+    const entries = playerPresentationEntries.map((entry) => {
+      const hasLeft = Boolean(entry.state?.gaveUp);
+      return {
+        key: entry.key,
+        name: entry.name,
+        username: entry.state?.username ?? null,
+        title: entry.state?.title ?? null,
+        userId: entry.userId,
+        score: hasLeft
+          ? 0
+          : resolveScoreValue(
+              entry.isSelf ? resolvedPlayerState?.score : entry.state?.score,
+              entry.isSelf ? score : null
+            ),
+        hasLeft,
+        isSelf: entry.isSelf,
+        avatarSource: entry.avatarSource,
+        avatarUrl: entry.avatarUrl,
+        avatarIcon: entry.avatarIcon,
+        avatarColor: entry.avatarColor,
+        initials: getInitials(entry.name),
+        usedBoostIds: collectUsedBoostIds(reviewByPlayerKey.get(entry.key)),
+      };
+    });
     const scoreValue = (value) => (Number.isFinite(value) ? value : -1);
     return entries
       .sort((a, b) => {
+        if (a.hasLeft !== b.hasLeft) {
+          return a.hasLeft ? 1 : -1;
+        }
         const diff = scoreValue(b.score) - scoreValue(a.score);
         if (diff !== 0) {
           return diff;
@@ -642,6 +651,7 @@ export default function useResultMultiplayerData({
         title: entry.state?.title ?? null,
         score: resolveScoreValue(entry.state?.score, entry.isSelf ? selfScoreValue : null),
         finished: Boolean(entry.state?.finished),
+        gaveUp: Boolean(entry.state?.gaveUp),
         answers: Array.isArray(entry.state?.answers) ? entry.state.answers : [],
         avatarUrl: entry.avatarUrl ?? null,
         avatarIcon: entry.avatarIcon ?? null,
@@ -656,6 +666,7 @@ export default function useResultMultiplayerData({
         title: resolvedPlayerState?.title ?? null,
         score: selfScoreValue,
         finished: Boolean(resolvedPlayerState?.finished),
+        gaveUp: Boolean(resolvedPlayerState?.gaveUp),
         answers: Array.isArray(resolvedPlayerState?.answers)
           ? resolvedPlayerState.answers
           : [],
@@ -671,6 +682,7 @@ export default function useResultMultiplayerData({
         title: null,
         score: 0,
         finished: false,
+        gaveUp: false,
         answers: [],
         avatarUrl: null,
         avatarIcon: null,
@@ -698,6 +710,7 @@ export default function useResultMultiplayerData({
     playerPresentationEntries,
     resolvedPlayerState?.answers,
     resolvedPlayerState?.finished,
+    resolvedPlayerState?.gaveUp,
     resolvedPlayerState?.title,
     resolvedPlayerState?.username,
     selfAvatarColor,

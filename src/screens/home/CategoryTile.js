@@ -8,6 +8,7 @@ function CategoryTile({
   icon,
   iconFamily = 'ion',
   accent,
+  style,
   onPress,
   disabled,
   selected = false,
@@ -21,6 +22,7 @@ function CategoryTile({
     <Pressable
       style={({ pressed }) => [
         styles.categoryCard,
+        style,
         selected ? { backgroundColor: selectedBackground, borderColor: selectedBorder } : null,
         pressed && !disabled ? styles.categoryCardPressed : null,
         disabled ? styles.categoryCardDisabled : null,

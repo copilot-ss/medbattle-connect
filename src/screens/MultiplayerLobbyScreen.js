@@ -5,6 +5,7 @@ import {
   deriveMatchRole,
   getMatchById,
 } from '../services/matchService';
+import { getMatchPlayerEntries } from '../services/match/matchHelpers';
 import { usePreferences } from '../context/PreferencesContext';
 import useCurrentAvatar from '../hooks/useCurrentAvatar';
 import useMatchStartCountdown from '../hooks/useMatchStartCountdown';
@@ -40,7 +41,28 @@ import PublicProfileSheet from '../components/PublicProfileSheet';
 import usePublicProfileSheet from '../hooks/usePublicProfileSheet';
 import LobbyStartCountdownOverlay from './multiplayer/LobbyStartCountdownOverlay';
 
-const lobbyBackgroundImage = require('../../assets/images/multiplayer-lobby-bg.png');
+const lobbyBackgroundImage = require('../../assets/images/multiplayer-lobby-bg-mobile.jpg');
+
+function isEffectiveCompletedLobbyHost(match, userId) {
+  if (!match || !userId || match.status !== 'completed') {
+    return false;
+  }
+
+  const currentRole = deriveMatchRole(match, userId);
+  if (!currentRole) {
+    return false;
+  }
+
+  const activeEntries = getMatchPlayerEntries(match).filter(
+    (entry) => !entry.state?.gaveUp
+  );
+  const firstActiveEntry = activeEntries[0];
+
+  return (
+    firstActiveEntry?.role === currentRole ||
+    firstActiveEntry?.state?.userId === userId
+  );
+}
 
 export default function MultiplayerLobbyScreen({ navigation, route }) {
   const { t } = useTranslation();
@@ -184,8 +206,8 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     }
 
     return (
-      deriveMatchRole(currentMatch, userId) === 'host' &&
-      currentMatch.status === 'completed'
+      currentMatch.status === 'completed' &&
+      isEffectiveCompletedLobbyHost(currentMatch, userId)
     );
   }, [currentMatch, userId]);
   const {
@@ -246,7 +268,10 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   });
   const allParticipantsInLobby = useMemo(() => {
     const activeParticipants = (participants ?? []).filter((item) => !item.isPlaceholder);
-    return activeParticipants.length > 0 && activeParticipants.every((item) => !item.isPending);
+    return (
+      activeParticipants.length > 0 &&
+      activeParticipants.every((item) => item.inCurrentLobby === true)
+    );
   }, [participants]);
   const showHostStartControls = isHostWaiting || isHostCompletedLobby;
   const canStartFromLobby =
@@ -302,7 +327,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
     }
 
     if (shouldSuppressActiveNavigationUntilWaiting) {
-      if (nextStatus === 'waiting') {
+      if (nextStatus === 'waiting' || nextStatus === 'active') {
         setShouldSuppressActiveNavigationUntilWaiting(false);
         setShouldSuppressActiveNavigation(false);
       }
@@ -387,8 +412,13 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   return (
     <ImageBackground
       source={lobbyBackgroundImage}
+      defaultSource={lobbyBackgroundImage}
       style={styles.container}
       imageStyle={styles.backgroundImage}
+      resizeMode="cover"
+      resizeMethod="resize"
+      progressiveRenderingEnabled
+      fadeDuration={0}
     >
       <View style={styles.backgroundOverlay}>
         <View style={styles.backgroundGlowTop} pointerEvents="none" />

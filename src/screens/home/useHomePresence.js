@@ -35,8 +35,11 @@ export default function useHomePresence({
         title: userTitle ?? null,
         activity: 'online',
         lobby: null,
+        matchId: null,
+        matchCode: null,
         lobbyPlayers: null,
         lobbyCapacity: null,
+        trackedAt: Date.now(),
       }).catch((err) => {
         console.warn('Konnte Home-Presence nicht tracken:', err);
       });

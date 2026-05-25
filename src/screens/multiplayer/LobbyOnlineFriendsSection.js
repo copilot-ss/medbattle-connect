@@ -33,8 +33,10 @@ export default function LobbyOnlineFriendsSection({
               typeof friend?.code === 'string'
                 ? friend.code.trim().toUpperCase()
                 : null;
-            const isInviting =
-              Boolean(inviteCode) && Boolean(invitingFriendCodes?.[inviteCode]);
+            const inviteState = inviteCode ? invitingFriendCodes?.[inviteCode] : null;
+            const isInviting = inviteState === true || inviteState === 'sending';
+            const isInviteSent = inviteState === 'sent';
+            const inviteDisabled = isInviting || isInviteSent;
 
             return (
               <View key={friend.code} style={styles.onlineFriendRow}>
@@ -49,12 +51,22 @@ export default function LobbyOnlineFriendsSection({
                   style={[
                     styles.onlineFriendInviteButton,
                     isInviting ? styles.onlineFriendInviteButtonDisabled : null,
+                    isInviteSent ? styles.onlineFriendInviteButtonSent : null,
                   ]}
-                  disabled={isInviting}
-                  accessibilityLabel={t('Freund einladen')}
+                  disabled={inviteDisabled}
+                  accessibilityLabel={
+                    isInviteSent ? t('Einladung gesendet') : t('Freund einladen')
+                  }
                 >
                   {isInviting ? (
                     <ActivityIndicator size="small" color="#6EE7A7" />
+                  ) : isInviteSent ? (
+                    <Ionicons
+                      name="checkmark"
+                      size={18}
+                      color="#07140D"
+                      style={styles.onlineFriendInviteIcon}
+                    />
                   ) : (
                     <Ionicons
                       name="add"

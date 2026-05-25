@@ -7,11 +7,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   backgroundImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
     resizeMode: 'cover',
   },
   backgroundOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(10, 7, 32, 0.58)',
+    backgroundColor: 'rgba(10, 7, 32, 0.44)',
     paddingHorizontal: 24,
     paddingTop: 30,
     paddingBottom: 24,
@@ -337,6 +340,12 @@ const styles = StyleSheet.create({
   participantAvatarCard: {
     alignItems: 'center',
     gap: 6,
+    width: '100%',
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   participantAvatarCardSelected: {
     opacity: 0.95,
@@ -351,6 +360,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'visible',
+  },
+  participantAvatarSelf: {
+    width: 70,
+    height: 70,
+    backgroundColor: 'rgba(87, 199, 255, 0.16)',
+    borderColor: '#57C7FF',
+    borderWidth: 4.5,
   },
   participantAvatarKick: {
     borderColor: 'rgba(255, 93, 110, 0.8)',
@@ -629,13 +645,13 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
   },
   matchAction: {
-    backgroundColor: 'rgba(87, 199, 255, 0.18)',
+    backgroundColor: colors.success,
     borderRadius: radii.md,
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
   matchActionText: {
-    color: colors.accent,
+    color: '#07120F',
     fontFamily: fonts.bold,
   },
   emptyState: {
@@ -714,6 +730,11 @@ const styles = StyleSheet.create({
   },
   onlineFriendInviteButtonDisabled: {
     opacity: 0.65,
+  },
+  onlineFriendInviteButtonSent: {
+    backgroundColor: '#6EE7A7',
+    borderColor: '#6EE7A7',
+    opacity: 1,
   },
   onlineFriendInviteIcon: {
     marginLeft: 1,

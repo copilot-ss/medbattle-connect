@@ -238,33 +238,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surfaceAlt,
-    paddingVertical: 18,
+    paddingVertical: 16,
     paddingHorizontal: 20,
-    rowGap: 8,
     alignItems: 'center',
   },
-  multiplayerWaitingTitle: {
-    color: '#CBEAFF',
-    fontSize: 17,
-    fontFamily: fonts.medium,
-    textAlign: 'center',
-  },
-  multiplayerWaitingName: {
-    color: colors.textPrimary,
-    fontSize: 15,
-    fontFamily: fonts.bold,
-    textAlign: 'center',
-  },
   multiplayerWaitingLoader: {
-    marginTop: 6,
     flexDirection: 'row',
     alignItems: 'center',
     columnGap: 4,
   },
-  multiplayerWaitingHint: {
+  waitingText: {
     color: colors.textMuted,
-    fontSize: 13,
-    fontFamily: fonts.regular,
+    fontSize: 16,
+    lineHeight: 18,
+    fontFamily: fonts.bold,
   },
   waitingDots: {
     flexDirection: 'row',
@@ -309,18 +296,20 @@ const styles = StyleSheet.create({
   scoreboardRowInteractive: {
     opacity: 0.98,
   },
-  scoreboardRowSelected: {
-    borderColor: 'rgba(255, 178, 92, 0.75)',
-    backgroundColor: 'rgba(255, 178, 92, 0.18)',
-  },
-  scoreboardRowSelf: {
-    borderColor: 'rgba(87, 199, 255, 0.6)',
-    backgroundColor: 'rgba(87, 199, 255, 0.16)',
+  scoreboardRowLeft: {
+    borderColor: 'rgba(148, 163, 184, 0.52)',
+    borderWidth: 1,
+    backgroundColor: 'rgba(148, 163, 184, 0.1)',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   scoreboardRank: {
     width: 34,
     color: colors.textSecondary,
     fontFamily: fonts.medium,
+  },
+  scoreboardRankLeft: {
+    color: '#94A3B8',
   },
   scoreboardIdentityPressable: {
     flex: 1,
@@ -338,6 +327,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     marginRight: 14,
+  },
+  scoreboardAvatarLeft: {
+    borderColor: 'rgba(148, 163, 184, 0.55)',
+    borderWidth: 1,
+    backgroundColor: 'rgba(148, 163, 184, 0.12)',
   },
   scoreboardAvatarImage: {
     width: '100%',
@@ -362,6 +356,25 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: fonts.medium,
     flexShrink: 1,
+  },
+  scoreboardNameSelf: {
+    color: '#57C7FF',
+    fontFamily: fonts.bold,
+  },
+  scoreboardNameLeft: {
+    color: '#94A3B8',
+  },
+  scoreboardLeftLabel: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.35)',
+    backgroundColor: 'rgba(148, 163, 184, 0.12)',
+    color: '#CBD5E1',
+    fontSize: 11,
+    fontFamily: fonts.medium,
   },
   scoreboardBoostRow: {
     flexDirection: 'row',
@@ -391,10 +404,19 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     minWidth: 48,
   },
+  scoreboardScoreBoxLeft: {
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+  },
   scoreboardScore: {
     color: colors.accent,
     fontSize: 22,
     fontFamily: fonts.bold,
+  },
+  scoreboardScoreLeft: {
+    color: '#94A3B8',
   },
   scoreboardScoreLabel: {
     color: colors.textMuted,
@@ -405,6 +427,12 @@ const styles = StyleSheet.create({
   multiplayerPointsWrap: {
     alignItems: 'center',
     marginTop: 2,
+  },
+  multiplayerScorePointsPlain: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
   },
   primaryButton: {
     width: '100%',

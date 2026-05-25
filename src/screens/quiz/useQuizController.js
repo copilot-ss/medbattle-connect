@@ -231,7 +231,7 @@ export default function useQuizController({ navigation, route }) {
   }, [boostInventory.streak_shield, setStreakShieldActive, streakShieldActive]);
 
   useEffect(() => {
-    if (isMultiplayer || premium || energyChargedRef.current) {
+    if (premium || energyChargedRef.current) {
       return;
     }
 
@@ -249,7 +249,7 @@ export default function useQuizController({ navigation, route }) {
         });
       }
     });
-  }, [consumeEnergy, isMultiplayer, navigation, premium]);
+  }, [consumeEnergy, navigation, premium]);
 
   const clearFreezeTimeout = useCallback(() => {
     if (freezeTimeoutRef.current) {
@@ -415,6 +415,7 @@ export default function useQuizController({ navigation, route }) {
               ? matchPlayerState.score
               : resolvedScore,
             finished: Boolean(matchPlayerState?.finished),
+            gaveUp: Boolean(matchPlayerState?.gaveUp),
           }
         : null;
       const opponentSnapshot = isMultiplayer
@@ -425,6 +426,7 @@ export default function useQuizController({ navigation, route }) {
               ? matchOpponentState.score
               : null,
             finished: Boolean(matchOpponentState?.finished),
+            gaveUp: Boolean(matchOpponentState?.gaveUp),
           }
         : null;
 
@@ -464,12 +466,14 @@ export default function useQuizController({ navigation, route }) {
       isMultiplayer,
       isQuickPlay,
       matchPlayerState?.finished,
+      matchPlayerState?.gaveUp,
       matchPlayerState?.score,
       matchPlayerState?.userId,
       matchPlayerState?.username,
       matchJoinCode,
       matchOpponentState?.score,
       matchOpponentState?.finished,
+      matchOpponentState?.gaveUp,
       matchOpponentState?.userId,
       matchOpponentState?.username,
       matchRole,

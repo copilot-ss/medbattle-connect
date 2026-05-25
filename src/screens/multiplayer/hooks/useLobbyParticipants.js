@@ -25,6 +25,7 @@ export default function useLobbyParticipants({
   friends,
   t,
 }) {
+  const currentMatchId = currentMatch?.id ?? null;
   const currentJoinCode = currentMatch?.code ?? null;
   const presenceParticipantCount = useMemo(
     () => getPresenceParticipantCount(currentMatch),
@@ -41,6 +42,7 @@ export default function useLobbyParticipants({
     avatarIcon: activeAvatarIcon,
     avatarColor: activeAvatar?.color ?? null,
     currentJoinCode,
+    currentMatchId,
     participantCount: presenceParticipantCount,
     maxPlayers,
     friends,

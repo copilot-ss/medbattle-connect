@@ -1,6 +1,18 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useTranslation } from '../i18n/useTranslation';
-import { colors, fonts, radii } from '../styles/theme';
+import { fonts } from '../styles/theme';
+
+const FADE_IN_MS = 180;
+const FADE_OUT_MS = 900;
 
 export default function LobbyInviteOverlay({
   invite,
@@ -12,34 +24,83 @@ export default function LobbyInviteOverlay({
   onDecline,
 }) {
   const { t } = useTranslation();
+  const [renderedInvite, setRenderedInvite] = useState(invite);
+  const opacity = useRef(new Animated.Value(invite ? 1 : 0)).current;
+  const translateY = opacity.interpolate({
+    inputRange: [0, 1],
+    outputRange: [12, 0],
+  });
 
-  if (!invite) {
+  useEffect(() => {
+    if (invite) {
+      opacity.stopAnimation();
+      setRenderedInvite(invite);
+      opacity.setValue(0);
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: FADE_IN_MS,
+        useNativeDriver: true,
+      }).start();
+      return undefined;
+    }
+
+    if (!renderedInvite) {
+      return undefined;
+    }
+
+    opacity.stopAnimation();
+    const animation = Animated.timing(opacity, {
+      toValue: 0,
+      duration: FADE_OUT_MS,
+      useNativeDriver: true,
+    });
+    animation.start(({ finished }) => {
+      if (finished) {
+        setRenderedInvite(null);
+      }
+    });
+
+    return () => {
+      animation.stop();
+    };
+  }, [invite, opacity, renderedInvite]);
+
+  const displayInvite = invite ?? renderedInvite;
+
+  if (!displayInvite) {
     return null;
   }
 
-  const senderName = invite.senderUsername ?? invite.senderCode ?? t('Freund');
+  const senderName =
+    displayInvite.senderUsername ?? displayInvite.senderCode ?? t('Freund');
   const secondsText = Number.isFinite(remainingSeconds)
-    ? t('Läuft ab in {seconds}s', {
-      seconds: Math.max(0, remainingSeconds),
-    })
+    ? `${Math.max(0, remainingSeconds)}s`
     : null;
-  const actionDisabled = acceptingInvite || decliningInvite;
+  const actionDisabled = acceptingInvite || decliningInvite || !invite;
 
   return (
-    <View pointerEvents="box-none" style={styles.overlayWrap}>
+    <Animated.View
+      pointerEvents={invite ? 'box-none' : 'none'}
+      style={[
+        styles.overlayWrap,
+        {
+          opacity,
+          transform: [{ translateY }],
+        },
+      ]}
+    >
+      <View pointerEvents="none" style={styles.glow} />
       <View style={styles.card}>
-        <Text style={styles.title}>{t('Lobby Einladung')}</Text>
-        <Text style={styles.message}>
-          {t('{name} lädt dich in eine Lobby ein.', { name: senderName })}
-        </Text>
-        <View style={styles.metaRow}>
-          <Text style={styles.matchCode}>
-            {invite.matchCode ?? t('Unbekannt')}
-          </Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>{t('Lobby Einladung')}</Text>
           {secondsText ? (
             <Text style={styles.expiryText}>{secondsText}</Text>
           ) : null}
         </View>
+
+        <Text numberOfLines={1} style={styles.message}>
+          {senderName}
+        </Text>
 
         {inviteError ? (
           <Text style={styles.errorText}>{inviteError}</Text>
@@ -47,6 +108,7 @@ export default function LobbyInviteOverlay({
 
         <View style={styles.actionsRow}>
           <Pressable
+            accessibilityLabel={t('Ablehnen')}
             style={[
               styles.actionButton,
               styles.declineButton,
@@ -56,12 +118,13 @@ export default function LobbyInviteOverlay({
             disabled={actionDisabled}
           >
             {decliningInvite ? (
-              <ActivityIndicator size="small" color="#FECACA" />
+              <ActivityIndicator size="small" color="#FFE4E6" />
             ) : (
-              <Text style={styles.declineButtonText}>{t('Ablehnen')}</Text>
+              <Ionicons name="close" size={30} color="#FFE4E6" />
             )}
           </Pressable>
           <Pressable
+            accessibilityLabel={t('Annehmen')}
             style={[
               styles.actionButton,
               styles.acceptButton,
@@ -71,14 +134,14 @@ export default function LobbyInviteOverlay({
             disabled={actionDisabled}
           >
             {acceptingInvite ? (
-              <ActivityIndicator size="small" color="#DCFCE7" />
+              <ActivityIndicator size="small" color="#ECFDF5" />
             ) : (
-              <Text style={styles.acceptButtonText}>{t('Annehmen')}</Text>
+              <Ionicons name="checkmark" size={32} color="#ECFDF5" />
             )}
           </Pressable>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -87,90 +150,86 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 86,
+    bottom: 92,
     alignItems: 'center',
-    paddingHorizontal: 16,
-    zIndex: 80,
+    paddingHorizontal: 14,
+    zIndex: 120,
+  },
+  glow: {
+    position: 'absolute',
+    left: 14,
+    right: 14,
+    top: -10,
+    bottom: -10,
+    maxWidth: 460,
+    borderRadius: 24,
+    backgroundColor: 'rgba(34, 211, 238, 0.22)',
   },
   card: {
     width: '100%',
     maxWidth: 460,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(87, 199, 255, 0.45)',
-    backgroundColor: 'rgba(8, 18, 34, 0.95)',
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: 'rgba(34, 211, 238, 0.95)',
+    backgroundColor: 'rgba(5, 13, 31, 0.98)',
     paddingHorizontal: 14,
     paddingVertical: 12,
-    rowGap: 8,
-    shadowColor: colors.accent,
-    shadowOpacity: 0.28,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 10,
+    rowGap: 10,
+    shadowColor: '#22D3EE',
+    shadowOpacity: 0.55,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 18,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    columnGap: 12,
   },
   title: {
-    color: '#DFF3FF',
+    color: '#F8FDFF',
     fontSize: 15,
     fontFamily: fonts.bold,
   },
   message: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontFamily: fonts.medium,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    columnGap: 10,
-  },
-  matchCode: {
-    color: '#9EDCFF',
-    fontSize: 13,
+    color: '#7DD3FC',
+    fontSize: 18,
     fontFamily: fonts.bold,
-    letterSpacing: 0.5,
   },
   expiryText: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontFamily: fonts.regular,
+    minWidth: 42,
+    textAlign: 'right',
+    color: '#FDE68A',
+    fontSize: 14,
+    fontFamily: fonts.bold,
   },
   errorText: {
-    color: '#FCA5A5',
+    color: '#FDA4AF',
     fontSize: 12,
     fontFamily: fonts.medium,
   },
   actionsRow: {
     flexDirection: 'row',
-    columnGap: 10,
+    columnGap: 12,
   },
   actionButton: {
     flex: 1,
-    minHeight: 40,
-    borderRadius: radii.md,
+    minHeight: 50,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
   },
   actionButtonDisabled: {
     opacity: 0.72,
   },
   declineButton: {
-    borderColor: 'rgba(248, 113, 113, 0.5)',
-    backgroundColor: 'rgba(248, 113, 113, 0.16)',
-  },
-  declineButtonText: {
-    color: '#FECACA',
-    fontSize: 14,
-    fontFamily: fonts.bold,
+    borderColor: 'rgba(251, 113, 133, 0.95)',
+    backgroundColor: 'rgba(225, 29, 72, 0.4)',
   },
   acceptButton: {
-    borderColor: 'rgba(74, 222, 128, 0.5)',
-    backgroundColor: 'rgba(74, 222, 128, 0.14)',
-  },
-  acceptButtonText: {
-    color: '#DCFCE7',
-    fontSize: 14,
-    fontFamily: fonts.bold,
+    borderColor: 'rgba(74, 222, 128, 0.95)',
+    backgroundColor: 'rgba(22, 163, 74, 0.45)',
   },
 });

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Text, View, ScrollView } from 'react-native';
+import { Text, View, ScrollView, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/HomeScreen.styles';
 import { useConnectivity } from '../context/ConnectivityContext';
@@ -13,7 +13,6 @@ import usePremiumStatus from '../hooks/usePremiumStatus';
 import { calculateCoinReward } from '../services/quizService';
 import { CATEGORY_META } from '../data/categoryMeta';
 import { getAchievementProgress } from '../services/achievementService';
-import ActiveLobbyBanner from './home/ActiveLobbyBanner';
 import CategoryTile from './home/CategoryTile';
 import EnergyBoostModal from './home/EnergyBoostModal';
 import FeaturedQuizCard from './home/FeaturedQuizCard';
@@ -46,6 +45,7 @@ export default function HomeScreen({ navigation, route }) {
   const routeLobby = route?.params?.activeLobby;
   const shouldOpenBoostModal = Boolean(route?.params?.showBoostModal);
   const insets = useSafeAreaInsets();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { isOnline, isChecking, checkOnline } = useConnectivity();
   const isOffline = isOnline === false;
   const userId = useSupabaseUserId();
@@ -216,12 +216,38 @@ export default function HomeScreen({ navigation, route }) {
       }),
     [t]
   );
+  const categoryCarousel = useMemo(() => {
+    const screenWidth =
+      Number.isFinite(windowWidth) && windowWidth > 0 ? windowWidth : 360;
+    const sidePadding = 18;
+    const itemGap = 8;
+    const teaserWidth = 14;
+    const rawItemWidth =
+      (screenWidth - sidePadding * 2 - itemGap * 2 - teaserWidth) / 3;
+
+    return {
+      itemGap,
+      itemWidth: Math.max(94, Math.floor(rawItemWidth)),
+      sidePadding,
+    };
+  }, [windowWidth]);
+  const screenHeight =
+    Number.isFinite(windowHeight) && windowHeight > 0 ? windowHeight : 720;
+  const isCompactHome = screenHeight < 760;
+  const isTightHome = screenHeight < 700;
   const scrollContentStyle = useMemo(
     () => [
       styles.scrollContent,
-      { paddingBottom: Math.max(insets.bottom + 88, 104) },
+      isCompactHome ? styles.scrollContentCompact : null,
+      isTightHome ? styles.scrollContentTight : null,
+      {
+        paddingBottom: Math.max(
+          insets.bottom + (isTightHome ? 2 : 4),
+          isTightHome ? 6 : 8
+        ),
+      },
     ],
-    [insets.bottom]
+    [insets.bottom, isCompactHome, isTightHome]
   );
 
   async function handleGoOnline() {
@@ -238,10 +264,31 @@ export default function HomeScreen({ navigation, route }) {
     });
   }
 
+  const handleOpenActiveLobby = useCallback(() => {
+    if (!hasActiveLobby) {
+      return;
+    }
+
+    const keepCompleted =
+      Boolean(activeLobby?.keepCompleted) ||
+      activeLobby?.existingMatch?.status === 'completed';
+    navigation.navigate('MultiplayerLobby', {
+      existingMatch: activeLobby?.existingMatch ?? null,
+      keepCompleted,
+      mode: 'hub',
+    });
+  }, [activeLobby, hasActiveLobby, navigation]);
+
   function handleJoinLobby() {
+    if (hasActiveLobby) {
+      handleOpenActiveLobby();
+      return;
+    }
+
     if (isOffline || hasLobby) {
       return;
     }
+
     navigation.navigate('MultiplayerLobby', {
       mode: 'join',
     });
@@ -285,8 +332,12 @@ export default function HomeScreen({ navigation, route }) {
       <View style={styles.backgroundGlowBottom} pointerEvents="none" />
 
       <ScrollView
+        style={styles.homeScroll}
         contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}
+        scrollEnabled={false}
+        bounces={false}
+        overScrollMode="never"
         nestedScrollEnabled
       >
         <HomeHeader
@@ -312,21 +363,6 @@ export default function HomeScreen({ navigation, route }) {
           onGoOnline={handleGoOnline}
         />
 
-        <ActiveLobbyBanner
-          activeLobby={activeLobby}
-          hasActiveLobby={hasActiveLobby}
-          onOpenLobby={() => {
-            const keepCompleted =
-              Boolean(activeLobby?.keepCompleted) ||
-              activeLobby?.existingMatch?.status === 'completed';
-            navigation.navigate('MultiplayerLobby', {
-              existingMatch: activeLobby?.existingMatch ?? null,
-              keepCompleted,
-              mode: 'hub',
-            });
-          }}
-        />
-
         <StreakCard
           streakValue={streakSummary.total}
           streakShieldCount={streakShieldCount}
@@ -350,27 +386,68 @@ export default function HomeScreen({ navigation, route }) {
           ) : null}
         </View>
 
-        <View style={styles.section}>
+        <View
+          style={[
+            styles.section,
+            styles.categoriesSection,
+            isCompactHome ? styles.categoriesSectionCompact : null,
+            isTightHome ? styles.categoriesSectionTight : null,
+          ]}
+        >
           <Text style={styles.sectionTitle}>{t('Kategorien')}</Text>
-          <View style={styles.categoryGrid}>
-            {categoryTiles.map((tile) => (
+          <ScrollView
+            horizontal
+            style={styles.categoryRail}
+            contentContainerStyle={[
+              styles.categoryRailContent,
+              {
+                paddingLeft: categoryCarousel.sidePadding,
+                paddingRight: categoryCarousel.sidePadding,
+              },
+            ]}
+            showsHorizontalScrollIndicator={false}
+            nestedScrollEnabled
+            directionalLockEnabled
+            decelerationRate="fast"
+            snapToInterval={categoryCarousel.itemWidth + categoryCarousel.itemGap}
+            snapToAlignment="start"
+            disableIntervalMomentum
+          >
+            {categoryTiles.map((tile, index) => (
               <CategoryTile
                 key={tile.key}
                 label={tile.label}
                 icon={tile.icon}
                 iconFamily={tile.iconFamily}
                 accent={tile.accent}
+                style={{
+                  width: categoryCarousel.itemWidth,
+                  marginRight:
+                    index === categoryTiles.length - 1 ? 0 : categoryCarousel.itemGap,
+                }}
                 onPress={() => handleSelectCategory(tile.value)}
                 disabled={false}
               />
             ))}
-          </View>
+          </ScrollView>
           <View style={styles.categoryFooterAction}>
             <ModeCard
-              title={t('Lobby beitreten')}
-              accent={colors.accent}
+              title={hasActiveLobby ? t('Zurück zur Lobby') : t('Lobby beitreten')}
+              accent={hasActiveLobby ? colors.accentGreen : colors.accent}
               onPress={handleJoinLobby}
-              disabled={isOffline || hasLobby}
+              disabled={isOffline || (hasLobby && !hasActiveLobby)}
+              containerStyle={[
+                styles.lobbyJoinCard,
+                hasActiveLobby ? styles.lobbyRejoinCard : null,
+              ]}
+              pressableStyle={[
+                styles.lobbyJoinCardPressable,
+                hasActiveLobby ? styles.lobbyRejoinCardPressable : null,
+              ]}
+              titleStyle={[
+                styles.lobbyJoinCardTitle,
+                hasActiveLobby ? styles.lobbyRejoinCardTitle : null,
+              ]}
             />
           </View>
         </View>

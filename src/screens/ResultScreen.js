@@ -59,15 +59,12 @@ function getFeedbackState({
   selfScoreValue,
   opponentScoreValue,
   showMultiplayerWaiting,
-  waitingPlayersLabel,
   t,
 }) {
   if (isMultiplayer) {
     if (showMultiplayerWaiting) {
       return {
-        line: t('Du bist durch. Wir warten noch auf {players}.', {
-          players: waitingPlayersLabel,
-        }),
+        line: null,
         tone: null,
       };
     }
@@ -90,7 +87,7 @@ function getFeedbackState({
       };
     }
     return {
-      line: t('Unentschieden. Diese Runde war komplett ausgeglichen.'),
+      line: t('Es gibt kein gewinner aber auch kein verlierer 😉'),
       tone: null,
     };
   }
@@ -243,7 +240,6 @@ export default function ResultScreen({ route, navigation }) {
   const {
     reviewItems,
     showMultiplayerWaiting,
-    waitingPlayersLabel,
     multiplayerEntries,
     selectedScorePlayerKey,
     setSelectedScorePlayerKey,
@@ -288,7 +284,6 @@ export default function ResultScreen({ route, navigation }) {
       selfScoreValue,
       opponentScoreValue,
       showMultiplayerWaiting,
-      waitingPlayersLabel,
       t,
     }),
     [
@@ -298,7 +293,6 @@ export default function ResultScreen({ route, navigation }) {
       selfScoreValue,
       showMultiplayerWaiting,
       t,
-      waitingPlayersLabel,
     ]
   );
   const feedbackToneStyle = useMemo(() => {
@@ -673,16 +667,8 @@ export default function ResultScreen({ route, navigation }) {
                       resetKey={`${entranceTriggerKey}:waiting-card`}
                     >
                       <View style={styles.multiplayerWaitingCard}>
-                        <Text style={styles.multiplayerWaitingTitle}>
-                          {t('Warte auf Spieler')}
-                        </Text>
-                        <Text style={styles.multiplayerWaitingName}>
-                          {waitingPlayersLabel}
-                        </Text>
                         <View style={styles.multiplayerWaitingLoader}>
-                          <Text style={styles.multiplayerWaitingHint}>
-                            {t('Waiting')}
-                          </Text>
+                          <Text style={styles.waitingText}>{t('Waiting')}</Text>
                           <WaitingDots />
                         </View>
                       </View>
@@ -711,7 +697,7 @@ export default function ResultScreen({ route, navigation }) {
                       resetKey={`${entranceTriggerKey}:mp-points`}
                     >
                       <View style={styles.multiplayerPointsWrap}>
-                        <View style={styles.scorePoints}>
+                        <View style={[styles.scorePoints, styles.multiplayerScorePointsPlain]}>
                           <Text style={styles.scorePointsText}>{`+${pointsEarned}`}</Text>
                           <Ionicons
                             name="sparkles"

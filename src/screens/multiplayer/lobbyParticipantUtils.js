@@ -30,21 +30,38 @@ function resolveParticipantLobbyState({
   isSelf,
   presence,
   matchStatus,
+  playerFinished,
   pendingQuizLabel,
   pendingReturnLabel,
 }) {
-  const activity = getPresenceActivity(presence);
+  const presenceActivity = getPresenceActivity(presence);
   const isExplicitlyInCurrentLobby = isSelf || Boolean(presence?.inCurrentLobby);
-  const isInQuiz = activity === 'quiz';
+  const hasCompletedRound = Boolean(playerFinished);
+  const isActiveMatch = matchStatus === 'active';
+  const isCompletedMatch = matchStatus === 'completed';
+  const isInActiveMatchQuiz = isActiveMatch && !hasCompletedRound;
+  const isPresenceQuiz =
+    presenceActivity === 'quiz' &&
+    !hasCompletedRound &&
+    !isExplicitlyInCurrentLobby &&
+    !isCompletedMatch;
+  const isInQuiz = isInActiveMatchQuiz || isPresenceQuiz;
   const shouldWaitForReturn =
     !isSelf &&
-    matchStatus === 'completed' &&
+    !isInQuiz &&
     !isExplicitlyInCurrentLobby &&
-    !isInQuiz;
+    (
+      (isActiveMatch && hasCompletedRound) ||
+      isCompletedMatch
+    );
   const isPending = !isSelf && (isInQuiz || shouldWaitForReturn);
   const inCurrentLobby =
-    isExplicitlyInCurrentLobby ||
-    (!isPending && matchStatus === 'waiting');
+    !isInQuiz &&
+    (
+      isExplicitlyInCurrentLobby ||
+      (!isPending && matchStatus === 'waiting')
+    );
+  const activity = isInQuiz ? 'quiz' : inCurrentLobby ? 'lobby' : presenceActivity;
 
   return {
     activity,
@@ -102,6 +119,7 @@ function buildParticipantEntry({
   return {
     key,
     isHost,
+    isSelf,
     role,
     name: state.username ?? presence?.username ?? fallbackName,
     username: state.username ?? presence?.username ?? null,
@@ -127,7 +145,9 @@ function buildParticipantEntry({
 }
 
 export function getPresenceParticipantCount(match) {
-  const players = getMatchPlayerEntries(match);
+  const players = getMatchPlayerEntries(match).filter(
+    (entry) => !entry.state?.gaveUp
+  );
   return players.length || 1;
 }
 
@@ -155,7 +175,9 @@ export function buildLobbyParticipants({
     return [];
   }
 
-  const playerEntries = getMatchPlayerEntries(currentMatch);
+  const playerEntries = getMatchPlayerEntries(currentMatch).filter(
+    (entry) => !entry.state?.gaveUp
+  );
 
   const presenceByUserId = new Map(
     (lobbyParticipants ?? [])
@@ -180,6 +202,7 @@ export function buildLobbyParticipants({
         isSelf,
         presence,
         matchStatus,
+        playerFinished: state.finished,
         pendingQuizLabel,
         pendingReturnLabel,
       });

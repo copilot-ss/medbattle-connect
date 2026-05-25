@@ -3,6 +3,43 @@ import { useIsFocused } from '@react-navigation/native';
 import { supabase } from '../../lib/supabaseClient';
 import { useTranslation } from '../../i18n/useTranslation';
 
+function normalizeTrackedAt(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function getPresencePriority(entry) {
+  if (entry?.activity === 'quiz') {
+    return 30;
+  }
+  if (entry?.activity === 'lobby') {
+    return 20;
+  }
+  return 10;
+}
+
+function shouldUsePresenceEntry(currentEntry, nextEntry) {
+  if (!currentEntry) {
+    return true;
+  }
+
+  const currentTrackedAt = normalizeTrackedAt(currentEntry.trackedAt);
+  const nextTrackedAt = normalizeTrackedAt(nextEntry.trackedAt);
+  if (currentTrackedAt || nextTrackedAt) {
+    if (nextTrackedAt !== currentTrackedAt) {
+      return nextTrackedAt > currentTrackedAt;
+    }
+  }
+
+  return getPresencePriority(nextEntry) > getPresencePriority(currentEntry);
+}
+
 export default function useFriendsPresence({
   userId,
   friendCode,
@@ -48,8 +85,7 @@ export default function useFriendsPresence({
           return;
         }
         const state = channel.presenceState() || {};
-        const seen = new Set();
-        const next = [];
+        const nextByCode = new Map();
 
         Object.values(state).forEach((entries) => {
           (entries || []).forEach((entry) => {
@@ -58,10 +94,9 @@ export default function useFriendsPresence({
               return;
             }
             const code = meta.code ?? meta.friendCode ?? null;
-            if (!code || !friendSet.has(code) || seen.has(code)) {
+            if (!code || !friendSet.has(code)) {
               return;
             }
-            seen.add(code);
             const lobby = typeof meta.lobby === 'string' && meta.lobby.trim()
               ? meta.lobby.trim()
               : null;
@@ -75,12 +110,12 @@ export default function useFriendsPresence({
               typeof meta.activity === 'string'
                 ? meta.activity.trim().toLowerCase()
                 : '';
-            const activity = lobby
-              ? 'lobby'
-              : activityValue === 'quiz'
+            const activity = activityValue === 'quiz'
               ? 'quiz'
-              : 'online';
-            next.push({
+              : lobby
+                ? 'lobby'
+                : 'online';
+            const nextEntry = {
               userId: meta.userId ?? null,
               code,
               username: meta.username ?? t('Freund:in'),
@@ -105,12 +140,16 @@ export default function useFriendsPresence({
               lobby,
               lobbyPlayers,
               lobbyCapacity,
-            });
+              trackedAt: normalizeTrackedAt(meta.trackedAt),
+            };
+            if (shouldUsePresenceEntry(nextByCode.get(code), nextEntry)) {
+              nextByCode.set(code, nextEntry);
+            }
           });
         });
 
         if (!cancelled) {
-          setOnlineFriends(next);
+          setOnlineFriends(Array.from(nextByCode.values()));
           setLoadingOnline(false);
         }
       };
@@ -145,8 +184,11 @@ export default function useFriendsPresence({
                   ? avatarColor.trim()
                   : null,
               lobby: null,
+              matchId: null,
+              matchCode: null,
               lobbyPlayers: null,
               lobbyCapacity: null,
+              trackedAt: Date.now(),
             })
             .catch((err) => console.warn('Konnte Presence nicht tracken:', err));
         }

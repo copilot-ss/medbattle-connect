@@ -9,8 +9,15 @@ import {
   subscribeToLobbyInvites,
 } from '../services/lobbyInviteService';
 
-const INVITE_POLL_INTERVAL_MS = 12000;
+const INVITE_POLL_INTERVAL_MS = 5000;
 const INVITE_TICK_INTERVAL_MS = 1000;
+
+function getInviteDismissSignature(invite) {
+  if (!invite?.id) {
+    return null;
+  }
+  return `${invite.id}:${invite.createdAt ?? ''}`;
+}
 
 function pickMostRecentInvite(invites, nowMs = Date.now()) {
   if (!Array.isArray(invites) || !invites.length) {
@@ -50,7 +57,9 @@ export default function useLobbyInviteMonitor({ onInviteAccepted } = {}) {
   const [decliningInvite, setDecliningInvite] = useState(false);
   const [inviteError, setInviteError] = useState(null);
   const refreshInFlightRef = useRef(false);
+  const refreshQueuedRef = useRef(false);
   const expiringInviteIdRef = useRef(null);
+  const dismissedInviteSignaturesRef = useRef(new Set());
   const activeInviteRef = useRef(null);
   const authUserIdRef = useRef(null);
 
@@ -71,24 +80,35 @@ export default function useLobbyInviteMonitor({ onInviteAccepted } = {}) {
     }
 
     if (refreshInFlightRef.current) {
+      refreshQueuedRef.current = true;
       return;
     }
 
-    refreshInFlightRef.current = true;
-    try {
-      const result = await fetchLobbyInvites();
-      if (!result.ok) {
-        return;
-      }
+    do {
+      refreshQueuedRef.current = false;
+      refreshInFlightRef.current = true;
+      try {
+        const result = await fetchLobbyInvites();
+        if (!result.ok) {
+          return;
+        }
 
-      const nextInvite = pickMostRecentInvite(result.invites, Date.now());
-      setActiveInvite(nextInvite);
-      if (!nextInvite) {
-        setInviteError(null);
+        const nowMs = Date.now();
+        const visibleInvites = result.invites.filter((invite) => {
+          const signature = getInviteDismissSignature(invite);
+          return !signature || !dismissedInviteSignaturesRef.current.has(signature);
+        });
+        const previousInviteId = activeInviteRef.current?.id ?? null;
+        const nextInvite = pickMostRecentInvite(visibleInvites, nowMs);
+        setCurrentTimeMs(nowMs);
+        setActiveInvite(nextInvite);
+        if (!nextInvite || nextInvite.id !== previousInviteId) {
+          setInviteError(null);
+        }
+      } finally {
+        refreshInFlightRef.current = false;
       }
-    } finally {
-      refreshInFlightRef.current = false;
-    }
+    } while (refreshQueuedRef.current);
   }, []);
 
   useEffect(() => {
@@ -239,6 +259,11 @@ export default function useLobbyInviteMonitor({ onInviteAccepted } = {}) {
       if (!result.ok) {
         throw result.error ?? new Error(t('Einladung konnte nicht abgelehnt werden.'));
       }
+      const signature = getInviteDismissSignature(invite);
+      if (signature) {
+        dismissedInviteSignaturesRef.current.add(signature);
+      }
+      activeInviteRef.current = null;
       setActiveInvite(null);
       await refreshLobbyInvites();
       return { ok: true };
@@ -278,6 +303,11 @@ export default function useLobbyInviteMonitor({ onInviteAccepted } = {}) {
         action: 'accept',
       });
 
+      const signature = getInviteDismissSignature(invite);
+      if (signature) {
+        dismissedInviteSignaturesRef.current.add(signature);
+      }
+      activeInviteRef.current = null;
       setActiveInvite(null);
       setInviteError(null);
 
@@ -289,6 +319,25 @@ export default function useLobbyInviteMonitor({ onInviteAccepted } = {}) {
       return { ok: true, match: joinResult.match };
     } catch (err) {
       setInviteError(t('Einladung konnte nicht angenommen werden.'));
+      const signature = getInviteDismissSignature(invite);
+      if (signature) {
+        dismissedInviteSignaturesRef.current.add(signature);
+      }
+      activeInviteRef.current = null;
+      setActiveInvite(null);
+      void (async () => {
+        const cleanupResult = await respondLobbyInvite({
+          inviteId: invite.id,
+          action: 'decline',
+        });
+        if (!cleanupResult.ok) {
+          console.warn(
+            'Fehlgeschlagene Lobby-Einladung konnte nicht bereinigt werden:',
+            cleanupResult.error
+          );
+        }
+        await refreshLobbyInvites();
+      })();
       return { ok: false, error: err };
     } finally {
       setAcceptingInvite(false);

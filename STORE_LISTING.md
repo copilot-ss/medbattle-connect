@@ -7,6 +7,8 @@ Stand: 2026-03-24
 - Terms: https://copilot-ss.github.io/medbattle-connect/legal-static/terms.html
 - Support: https://copilot-ss.github.io/medbattle-connect/legal-static/support.html
 - Delete account: https://copilot-ss.github.io/medbattle-connect/legal-static/delete-account.html
+- Developer website for AdMob: https://medquiz-web.vercel.app/
+- app-ads.txt: https://medquiz-web.vercel.app/app-ads.txt
 - Delete-account page must visibly reference: `MedQuiz`, `CoppiCodes`, `com.sjigalin.medbattle`
 - Contact: medbattle1@gmail.com
 - Link check (2026-04-10): privacy, terms, support, delete-account are live as GitHub Pages HTML pages; delete-account page visibly references `MedQuiz`, `CoppiCodes`, `com.sjigalin.medbattle`
