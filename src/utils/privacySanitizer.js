@@ -99,7 +99,3 @@ export function sanitizeForTelemetry(
 ) {
   return sanitizeValue(value, { maxDepth, maxKeys, maxItems, maxStringLength }, 0, null);
 }
-
-export function isSensitiveKey(key) {
-  return typeof key === 'string' && SENSITIVE_KEY_PATTERN.test(key);
-}

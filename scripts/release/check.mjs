@@ -127,11 +127,18 @@ const appConfig = readJson('app.json');
 const packageJson = readJson('package.json');
 const buildGradle = readText(path.join('android', 'app', 'build.gradle'));
 const androidManifest = readText(path.join('android', 'app', 'src', 'main', 'AndroidManifest.xml'));
+const androidStrings = readText(
+  path.join('android', 'app', 'src', 'main', 'res', 'values', 'strings.xml')
+);
 const keystorePropertiesPath = path.join(projectRoot, 'android', 'keystore.properties');
 const gradleVersionCodeMatch = buildGradle.match(/\btrackedAndroidVersionCode\s*=\s*(\d+)/);
 const gradleVersionCode = gradleVersionCodeMatch
   ? Number.parseInt(gradleVersionCodeMatch[1], 10)
   : null;
+const gradleVersionName = buildGradle.match(/\bversionName\s+["']([^"']+)["']/)?.[1] ?? null;
+const nativeRuntimeVersion = androidStrings.match(
+  /<string\s+name=["']expo_runtime_version["']>([^<]+)<\/string>/
+)?.[1] ?? null;
 const results = [];
 const requiredStoreAssets = [
   { path: path.join('store_assets', 'play_store_icon_512.png'), width: 512, height: 512 },
@@ -277,17 +284,58 @@ if (
   fail(results, 'Android versionCode ist zwischen app.json und build.gradle nicht synchron.');
 }
 
+const configuredVersionNames = [
+  appConfig?.expo?.version,
+  packageJson?.version,
+  gradleVersionName,
+];
+if (
+  configuredVersionNames.every(Boolean) &&
+  new Set(configuredVersionNames).size === 1
+) {
+  pass(results, `VersionName ist synchron (${configuredVersionNames[0]}).`);
+} else {
+  fail(
+    results,
+    `VersionName ist nicht synchron: app.json=${configuredVersionNames[0] ?? '-'}, package.json=${configuredVersionNames[1] ?? '-'}, build.gradle=${configuredVersionNames[2] ?? '-'}.`
+  );
+}
+
+if (
+  appConfig?.expo?.runtimeVersion &&
+  appConfig.expo.runtimeVersion === nativeRuntimeVersion
+) {
+  pass(results, `Expo Runtime-Version ist synchron (${nativeRuntimeVersion}).`);
+} else {
+  fail(
+    results,
+    `Expo Runtime-Version ist nicht synchron: app.json=${appConfig?.expo?.runtimeVersion ?? '-'}, Android=${nativeRuntimeVersion ?? '-'}.`
+  );
+}
+
 if (packageJson?.scripts?.['release:check']) {
   pass(results, 'release:check npm script vorhanden.');
 }
 
-const releaseBuildTypeUsesDebugSigning = /buildTypes\s*\{[\s\S]*?release\s*\{[\s\S]*?signingConfig\s+signingConfigs\.debug/.test(
+const releaseBuildTypeUsesDebugSigning = /buildTypes\s*\{[\s\S]*?release\s*\{[\s\S]*?signingConfig\s*=\s*signingConfigs\.debug/.test(
   buildGradle
 );
 if (releaseBuildTypeUsesDebugSigning) {
   fail(results, 'android/app/build.gradle enthaelt noch Debug-Signing im Release-Flow.');
-} else if (buildGradle.includes('signingConfig signingConfigs.release')) {
+} else if (/signingConfig\s*=\s*signingConfigs\.release/.test(buildGradle)) {
   pass(results, 'Release-Signing verweist auf eigenes SigningConfig.');
+} else {
+  fail(results, 'Release-SigningConfig fehlt in android/app/build.gradle.');
+}
+
+const workspaceSettingsPath = path.join(projectRoot, '.vscode', 'settings.json');
+if (fs.existsSync(workspaceSettingsPath)) {
+  const workspaceSettings = fs.readFileSync(workspaceSettingsPath, 'utf8');
+  if (/SUPABASE_SERVICE_ROLE_KEY|service_role/i.test(workspaceSettings)) {
+    fail(results, 'Workspace-Settings enthalten einen serverseitigen Supabase-Schluesselhinweis.');
+  } else {
+    pass(results, 'Workspace-Settings enthalten keinen Supabase-Service-Role-Key.');
+  }
 }
 
 if (

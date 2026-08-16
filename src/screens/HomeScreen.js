@@ -13,6 +13,7 @@ import usePremiumStatus from '../hooks/usePremiumStatus';
 import { calculateCoinReward } from '../services/quizService';
 import { CATEGORY_META } from '../data/categoryMeta';
 import { getAchievementProgress } from '../services/achievementService';
+import GameBackground from '../components/game/GameBackground';
 import CategoryTile from './home/CategoryTile';
 import EnergyBoostModal from './home/EnergyBoostModal';
 import FeaturedQuizCard from './home/FeaturedQuizCard';
@@ -39,6 +40,12 @@ import { useTranslation } from '../i18n/useTranslation';
 import { colors } from '../styles/theme';
 
 const doctorAnimation = require('../../assets/animations/doctor/doctor.json');
+const HOME_LAYOUT_MIN_HEIGHT = 650;
+const HOME_LAYOUT_EXPANSION_RANGE = 128;
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
 
 export default function HomeScreen({ navigation, route }) {
   const { t } = useTranslation();
@@ -46,6 +53,7 @@ export default function HomeScreen({ navigation, route }) {
   const shouldOpenBoostModal = Boolean(route?.params?.showBoostModal);
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const [homeViewportHeight, setHomeViewportHeight] = useState(null);
   const { isOnline, isChecking, checkOnline } = useConnectivity();
   const isOffline = isOnline === false;
   const userId = useSupabaseUserId();
@@ -227,19 +235,121 @@ export default function HomeScreen({ navigation, route }) {
 
     return {
       itemGap,
-      itemWidth: Math.max(94, Math.floor(rawItemWidth)),
+      itemWidth: Math.min(140, Math.max(94, Math.floor(rawItemWidth))),
       sidePadding,
     };
   }, [windowWidth]);
   const screenHeight =
-    Number.isFinite(windowHeight) && windowHeight > 0 ? windowHeight : 720;
+    Number.isFinite(homeViewportHeight) && homeViewportHeight > 0
+      ? homeViewportHeight
+      : Number.isFinite(windowHeight) && windowHeight > 0
+        ? Math.max(0, windowHeight - 72)
+        : 648;
   const isCompactHome = screenHeight < 760;
   const isTightHome = screenHeight < 700;
+  const hasInlineEnergyMessage = Boolean(energyMessage && !showBoostModal);
+  const optionalContentHeight =
+    (isOffline ? 100 : 0) + (hasInlineEnergyMessage ? 28 : 0);
+  const homeLayoutScale = clamp(
+    (screenHeight - HOME_LAYOUT_MIN_HEIGHT - optionalContentHeight) /
+      HOME_LAYOUT_EXPANSION_RANGE,
+    0,
+    1
+  );
+  const homeLayout = useMemo(() => {
+    const between = (compactValue, expandedValue) =>
+      Math.round(
+        compactValue + (expandedValue - compactValue) * homeLayoutScale
+      );
+    const categoryIconSize = between(20, 26);
+    const featuredArtSize = between(124, 164);
+
+    return {
+      categoryCard: {
+        minHeight: between(102, 144),
+        height: between(102, 144),
+        paddingVertical: between(10, 16),
+      },
+      categoryEmoji: {
+        width: between(38, 48),
+        fontSize: categoryIconSize,
+        lineHeight: between(24, 30),
+      },
+      categoryIconSize,
+      categoryIconWrap: {
+        width: between(38, 48),
+        height: between(38, 48),
+        borderRadius: between(19, 24),
+        marginBottom: between(8, 12),
+      },
+      categoryLabel: {
+        fontSize: between(12, 15),
+        paddingHorizontal: between(6, 8),
+      },
+      categoryRail: {
+        height: between(108, 150),
+      },
+      featuredArt: {
+        width: featuredArtSize,
+        height: featuredArtSize,
+      },
+      featuredButton: {
+        paddingHorizontal: between(18, 28),
+        paddingVertical: between(10, 16),
+      },
+      featuredButtonText: {
+        fontSize: between(14, 17),
+      },
+      featuredCard: {
+        minHeight: between(136, 230),
+        padding: between(16, 26),
+        paddingRight: between(118, 150),
+      },
+      featuredRewardIcon: {
+        fontSize: between(15, 18),
+      },
+      featuredRewardText: {
+        fontSize: between(14, 17),
+      },
+      featuredTitle: {
+        fontSize: between(18, 23),
+      },
+      lobbyPressable: {
+        paddingHorizontal: between(20, 26),
+        paddingVertical: between(23, 46),
+      },
+      lobbyTitle: {
+        fontSize: between(22, 27),
+      },
+      scrollContent: {
+        paddingTop: between(6, 14),
+        rowGap: between(10, 14),
+      },
+      section: {
+        rowGap: between(6, 10),
+      },
+      sectionTitle: {
+        fontSize: between(13, 17),
+      },
+      streakCard: {
+        paddingHorizontal: between(14, 18),
+        paddingVertical: between(9, 20),
+      },
+      streakProgressText: {
+        fontSize: between(10, 12),
+        marginTop: between(3, 5),
+      },
+      streakTitle: {
+        fontSize: between(16, 20),
+      },
+    };
+  }, [homeLayoutScale]);
   const scrollContentStyle = useMemo(
     () => [
       styles.scrollContent,
       isCompactHome ? styles.scrollContentCompact : null,
       isTightHome ? styles.scrollContentTight : null,
+      homeLayout.scrollContent,
       {
         paddingBottom: Math.max(
           insets.bottom + (isTightHome ? 2 : 4),
@@ -247,7 +357,7 @@ export default function HomeScreen({ navigation, route }) {
         ),
       },
     ],
-    [insets.bottom, isCompactHome, isTightHome]
+    [homeLayout.scrollContent, insets.bottom, isCompactHome, isTightHome]
   );
 
   async function handleGoOnline() {
@@ -327,7 +437,16 @@ export default function HomeScreen({ navigation, route }) {
   }, [energy, isBoostBusy, premium, setEnergyMessage, setShowBoostModal]);
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      onLayout={(event) => {
+        const nextHeight = Math.round(event.nativeEvent.layout.height);
+        setHomeViewportHeight((currentHeight) =>
+          currentHeight === nextHeight ? currentHeight : nextHeight
+        );
+      }}
+    >
+      <GameBackground />
       <View style={styles.backgroundGlowTop} pointerEvents="none" />
       <View style={styles.backgroundGlowBottom} pointerEvents="none" />
 
@@ -335,7 +454,7 @@ export default function HomeScreen({ navigation, route }) {
         style={styles.homeScroll}
         contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}
-        scrollEnabled={false}
+        scrollEnabled
         bounces={false}
         overScrollMode="never"
         nestedScrollEnabled
@@ -368,10 +487,15 @@ export default function HomeScreen({ navigation, route }) {
           streakShieldCount={streakShieldCount}
           streakShieldActive={streakShieldActive}
           onToggleStreakShield={handleToggleStreakShield}
+          cardStyle={homeLayout.streakCard}
+          progressTextStyle={homeLayout.streakProgressText}
+          titleStyle={homeLayout.streakTitle}
         />
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('Quiz der Woche')}</Text>
+        <View style={[styles.section, homeLayout.section]}>
+          <Text style={[styles.sectionTitle, homeLayout.sectionTitle]}>
+            {t('Quiz der Woche')}
+          </Text>
           <FeaturedQuizCard
             title={t('Schnelles Spiel')}
             subtitle={quickPlaySubtitle}
@@ -380,8 +504,15 @@ export default function HomeScreen({ navigation, route }) {
             disabled={isBoostBusy || hasLobby}
             showAnimation={showAnimation}
             animationSource={doctorAnimation}
+            artStyle={homeLayout.featuredArt}
+            buttonStyle={homeLayout.featuredButton}
+            buttonTextStyle={homeLayout.featuredButtonText}
+            cardStyle={homeLayout.featuredCard}
+            rewardIconStyle={homeLayout.featuredRewardIcon}
+            rewardTextStyle={homeLayout.featuredRewardText}
+            titleStyle={homeLayout.featuredTitle}
           />
-          {energyMessage && !showBoostModal ? (
+          {hasInlineEnergyMessage ? (
             <Text style={styles.energyMessage}>{energyMessage}</Text>
           ) : null}
         </View>
@@ -392,12 +523,15 @@ export default function HomeScreen({ navigation, route }) {
             styles.categoriesSection,
             isCompactHome ? styles.categoriesSectionCompact : null,
             isTightHome ? styles.categoriesSectionTight : null,
+            homeLayout.section,
           ]}
         >
-          <Text style={styles.sectionTitle}>{t('Kategorien')}</Text>
+          <Text style={[styles.sectionTitle, homeLayout.sectionTitle]}>
+            {t('Kategorien')}
+          </Text>
           <ScrollView
             horizontal
-            style={styles.categoryRail}
+            style={[styles.categoryRail, homeLayout.categoryRail]}
             contentContainerStyle={[
               styles.categoryRailContent,
               {
@@ -408,10 +542,7 @@ export default function HomeScreen({ navigation, route }) {
             showsHorizontalScrollIndicator={false}
             nestedScrollEnabled
             directionalLockEnabled
-            decelerationRate="fast"
-            snapToInterval={categoryCarousel.itemWidth + categoryCarousel.itemGap}
-            snapToAlignment="start"
-            disableIntervalMomentum
+            decelerationRate="normal"
           >
             {categoryTiles.map((tile, index) => (
               <CategoryTile
@@ -420,11 +551,18 @@ export default function HomeScreen({ navigation, route }) {
                 icon={tile.icon}
                 iconFamily={tile.iconFamily}
                 accent={tile.accent}
-                style={{
-                  width: categoryCarousel.itemWidth,
-                  marginRight:
-                    index === categoryTiles.length - 1 ? 0 : categoryCarousel.itemGap,
-                }}
+                style={[
+                  {
+                    width: categoryCarousel.itemWidth,
+                    marginRight:
+                      index === categoryTiles.length - 1 ? 0 : categoryCarousel.itemGap,
+                  },
+                  homeLayout.categoryCard,
+                ]}
+                emojiStyle={homeLayout.categoryEmoji}
+                iconSize={homeLayout.categoryIconSize}
+                iconWrapStyle={homeLayout.categoryIconWrap}
+                labelStyle={homeLayout.categoryLabel}
                 onPress={() => handleSelectCategory(tile.value)}
                 disabled={false}
               />
@@ -434,6 +572,8 @@ export default function HomeScreen({ navigation, route }) {
             <ModeCard
               title={hasActiveLobby ? t('Zurück zur Lobby') : t('Lobby beitreten')}
               accent={hasActiveLobby ? colors.accentGreen : colors.accent}
+              icon={hasActiveLobby ? 'return-up-back' : 'enter'}
+              tone={hasActiveLobby ? 'lobby' : 'join'}
               onPress={handleJoinLobby}
               disabled={isOffline || (hasLobby && !hasActiveLobby)}
               containerStyle={[
@@ -443,10 +583,12 @@ export default function HomeScreen({ navigation, route }) {
               pressableStyle={[
                 styles.lobbyJoinCardPressable,
                 hasActiveLobby ? styles.lobbyRejoinCardPressable : null,
+                homeLayout.lobbyPressable,
               ]}
               titleStyle={[
                 styles.lobbyJoinCardTitle,
                 hasActiveLobby ? styles.lobbyRejoinCardTitle : null,
+                homeLayout.lobbyTitle,
               ]}
             />
           </View>

@@ -3,6 +3,12 @@ import { supabase } from '../lib/supabaseClient';
 import OFFLINE_SEED_QUESTIONS from '../data/offlineSeedQuestions';
 import { runSupabaseRequest } from './supabaseRequest';
 import { getBoostPointPenalty, sanitizeBoostUsage } from '../utils/quizBoosts';
+import {
+  DEFAULT_LANGUAGE,
+  normalizeLanguage,
+  normalizeLanguageOrNull,
+  resolveFallbackLanguage,
+} from '../utils/language';
 
 const LEADERBOARD_CACHE_TTL = 30 * 1000;
 const leaderboardCache = {
@@ -15,13 +21,6 @@ function invalidateLeaderboardCache() {
   leaderboardCache.fetchedAt = 0;
 }
 
-const CATEGORY_CACHE_TTL = 5 * 60 * 1000;
-const CATEGORY_STORAGE_TTL = 7 * 24 * 60 * 60 * 1000;
-const CATEGORIES_STORAGE_KEY = 'medbattle_categories_cache';
-const categoriesCache = {
-  data: null,
-  fetchedAt: 0,
-};
 const QUESTIONS_CACHE_TTL = 20 * 1000;
 const questionsCache = new Map();
 const inFlightQuestionPoolRequests = new Map();
@@ -32,7 +31,6 @@ const QUESTION_CACHE_SYNC_TTL = 6 * 60 * 60 * 1000;
 const RECENT_QUESTION_IDS_STORAGE_PREFIX = 'medbattle_recent_question_ids';
 const MAX_RECENT_QUESTION_IDS = 72;
 const MIN_SERVER_QUESTION_POOL = 18;
-const DEFAULT_LANGUAGE = 'en';
 const BLOCKED_CATEGORY_KEYS = new Set(['fussball', 'football']);
 const MEDICAL_CATEGORY_KEYS = new Set([
   'anatomie',
@@ -155,95 +153,6 @@ async function fetchLeaderboardRowsFromUsers(requestedLimit) {
   }
 
   return Array.isArray(data) ? data : [];
-}
-
-function normalizeCategoryList(source) {
-  const entries = Array.isArray(source) ? source : [];
-  const deduped = new Map();
-
-  entries.forEach((entry) => {
-    const raw =
-      typeof entry === 'string'
-        ? entry
-        : typeof entry?.category === 'string'
-        ? entry.category
-        : typeof entry?.name === 'string'
-        ? entry.name
-        : null;
-    const value = typeof raw === 'string' ? raw.trim() : '';
-    if (!value) {
-      return;
-    }
-    if (isBlockedCategory(value)) {
-      return;
-    }
-    const key = value.toLowerCase();
-    if (!deduped.has(key)) {
-      deduped.set(key, value);
-    }
-  });
-
-  return Array.from(deduped.values()).sort((a, b) => a.localeCompare(b));
-}
-
-async function loadCachedCategories() {
-  try {
-    const raw = await AsyncStorage.getItem(CATEGORIES_STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
-    const parsed = JSON.parse(raw);
-    const categories = Array.isArray(parsed)
-      ? parsed
-      : Array.isArray(parsed?.categories)
-      ? parsed.categories
-      : [];
-    const savedAt = Date.parse(parsed?.savedAt ?? '');
-    if (
-      Number.isFinite(savedAt) &&
-      Date.now() - savedAt > CATEGORY_STORAGE_TTL
-    ) {
-      return [];
-    }
-    return normalizeCategoryList(categories);
-  } catch (err) {
-    console.warn('Konnte Kategorien-Cache nicht lesen:', err);
-    return [];
-  }
-}
-
-async function saveCachedCategories(categories) {
-  try {
-    const payload = {
-      savedAt: new Date().toISOString(),
-      categories: normalizeCategoryList(categories),
-    };
-    await AsyncStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(payload));
-  } catch (err) {
-    console.warn('Konnte Kategorien-Cache nicht speichern:', err);
-  }
-}
-
-function normalizeLanguage(value) {
-  if (typeof value !== 'string') {
-    return DEFAULT_LANGUAGE;
-  }
-  const normalized = value.trim().toLowerCase();
-  if (normalized === 'de') {
-    return 'de';
-  }
-  return normalized === 'en' ? 'en' : DEFAULT_LANGUAGE;
-}
-
-function normalizeLanguageOrNull(value) {
-  if (value === null || value === undefined) {
-    return null;
-  }
-  if (typeof value !== 'string') {
-    return null;
-  }
-  const normalized = value.trim().toLowerCase();
-  return normalized ? normalized : null;
 }
 
 function inferExplanationLanguage(question) {
@@ -1143,12 +1052,10 @@ export async function fetchQuestions(
   { force = false, offline = false, language, fallbackLanguage } = {}
 ) {
   const normalizedLanguage = normalizeLanguage(language);
-  const normalizedFallbackLanguage =
-    fallbackLanguage === undefined
-      ? normalizedLanguage === DEFAULT_LANGUAGE
-        ? DEFAULT_LANGUAGE
-        : null
-      : normalizeLanguageOrNull(fallbackLanguage);
+  const normalizedFallbackLanguage = resolveFallbackLanguage(
+    normalizedLanguage,
+    fallbackLanguage
+  );
   const normalizedLimit =
     Number.isFinite(limit) && limit > 0 ? Math.min(limit, 50) : 6;
   const questionPoolLimit = deriveQuestionPoolLimit(normalizedLimit);
@@ -1366,106 +1273,6 @@ export async function fetchQuestions(
       return cached;
     }
     return [];
-  }
-}
-
-export async function fetchCategories({
-  force = false,
-  offline = false,
-  limit = 40,
-} = {}) {
-  const now = Date.now();
-  const normalizedLimit =
-    Number.isFinite(limit) && limit > 0 ? Math.min(limit, 200) : 40;
-
-  if (!force && categoriesCache.data && now - categoriesCache.fetchedAt < CATEGORY_CACHE_TTL) {
-    return { ok: true, categories: [...categoriesCache.data] };
-  }
-
-  const cachedCategories = await loadCachedCategories();
-  if (offline) {
-    return cachedCategories.length
-      ? { ok: true, categories: cachedCategories, cached: true }
-      : { ok: false, categories: [], error: new Error('Offline') };
-  }
-
-  const loadFallback = async () => {
-    try {
-      const { data, error } = await runSupabaseRequest(
-        () =>
-          supabase
-            .from('questions')
-            .select('category')
-            .not('category', 'is', null)
-            .order('category', { ascending: true })
-            .limit(normalizedLimit),
-        {
-          label: 'quizService.getCategories.fallback',
-          profile: 'ui',
-          dedupeKey: `categories:fallback:${normalizedLimit}`,
-        }
-      );
-      if (error) {
-        throw error;
-      }
-      return normalizeCategoryList(data);
-    } catch (err) {
-      console.warn('Konnte Kategorien-Fallback nicht laden:', err?.message ?? err);
-      return [];
-    }
-  };
-
-  try {
-    const { data, error } = await runSupabaseRequest(
-      () =>
-        supabase.rpc('get_categories', {
-          p_limit: normalizedLimit,
-        }),
-      {
-        label: 'quizService.getCategories',
-        profile: 'ui',
-        dedupeKey: `categories:${normalizedLimit}`,
-      }
-    );
-
-    if (error) {
-      throw error;
-    }
-
-    const normalized = normalizeCategoryList(data);
-    if (!normalized.length) {
-      const fallback = await loadFallback();
-      if (fallback.length) {
-        categoriesCache.data = fallback;
-        categoriesCache.fetchedAt = now;
-        saveCachedCategories(fallback).catch(() => {});
-        return { ok: true, categories: [...fallback], fallback: true };
-      }
-
-      if (cachedCategories.length) {
-        return { ok: true, categories: cachedCategories, cached: true };
-      }
-
-      return { ok: false, categories: [], error: new Error('Keine Kategorien gefunden.') };
-    }
-
-    categoriesCache.data = normalized;
-    categoriesCache.fetchedAt = now;
-    saveCachedCategories(normalized).catch(() => {});
-    return { ok: true, categories: [...normalized] };
-  } catch (err) {
-    console.warn('Fehler beim Laden der Kategorien:', err?.message ?? err);
-    const fallback = await loadFallback();
-    if (fallback.length) {
-      categoriesCache.data = fallback;
-      categoriesCache.fetchedAt = now;
-      saveCachedCategories(fallback).catch(() => {});
-      return { ok: true, categories: [...fallback], fallback: true };
-    }
-    if (cachedCategories.length) {
-      return { ok: true, categories: cachedCategories, cached: true };
-    }
-    return { ok: false, categories: [], error: err };
   }
 }
 

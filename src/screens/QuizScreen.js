@@ -1,5 +1,11 @@
 import { useMemo } from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import styles from './styles/QuizScreen.styles';
 import { colors } from '../styles/theme';
 import QuizHeader from './quiz/QuizHeader';
@@ -13,6 +19,7 @@ import useQuizController from './quiz/useQuizController';
 import useQuizPresence from './quiz/useQuizPresence';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { useTranslation } from '../i18n/useTranslation';
+import GameBackground from '../components/game/GameBackground';
 
 export default function QuizScreen({ navigation, route }) {
   const { t } = useTranslation();
@@ -158,6 +165,7 @@ export default function QuizScreen({ navigation, route }) {
 
   return (
     <View style={styles.screen}>
+      <GameBackground intensity="subtle" />
       <View style={styles.topSection}>
         <QuizHeader
           totalQuestions={totalQuestions}
@@ -201,36 +209,43 @@ export default function QuizScreen({ navigation, route }) {
       />
       </View>
 
-      <QuestionCard
-        activeIndex={activeIndex}
-        totalQuestions={totalQuestions}
-        question={currentQuestion.question}
-        imageSource={currentQuestion.image_asset ?? currentQuestion.imageSource}
-        imageUrl={currentQuestion.image_url ?? currentQuestion.imageUrl}
-        imageAlt={currentQuestion.image_alt ?? currentQuestion.imageAlt}
-        imageOnly={
-          currentQuestion.image_only === true ||
-          currentQuestion.imageOnly === true ||
-          currentQuestion.prompt_mode === 'image_only' ||
-          currentQuestion.promptMode === 'image_only'
-        }
-        showProgress
-      />
+      <ScrollView
+        style={styles.quizScroll}
+        contentContainerStyle={styles.quizScrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <QuestionCard
+          activeIndex={activeIndex}
+          totalQuestions={totalQuestions}
+          question={currentQuestion.question}
+          imageSource={currentQuestion.image_asset ?? currentQuestion.imageSource}
+          imageUrl={currentQuestion.image_url ?? currentQuestion.imageUrl}
+          imageAlt={currentQuestion.image_alt ?? currentQuestion.imageAlt}
+          imageOnly={
+            currentQuestion.image_only === true ||
+            currentQuestion.imageOnly === true ||
+            currentQuestion.prompt_mode === 'image_only' ||
+            currentQuestion.promptMode === 'image_only'
+          }
+          showProgress
+        />
 
-      {boostItems.length ? <BoostRow items={boostItems} /> : null}
+        {boostItems.length ? <BoostRow items={boostItems} /> : null}
 
-      <OptionsList
-        currentQuestion={currentQuestion}
-        selectedOption={selectedOption}
-        hiddenOptions={hiddenOptions}
-        timedOut={timedOut}
-        isAnswerLocked={isAnswerLocked}
-        isMultiplayer={isMultiplayer}
-        matchIsActive={matchIsActive}
-        onSelectOption={answer}
-      />
+        <OptionsList
+          currentQuestion={currentQuestion}
+          selectedOption={selectedOption}
+          hiddenOptions={hiddenOptions}
+          timedOut={timedOut}
+          isAnswerLocked={isAnswerLocked}
+          isMultiplayer={isMultiplayer}
+          matchIsActive={matchIsActive}
+          onSelectOption={answer}
+        />
 
-      <TimeoutBanner timedOut={timedOut} isAnswerLocked={isAnswerLocked} />
+        <TimeoutBanner timedOut={timedOut} isAnswerLocked={isAnswerLocked} />
+      </ScrollView>
 
       <ExitConfirmModal
         visible={showExitConfirm}

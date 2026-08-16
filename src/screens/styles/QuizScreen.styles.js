@@ -12,6 +12,12 @@ const styles = StyleSheet.create({
   topSection: {
     position: 'relative',
   },
+  quizScroll: {
+    flex: 1,
+  },
+  quizScrollContent: {
+    paddingBottom: 12,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -111,12 +117,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 6,
-  },
-  timerLabel: {
-    color: colors.highlight,
-    fontSize: 14,
-    fontFamily: fonts.medium,
-    letterSpacing: 1.1,
   },
   timerValue: {
     color: colors.textPrimary,
@@ -355,13 +355,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
   },
-  timeoutSubtitle: {
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginTop: 4,
-    fontSize: 13,
-    fontFamily: fonts.regular,
-  },
   modalOverlay: {
     position: 'absolute',
     top: 0,
@@ -387,12 +380,6 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 20,
     fontFamily: fonts.bold,
-  },
-  modalMessage: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    lineHeight: 20,
-    fontFamily: fonts.regular,
   },
   modalActions: {
     flexDirection: 'row',

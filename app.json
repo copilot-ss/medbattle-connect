@@ -5,18 +5,18 @@
     "scheme": "medbattle",
     "owner": "sjigalin",
     "icon": "./assets/branding/app-icon.png",
-    "version": "1.0.1",
-    "jsEngine": "hermes",
+    "version": "1.0.2",
     "ios": {
       "bundleIdentifier": "com.sjigalin.medbattle",
-      "buildNumber": "27"
+      "buildNumber": "28"
     },
     "android": {
       "package": "com.sjigalin.medbattle",
-      "versionCode": 51,
+      "versionCode": 54,
       "adaptiveIcon": {
         "foregroundImage": "./assets/branding/adaptive-icon-foreground.png",
-        "backgroundColor": "#082b39"
+        "monochromeImage": "./assets/branding/adaptive-icon-monochrome.png",
+        "backgroundColor": "#000000"
       },
       "allowBackup": false,
       "blockedPermissions": [
@@ -33,10 +33,25 @@
       "checkAutomatically": "ON_LOAD",
       "fallbackToCacheTimeout": 0
     },
-    "runtimeVersion": "55.0.0-imagefix-20260503",
+    "runtimeVersion": "55.0.0-ui-1.0.2-20260815",
     "plugins": [
       "expo-font",
-      "expo-notifications",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/branding/splash-icon.png",
+          "imageWidth": 184,
+          "resizeMode": "contain",
+          "backgroundColor": "#000000"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/branding/notification-icon.png",
+          "color": "#7C3AED"
+        }
+      ],
       "expo-iap",
       "expo-web-browser"
     ],

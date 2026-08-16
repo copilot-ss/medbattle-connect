@@ -9,6 +9,7 @@ import SettingsPreferencesCard from './settings/SettingsPreferencesCard';
 import SettingsTabs from './settings/SettingsTabs';
 import useSettingsController from './settings/useSettingsController';
 import { useTranslation } from '../i18n/useTranslation';
+import GameBackground from '../components/game/GameBackground';
 
 const ClaimBlurTargetView = (() => {
   try {
@@ -125,6 +126,7 @@ export default function SettingsScreen({
           headerMovesWithScroll ? styles.containerProfileTop : null,
         ]}
       >
+        <GameBackground intensity="subtle" />
         <View style={styles.backgroundGlowTop} pointerEvents="none" />
         <View style={styles.backgroundGlowBottom} pointerEvents="none" />
         {!headerMovesWithScroll ? (

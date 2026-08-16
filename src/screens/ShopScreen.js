@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import GameBackground from '../components/game/GameBackground';
 import styles from './styles/ShopScreen.styles';
 import { colors } from '../styles/theme';
 import { useConnectivity } from '../context/ConnectivityContext';
@@ -75,42 +76,6 @@ const normalizeIapErrorText = (value) => {
     return '';
   }
   return value.trim();
-};
-
-const buildIapFailureMessage = (t, errorLike) => {
-  const rawCode = normalizeIapErrorText(
-    errorLike?.code ?? errorLike?.errorCode
-  );
-  const code = rawCode.toLowerCase();
-  const message = normalizeIapErrorText(
-    errorLike?.message ?? errorLike?.errorMessage
-  ).toLowerCase();
-
-  if (
-    code.includes('item_unavailable') ||
-    message.includes('item unavailable') ||
-    message.includes('product is not available') ||
-    message.includes('offer is not available')
-  ) {
-    return t('Produkt ist im Store gerade nicht verfügbar.');
-  }
-
-  if (
-    code.includes('developer') ||
-    message.includes('not configured for billing') ||
-    message.includes('billing through google play') ||
-    message.includes('this version of the application is not configured')
-  ) {
-    return t('Kauf ist gerade nicht verfügbar.');
-  }
-
-  if (code.includes('service_disconnected') || code.includes('not_ready')) {
-    return t('Kauf ist gerade nicht verfügbar.');
-  }
-
-  return rawCode
-    ? `${t('Kauf fehlgeschlagen. Bitte später erneut.')} (${rawCode})`
-    : t('Kauf fehlgeschlagen. Bitte später erneut.');
 };
 
 const buildFriendlyIapFailureMessage = (t, errorLike) => {
@@ -219,7 +184,10 @@ export default function ShopScreen() {
   const cardPeek = 10;
   const cardWidth = useMemo(() => {
     const availableWidth = Math.max(0, screenWidth - 48);
-    return Math.max(0, (availableWidth - cardGap * 2) / 3 - cardPeek);
+    return Math.min(
+      168,
+      Math.max(96, (availableWidth - cardGap * 2) / 3 - cardPeek)
+    );
   }, [cardGap, cardPeek, screenWidth]);
   const contentPaddingTop = Math.max(insets.top - 4, 28);
   const contentPaddingBottom = 24;
@@ -733,6 +701,7 @@ export default function ShopScreen() {
 
   return (
     <View style={styles.screen}>
+      <GameBackground />
       <Animated.View
         pointerEvents="none"
         style={[styles.energyFlashOverlay, { opacity: energyFlashOpacity }]}

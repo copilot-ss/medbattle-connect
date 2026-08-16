@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import GameBackground from '../components/game/GameBackground';
 import { useTranslation } from '../i18n/useTranslation';
 import styles from './styles/SettingsScreen.styles';
 import SettingsHeader from './settings/SettingsHeader';
@@ -90,6 +91,7 @@ export default function SettingsHelpScreen({ navigation }) {
 
   return (
     <View style={styles.screenRoot}>
+      <GameBackground intensity="subtle" />
       <View style={[styles.container, styles.helpContainer]}>
         <View style={styles.backgroundGlowTop} pointerEvents="none" />
         <View style={styles.backgroundGlowBottom} pointerEvents="none" />

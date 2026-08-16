@@ -3,7 +3,6 @@ node_modules
 .env
 /.tmp_*
 /temp/
-/.vscode/settings.json
 supabase/.temp/
 supabase/.branches/
 _eas/
@@ -14,7 +13,8 @@ android/keystore.properties
 android/app/build/
 android/build/
 android/.gradle/
-android/.cxx/
+android/.kotlin/
+android/app/.cxx/
 *.keystore
 dist/
 .vercel/
@@ -33,5 +33,8 @@ tmp-uizard-preview.*
 /phone_*.png
 /phone_*.xml
 /tmp_emulator_*.xml
+/temp_emu_screen*.png
+/current-screen.png
+/quiz-screen.png
+/window.xml
 /tmp_phone_*.xml
-.vercel

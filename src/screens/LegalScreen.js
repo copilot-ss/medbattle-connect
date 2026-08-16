@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import GameBackground from '../components/game/GameBackground';
 import { usePreferences } from '../context/PreferencesContext';
 import { getSessionUser } from '../lib/supabaseClient';
 import { deleteCurrentAccount } from '../services/accountDeletionService';
@@ -327,6 +328,7 @@ export default function LegalScreen({ navigation, route, onClearSession = null }
 
   return (
     <View style={styles.container}>
+      <GameBackground intensity="subtle" />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}

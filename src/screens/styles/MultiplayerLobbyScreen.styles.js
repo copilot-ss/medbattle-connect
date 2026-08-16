@@ -57,13 +57,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     marginTop: 4,
   },
-  subtitle: {
-    color: colors.accentPink,
-    fontSize: 14,
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-    fontFamily: fonts.medium,
-  },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -205,30 +198,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(87, 199, 255, 0.38)',
     backgroundColor: 'rgba(87, 199, 255, 0.14)',
   },
-  lobbyConfig: {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    rowGap: 12,
-  },
-  lobbyConfigTitle: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    fontFamily: fonts.medium,
-  },
-  lobbyConfigAction: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.accent,
-    borderRadius: radii.md,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-  },
-  lobbyConfigActionText: {
-    color: '#081019',
-    fontSize: 15,
-    fontFamily: fonts.bold,
-  },
   codeBadge: {
     alignSelf: 'flex-start',
     backgroundColor: '#50BDF2',
@@ -248,19 +217,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     columnGap: 8,
   },
-  codeBadgeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    columnGap: 6,
-    marginBottom: 4,
-  },
-  codeBadgeLabel: {
-    color: '#DDF5FF',
-    fontSize: 11,
-    fontFamily: fonts.medium,
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-  },
   codeBadgeText: {
     color: colors.textPrimary,
     fontSize: 16,
@@ -277,20 +233,6 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 2,
     marginBottom: 18,
-  },
-  codeHint: {
-    color: '#DDF5FF',
-    marginTop: 2,
-    fontSize: 10,
-    fontFamily: fonts.medium,
-    letterSpacing: 0.4,
-  },
-  codeHintSuccess: {
-    color: '#06140D',
-    marginTop: 2,
-    fontSize: 10,
-    fontFamily: fonts.medium,
-    letterSpacing: 0.4,
   },
   codeSettingsWrap: {
     justifyContent: 'flex-end',
@@ -329,13 +271,6 @@ const styles = StyleSheet.create({
   participantsCount: {
     color: colors.textSecondary,
     fontFamily: fonts.medium,
-  },
-  participantList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 16,
-    justifyContent: 'flex-start',
   },
   participantAvatarCard: {
     alignItems: 'center',
@@ -468,43 +403,6 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(16, 185, 129, 0.35)',
     textShadowRadius: 6,
     textShadowOffset: { width: 0, height: 2 },
-  },
-  startHint: {
-    color: colors.textMuted,
-    fontSize: 13,
-    fontFamily: fonts.regular,
-  },
-  refreshWaitingButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignSelf: 'flex-start',
-    borderRadius: radii.md,
-    backgroundColor: 'rgba(87, 199, 255, 0.16)',
-  },
-  refreshWaitingText: {
-    color: '#CBEAFF',
-    fontFamily: fonts.bold,
-  },
-  createInfoBox: {
-    backgroundColor: 'rgba(87, 199, 255, 0.12)',
-    borderRadius: radii.lg,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(87, 199, 255, 0.35)',
-    marginTop: 20,
-  },
-  createInfoTitle: {
-    color: '#CBEAFF',
-    fontSize: 16,
-    fontFamily: fonts.bold,
-    marginBottom: 6,
-  },
-  createInfoText: {
-    color: colors.textMuted,
-    fontSize: 13,
-    lineHeight: 20,
-    fontFamily: fonts.regular,
   },
   actionsRow: {
     flexDirection: 'row',
@@ -664,12 +562,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 16,
     fontFamily: fonts.bold,
-  },
-  emptySubtitle: {
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 20,
-    fontFamily: fonts.regular,
   },
   onlineFriendsSection: {
     marginTop: 18,

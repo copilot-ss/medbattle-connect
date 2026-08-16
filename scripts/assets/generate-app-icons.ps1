@@ -3,13 +3,14 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$sourceSymbolPath = Join-Path $projectRoot 'assets\branding\medbattle-symbol-source.png'
+$sourceIconPath = Join-Path $projectRoot 'assets\branding\quiz-app-icon-source.png'
 $brandingDir = Join-Path $projectRoot 'assets\branding'
+$publicDir = Join-Path $projectRoot 'public'
 $storeAssetsDir = Join-Path $projectRoot 'store_assets'
 $androidResDir = Join-Path $projectRoot 'android\app\src\main\res'
 
 function Ensure-Directory([string] $path) {
-  if (-not (Test-Path $path)) {
+  if (-not (Test-Path -LiteralPath $path)) {
     New-Item -ItemType Directory -Path $path | Out-Null
   }
 }
@@ -19,187 +20,193 @@ function Set-Quality([System.Drawing.Graphics] $graphics) {
   $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
   $graphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
   $graphics.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
-  $graphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAliasGridFit
 }
 
-function New-RoundRectPath(
-  [float] $x,
-  [float] $y,
-  [float] $width,
-  [float] $height,
-  [float] $radius
+function New-ResizedBitmap(
+  [System.Drawing.Bitmap] $source,
+  [int] $width,
+  [int] $height
 ) {
-  $path = New-Object System.Drawing.Drawing2D.GraphicsPath
-  $diameter = $radius * 2
-  $path.AddArc($x, $y, $diameter, $diameter, 180, 90)
-  $path.AddArc($x + $width - $diameter, $y, $diameter, $diameter, 270, 90)
-  $path.AddArc($x + $width - $diameter, $y + $height - $diameter, $diameter, $diameter, 0, 90)
-  $path.AddArc($x, $y + $height - $diameter, $diameter, $diameter, 90, 90)
-  $path.CloseFigure()
-  return $path
+  $bitmap = New-Object System.Drawing.Bitmap(
+    $width,
+    $height,
+    [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
+  )
+  $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+  Set-Quality $graphics
+  $graphics.Clear([System.Drawing.Color]::Transparent)
+  $graphics.DrawImage($source, 0, 0, $width, $height)
+  $graphics.Dispose()
+  return $bitmap
 }
 
-function Remove-NearBlackBackground([System.Drawing.Bitmap] $source, [int] $threshold = 18) {
-  $target = New-Object System.Drawing.Bitmap($source.Width, $source.Height, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+function New-ResizedOpaqueBitmap(
+  [System.Drawing.Bitmap] $source,
+  [int] $width,
+  [int] $height
+) {
+  $bitmap = New-Object System.Drawing.Bitmap(
+    $width,
+    $height,
+    [System.Drawing.Imaging.PixelFormat]::Format24bppRgb
+  )
+  $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+  Set-Quality $graphics
+  $graphics.Clear([System.Drawing.Color]::Black)
+  $graphics.DrawImage($source, 0, 0, $width, $height)
+  $graphics.Dispose()
+  return $bitmap
+}
 
-  for ($x = 0; $x -lt $source.Width; $x++) {
-    for ($y = 0; $y -lt $source.Height; $y++) {
-      $pixel = $source.GetPixel($x, $y)
+function New-TransparentOuterBitmap([System.Drawing.Bitmap] $source) {
+  $bitmap = New-ResizedBitmap $source $source.Width $source.Height
 
-      if ($pixel.A -eq 0) {
-        $target.SetPixel($x, $y, [System.Drawing.Color]::FromArgb(0, 0, 0, 0))
-        continue
-      }
+  for ($x = 0; $x -lt $bitmap.Width; $x++) {
+    for ($y = 0; $y -lt $bitmap.Height; $y++) {
+      $pixel = $bitmap.GetPixel($x, $y)
+      $isOuterBlack =
+        $pixel.R -le 18 -and
+        $pixel.G -le 18 -and
+        $pixel.B -le 18
 
-      $isNearBlack = $pixel.R -le $threshold -and $pixel.G -le $threshold -and $pixel.B -le $threshold
-      if ($isNearBlack) {
-        $target.SetPixel($x, $y, [System.Drawing.Color]::FromArgb(0, 0, 0, 0))
-      } else {
-        $target.SetPixel($x, $y, $pixel)
+      if ($isOuterBlack) {
+        $bitmap.SetPixel($x, $y, [System.Drawing.Color]::Transparent)
       }
     }
   }
 
-  return $target
+  return $bitmap
 }
 
-function Draw-GradientBackground([System.Drawing.Graphics] $graphics, [int] $size) {
-  $backgroundRect = [System.Drawing.RectangleF]::new(0, 0, $size, $size)
-  $gradientBrush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-    $backgroundRect,
-    [System.Drawing.Color]::FromArgb(255, 8, 43, 57),
-    [System.Drawing.Color]::FromArgb(255, 4, 18, 28),
-    45
-  )
-  $graphics.FillRectangle($gradientBrush, $backgroundRect)
-  $gradientBrush.Dispose()
-
-  $haloRect = [System.Drawing.RectangleF]::new(
-    [float]($size * 0.16),
-    [float]($size * 0.1),
-    [float]($size * 0.68),
-    [float]($size * 0.52)
-  )
-  $haloBrush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-    $haloRect,
-    [System.Drawing.Color]::FromArgb(125, 52, 192, 188),
-    [System.Drawing.Color]::FromArgb(25, 52, 192, 188),
-    90
-  )
-  $graphics.FillEllipse($haloBrush, $size * 0.12, $size * 0.08, $size * 0.76, $size * 0.58)
-  $haloBrush.Dispose()
-
-  $panelPath = New-RoundRectPath `
-    -x ([float]($size * 0.1)) `
-    -y ([float]($size * 0.1)) `
-    -width ([float]($size * 0.8)) `
-    -height ([float]($size * 0.8)) `
-    -radius ([float]($size * 0.22))
-  $panelRect = [System.Drawing.RectangleF]::new(
-    [float]($size * 0.1),
-    [float]($size * 0.1),
-    [float]($size * 0.8),
-    [float]($size * 0.8)
-  )
-  $panelBrush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-    $panelRect,
-    [System.Drawing.Color]::FromArgb(50, 255, 255, 255),
-    [System.Drawing.Color]::FromArgb(8, 255, 255, 255),
-    90
-  )
-  $graphics.FillPath($panelBrush, $panelPath)
-  $panelBrush.Dispose()
-
-  $panelPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(34, 255, 255, 255), ($size * 0.008))
-  $graphics.DrawPath($panelPen, $panelPath)
-  $panelPen.Dispose()
-  $panelPath.Dispose()
-}
-
-function Draw-Symbol(
-  [System.Drawing.Graphics] $graphics,
-  [System.Drawing.Bitmap] $symbol,
+function New-ContainedBitmap(
+  [System.Drawing.Bitmap] $source,
   [int] $size,
-  [float] $relativeSize,
-  [float] $offsetX,
-  [float] $offsetY
+  [float] $relativeSize
 ) {
-  $symbolSize = [int]($size * $relativeSize)
-  $x = [int](($size - $symbolSize) / 2 + ($size * $offsetX))
-  $y = [int](($size - $symbolSize) / 2 + ($size * $offsetY))
+  $bitmap = New-Object System.Drawing.Bitmap(
+    $size,
+    $size,
+    [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
+  )
+  $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+  Set-Quality $graphics
+  $graphics.Clear([System.Drawing.Color]::Transparent)
 
-  $shadowAttributes = New-Object System.Drawing.Imaging.ImageAttributes
-  $shadowMatrix = New-Object System.Drawing.Imaging.ColorMatrix
-  $shadowMatrix.Matrix00 = 0
-  $shadowMatrix.Matrix11 = 0
-  $shadowMatrix.Matrix22 = 0
-  $shadowMatrix.Matrix33 = 0.24
-  $shadowAttributes.SetColorMatrix($shadowMatrix)
-  $shadowRect = [System.Drawing.Rectangle]::new(
-    $x + [int]($size * 0.016),
-    $y + [int]($size * 0.024),
-    $symbolSize,
-    $symbolSize
+  $imageSize = [int][Math]::Round($size * $relativeSize)
+  $offset = [int][Math]::Round(($size - $imageSize) / 2)
+  $graphics.DrawImage($source, $offset, $offset, $imageSize, $imageSize)
+  $graphics.Dispose()
+  return $bitmap
+}
+
+function New-CroppedContainedBitmap(
+  [System.Drawing.Bitmap] $source,
+  [System.Drawing.Rectangle] $sourceRect,
+  [int] $size,
+  [float] $relativeHeight
+) {
+  $bitmap = New-Object System.Drawing.Bitmap(
+    $size,
+    $size,
+    [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
+  )
+  $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+  Set-Quality $graphics
+  $graphics.Clear([System.Drawing.Color]::Transparent)
+
+  $targetHeight = [int][Math]::Round($size * $relativeHeight)
+  $targetWidth = [int][Math]::Round(
+    $targetHeight * $sourceRect.Width / $sourceRect.Height
+  )
+  $targetX = [int][Math]::Round(($size - $targetWidth) / 2)
+  $targetY = [int][Math]::Round(($size - $targetHeight) / 2)
+  $targetRect = [System.Drawing.Rectangle]::new(
+    $targetX,
+    $targetY,
+    $targetWidth,
+    $targetHeight
   )
   $graphics.DrawImage(
-    $symbol,
-    $shadowRect,
-    0,
-    0,
-    $symbol.Width,
-    $symbol.Height,
-    [System.Drawing.GraphicsUnit]::Pixel,
-    $shadowAttributes
+    $source,
+    $targetRect,
+    $sourceRect.X,
+    $sourceRect.Y,
+    $sourceRect.Width,
+    $sourceRect.Height,
+    [System.Drawing.GraphicsUnit]::Pixel
   )
-  $shadowAttributes.Dispose()
-
-  $graphics.DrawImage($symbol, $x, $y, $symbolSize, $symbolSize)
+  $graphics.Dispose()
+  return $bitmap
 }
 
-function Draw-Badge([System.Drawing.Graphics] $graphics, [int] $size, [string] $text) {
-  $badgeSize = [int]($size * 0.255)
-  $x = [int]($size * 0.62)
-  $y = [int]($size * 0.63)
-  $shadowOffset = [int]($size * 0.015)
-
-  $shadowBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(95, 2, 10, 18))
-  $graphics.FillEllipse($shadowBrush, $x + $shadowOffset, $y + $shadowOffset, $badgeSize, $badgeSize)
-  $shadowBrush.Dispose()
-
-  $badgeRect = [System.Drawing.RectangleF]::new($x, $y, $badgeSize, $badgeSize)
-  $badgeBrush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-    $badgeRect,
-    [System.Drawing.Color]::FromArgb(255, 255, 126, 94),
-    [System.Drawing.Color]::FromArgb(255, 233, 82, 118),
-    45
+function New-NotificationMask([System.Drawing.Bitmap] $source) {
+  $bitmap = New-Object System.Drawing.Bitmap(
+    $source.Width,
+    $source.Height,
+    [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
   )
-  $graphics.FillEllipse($badgeBrush, $x, $y, $badgeSize, $badgeSize)
-  $badgeBrush.Dispose()
 
-  $ringPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(230, 255, 244, 244), ($size * 0.01))
-  $graphics.DrawEllipse($ringPen, $x + [int]($size * 0.006), $y + [int]($size * 0.006), $badgeSize - [int]($size * 0.012), $badgeSize - [int]($size * 0.012))
-  $ringPen.Dispose()
+  for ($x = 0; $x -lt $source.Width; $x++) {
+    for ($y = 0; $y -lt $source.Height; $y++) {
+      $pixel = $source.GetPixel($x, $y)
+      $insideQuestionArea =
+        $x -ge [int]($source.Width * 0.28) -and
+        $x -le [int]($source.Width * 0.72) -and
+        $y -ge [int]($source.Height * 0.29) -and
+        $y -le [int]($source.Height * 0.82)
+      $isYellow =
+        $pixel.R -ge 130 -and
+        $pixel.G -ge 55 -and
+        $pixel.B -le 150 -and
+        $pixel.R -ge ($pixel.B + 60) -and
+        $pixel.G -ge ($pixel.B + 15)
 
-  $highlightBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(70, 255, 255, 255))
-  $graphics.FillEllipse($highlightBrush, $x + [int]($badgeSize * 0.18), $y + [int]($badgeSize * 0.12), [int]($badgeSize * 0.24), [int]($badgeSize * 0.15))
-  $highlightBrush.Dispose()
+      if ($insideQuestionArea -and $isYellow) {
+        $bitmap.SetPixel(
+          $x,
+          $y,
+          [System.Drawing.Color]::FromArgb($pixel.A, 255, 255, 255)
+        )
+      }
+    }
+  }
 
-  $fontSize = [int]($size * 0.14)
-  $font = New-Object System.Drawing.Font('Segoe UI', $fontSize, [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
-  $textBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 248, 251, 255))
-  $format = New-Object System.Drawing.StringFormat
-  $format.Alignment = [System.Drawing.StringAlignment]::Center
-  $format.LineAlignment = [System.Drawing.StringAlignment]::Center
-  $textRect = [System.Drawing.RectangleF]::new(
-    [float]$x,
-    [float]($y - ($size * 0.01)),
-    [float]$badgeSize,
-    [float]$badgeSize
+  return $bitmap
+}
+
+function Set-WhiteMaskRgb([System.Drawing.Bitmap] $bitmap) {
+  for ($x = 0; $x -lt $bitmap.Width; $x++) {
+    for ($y = 0; $y -lt $bitmap.Height; $y++) {
+      $pixel = $bitmap.GetPixel($x, $y)
+
+      if ($pixel.A -gt 0) {
+        $bitmap.SetPixel(
+          $x,
+          $y,
+          [System.Drawing.Color]::FromArgb($pixel.A, 255, 255, 255)
+        )
+      }
+    }
+  }
+}
+
+function New-RoundBitmap([System.Drawing.Bitmap] $source, [int] $size) {
+  $bitmap = New-Object System.Drawing.Bitmap(
+    $size,
+    $size,
+    [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
   )
-  $graphics.DrawString($text, $font, $textBrush, $textRect, $format)
-  $format.Dispose()
-  $textBrush.Dispose()
-  $font.Dispose()
+  $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+  Set-Quality $graphics
+  $graphics.Clear([System.Drawing.Color]::Transparent)
+
+  $clipPath = New-Object System.Drawing.Drawing2D.GraphicsPath
+  $clipPath.AddEllipse(0, 0, $size, $size)
+  $graphics.SetClip($clipPath)
+  $graphics.DrawImage($source, 0, 0, $size, $size)
+  $clipPath.Dispose()
+  $graphics.Dispose()
+  return $bitmap
 }
 
 function Save-Png([System.Drawing.Image] $image, [string] $path) {
@@ -207,65 +214,36 @@ function Save-Png([System.Drawing.Image] $image, [string] $path) {
   $image.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
 }
 
-function New-IconBitmap(
-  [System.Drawing.Bitmap] $symbol,
-  [int] $size,
-  [bool] $includeBackground,
-  [bool] $roundMask
-) {
-  $bitmap = New-Object System.Drawing.Bitmap($size, $size, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
-  $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-  Set-Quality $graphics
-
-  if ($includeBackground) {
-    Draw-GradientBackground $graphics $size
-  } else {
-    $graphics.Clear([System.Drawing.Color]::FromArgb(0, 0, 0, 0))
-  }
-
-  $symbolSize = if ($includeBackground) { 0.58 } else { 0.5 }
-  Draw-Symbol $graphics $symbol $size $symbolSize 0 -0.03
-  Draw-Badge $graphics $size '?'
-
-  if ($roundMask) {
-    $rounded = New-Object System.Drawing.Bitmap($size, $size, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
-    $roundGraphics = [System.Drawing.Graphics]::FromImage($rounded)
-    Set-Quality $roundGraphics
-    $ellipsePath = New-Object System.Drawing.Drawing2D.GraphicsPath
-    $ellipsePath.AddEllipse(0, 0, $size, $size)
-    $roundGraphics.SetClip($ellipsePath)
-    $roundGraphics.DrawImage($bitmap, 0, 0, $size, $size)
-    $ellipsePath.Dispose()
-    $roundGraphics.Dispose()
-    $graphics.Dispose()
-    $bitmap.Dispose()
-    return $rounded
-  }
-
-  $graphics.Dispose()
-  return $bitmap
-}
-
-if (-not (Test-Path $sourceSymbolPath)) {
-  throw "Missing source symbol: $sourceSymbolPath"
+if (-not (Test-Path -LiteralPath $sourceIconPath)) {
+  throw "Missing source icon: $sourceIconPath"
 }
 
 Ensure-Directory $brandingDir
+Ensure-Directory $publicDir
 Ensure-Directory $storeAssetsDir
 
-$rawSource = [System.Drawing.Bitmap]::FromFile($sourceSymbolPath)
-$symbol = Remove-NearBlackBackground $rawSource
-$rawSource.Dispose()
-
-$appIcon = New-IconBitmap $symbol 1024 $true $false
-$roundAppIcon = New-IconBitmap $symbol 1024 $true $true
-$adaptiveForeground = New-IconBitmap $symbol 1024 $false $false
-$playIcon = [System.Drawing.Bitmap]::new($appIcon, 512, 512)
+$sourceIcon = [System.Drawing.Bitmap]::FromFile($sourceIconPath)
+$transparentIcon = New-TransparentOuterBitmap $sourceIcon
+$appIcon = New-ResizedOpaqueBitmap $sourceIcon 1024 1024
+$webIcon = New-ResizedOpaqueBitmap $sourceIcon 512 512
+$adaptiveForeground = New-ContainedBitmap $transparentIcon 1024 0.66
+$playStoreIcon = New-ResizedOpaqueBitmap $sourceIcon 512 512
+$notificationMask = New-NotificationMask $sourceIcon
+$notificationCrop = [System.Drawing.Rectangle]::new(140, 140, 235, 280)
+$notificationIcon = New-CroppedContainedBitmap $notificationMask $notificationCrop 96 0.84
+$adaptiveMonochrome = New-CroppedContainedBitmap $notificationMask $notificationCrop 1024 0.62
+Set-WhiteMaskRgb $notificationIcon
+Set-WhiteMaskRgb $adaptiveMonochrome
 
 Save-Png $appIcon (Join-Path $brandingDir 'app-icon.png')
 Save-Png $adaptiveForeground (Join-Path $brandingDir 'adaptive-icon-foreground.png')
-Save-Png $appIcon (Join-Path $storeAssetsDir 'app_store_icon_1024.png')
-Save-Png $playIcon (Join-Path $storeAssetsDir 'play_store_icon_512.png')
+Save-Png $adaptiveMonochrome (Join-Path $brandingDir 'adaptive-icon-monochrome.png')
+Save-Png $transparentIcon (Join-Path $brandingDir 'splash-icon.png')
+Save-Png $notificationIcon (Join-Path $brandingDir 'notification-icon.png')
+Save-Png $adaptiveForeground (Join-Path $androidResDir 'drawable-nodpi\ic_launcher_foreground.png')
+Save-Png $adaptiveMonochrome (Join-Path $androidResDir 'drawable-nodpi\ic_launcher_monochrome.png')
+Save-Png $webIcon (Join-Path $publicDir 'quiz-app-icon.png')
+Save-Png $playStoreIcon (Join-Path $storeAssetsDir 'play_store_icon_512.png')
 
 $launcherSizes = @{
   'mipmap-mdpi' = 48
@@ -277,34 +255,60 @@ $launcherSizes = @{
 
 foreach ($entry in $launcherSizes.GetEnumerator()) {
   $folderPath = Join-Path $androidResDir $entry.Key
-  Ensure-Directory $folderPath
-
   $launcherPath = Join-Path $folderPath 'ic_launcher.png'
   $roundLauncherPath = Join-Path $folderPath 'ic_launcher_round.png'
-  $legacyLauncherPath = Join-Path $folderPath 'ic_launcher.webp'
-  $legacyRoundLauncherPath = Join-Path $folderPath 'ic_launcher_round.webp'
-
-  if (Test-Path $legacyLauncherPath) {
-    Remove-Item $legacyLauncherPath -Force
-  }
-  if (Test-Path $legacyRoundLauncherPath) {
-    Remove-Item $legacyRoundLauncherPath -Force
-  }
-
-  $launcherBitmap = [System.Drawing.Bitmap]::new($appIcon, $entry.Value, $entry.Value)
-  $roundLauncherBitmap = [System.Drawing.Bitmap]::new($roundAppIcon, $entry.Value, $entry.Value)
+  $launcherBitmap = New-ResizedBitmap $transparentIcon $entry.Value $entry.Value
+  $roundLauncherBitmap = New-RoundBitmap $transparentIcon $entry.Value
 
   Save-Png $launcherBitmap $launcherPath
   Save-Png $roundLauncherBitmap $roundLauncherPath
-
   $launcherBitmap.Dispose()
   $roundLauncherBitmap.Dispose()
 }
 
-$playIcon.Dispose()
-$adaptiveForeground.Dispose()
-$roundAppIcon.Dispose()
-$appIcon.Dispose()
-$symbol.Dispose()
+$notificationSizes = @{
+  'drawable-mdpi' = 24
+  'drawable-hdpi' = 36
+  'drawable-xhdpi' = 48
+  'drawable-xxhdpi' = 72
+  'drawable-xxxhdpi' = 96
+}
 
-Write-Host 'Generated MedQuiz app icons.'
+foreach ($entry in $notificationSizes.GetEnumerator()) {
+  $folderPath = Join-Path $androidResDir $entry.Key
+  $notificationPath = Join-Path $folderPath 'notification_icon.png'
+  $notificationBitmap = New-ResizedBitmap $notificationIcon $entry.Value $entry.Value
+  Set-WhiteMaskRgb $notificationBitmap
+
+  Save-Png $notificationBitmap $notificationPath
+  $notificationBitmap.Dispose()
+}
+
+$splashSizes = @{
+  'drawable-mdpi' = 288
+  'drawable-hdpi' = 432
+  'drawable-xhdpi' = 576
+  'drawable-xxhdpi' = 864
+  'drawable-xxxhdpi' = 1152
+}
+
+foreach ($entry in $splashSizes.GetEnumerator()) {
+  $folderPath = Join-Path $androidResDir $entry.Key
+  $splashPath = Join-Path $folderPath 'splashscreen_logo.png'
+  $splashBitmap = New-ContainedBitmap $transparentIcon $entry.Value 0.64
+
+  Save-Png $splashBitmap $splashPath
+  $splashBitmap.Dispose()
+}
+
+$playStoreIcon.Dispose()
+$adaptiveMonochrome.Dispose()
+$notificationIcon.Dispose()
+$notificationMask.Dispose()
+$adaptiveForeground.Dispose()
+$webIcon.Dispose()
+$appIcon.Dispose()
+$transparentIcon.Dispose()
+$sourceIcon.Dispose()
+
+Write-Host 'Generated MedQuiz icons from the blue-purple quiz logo.'

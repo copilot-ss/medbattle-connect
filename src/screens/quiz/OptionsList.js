@@ -1,10 +1,12 @@
+import { memo } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles, {
   getOptionButtonStyle,
   getOptionTextStyle,
 } from '../styles/QuizScreen.styles';
 
-export default function OptionsList({
+function OptionsList({
   currentQuestion,
   selectedOption,
   hiddenOptions,
@@ -14,6 +16,7 @@ export default function OptionsList({
   matchIsActive,
   onSelectOption,
 }) {
+  const { t } = useTranslation();
   const hiddenSet = new Set(Array.isArray(hiddenOptions) ? hiddenOptions : []);
   const visibleOptions = Array.isArray(currentQuestion.options)
     ? currentQuestion.options.filter((opt) => !hiddenSet.has(opt))
@@ -27,6 +30,16 @@ export default function OptionsList({
         const isCorrectOption = opt === currentQuestion.correct_answer;
         const showFeedback =
           isAnswerLocked && (selectedOption !== null || timedOut);
+        const disabled = isAnswerLocked || (isMultiplayer && !matchIsActive);
+        const accessibilityStatus = showFeedback
+          ? isCorrectOption
+            ? t('Richtige Antwort')
+            : isOptionSelected
+              ? t('Falsche Antwort')
+              : t('Nicht ausgewählt')
+          : isOptionSelected
+            ? t('Ausgewählt')
+            : t('Nicht ausgewählt');
 
         let backgroundColor = '#111827';
         let borderColor = 'rgba(148, 163, 184, 0.25)';
@@ -58,9 +71,11 @@ export default function OptionsList({
           <Pressable
             key={optionKey}
             onPress={() => onSelectOption(opt)}
-            disabled={
-              isAnswerLocked || (isMultiplayer && !matchIsActive)
-            }
+            disabled={disabled}
+            accessibilityRole="button"
+            accessibilityLabel={opt}
+            accessibilityState={{ disabled, selected: isOptionSelected }}
+            accessibilityValue={{ text: accessibilityStatus }}
             style={getOptionButtonStyle({
               backgroundColor,
               borderColor,
@@ -74,3 +89,5 @@ export default function OptionsList({
     </View>
   );
 }
+
+export default memo(OptionsList);

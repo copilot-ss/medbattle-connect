@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
+import GameBackground from '../components/game/GameBackground';
 import { getSessionUser } from '../lib/supabaseClient';
 import {
   fetchUserProfile,
@@ -117,6 +118,7 @@ export default function UsernameSetupScreen({ navigation }) {
   if (loading) {
     return (
       <View style={styles.container}>
+        <GameBackground intensity="subtle" />
         <ActivityIndicator size="large" color="#2563EB" />
       </View>
     );
@@ -124,6 +126,7 @@ export default function UsernameSetupScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <GameBackground intensity="subtle" />
       <Text style={styles.title}>{t('Wähle deinen Namen')}</Text>
       <Text style={styles.subtitle}>
         {t('Dieser Name wird in Lobbys, Ranglisten und deinem Profil angezeigt.')}

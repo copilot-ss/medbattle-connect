@@ -27,6 +27,7 @@ import {
 } from '../services/matchService';
 import { isMatchPlayerRole } from '../services/match/matchHelpers';
 import { colors } from '../styles/theme';
+import GameBackground from '../components/game/GameBackground';
 import { findBadge } from './result/resultConstants';
 import ResultScoreboard from './result/ResultScoreboard';
 import ResultReviewList from './result/ResultReviewList';
@@ -535,6 +536,7 @@ export default function ResultScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
+      <GameBackground />
       <View style={getLargeGlowStyle(badge.glow)} />
       <View style={styles.backgroundGlowSmall} />
 

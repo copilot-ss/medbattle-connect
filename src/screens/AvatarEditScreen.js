@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
 import AvatarView from '../components/avatar/AvatarView';
+import GameBackground from '../components/game/GameBackground';
 import { usePreferences } from '../context/PreferencesContext';
 import { useTranslation } from '../i18n/useTranslation';
 import {
@@ -231,6 +232,7 @@ export default function AvatarEditScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <GameBackground intensity="subtle" />
       <View style={styles.backgroundGlowTop} pointerEvents="none" />
       <View style={styles.backgroundGlowBottom} pointerEvents="none" />
       <SettingsHeader

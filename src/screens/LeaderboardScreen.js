@@ -11,6 +11,7 @@ import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 
 import AvatarView from '../components/avatar/AvatarView';
+import GameBackground from '../components/game/GameBackground';
 import styles from './styles/LeaderboardScreen.styles';
 import { colors } from '../styles/theme';
 import { fetchLeaderboard } from '../services/quizService';
@@ -281,6 +282,7 @@ export default function LeaderboardScreen({ navigation, showClose = true }) {
 
   return (
     <View style={styles.screen}>
+      <GameBackground intensity="subtle" />
       <View style={styles.backgroundGlowTop} pointerEvents="none" />
       <View style={styles.backgroundGlowBottom} pointerEvents="none" />
       <View style={styles.header}>

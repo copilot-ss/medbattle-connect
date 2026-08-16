@@ -1,60 +1,54 @@
 # PLANNING.md - MedQuiz
 
 ## Ziel
-Kostenlose kompetitive Medizin-Quiz-App mit Supabase-Backend, Google-/E-Mail-Auth, Rewarded Ads, Premium und Multiplayer.
+
+Kostenlose kompetitive Quiz-App mit Medizin- und Allgemeinwissenskategorien, Supabase-Backend, optionalem Login, Rewarded Ads, Premium und Multiplayer.
 
 ## Aktueller Stand
-- Fokus ist Android Release ueber Google Play Closed testing.
-- Neuester hochgeladener Store-Build ist `versionCode 42` (`1.0.1`) im Closed-Test-Track.
-- Neuester lokal gebauter Store-Build ist `versionCode 51` (`1.0.1`), erstellt am `2026-05-03`.
-- Das lokale Release-AAB `51` liegt unter `android/app/build/outputs/bundle/release/app-release.aab` und ist fuer den naechsten Play-Store-Upload vorbereitet; der aktuell hochgeladene Closed-Test-Track bleibt `versionCode 42`.
-- Das angeschlossene Realgeraet `c2ccd135` liegt noch auf `versionCode 35`; der gestartete Emulator kann lokal wieder mit `x86_64`-Builds getestet werden, fuer den Play-Store-Pfad braucht er aber den ausgerollten Store-Build.
-- Android-15-Systemleistenwarnung aus der Play Console ist im Repo adressiert: App-seitige Status-/Navigationsleistenaufrufe wurden reduziert, Edge-to-Edge ist lokal deaktiviert und React Native `0.83.2` wird per Patch an den Android-15-APIs vorbeigefuehrt.
+
+- Fokus ist der nächste Android-Release über Google Play Closed Testing.
+- Nach der aktuellen Codebereinigung ist genau ein finaler Release-Rebuild vorgesehen; erst dessen verifizierte Daten gelten als neuer Kandidat.
+- Der vollständige, allein maßgebliche Store-, Versions-, Runtime-, Artefakt- und Hash-Stand steht in `docs/release/RELEASE_STATUS.md`.
 
 ## Architektur
-- Runtime: Expo SDK `55`, React Native `0.83.2`, React `19`, Hermes aktiv.
-- Sprache: `i18next` + `react-i18next`, Locale-Erkennung ueber `expo-localization`, App folgt der Systemsprache.
-- App-Start: `App.js` initialisiert Fonts/Assets, Ads, Updates und mountet den Navigator.
-- Navigation: `src/AppNavigator.js` + `src/navigation/MainTabs.js`.
-- Auth/Supabase: `src/lib/supabaseClient.js`, `src/services/supabaseRequest.js`, `src/hooks/useAuthSession.js`, `src/hooks/useAuthCallbackLinking.js`.
-- Quiz-Flow: `src/screens/HomeScreen.js` -> `src/screens/QuizScreen.js` / `src/screens/quiz/useQuizController.js` -> `src/screens/ResultScreen.js`.
+
+- Runtime: Expo SDK `55`, React Native `0.83.10`, React `19`, Hermes.
+- Sprache: `i18next`, `react-i18next` und `expo-localization`; die App folgt der Systemsprache.
+- App-Start: `App.js` initialisiert Fonts, Assets, Ads und Updates und mountet den Navigator.
+- Navigation: `src/AppNavigator.js`, `src/navigation/MainTabs.js`.
+- Auth und Supabase: `src/lib/supabaseClient.js`, `src/services/supabaseRequest.js`, `src/hooks/useAuthSession.js`, `src/hooks/useAuthCallbackLinking.js`.
+- Quiz-Flow: `src/screens/HomeScreen.js` → `src/screens/QuizScreen.js` → `src/screens/ResultScreen.js`.
 - Quiz-Daten: `src/services/quizService.js`.
-- Multiplayer: `src/services/matchService.js` + `src/screens/multiplayer/*`.
-- Android native entry: `android/app/src/main/AndroidManifest.xml`, `android/app/src/main/java/com/sjigalin/medbattle/MainApplication.kt`.
+- Multiplayer: `src/services/matchService.js`, `src/screens/multiplayer/`.
+- Native Android-Einstiege: `android/app/src/main/AndroidManifest.xml`, `android/app/src/main/java/com/sjigalin/medbattle/MainApplication.kt`.
 
 ## Produktregeln
-- Normales Solo-/Quick-Play-/Kategorie-Quiz hat `6` Fragen.
-- Multiplayer hat standardmaessig ebenfalls `6` Fragen, kann aber in der Lobby zwischen `3` und `20` liegen.
-- Rewarded Ads geben aktuell `+5` Energie.
-- Coin-zu-Energie ist in Shop und leerem-Energie-Dialog einheitlich auf `24 Coins pro 1 Energie` gesetzt.
 
-## Release- und Build-Stand
-- `app.json` nutzt Android `versionCode 51`, `versionName 1.0.1`.
-- Expo Updates laufen ueber den `production`-Kanal mit `runtimeVersion 55.0.0`.
-- Release-Builds sind mit Minify, Resource Shrinking und Hermes konfiguriert.
-- Das Repo ist aktuell fuer `armeabi-v7a`, `arm64-v8a` und `x86_64` konfiguriert.
-- Das letzte lokale Store-Artefakt `51` liegt unter `android/app/build/outputs/bundle/release/app-release.aab`; damit ist der aktuelle Repo-Stand fuer den naechsten Upload gebaut.
+- Solo-, Quick-Play- und Kategoriequiz haben `6` Fragen.
+- Multiplayer startet ebenfalls mit `6` Fragen; in der Lobby sind `3` bis `20` möglich.
+- Rewarded Ads geben `+5` Energie.
+- Eine Energie kostet in Shop und Energie-Dialog `24` Coins.
+- Navigation, Belohnungen und Spiellogik werden nur bei explizitem Produktauftrag geändert.
 
-## Auth / Ads Besonderheiten
-- Google-/Supabase-OAuth wurde gegen spaet ankommende Sessions gehaertet, damit der erste Login nach Neuinstallation nicht mehr vorschnell mit `Supabase nicht erreichbar (Session setzen)` fehlschlaegt.
-- OAuth-Callback-URLs werden jetzt pro App-Lauf nur noch einmal verarbeitet, damit Google-Redirect und globaler Deep-Link-Listener nicht parallel dieselbe Supabase-Session setzen.
-- Release-Builds laufen jetzt standardmaessig mit der echten Rewarded-Ad-Unit; einzelne Testgeraete koennen optional ueber `EXPO_PUBLIC_ADMOB_TEST_DEVICE_IDS_ANDROID` auf Test-Ads bleiben.
-- `npm run release:check` blockiert jetzt versehentliches `EXPO_PUBLIC_ADMOB_USE_TEST_IDS=true` vor dem naechsten AAB-Bau.
-- Aktuell gibt es keinen veroeffentlichten EAS Update-Stand auf dem `production`-Branch, der den Store-Build ueberschreibt.
+## Release-Konfiguration
 
-## Patches
-- Aktive Patches im Repo: `patches/react-native-gesture-handler+2.30.0.patch`, `patches/react-native+0.83.2.patch`.
-- `react-native-gesture-handler+2.30.0.patch`: Android-Kompatibilitaets-Stub fuer `ViewManagerWithGeneratedInterface`.
-- `react-native+0.83.2.patch`: umgeht auf Android 15 die veralteten `statusBarColor`-/`navigationBarColor`-Zugriffe in React Natives StatusBar- und Edge-to-Edge-Helfern.
-- Alte Hinweise auf `expo-modules-core`-Patches sind veraltet und nicht mehr Quelle des aktuellen Runtime-Stands.
+- Android-ABIs: `armeabi-v7a`, `arm64-v8a`, `x86_64`.
+- Release-Builds: Hermes, Minify und Resource Shrinking aktiv.
+- Aktive Native-Patches liegen unter `patches/` und müssen zur installierten Paketversion passen.
+- Der Android-15-Kompatibilitätspatch zielt auf React Native `0.83.10`.
 
-## Release-Blocker
-- Closed-Test-Store-Build `42` auf Realgeraet und Emulator installieren und gegen genau diesen Play-Store-Stand testen.
-- Play Console Content Rating und Data Safety final abschliessen.
-- OAuth-Roundtrips, Offline-Sync, Multiplayer und Ads/IAP im Store-Build end-to-end bestaetigen.
-- Google Play Submit Service Account fuer EAS Submission hinterlegen.
+## Aktuelle Release-Blocker
 
-## Arbeitsregeln
-- Standard-Track fuer Verteilung ist aktuell Closed testing, nicht Dev Build.
-- Vor jeder neuen Arbeit zuerst `TASKS.md` auf offene Release-Blocker pruefen.
-- Fuer konkrete Smoke-Checks und Testhistorie `RELEASE_TESTS.md` als Quelle verwenden.
+- Nach Abschluss der Codebereinigung genau einen finalen AAB-Rebuild erstellen und Status, Version und Hash zentral aktualisieren.
+- Den finalen Kandidaten in den Closed-Test-Track hochladen und anschließend genau den über Google Play ausgelieferten Build testen.
+- Content Rating, Data Safety und Health Apps Declaration in der Play Console finalisieren.
+- OAuth, Offline-Sync, Multiplayer, Rewarded Ads und IAP im Store-Build end-to-end bestätigen.
+- Play-Submit-Service-Account in EAS hinterlegen, falls der Upload über EAS erfolgen soll.
+- Serverseitige Validierung für sensible Fortschritts-, Match- und Kaufvorgänge weiter härten.
+
+## Arbeitsquellen
+
+- Offene Arbeit: `TASKS.md`
+- Release-Status: `docs/release/RELEASE_STATUS.md`
+- Release-Ablauf: `docs/release/PLAY_RELEASE_RUNBOOK.md`
+- Manuelle Prüfungen: `docs/release/RELEASE_TESTS.md`

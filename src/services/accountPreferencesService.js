@@ -3,7 +3,6 @@ import { runSupabaseRequest } from './supabaseRequest';
 import {
   DEFAULT_BOOSTS,
   DEFAULT_STREAKS,
-  DEFAULT_USER_STATS,
   MAX_ENERGY_CAP_BONUS,
   NEW_ACCOUNT_MAX_ENERGY,
 } from '../context/preferences/constants';

@@ -26,10 +26,10 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    rowGap: 24,
+    rowGap: 26,
   },
   stickyHeader: {
-    backgroundColor: colors.background,
+    backgroundColor: 'rgba(5, 8, 22, 0.96)',
     rowGap: 12,
     paddingBottom: 12,
     zIndex: 2,
@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 30,
+    fontSize: 32,
     fontFamily: fonts.bold,
     color: colors.textPrimary,
   },
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: colors.textPrimary,
-    fontSize: 18,
+    fontSize: 19,
     fontFamily: fonts.bold,
   },
   cardList: {
@@ -130,28 +130,43 @@ const styles = StyleSheet.create({
   itemCard: {
     width: '100%',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 15,
     paddingHorizontal: 10,
-    minHeight: 108,
+    minHeight: 150,
     position: 'relative',
     borderRadius: radii.lg,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     backfaceVisibility: 'hidden',
-    rowGap: 6,
+    rowGap: 8,
+    overflow: 'hidden',
+    shadowOpacity: 0.24,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 4,
+  },
+  itemCardGradient: {
+    position: 'absolute',
+    top: -24,
+    right: -24,
+    bottom: -24,
+    left: -24,
   },
   itemCardDaily: {
-    minHeight: 102,
-    paddingBottom: 9,
+    minHeight: 144,
+    paddingBottom: 12,
   },
   itemCardDisabled: {
     opacity: 0.62,
   },
+  itemBadgeSlot: {
+    width: '100%',
+    height: 18,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
   itemBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
     minWidth: 30,
     height: 18,
     paddingHorizontal: 6,
@@ -161,7 +176,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentGreen,
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.12)',
-    zIndex: 1,
   },
   itemBadgeText: {
     color: '#0A0A12',
@@ -170,23 +184,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   itemIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 0,
   },
   itemIconImage: {
-    width: 22,
-    height: 22,
+    width: 28,
+    height: 28,
   },
   coinStack: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   coinStackEmoji: {
-    fontSize: 14,
+    fontSize: 17,
   },
   coinStackEmojiOffset: {
     marginLeft: -4,
@@ -199,7 +213,7 @@ const styles = StyleSheet.create({
   itemTitle: {
     color: colors.textPrimary,
     fontFamily: fonts.bold,
-    fontSize: 13,
+    fontSize: 14,
     textAlign: 'center',
   },
   itemTitleSingleLine: {
@@ -216,12 +230,12 @@ const styles = StyleSheet.create({
   priceText: {
     color: colors.highlight,
     fontFamily: fonts.bold,
-    fontSize: 11,
+    fontSize: 12,
     marginBottom: 4,
     textAlign: 'center',
   },
   itemStatusPill: {
-    minHeight: 24,
+    minHeight: 27,
     maxWidth: '100%',
     paddingHorizontal: 10,
     paddingVertical: 4,

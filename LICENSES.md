@@ -1,6 +1,6 @@
 # LICENSES.md - Third-Party Licenses & Asset Attribution
 
-Stand: 2026-04-29
+Stand: 2026-08-15
 
 ## Ziel
 Diese Datei dokumentiert die aktuell verwendeten Drittanbieter-Lizenzen und den Status fuer den Store-Release.
@@ -110,25 +110,13 @@ Diese Datei dokumentiert die aktuell verwendeten Drittanbieter-Lizenzen und den 
   - Flaticon Free License mit Nennungspflicht ("Attribution required").
   - Bei Flaticon Premium kann die Nennungspflicht entfallen.
 - Umsetzungsanforderung fuer Release:
-  - Wenn Free License genutzt wird, muss die Nennung in App/Store/Impressum sichtbar hinterlegt sein.
+  - Die Nennung ist in den In-App-Rechtstexten und in `legal-static/terms.html` sichtbar hinterlegt.
   - Wenn keine Nennung erfolgen soll, auf Premium-Lizenz wechseln oder Assets ersetzen.
 
-## Entfernte, nicht mehr genutzte Drittanbieter-Bildicons
-- `assets/icons/flaticon/schild_473701.png`
-- `assets/icons/flaticon/trophae_3135735.png`
-- `assets/icons_profile/alte-frau.png`
-- `assets/icons_profile/arztin.png`
-- `assets/icons_profile/benutzer.png`
-- `assets/icons_profile/caduceus_1839855.png`
-- `assets/icons_profile/doktor-der-medizin.png`
-- `assets/icons_profile/frau.png`
-- `assets/icons_profile/junge.png`
-- `assets/icons_profile/mann.png`
-
 ## Rest-Risiko vor Release
-- Alle verbleibenden Animationen/Bilder in `assets/animations/*` sollten intern als "eigene Assets" oder mit externer Quelle/Lizenz belegbar sein.
-- Wenn fuer einzelne Animationen kein klarer Herkunftsnachweis vorliegt: vor Release Quelle + Lizenztyp ergaenzen oder Asset ersetzen.
+- Fuer die verbleibenden Dateien unter `assets/animations/` muss intern weiterhin eine eigene Erstellung oder eine passende externe Lizenz belegbar sein.
+- Wenn fuer eine Datei kein klarer Herkunftsnachweis vorliegt: vor dem Produktions-Rollout Quelle + Lizenztyp ergaenzen oder das Asset ersetzen.
 
-## Copyright Go/No-Go (nur fuer Icon-Thema)
-- Icon-Thema: `GO mit Bedingung` (Flaticon-Attribution muss bei Free License sichtbar hinterlegt sein).
-- Gesamt-Copyright: `NO-GO`, solange Herkunft/Lizenz fuer alle verbleibenden Animationsassets nicht intern verifiziert ist.
+## Copyright Go/No-Go
+- Avatar-Sticker: `GO` mit der derzeit sichtbaren Flaticon-Attribution.
+- Gesamt-Copyright: `NO-GO` fuer den Produktions-Rollout, solange Herkunft/Lizenz der verbleibenden Animationsassets nicht intern verifiziert ist.

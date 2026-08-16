@@ -3,7 +3,7 @@
 ## Aktueller Stand
 
 - Datum: `2026-08-15`
-- Der finale Closed-Test-Kandidat wurde erfolgreich als `1.0.2` / `versionCode 53` gebaut und verifiziert.
+- Der finale Closed-Test-Kandidat wurde erfolgreich als `1.0.2` / `versionCode 54` gebaut und verifiziert.
 - Vollständiger Store-, Runtime-, AAB- und Hash-Stand wird in `docs/release/RELEASE_STATUS.md` geführt.
 
 ## Jetzt offen
@@ -30,7 +30,7 @@
 
 ## Release-Gates
 
-- [x] Finales AAB `1.0.2` / `versionCode 53` gebaut.
+- [x] Finales AAB `1.0.2` / `versionCode 54` gebaut.
 - [x] SHA-256, Größe, Signatur, Upload-Zertifikat, Bundle, targetSdk 36, ABIs und 16-KB-Ausrichtung des finalen AAB geprüft.
 - [x] `npm run release:check`, TypeScript, Expo Doctor, Dependency-Check und Web-Build gegen den finalen Code-Stand bestätigt.
 - [x] Premium-UI, neue Logos und responsive Home-/Shop-/Quiz-Layouts auf Emulatorgrößen `1080x2400` und `1080x1920` geprüft.
@@ -43,7 +43,7 @@
 
 ## Jüngste Abschlüsse
 
-- [x] Finales Closed-Test-AAB `1.0.2` / `versionCode 53` gebaut und mit Bundletool, Signatur sowie 16-KB-Ausrichtung verifiziert (`2026-08-15`).
+- [x] Finales Closed-Test-AAB `1.0.2` / `versionCode 54` gebaut und mit Bundletool, Signatur sowie 16-KB-Ausrichtung verifiziert (`2026-08-15`).
 - [x] Dokumentation auf eine aktuelle Release-Quelle konsolidiert, Dateinamen case-sensitiv vereinheitlicht und alte Snapshot-Historie entfernt (`2026-08-15`).
 - [x] App-weites Premium-UI mit zentraler Navy-/Violett-Spieloptik, wiederverwendbaren Hintergründen, Reward-Chips und Tab-Icons umgesetzt (`2026-08-15`).
 - [x] Home-Abstände und das App-Logo-System vereinheitlicht; altes blaues Logo in App-, Android-, Web- und Store-Flächen ersetzt (`2026-08-15`).

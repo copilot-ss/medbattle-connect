@@ -1,10 +1,11 @@
+import { memo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from '../styles/QuizScreen.styles';
 
 const JOKER_GLYPH = '🃏';
 
-export default function BoostRow({ items }) {
+function BoostRow({ items }) {
   if (!Array.isArray(items) || items.length === 0) {
     return null;
   }
@@ -74,3 +75,5 @@ export default function BoostRow({ items }) {
     </View>
   );
 }
+
+export default memo(BoostRow);

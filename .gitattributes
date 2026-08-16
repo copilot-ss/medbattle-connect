@@ -1,0 +1,15 @@
+* text=auto eol=lf
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+*.aab binary
+*.gif binary
+*.ico binary
+*.jar binary
+*.jpg binary
+*.jpeg binary
+*.jks binary
+*.keystore binary
+*.png binary
+*.ttf binary

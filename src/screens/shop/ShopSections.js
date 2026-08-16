@@ -1,5 +1,6 @@
 import { Animated, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   COIN_EMOJI,
   PURCHASE_SPIN_DEGREES_PER_CYCLE,
@@ -160,16 +161,29 @@ export default function ShopSections({
               <Animated.View
                 style={[
                   styles.itemCard,
+                  {
+                    borderColor: `${item.accent}70`,
+                    shadowColor: item.accent,
+                  },
                   isDailyItem ? styles.itemCardDaily : null,
                   !canBuy ? styles.itemCardDisabled : null,
                   itemCardSpinStyle,
                 ]}
               >
-                {savingsLabel ? (
-                  <View style={styles.itemBadge} pointerEvents="none">
-                    <Text style={styles.itemBadgeText}>{savingsLabel}</Text>
-                  </View>
-                ) : null}
+                <LinearGradient
+                  colors={[`${item.accent}30`, 'rgba(17, 20, 44, 0.98)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.itemCardGradient}
+                  pointerEvents="none"
+                />
+                <View style={styles.itemBadgeSlot} pointerEvents="none">
+                  {savingsLabel ? (
+                    <View style={styles.itemBadge}>
+                      <Text style={styles.itemBadgeText}>{savingsLabel}</Text>
+                    </View>
+                  ) : null}
+                </View>
                 <View style={[styles.itemIconWrap, { backgroundColor: item.accent }]}>
                   {iconImage ? (
                     <Image
@@ -192,7 +206,7 @@ export default function ShopSections({
                       ))}
                     </View>
                   ) : (
-                    <Ionicons name={item.icon} size={20} color="#0A0A12" />
+                    <Ionicons name={item.icon} size={24} color="#0A0A12" />
                   )}
                 </View>
                 <View style={styles.itemInfo}>

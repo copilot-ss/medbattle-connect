@@ -87,10 +87,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingRight: 12,
   },
-  headerTitleWithBack: {
-    textAlign: 'center',
-    paddingRight: 0,
-  },
   headerActionButton: {
     width: 42,
     height: 42,
@@ -111,11 +107,6 @@ const styles = StyleSheet.create({
   headerTrailingButton: {
     borderColor: colors.borderStrong,
     backgroundColor: colors.surfaceAlt,
-  },
-  headerBackSpacer: {
-    width: 42,
-    height: 42,
-    flexShrink: 0,
   },
   headerCloseButton: {
     marginRight: __DEV__ ? 144 : 0,
@@ -167,9 +158,6 @@ const styles = StyleSheet.create({
   settingsCard: {
     borderColor: 'rgba(87, 199, 255, 0.35)',
   },
-  languageCard: {
-    borderColor: colors.border,
-  },
   squadCard: {
     borderColor: 'rgba(87, 199, 255, 0.35)',
   },
@@ -183,11 +171,6 @@ const styles = StyleSheet.create({
     marginBottom: 0,
     textTransform: 'uppercase',
     fontFamily: fonts.medium,
-  },
-  cardTitle: {
-    color: colors.textPrimary,
-    fontSize: 18,
-    fontFamily: fonts.bold,
   },
   claimOverlayContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -224,36 +207,10 @@ const styles = StyleSheet.create({
     },
     overflow: 'hidden',
   },
-  claimCenterBadgeWrap: {
-    alignSelf: 'flex-start',
-  },
-  claimCenterBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255, 127, 168, 0.16)',
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 127, 168, 0.42)',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  claimCenterBadgeText: {
-    color: '#FFC3D8',
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
   claimCenterHero: {
     marginTop: 0,
     width: '100%',
     alignItems: 'flex-start',
-  },
-  claimCenterCoinsLabel: {
-    color: '#FFC3D8',
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
   },
   claimCenterHeroRow: {
     marginTop: 6,
@@ -329,61 +286,6 @@ const styles = StyleSheet.create({
   },
   rowBetweenSpaced: {
     marginTop: 14,
-  },
-  languageRow: {
-    flexDirection: 'row',
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radii.md,
-    padding: 4,
-    marginTop: 12,
-  },
-  languageButton: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: radii.sm,
-    position: 'relative',
-    alignItems: 'center',
-  },
-  languageButtonActive: {
-    backgroundColor: 'rgba(87, 199, 255, 0.16)',
-    borderColor: 'rgba(87, 199, 255, 0.5)',
-    borderWidth: 1,
-  },
-  languageButtonText: {
-    color: colors.textMuted,
-    fontFamily: fonts.medium,
-  },
-  languageButtonTextActive: {
-    color: colors.textPrimary,
-  },
-  languageButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  languageFlag: {
-    fontSize: 16,
-    marginRight: 8,
-    opacity: 0.7,
-  },
-  languageFlagActive: {
-    opacity: 1,
-  },
-  languageCheck: {
-    position: 'absolute',
-    top: 6,
-    right: 8,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  languageCheckText: {
-    color: colors.background,
-    fontSize: 11,
-    fontFamily: fonts.bold,
   },
   fieldGroup: {
     marginBottom: 16,
@@ -461,25 +363,6 @@ const styles = StyleSheet.create({
   },
   warningButtonDisabled: {
     backgroundColor: colors.surfaceAlt,
-  },
-  friendHeroRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 18,
-  },
-  friendToggleRow: {
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-  },
-  friendHeroTextGroup: {
-    flex: 1,
-  },
-  friendHeroTitle: {
-    color: colors.textPrimary,
-    fontSize: 22,
-    fontFamily: fonts.bold,
   },
   friendHeroSubtitle: {
     color: colors.textSecondary,
@@ -673,11 +556,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     marginTop: 2,
   },
-  friendStatusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
   friendStatusDot: {
     width: 8,
     height: 8,
@@ -688,75 +566,8 @@ const styles = StyleSheet.create({
     marginRight: 0,
     flexShrink: 0,
   },
-  friendStatusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexShrink: 1,
-    minWidth: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  friendStatusBadgeOnline: {
-    backgroundColor: 'rgba(34, 197, 94, 0.12)',
-    borderColor: 'rgba(34, 197, 94, 0.28)',
-  },
-  friendStatusBadgeOffline: {
-    backgroundColor: 'rgba(148, 163, 184, 0.12)',
-    borderColor: 'rgba(148, 163, 184, 0.24)',
-  },
-  friendStatusBadgeLobby: {
-    backgroundColor: 'rgba(96, 165, 250, 0.12)',
-    borderColor: 'rgba(96, 165, 250, 0.24)',
-  },
-  friendStatusBadgeQuiz: {
-    backgroundColor: 'rgba(251, 191, 36, 0.12)',
-    borderColor: 'rgba(251, 191, 36, 0.24)',
-  },
   friendStatusDotOnline: {
     backgroundColor: colors.success,
-  },
-  friendStatusDotOffline: {
-    backgroundColor: colors.textMuted,
-  },
-  friendStatusDotLobby: {
-    backgroundColor: colors.accent,
-  },
-  friendStatusDotQuiz: {
-    backgroundColor: '#FBBF24',
-  },
-  friendStatusText: {
-    color: colors.accentPink,
-    fontSize: 12,
-    fontFamily: fonts.medium,
-  },
-  friendStatusBadgeText: {
-    flexShrink: 1,
-  },
-  friendStatusTextOnline: {
-    color: '#9BF2C4',
-  },
-  friendStatusTextOffline: {
-    color: colors.textMuted,
-  },
-  friendStatusTextLobby: {
-    color: '#9EDCFF',
-  },
-  friendStatusTextQuiz: {
-    color: '#FCD34D',
-  },
-  friendRemoveButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 93, 110, 0.4)',
-  },
-  friendRemoveText: {
-    color: '#FFB1B9',
-    fontSize: 12,
-    fontFamily: fonts.medium,
   },
   friendRequestsSection: {
     rowGap: 10,
@@ -937,43 +748,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: fonts.medium,
   },
-  inlineLink: {
-    alignSelf: 'center',
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  inlineLinkText: {
-    color: '#9EDCFF',
-    fontSize: 13,
-    textDecorationLine: 'underline',
-    fontFamily: fonts.medium,
-  },
-  legalRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    columnGap: 6,
-    rowGap: 2,
-    marginTop: 4,
-  },
-  legalLink: {
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-  },
-  legalLinkText: {
-    color: '#9EDCFF',
-    fontSize: 11,
-    fontFamily: fonts.medium,
-  },
-  legalDivider: {
-    color: colors.textMuted,
-    fontSize: 11,
-  },
-  legalLinkDisabled: {
-    opacity: 0.4,
-  },
   helperText: {
     marginTop: 6,
     color: colors.textMuted,
@@ -1014,13 +788,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: radii.md,
-  },
-  avatarFrameImage: {
-    position: 'absolute',
-    top: -6,
-    left: -6,
-    width: 96,
-    height: 96,
   },
   avatarText: {
     color: colors.textPrimary,
@@ -1067,19 +834,6 @@ const styles = StyleSheet.create({
   },
   profileFriendCodeInline: {
     marginTop: 8,
-  },
-  profileQuickAuthButton: {
-    alignSelf: 'flex-start',
-    minWidth: 132,
-    marginTop: 124,
-    marginBottom: 2,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: radii.md,
-  },
-  profileQuickAuthDangerText: {
-    color: colors.textPrimary,
-    fontFamily: fonts.bold,
   },
   profileLevelProgressBlock: {
     marginTop: 8,
@@ -1137,12 +891,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: fonts.medium,
     flexShrink: 1,
-  },
-  profileEmail: {
-    color: colors.textMuted,
-    fontSize: 13,
-    marginTop: 2,
-    fontFamily: fonts.regular,
   },
   levelBadge: {
     marginTop: 8,
@@ -1392,26 +1140,6 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingBottom: 16,
   },
-  flameBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radii.md,
-    backgroundColor: 'rgba(255, 178, 92, 0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 178, 92, 0.4)',
-    columnGap: 6,
-  },
-  flameEmoji: {
-    fontSize: 16,
-  },
-  flameText: {
-    color: '#FFD0A1',
-    fontFamily: fonts.bold,
-    fontSize: 13,
-    letterSpacing: 0.5,
-  },
   avatarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1482,33 +1210,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     letterSpacing: 0.4,
   },
-  avatarToggle: {
-    marginTop: 8,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(87, 199, 255, 0.45)',
-    backgroundColor: 'rgba(87, 199, 255, 0.12)',
-  },
-  avatarToggleText: {
-    color: '#CBEAFF',
-    fontFamily: fonts.bold,
-  },
-  resetContainer: {
-    marginBottom: 8,
-    padding: 16,
-    borderRadius: radii.lg,
-    backgroundColor: colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  bottomActions: {
-    marginTop: 24,
-    marginBottom: 0,
-    gap: 6,
-  },
   footerStack: {
     marginTop: 0,
     paddingTop: 8,
@@ -1516,10 +1217,6 @@ const styles = StyleSheet.create({
   },
   footerPrimary: {
     marginTop: 0,
-  },
-  footerSecondary: {
-    marginTop: 240,
-    gap: 8,
   },
 });
 

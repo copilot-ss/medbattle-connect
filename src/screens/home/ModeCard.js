@@ -1,5 +1,8 @@
 import { useMemo, useRef } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors, gradients } from '../../styles/theme';
 import styles, {
   getModeCardContainerStyle,
   getModeCardTitleStyle,
@@ -36,6 +39,8 @@ export default function ModeCard({
   onPress,
   disabled = false,
   titleMeta = null,
+  icon = null,
+  tone = 'default',
   containerStyle = null,
   pressableStyle = null,
   titleStyle = null,
@@ -48,6 +53,21 @@ export default function ModeCard({
     }),
     [accent]
   );
+  const toneConfig = useMemo(() => {
+    if (tone === 'play') {
+      return { gradient: gradients.play, content: '#211500' };
+    }
+    if (tone === 'lobby') {
+      return { gradient: gradients.lobby, content: '#041B18' };
+    }
+    if (tone === 'join') {
+      return { gradient: gradients.join, content: colors.textPrimary };
+    }
+    return {
+      gradient: [`${accent}38`, 'rgba(17, 20, 44, 0.98)'],
+      content: accent,
+    };
+  }, [accent, tone]);
 
   function handlePressIn() {
     Animated.timing(glow, {
@@ -79,9 +99,32 @@ export default function ModeCard({
         onPressOut={handlePressOut}
         onPress={disabled ? undefined : onPress}
         disabled={disabled}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ disabled }}
       >
+        <LinearGradient
+          colors={toneConfig.gradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          pointerEvents="none"
+          style={styles.modeCardGradient}
+        />
         <View style={styles.modeCardTitleRow}>
-          <Text style={[getModeCardTitleStyle(accent), titleStyle]}>{title}</Text>
+          {icon ? (
+            <View style={styles.modeCardIconWrap}>
+              <Ionicons name={icon} size={22} color={toneConfig.content} />
+            </View>
+          ) : null}
+          <Text
+            style={[
+              getModeCardTitleStyle(accent),
+              { color: toneConfig.content },
+              titleStyle,
+            ]}
+          >
+            {title}
+          </Text>
           {titleMeta ? (
             <View style={styles.modeCardTitleMeta}>{titleMeta}</View>
           ) : null}

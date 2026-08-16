@@ -41,6 +41,7 @@ function readVersionCode() {
 }
 
 const checkScriptPath = path.join(scriptDir, 'check.mjs');
+const verifyScriptPath = path.join(scriptDir, 'verify-android-aab.mjs');
 
 run(process.execPath, [checkScriptPath]);
 
@@ -57,6 +58,8 @@ if (!aabStats) {
   console.error('AAB build finished, but app-release.aab was not found.');
   process.exit(1);
 }
+
+run(process.execPath, [verifyScriptPath, aabPath]);
 
 console.log('');
 console.log(`AAB ready: ${aabPath}`);

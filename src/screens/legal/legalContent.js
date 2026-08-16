@@ -118,7 +118,7 @@ const LEGAL_DOCS_DE = {
   terms: {
     id: 'terms',
     title: 'AGB',
-    updatedAt: '2026-04-13',
+    updatedAt: '2026-08-15',
     intro:
       'Diese Bedingungen regeln die Nutzung der MedQuiz App und der zugehoerigen Dienste.',
     sections: [
@@ -165,6 +165,13 @@ const LEGAL_DOCS_DE = {
           'Die kostenlose Version kann Werbung enthalten.',
           'Wir bemuehen uns um eine stabile Verfuegbarkeit, koennen aber keinen unterbrechungsfreien Betrieb garantieren.',
           'Die Haftung ist auf den gesetzlich zulaessigen Umfang beschraenkt.',
+        ],
+      },
+      {
+        heading: 'Drittanbieter-Assets und Attribution',
+        bullets: [
+          'Avatar-Sticker "Arzt" von inipagistudio auf Flaticon: https://www.flaticon.com/de/kostenloses-sticker/arzt_6181883',
+          'Avatar-Sticker "Krankenschwester" von inipagistudio auf Flaticon: https://www.flaticon.com/de/kostenloses-sticker/krankenschwester_6181895',
         ],
       },
       {
@@ -382,7 +389,7 @@ const LEGAL_DOCS_EN = {
   terms: {
     id: 'terms',
     title: 'Terms of Service',
-    updatedAt: '2026-04-13',
+    updatedAt: '2026-08-15',
     intro: 'These terms govern the use of the MedQuiz app and related services.',
     sections: [
       {
@@ -428,6 +435,13 @@ const LEGAL_DOCS_EN = {
           'The free version may include advertisements.',
           'We aim for stable availability but cannot guarantee uninterrupted service.',
           'Liability is limited to the extent permitted by law.',
+        ],
+      },
+      {
+        heading: 'Third-Party Assets and Attribution',
+        bullets: [
+          'Doctor avatar sticker by inipagistudio on Flaticon: https://www.flaticon.com/de/kostenloses-sticker/arzt_6181883',
+          'Nurse avatar sticker by inipagistudio on Flaticon: https://www.flaticon.com/de/kostenloses-sticker/krankenschwester_6181895',
         ],
       },
       {
@@ -528,7 +542,5 @@ const LEGAL_DOCS_EN = {
 };
 
 export function getLegalDocs(locale = 'en') {
-  return LEGAL_DOCS_EN;
+  return locale === 'de' ? LEGAL_DOCS_DE : LEGAL_DOCS_EN;
 }
-
-export const LEGAL_DOCS = LEGAL_DOCS_EN;

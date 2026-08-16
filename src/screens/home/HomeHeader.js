@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from '../../i18n/useTranslation';
 import AvatarView from '../../components/avatar/AvatarView';
 import styles from '../styles/HomeScreen.styles';
@@ -152,6 +153,13 @@ export default function HomeHeader({
         accessibilityRole="button"
         accessibilityLabel={t('Profil')}
       >
+        <LinearGradient
+          colors={['rgba(36, 40, 86, 0.98)', 'rgba(15, 18, 45, 0.98)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          pointerEvents="none"
+          style={styles.profileQuickAccessGradient}
+        />
         <AvatarView
           uri={avatarUri}
           source={avatarSource}
@@ -197,10 +205,15 @@ export default function HomeHeader({
       </Pressable>
 
       <View style={styles.quickActions}>
-        <View style={styles.coinBadge}>
+        <LinearGradient
+          colors={['rgba(255, 216, 77, 0.28)', 'rgba(75, 47, 12, 0.72)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.coinBadge}
+        >
           <Text style={styles.coinEmoji}>{'\u{1FA99}'}</Text>
           <Text style={styles.coinBadgeText}>{coins}</Text>
-        </View>
+        </LinearGradient>
         {energyActionable ? (
           <Pressable
             onPress={onEnergyPress}
@@ -220,6 +233,13 @@ export default function HomeHeader({
                   },
                 ]}
               >
+                <LinearGradient
+                  colors={['rgba(124, 58, 237, 0.34)', 'rgba(22, 139, 255, 0.22)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  pointerEvents="none"
+                  style={styles.energyTopBadgeGradient}
+                />
                 <Animated.View
                   pointerEvents="none"
                   style={[
@@ -256,6 +276,13 @@ export default function HomeHeader({
               },
             ]}
           >
+            <LinearGradient
+              colors={['rgba(124, 58, 237, 0.34)', 'rgba(22, 139, 255, 0.22)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              pointerEvents="none"
+              style={styles.energyTopBadgeGradient}
+            />
             <Animated.View
               pointerEvents="none"
               style={[

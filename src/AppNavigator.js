@@ -1,4 +1,4 @@
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -15,6 +15,7 @@ import useAuthSession from './hooks/useAuthSession';
 import useLobbyInviteMonitor from './hooks/useLobbyInviteMonitor';
 import useOfflineSync from './hooks/useOfflineSync';
 import LobbyInviteOverlay from './components/LobbyInviteOverlay';
+import GameBackground from './components/game/GameBackground';
 import AuthScreen from './screens/AuthScreen';
 import AvatarEditScreen from './screens/AvatarEditScreen';
 import CategoryDetailScreen from './screens/CategoryDetailScreen';
@@ -33,6 +34,7 @@ import {
   hasRemoteUserProgress,
 } from './services/accountPreferencesService';
 import { setGameplayNotificationSuppressed } from './services/notificationsService';
+import { useTranslation } from './i18n/useTranslation';
 import styles from './screens/styles/AppNavigator.styles';
 
 const Stack = createNativeStackNavigator();
@@ -62,6 +64,7 @@ function getPreferencesOwnerKey(owner) {
 }
 
 function AppNavigatorInner() {
+  const { t } = useTranslation();
   const {
     session,
     isAuthenticated,
@@ -79,6 +82,8 @@ function AppNavigatorInner() {
   useOfflineSync();
   const navigationRef = useRef(null);
   const [preferencesSwitching, setPreferencesSwitching] = useState(false);
+  const [preferencesSwitchError, setPreferencesSwitchError] = useState(null);
+  const [preferencesSwitchRetry, setPreferencesSwitchRetry] = useState(0);
   const [guestTransferLoading, setGuestTransferLoading] = useState(false);
   const transferInFlightRef = useRef(false);
   const targetOwner = useMemo(
@@ -127,10 +132,19 @@ function AppNavigatorInner() {
 
     let active = true;
     setPreferencesSwitching(true);
+    setPreferencesSwitchError(null);
 
     switchAccountOwner(targetOwner)
+      .then((result) => {
+        if (!result?.ok) {
+          throw result?.error ?? new Error('Account-Speicher konnte nicht gewechselt werden.');
+        }
+      })
       .catch((err) => {
         console.warn('Konnte Account-Speicher nicht wechseln:', err);
+        if (active) {
+          setPreferencesSwitchError(err);
+        }
       })
       .finally(() => {
         if (active) {
@@ -144,6 +158,7 @@ function AppNavigatorInner() {
   }, [
     accountOwnerKey,
     initializing,
+    preferencesSwitchRetry,
     switchAccountOwner,
     targetOwner,
     targetOwnerKey,
@@ -236,6 +251,40 @@ function AppNavigatorInner() {
     };
   }, []);
 
+  if (preferencesSwitchError && accountOwnerKey !== targetOwnerKey) {
+    return (
+      <View style={styles.loadingContainer}>
+        <GameBackground intensity="subtle" />
+        <View style={styles.initializationErrorCard}>
+          <Text style={styles.initializationErrorTitle}>
+            {t('Daten konnten nicht geladen werden')}
+          </Text>
+          <Text style={styles.initializationErrorText}>
+            {t('Bitte versuche es erneut oder melde dich ab.')}
+          </Text>
+          <Pressable
+            onPress={() => setPreferencesSwitchRetry((value) => value + 1)}
+            style={styles.initializationRetryButton}
+            accessibilityRole="button"
+          >
+            <Text style={styles.initializationRetryButtonText}>
+              {t('Erneut versuchen')}
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={clearSession}
+            style={styles.initializationSignOutButton}
+            accessibilityRole="button"
+          >
+            <Text style={styles.initializationSignOutButtonText}>
+              {t('Abmelden')}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
   if (
     initializing ||
     preferencesLoading ||
@@ -245,6 +294,7 @@ function AppNavigatorInner() {
   ) {
     return (
       <View style={styles.loadingContainer}>
+        <GameBackground intensity="subtle" />
         <ActivityIndicator size="large" color="#2563EB" />
       </View>
     );

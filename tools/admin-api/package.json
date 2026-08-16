@@ -2,11 +2,12 @@
   "name": "medbattle-admin-api",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "main": "index.js",
   "scripts": {
-    "sync:mcp": "node import-mcp.js",
     "start": "node index.js",
-    "start:sync": "npm run sync:mcp && npm start",
     "dev": "nodemon index.js"
   },
   "dependencies": {

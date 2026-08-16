@@ -114,7 +114,7 @@ def isEasBuild = ["EAS_BUILD", "EAS_BUILD_PLATFORM", "EAS_BUILD_PROFILE"].any { 
 }
 def googleTestAdmobAppId = "ca-app-pub-3940256099942544~3347511713"
 def androidAdmobAppId = readRepoEnvValue(["EXPO_PUBLIC_ADMOB_APP_ID_ANDROID"])
-def trackedAndroidVersionCode = 51
+def trackedAndroidVersionCode = 54
 def appBuildGradleFile = project.file("build.gradle")
 def appConfigFile = new File(projectRoot, "app.json")
 def parseVersionCode = { String text, String pattern ->
@@ -240,18 +240,18 @@ def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBu
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
 android {
-    ndkVersion rootProject.ext.ndkVersion
+    ndkVersion = rootProject.ext.ndkVersion
 
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.sjigalin.medbattle'
+    namespace = 'com.sjigalin.medbattle'
     defaultConfig {
         applicationId 'com.sjigalin.medbattle'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode resolvedAndroidVersionCode
-        versionName "1.0.1"
+        versionName "1.0.2"
 
         def admobAppId = androidAdmobAppId ?: googleTestAdmobAppId
         manifestPlaceholders = [admobAppId: admobAppId]
@@ -279,28 +279,28 @@ android {
     }
     buildTypes {
         debug {
-            signingConfig signingConfigs.debug
+            signingConfig = signingConfigs.debug
         }
         release {
             if (hasReleaseSigningConfig) {
-                signingConfig signingConfigs.release
+                signingConfig = signingConfigs.release
             }
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
-            shrinkResources enableShrinkResources.toBoolean()
+            shrinkResources = enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             def enablePngCrunchInRelease = findProperty('android.enablePngCrunchInReleaseBuilds') ?: 'true'
-            crunchPngs enablePngCrunchInRelease.toBoolean()
+            crunchPngs = enablePngCrunchInRelease.toBoolean()
         }
     }
     packagingOptions {
         jniLibs {
             def enableLegacyPackaging = findProperty('expo.useLegacyPackaging') ?: 'false'
-            useLegacyPackaging enableLegacyPackaging.toBoolean()
+            useLegacyPackaging = enableLegacyPackaging.toBoolean()
         }
     }
     androidResources {
-        ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
+        ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
     }
 }
 

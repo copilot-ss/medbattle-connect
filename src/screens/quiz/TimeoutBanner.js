@@ -1,8 +1,9 @@
+import { memo } from 'react';
 import { Text, View } from 'react-native';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/QuizScreen.styles';
 
-export default function TimeoutBanner({ timedOut, isAnswerLocked }) {
+function TimeoutBanner({ timedOut, isAnswerLocked }) {
   const { t } = useTranslation();
 
   if (!timedOut || !isAnswerLocked) {
@@ -14,3 +15,5 @@ export default function TimeoutBanner({ timedOut, isAnswerLocked }) {
     </View>
   );
 }
+
+export default memo(TimeoutBanner);

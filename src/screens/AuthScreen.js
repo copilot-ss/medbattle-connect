@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 
+import GameBackground from '../components/game/GameBackground';
 import { usePreferences } from '../context/PreferencesContext';
 import { savePendingGuestAccountTransfer } from '../context/preferences/storage';
 import { supabase } from '../lib/supabaseClient';
@@ -429,6 +430,7 @@ export default function AuthScreen({ route, navigation, onGuest }) {
 
   return (
     <View style={styles.container}>
+      <GameBackground intensity="subtle" />
       <View style={styles.backgroundGlowTop} pointerEvents="none" />
       <View style={styles.backgroundGlowBottom} pointerEvents="none" />
       <View style={styles.panel}>

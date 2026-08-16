@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Image, Text, View } from 'react-native';
 import { getQuestionImageAsset } from '../../data/questionImageAssets';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -21,7 +22,7 @@ function resolveImageSource(imageSource, imageUrl) {
   return /^https?:\/\//i.test(trimmed) ? { uri: trimmed } : null;
 }
 
-export default function QuestionCard({
+function QuestionCard({
   activeIndex,
   totalQuestions,
   question,
@@ -72,3 +73,5 @@ export default function QuestionCard({
     </View>
   );
 }
+
+export default memo(QuestionCard);

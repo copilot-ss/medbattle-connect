@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { usePreferences } from '../context/PreferencesContext';
 import usePremiumStatus from '../hooks/usePremiumStatus';
@@ -7,8 +8,10 @@ import { calculateCoinReward } from '../services/quizService';
 import { calculateXpGain } from '../services/titleService';
 import { getCategoryMeta } from '../data/categoryMeta';
 import { CATEGORY_QUESTION_LIMIT } from '../config/quizLimits';
-import { colors } from '../styles/theme';
+import { colors, gradients } from '../styles/theme';
 import { useTranslation } from '../i18n/useTranslation';
+import GameBackground from '../components/game/GameBackground';
+import RewardChip from '../components/game/RewardChip';
 import ModeCard from './home/ModeCard';
 import styles from './styles/CategoryDetailScreen.styles';
 import homeStyles from './styles/HomeScreen.styles';
@@ -72,6 +75,7 @@ export default function CategoryDetailScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
+      <GameBackground />
       <View style={styles.backgroundGlowTop} pointerEvents="none" />
       <View style={styles.backgroundGlowBottom} pointerEvents="none" />
 
@@ -86,12 +90,24 @@ export default function CategoryDetailScreen({ navigation, route }) {
           </Pressable>
           <View style={styles.headerSpacer} />
           <View style={[homeStyles.energyTopBadge, styles.energyBadgeReset]}>
+            <LinearGradient
+              colors={['rgba(124, 58, 237, 0.34)', 'rgba(22, 139, 255, 0.22)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              pointerEvents="none"
+              style={homeStyles.energyTopBadgeGradient}
+            />
             <Text style={homeStyles.energyTopEmoji}>{'\u26A1'}</Text>
             <Text style={homeStyles.energyTopBadgeText}>{energyLabel}</Text>
           </View>
         </View>
 
-        <View style={styles.categoryCard}>
+        <LinearGradient
+          colors={gradients.surfaceAccent}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.categoryCard}
+        >
           <View
             style={[
               styles.categoryIconWrap,
@@ -112,25 +128,27 @@ export default function CategoryDetailScreen({ navigation, route }) {
           </View>
           <Text style={styles.categoryTitle}>{categoryDisplay}</Text>
           <Text style={styles.categoryDescription}>{categoryDescription}</Text>
-          <Text style={styles.categoryReward}>
-            {t('+{xp} XP · +{coins} Coins', {
-              xp: rewardXp,
-              coins: rewardCoins,
-            })}
-          </Text>
-        </View>
+          <View style={styles.categoryRewards}>
+            <RewardChip type="xp" value={rewardXp} label="XP" />
+            <RewardChip type="coin" value={rewardCoins} label={t('Coins')} />
+          </View>
+        </LinearGradient>
 
         <View>
           <View style={styles.modeSection}>
             <ModeCard
               title={t('Solo-Spiel')}
               accent={colors.accentWarm}
+              icon="play"
+              tone="play"
               onPress={handleStartSolo}
               disabled={hasLobby}
             />
             <ModeCard
               title={t('Lobby erstellen')}
               accent={colors.accentGreen}
+              icon="people"
+              tone="lobby"
               onPress={handlePlayWithFriends}
               disabled={isOffline || hasLobby}
             />

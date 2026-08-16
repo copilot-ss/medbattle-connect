@@ -418,12 +418,6 @@ const styles = StyleSheet.create({
   scoreboardScoreLeft: {
     color: '#94A3B8',
   },
-  scoreboardScoreLabel: {
-    color: colors.textMuted,
-    fontSize: 11,
-    marginTop: 2,
-    fontFamily: fonts.regular,
-  },
   multiplayerPointsWrap: {
     alignItems: 'center',
     marginTop: 2,

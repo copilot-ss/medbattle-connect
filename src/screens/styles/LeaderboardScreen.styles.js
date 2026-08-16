@@ -73,11 +73,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     lineHeight: 24,
   },
-  headerSubtitle: {
-    color: colors.textSecondary,
-    marginTop: 6,
-    fontFamily: fonts.regular,
-  },
   stateContainer: {
     flex: 1,
     justifyContent: 'center',

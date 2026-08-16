@@ -14,6 +14,7 @@ import styles from './styles/SettingsScreen.styles';
 import { useTranslation } from '../i18n/useTranslation';
 import PublicProfileSheet from '../components/PublicProfileSheet';
 import usePublicProfileSheet from '../hooks/usePublicProfileSheet';
+import GameBackground from '../components/game/GameBackground';
 
 export default function FriendsScreen({ navigation, route, showClose = true }) {
   const { t } = useTranslation();
@@ -143,6 +144,7 @@ export default function FriendsScreen({ navigation, route, showClose = true }) {
 
   return (
     <View style={styles.container}>
+      <GameBackground intensity="subtle" />
       <View style={styles.backgroundGlowTop} pointerEvents="none" />
       <View style={styles.backgroundGlowBottom} pointerEvents="none" />
       <SettingsHeader

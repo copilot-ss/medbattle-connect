@@ -1,36 +1,56 @@
-# SUPABASE_SCHEMA.md
+# Supabase schema
 
-Stand: 2026-03-24
+Stand: 2026-08-15
+Migrationen bis: `20260507110000_keep_match_active_when_player_abandons.sql`
 
 ## Quelle der Wahrheit
-- Primar gilt im Repo der Migrationsstand unter `supabase/migrations/`.
-- Fuer Codex-/Review-Zwecke ist ein lokaler Schema-Dump optional nuetzlich, aber nicht die fuehrende Quelle.
 
-## Aktuell relevante DB-Bereiche
-- `questions` + `question_translations` fuer den Online-Fragenpool
-- `users`, `profiles`, `scores` fuer Profil, Fortschritt und Rangliste
-- `matches` + Match-RPCs fuer Multiplayer
+Die versionierten Dateien unter `supabase/migrations/` sind die einzige
+verbindliche Schemaquelle. Ein lokaler oder Remote-Dump ist nur ein Prüfstand
+und darf Migrationen nicht ersetzen.
 
-## Wichtige aktuelle DB-Realitaet
-- Die Rangliste ist seit `2026-03-24` kumulativ.
-- Dafuer existiert `users.leaderboard_points`, das von `submit_score(...)` fortgeschrieben wird.
-- `get_leaderboard(...)` und `fetch_public_profile(...)` ranken nicht mehr nach dem besten Einzelrun, sondern nach dieser persistierten Summe.
-- Der Online-Fragenpool wird direkt aus `questions` und `question_translations` gespeist; reine Inhaltsaenderungen an diesen Tabellen sind ohne neuen App-Build live.
-- Single-Session-Login wird ueber die RPCs `claim_active_session(...)`, `is_active_session(...)` und `release_active_session(...)` gestuetzt.
+## Aktuelle Bereiche
 
-## Praktischer Workflow
+- `questions` und `question_translations`: Online-Fragen, Erklärungen und
+  optionale Public-Domain-Bild-URLs.
+- `users`, `profiles` und `scores`: Profil, XP, Coins, Energie,
+  `leaderboard_points`, Einstellungen und Accountzustand.
+- `matches`: Lobby- und Quizstatus. Bis zu fünf Teilnehmer liegen im JSONB-Feld
+  `state`; `host_id` und `guest_id` bilden deshalb nicht mehr alle Teilnehmer ab.
+- Friend-, Invite-, Report- und Moderationsfunktionen: soziale Flows und
+  Realtime-Lobby-Einladungen.
+
+## Wichtige Laufzeitregeln
+
+- Die Rangliste verwendet kumulative `users.leaderboard_points`.
+- Single-Session-Login läuft über `claim_active_session(...)`,
+  `is_active_session(...)` und `release_active_session(...)`.
+- Fünf-Spieler-Lobbys werden ausschließlich über die Match-RPCs und die
+  Hilfsfunktionen `match_participant_rows(...)` / `match_state_has_player(...)`
+  ausgewertet. DSAR- und Cleanup-Abfragen müssen das JSONB-`state` einbeziehen.
+- Achievement-Belohnungen werden mit `claim_user_achievement(...)` nur einmal
+  als beansprucht markiert.
+- Reine Änderungen am Fragenbestand werden nach einer Datenmigration ohne neue
+  App-Binary wirksam.
+
+## Offene Härtung vor Produktions-Rollout
+
+Einige RPCs akzeptieren weiterhin vom Client berechnete Score-, XP-, Coin- oder
+Fortschrittswerte. Dazu gehören insbesondere Score-/Progress-/Achievement- und
+Match-Progress-Flows. Diese Werte müssen serverseitig aus vertrauenswürdigen
+Fragen- und Kaufdaten berechnet oder streng begrenzt werden; bis dahin ist die
+Spielökonomie manipulierbar. Der aktuelle Stand ist in `TASKS.md` und
+`docs/release/RELEASE_STATUS.md` als Produktionsblocker geführt.
+
+## Prüfworkflow
+
 ```powershell
-# 1) Projekt verknuepfen (einmalig)
-supabase link --project-ref <DEIN_REF>
-
-# 2) Remote-Migrationen einsehen
+supabase link --project-ref <PROJECT_REF>
 supabase migration list --linked
-
-# 3) Optional: lokalen Schema-Dump ziehen
-supabase db pull --local
+supabase db lint --linked
 ```
 
-## Hinweise
-- `supabase db pull --local` ist optional und erzeugt einen Snapshot des aktuellen Remote-Schemas.
-- Fuer App-Aenderungen an Datenlogik immer zuerst die existierenden Migrationen und RPCs lesen, bevor ein neuer Dump beurteilt wird.
-- Keine Secrets oder Service-Role-Keys ins Repo schreiben.
+- Vor jeder neuen Migration zuerst spätere Definitionen derselben Funktion
+  suchen; bei `create or replace function` gilt die letzte Migration.
+- Keine Anon-, Service-Role- oder Datenbank-Schlüssel in Git, VS-Code-Settings
+  oder Dokumentation speichern.

@@ -1,6 +1,7 @@
 import { memo, useMemo } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from '../../i18n/useTranslation';
 import { colors } from '../../styles/theme';
 import styles from '../styles/HomeScreen.styles';
@@ -77,6 +78,9 @@ function StreakCard({
   streakShieldCount = 0,
   streakShieldActive = false,
   onToggleStreakShield,
+  cardStyle = null,
+  progressTextStyle = null,
+  titleStyle = null,
 }) {
   const { t } = useTranslation();
 
@@ -124,11 +128,26 @@ function StreakCard({
   );
 
   return (
-    <View style={[styles.streakCard, streakGlowStyle]}>
+    <View
+      style={[
+        styles.streakCard,
+        cardStyle,
+        streakGlowStyle,
+      ]}
+    >
+      <LinearGradient
+        colors={['rgba(255, 169, 71, 0.16)', 'rgba(17, 20, 44, 0.98)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        pointerEvents="none"
+        style={styles.streakCardGradient}
+      />
       <View style={styles.streakHeader}>
         <View style={styles.streakCopy}>
           <View style={styles.streakTitleRow}>
-            <Text style={styles.streakTitle}>{streakSummary.title}</Text>
+            <Text style={[styles.streakTitle, titleStyle]}>
+              {streakSummary.title}
+            </Text>
             <Pressable
               onPress={onToggleStreakShield}
               disabled={shieldDisabled}
@@ -175,7 +194,9 @@ function StreakCard({
           ]}
         />
       </View>
-      <Text style={styles.streakProgressText}>{streakSummary.progressLabel}</Text>
+      <Text style={[styles.streakProgressText, progressTextStyle]}>
+        {streakSummary.progressLabel}
+      </Text>
     </View>
   );
 }

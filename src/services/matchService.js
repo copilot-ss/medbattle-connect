@@ -5,6 +5,10 @@ import {
 } from '../config/quizLimits';
 import { runSupabaseRequest } from './supabaseRequest';
 import {
+  normalizeLanguage,
+  resolveFallbackLanguage,
+} from '../utils/language';
+import {
   LOBBY_IDLE_TIMEOUT_MINUTES,
   MATCH_CACHE_TTL,
   MATCH_STATUS,
@@ -20,32 +24,9 @@ const openMatchesCache = {
   data: null,
 };
 
-const DEFAULT_LANGUAGE = 'en';
 const MATCH_REALTIME_RETRY_BASE_MS = 2000;
 const MATCH_REALTIME_RETRY_MAX_MS = 15000;
 const LOBBY_CLEANUP_FORCE_MIN_INTERVAL_MS = 30 * 1000;
-
-function normalizeLanguage(value) {
-  if (typeof value !== 'string') {
-    return DEFAULT_LANGUAGE;
-  }
-  const normalized = value.trim().toLowerCase();
-  if (normalized === 'de') {
-    return 'de';
-  }
-  return normalized === 'en' ? 'en' : DEFAULT_LANGUAGE;
-}
-
-function normalizeLanguageOrNull(value) {
-  if (value === null || value === undefined) {
-    return null;
-  }
-  if (typeof value !== 'string') {
-    return null;
-  }
-  const normalized = value.trim().toLowerCase();
-  return normalized ? normalized : null;
-}
 
 let initialLobbyCleanupPromise = null;
 let lobbyCleanupPromise = null;
@@ -194,12 +175,10 @@ export async function createMatch({
   const normalizedCategory =
     typeof category === 'string' && category.trim() ? category.trim() : null;
   const normalizedLanguage = normalizeLanguage(language);
-  const normalizedFallbackLanguage =
-    fallbackLanguage === undefined
-      ? normalizedLanguage === DEFAULT_LANGUAGE
-        ? DEFAULT_LANGUAGE
-        : null
-      : normalizeLanguageOrNull(fallbackLanguage);
+  const normalizedFallbackLanguage = resolveFallbackLanguage(
+    normalizedLanguage,
+    fallbackLanguage
+  );
   const limit = Number.isFinite(questionLimit)
     ? Math.max(1, Math.min(questionLimit, 50))
     : MULTIPLAYER_DEFAULT_QUESTION_LIMIT;
@@ -398,12 +377,10 @@ export async function updateMatchSettings({
   }
 
   const normalizedLanguage = normalizeLanguage(language);
-  const normalizedFallbackLanguage =
-    fallbackLanguage === undefined
-      ? normalizedLanguage === DEFAULT_LANGUAGE
-        ? DEFAULT_LANGUAGE
-        : null
-      : normalizeLanguageOrNull(fallbackLanguage);
+  const normalizedFallbackLanguage = resolveFallbackLanguage(
+    normalizedLanguage,
+    fallbackLanguage
+  );
   const limit = Number.isFinite(questionLimit)
     ? Math.max(1, Math.min(questionLimit, 50))
     : MULTIPLAYER_DEFAULT_QUESTION_LIMIT;
@@ -563,12 +540,10 @@ export async function restartMatchLobby({
   }
 
   const normalizedLanguage = normalizeLanguage(language);
-  const normalizedFallbackLanguage =
-    fallbackLanguage === undefined
-      ? normalizedLanguage === DEFAULT_LANGUAGE
-        ? DEFAULT_LANGUAGE
-        : null
-      : normalizeLanguageOrNull(fallbackLanguage);
+  const normalizedFallbackLanguage = resolveFallbackLanguage(
+    normalizedLanguage,
+    fallbackLanguage
+  );
   const limit = Number.isFinite(questionLimit)
     ? Math.max(1, Math.min(questionLimit, 50))
     : MULTIPLAYER_DEFAULT_QUESTION_LIMIT;
@@ -614,12 +589,10 @@ export async function leaveMatchLobby({
   }
 
   const normalizedLanguage = normalizeLanguage(language);
-  const normalizedFallbackLanguage =
-    fallbackLanguage === undefined
-      ? normalizedLanguage === DEFAULT_LANGUAGE
-        ? DEFAULT_LANGUAGE
-        : null
-      : normalizeLanguageOrNull(fallbackLanguage);
+  const normalizedFallbackLanguage = resolveFallbackLanguage(
+    normalizedLanguage,
+    fallbackLanguage
+  );
 
   try {
     const payload = {
