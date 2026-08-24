@@ -3,7 +3,7 @@
 ## Aktueller Stand
 
 - Datum: `2026-08-24`
-- Der finale Produktionsupdate-Kandidat wurde erfolgreich als `1.0.4` / `versionCode 58` gebaut und verifiziert.
+- Der finale Produktionsupdate-Kandidat wurde erfolgreich als `1.0.4` / `versionCode 59` gebaut und verifiziert.
 - Vollständiger Store-, Runtime-, AAB- und Hash-Stand wird in `docs/release/RELEASE_STATUS.md` geführt.
 
 ## Jetzt offen
@@ -29,7 +29,7 @@
 
 ## Release-Gates
 
-- [x] Finales AAB `1.0.4` / `versionCode 58` gebaut.
+- [x] Finales AAB `1.0.4` / `versionCode 59` gebaut.
 - [x] SHA-256, Größe, Signatur, Upload-Zertifikat, Bundle, targetSdk 36, ABIs und 16-KB-Ausrichtung des finalen AAB geprüft.
 - [x] `npm run release:check`, TypeScript, Expo Doctor, Dependency-Check und Web-Build gegen den finalen Code-Stand bestätigt.
 - [x] Premium-UI, neue Logos und responsive Home-/Shop-/Quiz-Layouts auf Emulatorgrößen `1080x2400` und `1080x1920` geprüft.
@@ -42,6 +42,7 @@
 
 ## Jüngste Abschlüsse
 
+- [x] Android-`versionCode` auf `59` erhöht und neues signiertes Produktions-AAB vollständig verifiziert (`2026-08-24`).
 - [x] Play-Store-Icon als kanonische Quelle eingerichtet, Adaptive-/Launcher-/Splash-/Web-Icons vereinheitlicht und finalen AAB-58-Homescreen auf Android API 36 geprüft (`2026-08-24`).
 - [x] Supabase-Legacy-Keys deaktiviert, neue Publishable-/Secret-Keys deployed und alte Keys live als ungültig bestätigt (`2026-08-24`).
 - [x] Serverseitige, idempotente Quiz-/Match-/Shop-/Reward-Validierung deployed und mit authentifizierten Angriffs- und Replaytests bestätigt (`2026-08-24`).

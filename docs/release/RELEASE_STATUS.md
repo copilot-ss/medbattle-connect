@@ -6,7 +6,7 @@ Diese Datei ist die einzige Quelle für den aktuellen Release- und Artefaktstand
 
 ## Entscheidung
 
-- Produktionsupdate-Upload des finalen AAB 58: `BEREIT`.
+- Produktionsupdate-Upload des finalen AAB 59: `BEREIT`.
 - Sicherheits- und Lizenzfreigabe: `GO` für diesen Release-Umfang.
 - Öffentlicher Rollout: nach Play-Prüfung und Store-Smoke freigeben.
 
@@ -14,7 +14,7 @@ Diese Datei ist die einzige Quelle für den aktuellen Release- und Artefaktstand
 
 | Bereich | Stand |
 | --- | --- |
-| Finaler Produktionsupdate-Kandidat | `1.0.4`, Android `versionCode 58` |
+| Finaler Produktionsupdate-Kandidat | `1.0.4`, Android `versionCode 59` |
 | Expo SDK | `55` |
 | React Native | `0.83.10` |
 | React | `19.2.0` |
@@ -25,8 +25,8 @@ Diese Datei ist die einzige Quelle für den aktuellen Release- und Artefaktstand
 ## Finales verifiziertes Produktionsartefakt
 
 - Pfad: `android/app/build/outputs/bundle/release/app-release.aab`
-- SHA-256: `E6BC2D7EADF5339EF5A274C00BE6B9F46EE781B2BC583DD910648DFEED169715`
-- Größe: `56,723,292` Bytes
+- SHA-256: `6A3A2210CCA241830647BF835B4852DE59AD523C5F763788AA9D3FAE42AA7ECD`
+- Größe: `56,723,295` Bytes
 - Erstellt: `2026-08-24`
 - targetSdk: `36`
 - ABIs: `arm64-v8a`, `armeabi-v7a`, `x86_64`
@@ -34,7 +34,7 @@ Diese Datei ist die einzige Quelle für den aktuellen Release- und Artefaktstand
 - Signatur und dokumentiertes Upload-Zertifikat: geprüft und übereinstimmend
 - Bundletool-Validierung: bestanden
 
-## Bestandene technische Gates für AAB 58
+## Bestandene technische Gates für AAB 59
 
 - `npm run release:check`
 - `npx tsc --noEmit`
@@ -65,7 +65,7 @@ Diese Datei ist die einzige Quelle für den aktuellen Release- und Artefaktstand
 
 ## Offene Release-Gates
 
-- [ ] AAB 58 als Update in Google Play Produktion hochladen.
+- [ ] AAB 59 als Update in Google Play Produktion hochladen.
 - [ ] Store-ausgelieferten finalen Kandidaten auf Emulator und Realgerät installieren und `versionCode`/`versionName` prüfen.
 - [ ] Google-, Discord- und E-Mail-Auth inklusive Reset/Confirm end-to-end testen.
 - [ ] Offline-Quick-Play und späteren Online-Sync testen.
@@ -80,7 +80,7 @@ Diese Datei ist die einzige Quelle für den aktuellen Release- und Artefaktstand
 
 ## Nächster Ablauf
 
-1. Das verifizierte AAB 58 manuell oder mit dem expliziten lokalen Pfad aus `PLAY_RELEASE_RUNBOOK.md` in Produktion hochladen.
+1. Das verifizierte AAB 59 manuell oder mit dem expliziten lokalen Pfad aus `PLAY_RELEASE_RUNBOOK.md` in Produktion hochladen.
 2. Rollout abwarten, genau den von Google Play ausgelieferten Kandidaten installieren und `RELEASE_TESTS.md` vollständig abarbeiten.
 3. Nach abgeschlossenen Play-Pflichtfeldern die Produktionsfreigabe neu bewerten.
 
