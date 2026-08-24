@@ -659,18 +659,26 @@ export async function updateUsername(userId, nextUsername) {
       };
     }
 
-    const upsertPayload = { id: userId, username: sanitized, email: emailForUpsert };
-
-    const { error: upsertError } = await runSupabaseRequest(
-      () =>
-        supabase
-          .from('users')
-          .upsert(upsertPayload, { onConflict: 'id' }),
-      { label: 'userService.upsertProfile' }
+    const { data: ownProfile, error: ownProfileError } = await runSupabaseRequest(
+      () => supabase.from('users').select('id').eq('id', userId).maybeSingle(),
+      { label: 'userService.checkOwnProfile' }
     );
 
-    if (upsertError) {
-      throw upsertError;
+    if (ownProfileError) {
+      throw ownProfileError;
+    }
+
+    const profilePayload = { username: sanitized, email: emailForUpsert };
+    const { error: profileWriteError } = await runSupabaseRequest(
+      () =>
+        ownProfile?.id
+          ? supabase.from('users').update(profilePayload).eq('id', userId)
+          : supabase.from('users').insert({ id: userId, ...profilePayload }),
+      { label: ownProfile?.id ? 'userService.updateProfile' : 'userService.insertProfile' }
+    );
+
+    if (profileWriteError) {
+      throw profileWriteError;
     }
 
     const { error: metaError } = await runSupabaseRequest(

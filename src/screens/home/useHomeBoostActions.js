@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getAdsModule, getRewardedAdUnitId, initializeAds } from '../../services/adsService';
-import { syncUserProgressDelta } from '../../services/userProgressService';
+import {
+  createShopOperationKey,
+  spendShopCoins,
+} from '../../services/shopTransactionService';
 import {
   COIN_ENERGY_AMOUNT,
   COIN_ENERGY_COST,
@@ -213,11 +216,27 @@ export default function useHomeBoostActions({
     setCoinPurchasing(true);
 
     try {
+      let serverCoins = null;
+      if (userId && userId !== 'guest') {
+        if (isOffline) {
+          throw new Error('Offline');
+        }
+        const spendResult = await spendShopCoins(
+          'energy-1',
+          createShopOperationKey('energy-1')
+        );
+        if (!spendResult.ok) {
+          throw spendResult.error ?? new Error('Coin spend rejected');
+        }
+        serverCoins = spendResult.coins;
+      }
       await updateUserStats((current) => {
         const currentCoins = sanitizeStatNumber(current?.coins);
         return {
           ...current,
-          coins: Math.max(0, currentCoins - COIN_ENERGY_COST),
+          coins: Number.isFinite(serverCoins)
+            ? serverCoins
+            : Math.max(0, currentCoins - COIN_ENERGY_COST),
         };
       });
       const result = await addEnergy(COIN_ENERGY_AMOUNT);
@@ -237,17 +256,6 @@ export default function useHomeBoostActions({
       setCoinPurchasing(false);
     }
 
-    if (userId) {
-      try {
-        await syncUserProgressDelta(
-          userId,
-          { coins: -COIN_ENERGY_COST },
-          { offline: isOffline }
-        );
-      } catch (err) {
-        console.warn('Konnte Coins nicht synchronisieren:', err);
-      }
-    }
   }, [
     addEnergy,
     coinsAvailable,

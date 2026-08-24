@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { getTimerProgressFillStyle } from '../styles/QuizScreen.styles';
 import styles from '../styles/QuizScreen.styles';
 
-const SNAIL_ICON = require('../../../assets/animations/snail.gif');
 const SNAIL_SIZE = 26;
 
 export default function TimerBar({
@@ -79,15 +79,16 @@ export default function TimerBar({
           ) : null}
         </View>
         {matchIsActive && !isFrozen ? (
-          <Animated.Image
-            source={SNAIL_ICON}
+          <Animated.View
             style={[
               styles.snailIcon,
               {
                 transform: [{ translateX: snailTranslateX }],
               },
             ]}
-          />
+          >
+            <Ionicons name="walk" size={SNAIL_SIZE} color="#F4C95D" />
+          </Animated.View>
         ) : null}
       </View>
     </View>

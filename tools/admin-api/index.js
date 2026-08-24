@@ -16,22 +16,21 @@ app.use(apiLimiter);
 
 const PORT = process.env.PORT || 4001;
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
 const ADMIN_API_TOKEN = process.env.ADMIN_API_TOKEN;
-const TOKEN_SIGNING_KEY = process.env.TOKEN_SIGNING_KEY || process.env.TOKEN_SIGNING_KEY;
+const TOKEN_SIGNING_KEY = process.env.TOKEN_SIGNING_KEY;
 const TOKEN_DEFAULT_EXP = Number(process.env.TOKEN_DEFAULT_EXP) || 300;
 const ALLOW_SQL = (process.env.ALLOW_SQL === 'true');
-const ALLOWED_TABLES = (process.env.ALLOWED_TABLES || 'questions,scores,users').split(',').map(s => s.trim());
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.warn('WARN: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set. The server will run but reject DB actions.');
+if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
+  console.warn('WARN: SUPABASE_URL or SUPABASE_SECRET_KEY not set. The server will run but reject DB actions.');
 }
 if (!ADMIN_API_TOKEN) {
   console.warn('WARN: ADMIN_API_TOKEN is not set. Requests will be rejected without a token.');
 }
 
-const supabase = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
-  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+const supabase = (SUPABASE_URL && SUPABASE_SECRET_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_SECRET_KEY)
   : null;
 
 const jwt = require('jsonwebtoken');
@@ -118,38 +117,6 @@ app.post('/v1/questions/upsert', requireAuth, async (req, res) => {
     const { data, error } = await supabase.from('questions').upsert(questions, { onConflict: 'id' }).select();
     if (error) return res.status(400).json({ error: error.message });
     return res.json({ data });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Internal error' });
-  }
-});
-
-// Generic allowed-table operations (select/insert/update) - conservative
-app.post('/v1/table', requireAuth, async (req, res) => {
-  if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
-  const { table, action, payload, match } = req.body;
-  if (!ALLOWED_TABLES.includes(table)) return res.status(403).json({ error: 'Table not allowed' });
-  // require table-level scope for non-admin callers
-  if (!hasScope(req, 'tables:admin') && !hasScope(req, `${table}:write`) && action === 'insert') return res.status(403).json({ error: 'Insufficient scope for insert' });
-  if (!hasScope(req, 'tables:admin') && !hasScope(req, `${table}:read`) && action === 'select') return res.status(403).json({ error: 'Insufficient scope for select' });
-  if (!hasScope(req, 'tables:admin') && !hasScope(req, `${table}:write`) && action === 'update') return res.status(403).json({ error: 'Insufficient scope for update' });
-  try {
-    if (action === 'select') {
-      const { data, error } = await supabase.from(table).select('*').match(payload || {}).limit(100);
-      if (error) return res.status(400).json({ error: error.message });
-      return res.json({ data });
-    } else if (action === 'insert') {
-      if (!payload) return res.status(400).json({ error: 'payload required' });
-      const { data, error } = await supabase.from(table).insert(payload).select();
-      if (error) return res.status(400).json({ error: error.message });
-      return res.json({ data });
-    } else if (action === 'update') {
-      if (!payload || !match) return res.status(400).json({ error: 'payload and match required' });
-      const { data, error } = await supabase.from(table).update(payload).match(match).select();
-      if (error) return res.status(400).json({ error: error.message });
-      return res.json({ data });
-    }
-    return res.status(400).json({ error: 'Unknown action' });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Internal error' });

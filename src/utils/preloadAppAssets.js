@@ -3,8 +3,6 @@ import * as Font from 'expo-font';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import avatars from '../screens/settings/avatars';
 
-const HOME_ANIMATION = require('../../assets/animations/doctor/doctor.json');
-const TIMEOUT_PILLS_ICON = require('../../assets/animations/pharmacology/sleeping_pills_12082332.png');
 const LOBBY_BACKGROUND_IMAGE = require('../../assets/images/multiplayer-lobby-bg-mobile.jpg');
 
 const AVATAR_SOURCES = avatars
@@ -12,8 +10,6 @@ const AVATAR_SOURCES = avatars
   .filter(Boolean);
 
 const PRELOAD_ASSETS = [
-  HOME_ANIMATION,
-  TIMEOUT_PILLS_ICON,
   LOBBY_BACKGROUND_IMAGE,
   ...AVATAR_SOURCES,
 ].filter((asset) => typeof asset === 'number');

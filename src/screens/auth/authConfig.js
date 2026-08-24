@@ -39,7 +39,9 @@ export const PASSWORD_POLICY = {
 export const PASSWORD_HINT =
   'Mindestens 12 Zeichen, Groß- und Kleinbuchstaben, Zahl und Sonderzeichen.';
 export const SUPABASE_URL_HINT = process.env.EXPO_PUBLIC_SUPABASE_URL;
-export const SUPABASE_ANON_HINT = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+export const SUPABASE_ANON_HINT =
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  ?? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 export const EMAIL_CONFIRM_REDIRECT =
   process.env.EXPO_PUBLIC_EMAIL_CONFIRM_REDIRECT ?? NATIVE_SCHEME_REDIRECT;

@@ -3,10 +3,10 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$sourceIconPath = Join-Path $projectRoot 'assets\branding\quiz-app-icon-source.png'
 $brandingDir = Join-Path $projectRoot 'assets\branding'
 $publicDir = Join-Path $projectRoot 'public'
 $storeAssetsDir = Join-Path $projectRoot 'store_assets'
+$sourceIconPath = Join-Path $storeAssetsDir 'play_store_icon_512.png'
 $androidResDir = Join-Path $projectRoot 'android\app\src\main\res'
 
 function Ensure-Directory([string] $path) {
@@ -95,6 +95,28 @@ function New-ContainedBitmap(
   $imageSize = [int][Math]::Round($size * $relativeSize)
   $offset = [int][Math]::Round(($size - $imageSize) / 2)
   $graphics.DrawImage($source, $offset, $offset, $imageSize, $imageSize)
+  $graphics.Dispose()
+  return $bitmap
+}
+
+function New-AdaptiveBackgroundBitmap([int] $size) {
+  $bitmap = New-Object System.Drawing.Bitmap(
+    $size,
+    $size,
+    [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
+  )
+  $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+  Set-Quality $graphics
+
+  $bounds = [System.Drawing.Rectangle]::new(0, 0, $size, $size)
+  $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+    $bounds,
+    [System.Drawing.ColorTranslator]::FromHtml('#0669F7'),
+    [System.Drawing.ColorTranslator]::FromHtml('#6819D5'),
+    0
+  )
+  $graphics.FillRectangle($brush, $bounds)
+  $brush.Dispose()
   $graphics.Dispose()
   return $bitmap
 }
@@ -226,8 +248,8 @@ $sourceIcon = [System.Drawing.Bitmap]::FromFile($sourceIconPath)
 $transparentIcon = New-TransparentOuterBitmap $sourceIcon
 $appIcon = New-ResizedOpaqueBitmap $sourceIcon 1024 1024
 $webIcon = New-ResizedOpaqueBitmap $sourceIcon 512 512
-$adaptiveForeground = New-ContainedBitmap $transparentIcon 1024 0.66
-$playStoreIcon = New-ResizedOpaqueBitmap $sourceIcon 512 512
+$adaptiveBackground = New-AdaptiveBackgroundBitmap 1024
+$adaptiveForeground = New-ContainedBitmap $transparentIcon 1024 0.54
 $notificationMask = New-NotificationMask $sourceIcon
 $notificationCrop = [System.Drawing.Rectangle]::new(140, 140, 235, 280)
 $notificationIcon = New-CroppedContainedBitmap $notificationMask $notificationCrop 96 0.84
@@ -236,14 +258,15 @@ Set-WhiteMaskRgb $notificationIcon
 Set-WhiteMaskRgb $adaptiveMonochrome
 
 Save-Png $appIcon (Join-Path $brandingDir 'app-icon.png')
+Save-Png $adaptiveBackground (Join-Path $brandingDir 'adaptive-icon-background.png')
 Save-Png $adaptiveForeground (Join-Path $brandingDir 'adaptive-icon-foreground.png')
 Save-Png $adaptiveMonochrome (Join-Path $brandingDir 'adaptive-icon-monochrome.png')
 Save-Png $transparentIcon (Join-Path $brandingDir 'splash-icon.png')
 Save-Png $notificationIcon (Join-Path $brandingDir 'notification-icon.png')
 Save-Png $adaptiveForeground (Join-Path $androidResDir 'drawable-nodpi\ic_launcher_foreground.png')
+Save-Png $adaptiveBackground (Join-Path $androidResDir 'drawable-nodpi\ic_launcher_adaptive_background.png')
 Save-Png $adaptiveMonochrome (Join-Path $androidResDir 'drawable-nodpi\ic_launcher_monochrome.png')
 Save-Png $webIcon (Join-Path $publicDir 'quiz-app-icon.png')
-Save-Png $playStoreIcon (Join-Path $storeAssetsDir 'play_store_icon_512.png')
 
 $launcherSizes = @{
   'mipmap-mdpi' = 48
@@ -257,8 +280,8 @@ foreach ($entry in $launcherSizes.GetEnumerator()) {
   $folderPath = Join-Path $androidResDir $entry.Key
   $launcherPath = Join-Path $folderPath 'ic_launcher.png'
   $roundLauncherPath = Join-Path $folderPath 'ic_launcher_round.png'
-  $launcherBitmap = New-ResizedBitmap $transparentIcon $entry.Value $entry.Value
-  $roundLauncherBitmap = New-RoundBitmap $transparentIcon $entry.Value
+  $launcherBitmap = New-ResizedBitmap $sourceIcon $entry.Value $entry.Value
+  $roundLauncherBitmap = New-RoundBitmap $sourceIcon $entry.Value
 
   Save-Png $launcherBitmap $launcherPath
   Save-Png $roundLauncherBitmap $roundLauncherPath
@@ -301,8 +324,8 @@ foreach ($entry in $splashSizes.GetEnumerator()) {
   $splashBitmap.Dispose()
 }
 
-$playStoreIcon.Dispose()
 $adaptiveMonochrome.Dispose()
+$adaptiveBackground.Dispose()
 $notificationIcon.Dispose()
 $notificationMask.Dispose()
 $adaptiveForeground.Dispose()
@@ -311,4 +334,4 @@ $appIcon.Dispose()
 $transparentIcon.Dispose()
 $sourceIcon.Dispose()
 
-Write-Host 'Generated MedQuiz icons from the blue-purple quiz logo.'
+Write-Host 'Generated MedQuiz icons from the canonical Play Store icon.'

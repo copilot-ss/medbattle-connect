@@ -4,22 +4,21 @@ Kleiner serverseitiger Admin-Proxy für gezielte Supabase-Operationen. Er darf n
 
 ## Sicherheitsgrenze
 
-- `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_API_TOKEN` und `TOKEN_SIGNING_KEY` bleiben ausschließlich serverseitig.
+- `SUPABASE_SECRET_KEY`, `ADMIN_API_TOKEN` und `TOKEN_SIGNING_KEY` bleiben ausschließlich serverseitig.
 - Lokal gehören Secrets nur in die ignorierte `tools/admin-api/.env`.
 - In Deployment und CI gehören Secrets in den Secret Store der jeweiligen Plattform.
 - Keine Secrets in `.vscode`, Quellcode, Markdown, Kommandozeilenbeispiele, Logs oder Client-Bundles schreiben.
 - `ALLOW_SQL` bleibt standardmäßig `false`.
-- `ALLOWED_TABLES` auf die tatsächlich benötigten Tabellen begrenzen.
+- Der Dienst stellt ausschließlich die dedizierten Questions-Endpunkte bereit; ein generischer Tabellen-Endpunkt ist absichtlich nicht vorhanden.
 - Den Dienst nach Möglichkeit zusätzlich durch Netzwerkregeln oder eine weitere Authentifizierungsschicht schützen.
 
 ## Benötigte Konfiguration
 
 - `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_SECRET_KEY`
 - `ADMIN_API_TOKEN`
 - `TOKEN_SIGNING_KEY`
 - optional `TOKEN_DEFAULT_EXP`, Standard `300`
-- optional `ALLOWED_TABLES`
 - optional `ALLOW_SQL=false`
 - optional `PORT`, Standard `4001`
 
@@ -85,6 +84,6 @@ Der aufrufende lokale Prozess oder CI-Job muss `ADMIN_API_URL` und `ADMIN_API_TO
 ## Rotation und Vorfälle
 
 - `ADMIN_API_TOKEN` und `TOKEN_SIGNING_KEY` regelmäßig rotieren.
-- `SUPABASE_SERVICE_ROLE_KEY` bei Verdacht auf Offenlegung sofort rotieren.
+- `SUPABASE_SECRET_KEY` bei Verdacht auf Offenlegung sofort ersetzen und den alten Secret-Key deaktivieren.
 - Ausgegebene Tokens, Request-Bodies und personenbezogene Daten nicht vollständig loggen.
-- Nach Änderungen an Endpunkten `ALLOWED_TABLES`, Scopes und Dokumentation erneut prüfen.
+- Nach Änderungen an Endpunkten Scopes und Dokumentation erneut prüfen.

@@ -31,7 +31,11 @@ import {
   persistDailyCoinsClaimDate,
 } from '../services/dailyRewardsService';
 import { registerIapListener } from '../services/iapListeners';
-import { syncUserProgressDelta } from '../services/userProgressService';
+import {
+  claimServerDailyCoins,
+  createShopOperationKey,
+  spendShopCoins,
+} from '../services/shopTransactionService';
 import useShopSections from './shop/useShopSections';
 import ShopSections from './shop/ShopSections';
 import {
@@ -106,6 +110,8 @@ const buildFriendlyIapFailureMessage = (t, errorLike) => {
 };
 
 const SHOP_FREE_CLAIM_TIMEOUT_MS = 10000;
+// Echtgeld-Consumables bleiben bis zur serverseitigen Google-Play-Tokenprüfung aus.
+const VERIFIED_COIN_IAP_ENABLED = false;
 
 const withTimeout = async (promise, timeoutMs, message) => {
   let timeoutId = null;
@@ -145,7 +151,11 @@ export default function ShopScreen() {
     updateUserStats,
   } = usePreferences();
   const iapModule = useMemo(() => getInAppPurchases(), []);
-  const iapAvailable = Boolean(iapModule && typeof iapModule.connectAsync === 'function');
+  const iapAvailable = Boolean(
+    VERIFIED_COIN_IAP_ENABLED
+      && iapModule
+      && typeof iapModule.connectAsync === 'function'
+  );
   const [availableIapProductIds, setAvailableIapProductIds] = useState([]);
   const [iapPriceLabelsByProductId, setIapPriceLabelsByProductId] = useState({});
   const [iapProductsLoaded, setIapProductsLoaded] = useState(false);
@@ -369,15 +379,14 @@ export default function ShopScreen() {
     };
   }, [purchaseButtonSpin, purchasingId]);
 
-  const syncCoins = async (cost) => {
-    if (!userId || !Number.isFinite(cost) || cost <= 0) {
-      return;
+  const authorizeCoinSpend = async (item) => {
+    if (!userId || userId === 'guest') {
+      return { ok: true, coins: null };
     }
-    try {
-      await syncUserProgressDelta(userId, { coins: -cost }, { offline: isOffline });
-    } catch (err) {
-      console.warn('Konnte Coins nicht synchronisieren:', err);
+    if (isOffline) {
+      return { ok: false, error: new Error('Offline') };
     }
+    return spendShopCoins(item.id, createShopOperationKey(item.id));
   };
 
   const grantCoins = useCallback(
@@ -395,17 +404,8 @@ export default function ShopScreen() {
         console.warn('Konnte Coins nicht gutschreiben:', err);
       }
 
-      if (!userId) {
-        return;
-      }
-
-      try {
-        await syncUserProgressDelta(userId, { coins: increment }, { offline: isOffline });
-      } catch (err) {
-        console.warn('Konnte Coins nicht synchronisieren:', err);
-      }
     },
-    [isOffline, updateUserStats, userId]
+    [updateUserStats]
   );
 
   useEffect(() => {
@@ -509,12 +509,21 @@ export default function ShopScreen() {
     setShopMessage(null);
     setPurchasingId(item.id);
 
+    const spendResult = await authorizeCoinSpend(item);
+    if (!spendResult.ok) {
+      setPurchasingId(null);
+      setShopMessage(t('Kauf konnte nicht bestätigt werden.'));
+      return;
+    }
+
     try {
       await updateUserStats((current) => {
         const currentCoins = sanitizeStatNumber(current?.coins);
         return {
           ...current,
-          coins: Math.max(0, currentCoins - item.price),
+          coins: Number.isFinite(spendResult.coins)
+            ? spendResult.coins
+            : Math.max(0, currentCoins - item.price),
         };
       });
       const result = await addEnergy(item.amount);
@@ -528,8 +537,6 @@ export default function ShopScreen() {
     } finally {
       setPurchasingId(null);
     }
-
-    await syncCoins(item.price);
   };
 
   const handleBuyEnergyCap = async (item) => {
@@ -548,6 +555,13 @@ export default function ShopScreen() {
     setShopMessage(null);
     setPurchasingId(item.id);
 
+    const spendResult = await authorizeCoinSpend(item);
+    if (!spendResult.ok) {
+      setPurchasingId(null);
+      setShopMessage(t('Kauf konnte nicht bestätigt werden.'));
+      return;
+    }
+
     try {
       await updateUserStats((current) => {
         const currentCoins = sanitizeStatNumber(current?.coins);
@@ -555,7 +569,9 @@ export default function ShopScreen() {
         const nextBonus = Math.min(MAX_ENERGY_CAP_BONUS, currentBonus + item.amount);
         return {
           ...current,
-          coins: Math.max(0, currentCoins - item.price),
+          coins: Number.isFinite(spendResult.coins)
+            ? spendResult.coins
+            : Math.max(0, currentCoins - item.price),
           energyCapBonus: nextBonus,
         };
       });
@@ -565,8 +581,6 @@ export default function ShopScreen() {
     } finally {
       setPurchasingId(null);
     }
-
-    await syncCoins(item.price);
   };
 
   const handleBuyBoost = async (item) => {
@@ -586,6 +600,12 @@ export default function ShopScreen() {
       setPurchasingId(null);
       return;
     }
+    const spendResult = await authorizeCoinSpend(item);
+    if (!spendResult.ok) {
+      setPurchasingId(null);
+      setShopMessage(t('Kauf konnte nicht bestätigt werden.'));
+      return;
+    }
     const isDoubleXp = item.id === 'double_xp';
 
     try {
@@ -594,7 +614,9 @@ export default function ShopScreen() {
         const currentXpBoosts = sanitizeStatNumber(current?.xpBoostsUsed);
         return {
           ...current,
-          coins: Math.max(0, currentCoins - item.price),
+          coins: Number.isFinite(spendResult.coins)
+            ? spendResult.coins
+            : Math.max(0, currentCoins - item.price),
           xpBoostsUsed: isDoubleXp ? currentXpBoosts + 1 : currentXpBoosts,
         };
       });
@@ -613,8 +635,6 @@ export default function ShopScreen() {
     } finally {
       setPurchasingId(null);
     }
-
-    await syncCoins(item.price);
   };
 
   const handleBuyIap = async (item) => {
@@ -673,15 +693,27 @@ export default function ShopScreen() {
 
     const claimTimestamp = Date.now();
     const serializedClaimTimestamp = String(claimTimestamp);
-    setDailyClaimDate(serializedClaimTimestamp);
-    setShowClaimedDailyUntilLeave(true);
 
     try {
+      if (userId && userId !== 'guest') {
+        if (isOffline) {
+          throw new Error('Offline');
+        }
+        const claimResult = await claimServerDailyCoins();
+        if (!claimResult.ok) {
+          throw claimResult.error ?? new Error('Daily claim rejected');
+        }
+        await updateUserStats((current) => ({
+          ...current,
+          coins: claimResult.coins,
+        }));
+      } else {
+        await grantCoins(amount);
+      }
+      setDailyClaimDate(serializedClaimTimestamp);
+      setShowClaimedDailyUntilLeave(true);
       await withTimeout(
-        Promise.all([
-          grantCoins(amount),
-          persistDailyCoinsClaimDate(claimTimestamp),
-        ]),
+        persistDailyCoinsClaimDate(claimTimestamp),
         SHOP_FREE_CLAIM_TIMEOUT_MS,
         'Daily free coins claim timed out'
       );
@@ -696,6 +728,7 @@ export default function ShopScreen() {
   const sections = useShopSections({
     showDailySection,
     iapPriceLabelsByProductId,
+    coinIapEnabled: VERIFIED_COIN_IAP_ENABLED,
     t,
   });
 

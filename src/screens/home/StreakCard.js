@@ -1,13 +1,11 @@
 import { memo, useMemo } from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from '../../i18n/useTranslation';
 import { colors } from '../../styles/theme';
 import styles from '../styles/HomeScreen.styles';
 const STREAK_MILESTONES = [7, 30];
-const STREAK_FLAME_ANIMATION = require('../../../assets/animations/streak/flame.gif');
-const STREAK_FLAME_LOW_ANIMATION = require('../../../assets/animations/streak/flame_low.gif');
 const STREAK_GLOW_STOPS = [
   { step: 0, color: '#FFB25C' },
   { step: 3, color: '#FF915C' },
@@ -105,12 +103,9 @@ function StreakCard({
     };
   }, [streakValue, t]);
   const hasStreak = streakSummary.safeValue > 0;
-  const showFlameAnimation = streakSummary.safeValue >= 10;
-  const showFlameLowAnimation =
-    streakSummary.safeValue >= 1 && streakSummary.safeValue < 10;
   const flameName = hasStreak ? 'flame' : 'flame-outline';
   const flameColor = hasStreak ? colors.accentWarm : colors.textMuted;
-  const flameSize = hasStreak ? 44 : 24;
+  const flameSize = streakSummary.safeValue >= 10 ? 52 : hasStreak ? 44 : 24;
   const resolvedShieldCount = Number.isFinite(streakShieldCount)
     ? Math.max(0, streakShieldCount)
     : 0;
@@ -177,13 +172,7 @@ function StreakCard({
           ) : null}
         </View>
         <View style={styles.streakIconWrap}>
-          {showFlameAnimation ? (
-            <Image source={STREAK_FLAME_ANIMATION} style={styles.streakIconImage} />
-          ) : showFlameLowAnimation ? (
-            <Image source={STREAK_FLAME_LOW_ANIMATION} style={styles.streakIconImage} />
-          ) : (
-            <Ionicons name={flameName} size={flameSize} color={flameColor} />
-          )}
+          <Ionicons name={flameName} size={flameSize} color={flameColor} />
         </View>
       </View>
       <View style={styles.streakProgressTrack}>

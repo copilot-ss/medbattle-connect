@@ -1,13 +1,13 @@
 # MedQuiz Release Tests
 
-Stand: `2026-08-15`
+Stand: `2026-08-24`
 
 Diese Checkliste gilt für den aktuellen Release-Kandidaten aus `RELEASE_STATUS.md`. Historische Testläufe bleiben in Git.
 
 ## Artefaktidentität
 
-- [x] Finales AAB `1.0.2` / `versionCode 54` gebaut.
-- [x] AAB-Pfad, Runtime, SHA-256 `C4DA549270B77ED9141873194AECB4D8A6DFA9AB46566E72B858961E8C5AE11B` und Größe `60,650,041` Bytes gegen `RELEASE_STATUS.md` geprüft.
+- [x] Finales AAB `1.0.4` / `versionCode 58` gebaut.
+- [x] AAB-Pfad, Runtime, SHA-256 `E6BC2D7EADF5339EF5A274C00BE6B9F46EE781B2BC583DD910648DFEED169715` und Größe `56,723,292` Bytes gegen `RELEASE_STATUS.md` geprüft.
 - [x] Bundletool-Validierung, targetSdk 36, ABIs, Upload-Zertifikat und `PAGE_ALIGNMENT_16K` gegen den finalen Kandidaten geprüft.
 - [ ] Nach dem Upload die in Play angezeigte Version mit diesen Werten abgleichen.
 - [ ] Auf jedem Testgerät die installierte Paketversion vor dem Smoke dokumentieren.
@@ -23,7 +23,9 @@ Diese Checkliste gilt für den aktuellen Release-Kandidaten aus `RELEASE_STATUS.
 
 ## Installation und Start
 
-- [ ] Finalen Kandidaten über den Google-Play-Closed-Test-Link auf einem Realgerät installieren.
+- [x] Aus dem finalen AAB erzeugtes Gerätepaket mit dem Release-Key auf Android API 36 als Update installiert.
+- [x] Launcher-Icon auf dem API-36-Homescreen gegen das kanonische Play-Store-Motiv geprüft.
+- [ ] Finalen Kandidaten nach Freigabe über den öffentlichen Google-Play-Eintrag auf einem Realgerät installieren.
 - [ ] Finalen Kandidaten über Google Play auf einem kompatiblen Emulator installieren.
 - [ ] Cold Start, Warm Start und App-Resume ohne Crash, ANR oder White Screen.
 - [ ] Launcher-Icon, Splash und neues blau-violettes Logo prüfen.
@@ -52,7 +54,7 @@ Diese Checkliste gilt für den aktuellen Release-Kandidaten aus `RELEASE_STATUS.
 
 - [ ] Mit gespeicherter Session offline starten.
 - [ ] Offline-Quick-Play vollständig spielen.
-- [ ] Wieder online gehen und ausstehenden Fortschritt synchronisieren.
+- [ ] Wieder online gehen und bestätigen, dass nicht serverprüfbarer Offline-Fortschritt keine Serverbelohnung erzeugt.
 - [ ] Fehler- und Retry-Zustände ohne Endlosschleife prüfen.
 
 ## Multiplayer
@@ -68,9 +70,8 @@ Diese Checkliste gilt für den aktuellen Release-Kandidaten aus `RELEASE_STATUS.
 
 - [ ] Rewarded Ad mit produktiver Ad-Unit auf einem freigegebenen Testgerät laden und abschließen.
 - [ ] Exakt `+5` Energie gutschreiben; Abbruch und Ladefehler ohne Endlosschleife prüfen.
-- [ ] Coin-Paket kaufen und Preis/SKU/Gutschrift prüfen.
+- [ ] Prüfen, dass Echtgeld-Coinpacks bis zur serverseitigen Google-Play-Tokenprüfung nicht angezeigt werden.
 - [ ] Premium-Flow prüfen.
-- [ ] Bereits bearbeitete oder ausstehende Käufe beim Neustart korrekt behandeln.
 - [ ] `app-ads.txt` und Developer-Website in AdMob als verifiziert prüfen.
 
 ## Play Console und Betrieb

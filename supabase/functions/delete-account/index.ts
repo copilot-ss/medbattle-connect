@@ -89,8 +89,8 @@ serve(async (request) => {
 
   try {
     const supabaseUrl = getRequiredEnv('SUPABASE_URL');
-    const supabaseAnonKey = getRequiredEnv('SUPABASE_ANON_KEY');
-    const serviceRoleKey = getRequiredEnv('SUPABASE_SERVICE_ROLE_KEY');
+    const supabasePublishableKey = getRequiredEnv('MEDQUIZ_SUPABASE_PUBLISHABLE_KEY');
+    const secretKey = getRequiredEnv('MEDQUIZ_SUPABASE_SECRET_KEY');
     const authorization = request.headers.get('Authorization');
 
     if (!authorization) {
@@ -103,7 +103,7 @@ serve(async (request) => {
       );
     }
 
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+    const userClient = createClient(supabaseUrl, supabasePublishableKey, {
       global: {
         headers: {
           Authorization: authorization,
@@ -130,7 +130,7 @@ serve(async (request) => {
       );
     }
 
-    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+    const adminClient = createClient(supabaseUrl, secretKey, {
       auth: {
         persistSession: false,
         autoRefreshToken: false,

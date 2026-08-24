@@ -6,8 +6,8 @@ Kostenlose kompetitive Quiz-App mit Medizin- und Allgemeinwissenskategorien, Sup
 
 ## Aktueller Stand
 
-- Fokus ist der nächste Android-Release über Google Play Closed Testing.
-- Nach der aktuellen Codebereinigung ist genau ein finaler Release-Rebuild vorgesehen; erst dessen verifizierte Daten gelten als neuer Kandidat.
+- Fokus ist das nächste Android-Produktionsupdate über Google Play.
+- Der aktuelle technische Release-Kandidat ist gebaut; ausschließlich seine verifizierten Daten in `docs/release/RELEASE_STATUS.md` sind maßgeblich.
 - Der vollständige, allein maßgebliche Store-, Versions-, Runtime-, Artefakt- und Hash-Stand steht in `docs/release/RELEASE_STATUS.md`.
 
 ## Architektur
@@ -39,12 +39,11 @@ Kostenlose kompetitive Quiz-App mit Medizin- und Allgemeinwissenskategorien, Sup
 
 ## Aktuelle Release-Blocker
 
-- Nach Abschluss der Codebereinigung genau einen finalen AAB-Rebuild erstellen und Status, Version und Hash zentral aktualisieren.
-- Den finalen Kandidaten in den Closed-Test-Track hochladen und anschließend genau den über Google Play ausgelieferten Build testen.
+- Den finalen Kandidaten als Produktionsupdate hochladen und anschließend genau den über Google Play ausgelieferten Build testen.
 - Content Rating, Data Safety und Health Apps Declaration in der Play Console finalisieren.
 - OAuth, Offline-Sync, Multiplayer, Rewarded Ads und IAP im Store-Build end-to-end bestätigen.
 - Play-Submit-Service-Account in EAS hinterlegen, falls der Upload über EAS erfolgen soll.
-- Serverseitige Validierung für sensible Fortschritts-, Match- und Kaufvorgänge weiter härten.
+- Echtgeld-Coinpacks erst nach Einrichtung einer serverseitigen Google-Play-Tokenprüfung wieder aktivieren.
 
 ## Arbeitsquellen
 

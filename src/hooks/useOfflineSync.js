@@ -2,10 +2,9 @@ import { useEffect, useRef } from 'react';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { usePreferences } from '../context/PreferencesContext';
 import useSupabaseUserId from './useSupabaseUserId';
-import { flushQueuedScores, syncQuestionCache } from '../services/quizService';
+import { syncQuestionCache } from '../services/quizService';
 import {
   fetchUserProgress,
-  flushQueuedProgress,
   hasFreshUserProgress,
 } from '../services/userProgressService';
 
@@ -44,14 +43,9 @@ export default function useOfflineSync() {
     }
 
     syncingRef.current = true;
-    Promise.all([flushQueuedScores(userId), flushQueuedProgress(userId)])
-      .then(async ([scoreResult, progressResult]) => {
-        const shouldRefreshProgress =
-          Boolean(scoreResult?.didWork) ||
-          Boolean(progressResult?.didWork) ||
-          !hasFreshUserProgress(userId);
-
-        if (!shouldRefreshProgress) {
+    Promise.resolve()
+      .then(async () => {
+        if (hasFreshUserProgress(userId)) {
           return;
         }
 

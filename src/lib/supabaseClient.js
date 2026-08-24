@@ -62,8 +62,11 @@ function sanitizeEnv(value) {
 }
 
 const SUPABASE_URL = resolveLocalhostToLan(sanitizeEnv(process.env.EXPO_PUBLIC_SUPABASE_URL));
-const SUPABASE_ANON_KEY = sanitizeEnv(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
-const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+const SUPABASE_PUBLISHABLE_KEY = sanitizeEnv(
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+    ?? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+);
+const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 let authAppStateSubscription = null;
 const SESSION_USER_CACHE_TTL_MS = 750;
 const SESSION_USER_REQUEST_TIMEOUT_MS = 5000;
@@ -75,7 +78,7 @@ const sessionUserCache = {
 
 if (!hasSupabaseConfig) {
   console.warn(
-    'Supabase fehlt: Bitte EXPO_PUBLIC_SUPABASE_URL und EXPO_PUBLIC_SUPABASE_ANON_KEY in .env setzen.'
+    'Supabase fehlt: Bitte EXPO_PUBLIC_SUPABASE_URL und EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY in .env setzen.'
   );
 }
 
@@ -165,7 +168,7 @@ const safeAsyncStorage = {
 };
 
 export const supabase = hasSupabaseConfig
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  ? createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
       auth: {
         storage: safeAsyncStorage,
         autoRefreshToken: true,

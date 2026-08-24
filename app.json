@@ -5,17 +5,18 @@
     "scheme": "medbattle",
     "owner": "sjigalin",
     "icon": "./assets/branding/app-icon.png",
-    "version": "1.0.2",
+    "version": "1.0.4",
     "ios": {
       "bundleIdentifier": "com.sjigalin.medbattle",
       "buildNumber": "28"
     },
     "android": {
       "package": "com.sjigalin.medbattle",
-      "versionCode": 54,
+      "versionCode": 58,
       "adaptiveIcon": {
         "foregroundImage": "./assets/branding/adaptive-icon-foreground.png",
         "monochromeImage": "./assets/branding/adaptive-icon-monochrome.png",
+        "backgroundImage": "./assets/branding/adaptive-icon-background.png",
         "backgroundColor": "#000000"
       },
       "allowBackup": false,
@@ -33,7 +34,7 @@
       "checkAutomatically": "ON_LOAD",
       "fallbackToCacheTimeout": 0
     },
-    "runtimeVersion": "55.0.0-ui-1.0.2-20260815",
+    "runtimeVersion": "55.0.0-ui-1.0.4-20260824",
     "plugins": [
       "expo-font",
       [

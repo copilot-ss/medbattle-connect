@@ -9,6 +9,8 @@ interface ImportMetaEnv {
   readonly VITE_DELETE_ACCOUNT_URL?: string;
   readonly EXPO_PUBLIC_SUPABASE_URL?: string;
   readonly EXPO_PUBLIC_SUPABASE_ANON_KEY?: string;
+  readonly EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string;
+  readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string;
   readonly EXPO_PUBLIC_PRIVACY_URL?: string;
   readonly EXPO_PUBLIC_TERMS_URL?: string;
   readonly EXPO_PUBLIC_SUPPORT_URL?: string;

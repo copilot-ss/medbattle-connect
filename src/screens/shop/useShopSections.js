@@ -13,6 +13,7 @@ import {
 export default function useShopSections({
   showDailySection,
   iapPriceLabelsByProductId,
+  coinIapEnabled = false,
   t,
 }) {
   return useMemo(
@@ -161,24 +162,26 @@ export default function useShopSections({
           },
         ],
       },
-      {
-        key: 'coins',
-        title: t('Coins'),
-        items: COIN_PACKS.map((pack) => ({
-          id: pack.id,
-          title: t(pack.title),
-          priceLabel:
-            iapPriceLabelsByProductId?.[pack.productId] ?? pack.priceLabel,
-          savingsPercent: getSavingsPercent(pack),
-          coinIconCount: getCoinIconCount(pack.amount),
-          icon: 'cash',
-          accent: colors.highlight,
-          kind: 'iap',
-          productId: pack.productId,
-          amount: pack.amount,
-        })),
-      },
+      ...(coinIapEnabled
+        ? [{
+            key: 'coins',
+            title: t('Coins'),
+            items: COIN_PACKS.map((pack) => ({
+              id: pack.id,
+              title: t(pack.title),
+              priceLabel:
+                iapPriceLabelsByProductId?.[pack.productId] ?? pack.priceLabel,
+              savingsPercent: getSavingsPercent(pack),
+              coinIconCount: getCoinIconCount(pack.amount),
+              icon: 'cash',
+              accent: colors.highlight,
+              kind: 'iap',
+              productId: pack.productId,
+              amount: pack.amount,
+            })),
+          }]
+        : []),
     ],
-    [iapPriceLabelsByProductId, showDailySection, t]
+    [coinIapEnabled, iapPriceLabelsByProductId, showDailySection, t]
   );
 }

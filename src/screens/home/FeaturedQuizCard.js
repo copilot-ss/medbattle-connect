@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import LottieView from 'lottie-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { gradients } from '../../styles/theme';
@@ -13,7 +12,6 @@ function FeaturedQuizCard({
   onPress,
   disabled,
   showAnimation,
-  animationSource,
   artStyle = null,
   buttonStyle = null,
   buttonTextStyle = null,
@@ -75,7 +73,7 @@ function FeaturedQuizCard({
           </Text>
         </LinearGradient>
       </View>
-      {showAnimation && animationSource ? (
+      {showAnimation ? (
         <View
           style={[
             styles.featuredCardArt,
@@ -83,15 +81,7 @@ function FeaturedQuizCard({
           ]}
           pointerEvents="none"
         >
-          <LottieView
-            source={animationSource}
-            style={[
-              styles.featuredCardAnimation,
-              artStyle,
-            ]}
-            autoPlay
-            loop
-          />
+          <Ionicons name="medkit" size={94} color="rgba(255, 255, 255, 0.9)" />
         </View>
       ) : null}
     </Pressable>

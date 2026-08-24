@@ -417,6 +417,59 @@ function mergeQuestionPools(primary, fallback, limit) {
   return merged.slice(0, maxItems);
 }
 
+function sanitizeCompletionAnswers(answers) {
+  return (Array.isArray(answers) ? answers : []).map((answer) => ({
+    questionId:
+      typeof answer?.questionId === 'string' ? answer.questionId.trim() : '',
+    selectedOption:
+      typeof answer?.selectedOption === 'string' ? answer.selectedOption : null,
+    timedOut: answer?.timedOut === true,
+    boostsUsed: sanitizeBoostUsage(answer?.boostsUsed),
+  }));
+}
+
+export async function completeQuiz({ completionKey, answers, matchId = null } = {}) {
+  const normalizedKey =
+    typeof completionKey === 'string' ? completionKey.trim() : '';
+  if (!normalizedKey) {
+    return { ok: false, error: new Error('Completion-ID fehlt.') };
+  }
+
+  try {
+    const { data, error } = await runSupabaseRequest(
+      () =>
+        supabase.rpc('complete_quiz', {
+          p_completion_key: normalizedKey,
+          p_answers: matchId ? [] : sanitizeCompletionAnswers(answers),
+          p_match_id: matchId || null,
+        }),
+      { label: 'quizService.completeQuiz' }
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) {
+      throw new Error('Quiz-Abschluss hat keine Serverantwort geliefert.');
+    }
+
+    invalidateLeaderboardCache();
+    return {
+      ok: true,
+      alreadyProcessed: row.already_processed === true,
+      correct: sanitizePoints(row.correct_count),
+      total: sanitizePoints(row.question_count),
+      points: sanitizePoints(row.points),
+      xp: sanitizePoints(row.xp),
+      coins: sanitizePoints(row.coins),
+    };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
 function normalizeQuestionImageUrl(question) {
   if (!question) {
     return null;

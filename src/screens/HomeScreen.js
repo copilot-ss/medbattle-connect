@@ -39,7 +39,6 @@ import useSettingsStats from './settings/useSettingsStats';
 import { useTranslation } from '../i18n/useTranslation';
 import { colors } from '../styles/theme';
 
-const doctorAnimation = require('../../assets/animations/doctor/doctor.json');
 const HOME_LAYOUT_MIN_HEIGHT = 650;
 const HOME_LAYOUT_EXPANSION_RANGE = 128;
 
@@ -503,7 +502,6 @@ export default function HomeScreen({ navigation, route }) {
             onPress={startQuickPlay}
             disabled={isBoostBusy || hasLobby}
             showAnimation={showAnimation}
-            animationSource={doctorAnimation}
             artStyle={homeLayout.featuredArt}
             buttonStyle={homeLayout.featuredButton}
             buttonTextStyle={homeLayout.featuredButtonText}

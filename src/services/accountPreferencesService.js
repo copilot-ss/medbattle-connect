@@ -11,10 +11,7 @@ import {
   sanitizeStreakValue,
   sanitizeStringArray,
 } from '../context/preferences/sanitize';
-import {
-  incrementUserProgress,
-  fetchUserProgress,
-} from './userProgressService';
+import { fetchUserProgress } from './userProgressService';
 
 function sanitizeBoolean(value) {
   return value === true;
@@ -244,32 +241,8 @@ export async function mergeAccountPreferencesState(userId, patch) {
     }
 
     return { ok: true };
-  } catch (rpcError) {
-    try {
-      const current = await fetchAccountPreferences(userId);
-      if (!current.ok) {
-        throw current.error ?? rpcError;
-      }
-      const { error } = await runSupabaseRequest(
-        () =>
-          supabase
-            .from('users')
-            .update({
-              account_state: {
-                ...(current.state || {}),
-                ...nextPatch,
-              },
-            })
-            .eq('id', userId),
-        { label: 'accountPreferences.mergeFallback' }
-      );
-      if (error) {
-        throw error;
-      }
-      return { ok: true };
-    } catch (error) {
-      return { ok: false, error };
-    }
+  } catch (error) {
+    return { ok: false, error };
   }
 }
 
@@ -322,40 +295,10 @@ export async function applyGuestPreferencesToAccount(userId, snapshot) {
   }
 
   const sanitized = sanitizeAccountState(snapshot, snapshot.userStats);
-  const stats = sanitized.userStats;
-  const progressDelta = {
-    quizzes: sanitizeStatNumber(stats.quizzes),
-    correct: sanitizeStatNumber(stats.correct),
-    questions: sanitizeStatNumber(stats.questions),
-    xp: sanitizeStatNumber(stats.xp),
-    coins: sanitizeStatNumber(stats.coins),
-  };
-
-  const progressResult = await incrementUserProgress(userId, progressDelta);
-  if (!progressResult.ok && progressResult.reason !== 'guest') {
-    return progressResult;
-  }
-
   const stateResult = await mergeAccountPreferencesState(userId, {
     avatarId: sanitized.avatarId,
     avatarUri: sanitized.avatarUri,
     avatarFrameId: sanitized.avatarFrameId,
-    ownedFrames: sanitized.ownedFrames,
-    boosts: sanitized.boosts,
-    claimedAchievements: sanitized.claimedAchievements,
-    streakShieldActive: sanitized.streakShieldActive,
-    doubleXpExpiresAt: sanitized.doubleXpExpiresAt,
-    streaks: sanitized.streaks,
-    userStats: {
-      energyCapBonus: sanitizeStatNumber(stats.energyCapBonus),
-      multiplayerGames: sanitizeStatNumber(stats.multiplayerGames),
-      bestStreak: sanitizeStatNumber(stats.bestStreak),
-      xpBoostsUsed: sanitizeStatNumber(stats.xpBoostsUsed),
-    },
-    energyBase: sanitized.energyBase,
-    energy: sanitized.energy,
-    energyTimestamp: sanitized.energyTimestamp,
-    dailyFreeCoinsClaim: sanitized.dailyFreeCoinsClaim,
   });
 
   if (!stateResult.ok) {

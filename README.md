@@ -11,7 +11,7 @@ MedQuiz ist eine zweisprachige Quiz-App für Android mit Medizin- und Allgemeinw
 ## Schnellstart
 
 1. `npm install`
-2. `.env` mindestens mit `EXPO_PUBLIC_SUPABASE_URL` und `EXPO_PUBLIC_SUPABASE_ANON_KEY` befüllen.
+2. `.env` mindestens mit `EXPO_PUBLIC_SUPABASE_URL` und `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` befüllen.
 3. Entwicklung mit `npm run start` starten.
 4. Optional `npm run android` oder `npm run web` verwenden.
 

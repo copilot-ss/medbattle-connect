@@ -11,13 +11,12 @@ import usePremiumStatus from '../../hooks/usePremiumStatus';
 import useCountdownTimer from '../../hooks/useCountdownTimer';
 import useSupabaseUserId from '../../hooks/useSupabaseUserId';
 import useMultiplayerMatch from '../../hooks/useMultiplayerMatch';
-import { calculateCoinReward, calculateMatchPoints, submitScore } from '../../services/quizService';
+import { calculateCoinReward, calculateMatchPoints, completeQuiz } from '../../services/quizService';
 import { calculateXpGain } from '../../services/titleService';
 import {
   MULTIPLAYER_DEFAULT_QUESTION_LIMIT,
   SOLO_QUESTION_LIMIT,
 } from '../../config/quizLimits';
-import { syncUserProgressDelta } from '../../services/userProgressService';
 import useQuizConfig, { TIMER_DURATION } from './hooks/useQuizConfig';
 import useSoloQuestionLoader from './hooks/useSoloQuestionLoader';
 import useQuizInteractionHandlers from './hooks/useQuizInteractionHandlers';
@@ -56,6 +55,9 @@ export default function useQuizController({ navigation, route }) {
   const answerRef = useRef(null);
   const timeLeftRef = useRef(TIMER_DURATION);
   const answerHistoryRef = useRef([]);
+  const completionKeyRef = useRef(
+    `quiz:${Date.now()}:${Math.random().toString(36).slice(2, 12)}`
+  );
   const [hiddenOptions, setHiddenOptions] = useState([]);
   const [usedBoosts, setUsedBoosts] = useState({});
   const [currentQuestionBoosts, setCurrentQuestionBoosts] = useState([]);
@@ -291,7 +293,7 @@ export default function useQuizController({ navigation, route }) {
       const resolvedUsedBoostIds = isMultiplayer
         ? collectUsedBoostIds(resolvedAnswerItems)
         : usedBoostIds;
-      const earnedPoints = isMultiplayer && Number.isFinite(resolvedScore)
+      let earnedPoints = isMultiplayer && Number.isFinite(resolvedScore)
         ? Math.max(0, resolvedScore)
         : calculateMatchPoints({
             correct: resolvedCorrectCount,
@@ -304,11 +306,11 @@ export default function useQuizController({ navigation, route }) {
         isMultiplayer,
       });
       const doubleXpEnabled = isDoubleXpActive();
-      const xpEarned = Math.max(
+      let xpEarned = Math.max(
         0,
         Math.round(baseXp * (doubleXpEnabled ? DOUBLE_XP_MULTIPLIER : 1))
       );
-      const coinsEarned = submit
+      let coinsEarned = submit
         ? calculateCoinReward({
             correct: resolvedCorrectCount,
             total: effectiveTotal,
@@ -316,30 +318,41 @@ export default function useQuizController({ navigation, route }) {
           })
         : 0;
 
-      const shouldSubmitScore =
-        submit && userId && (!isMultiplayer || !wasSurrender);
+      const shouldSubmitSecureCompletion =
+        submit && userId && userId !== 'guest' && (!isMultiplayer || !wasSurrender);
 
       let scoreQueued = false;
-      if (shouldSubmitScore) {
-        try {
-          const result = await submitScore(
-            userId,
-            earnedPoints,
-            { offline: isOffline }
-          );
-          scoreQueued = Boolean(result?.queued);
-          if (!result?.ok) {
+      let secureCompletionAccepted = !shouldSubmitSecureCompletion;
+      if (shouldSubmitSecureCompletion) {
+        if (isOffline) {
+          earnedPoints = 0;
+          xpEarned = 0;
+          coinsEarned = 0;
+          console.warn('Offline-Quiz wird ohne serverseitige Belohnung abgeschlossen.');
+        } else {
+          const result = await completeQuiz({
+            completionKey: completionKeyRef.current,
+            answers: resolvedAnswerItems,
+            matchId: isMultiplayer ? matchId : null,
+          });
+          if (result.ok) {
+            earnedPoints = result.points;
+            xpEarned = result.xp;
+            coinsEarned = result.coins;
+            secureCompletionAccepted = true;
+          } else {
+            earnedPoints = 0;
+            xpEarned = 0;
+            coinsEarned = 0;
             console.warn(
-              'Score konnte nicht gespeichert werden:',
+              'Quiz-Belohnung wurde vom Server abgelehnt:',
               result?.error?.message ?? result?.error ?? 'Unbekannter Fehler'
             );
           }
-        } catch (err) {
-          console.error('Fehler beim Speichern des Scores:', err);
         }
       }
 
-      if (submit) {
+      if (submit && secureCompletionAccepted) {
         const mistakes = totalQuestions - resolvedScore;
         let nextStreakValue = null;
         if (!isMultiplayer) {
@@ -400,11 +413,6 @@ export default function useQuizController({ navigation, route }) {
           console.warn('Konnte lokale Quiz-Statistik nicht aktualisieren:', err);
         }
 
-        try {
-          await syncUserProgressDelta(userId, progressDelta, { offline: isOffline });
-        } catch (err) {
-          console.warn('Konnte Fortschritt nicht synchronisieren:', err);
-        }
       }
 
       const playerSnapshot = isMultiplayer
@@ -488,7 +496,6 @@ export default function useQuizController({ navigation, route }) {
       streakShieldActive,
       streaks,
       updateUserStats,
-      syncUserProgressDelta,
       totalQuestions,
       usedBoostIds,
       userId,
@@ -680,6 +687,9 @@ export default function useQuizController({ navigation, route }) {
     finalizeInFlightRef.current = false;
     timeLeftRef.current = TIMER_DURATION;
     answerHistoryRef.current = [];
+    completionKeyRef.current = `quiz:${Date.now()}:${Math.random()
+      .toString(36)
+      .slice(2, 12)}`;
     setAnswerHistory([]);
     setSoloQuestionsSnapshot([]);
     resetQuestionState();

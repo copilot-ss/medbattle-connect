@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { View, Text, Image, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { getQuestionImageAsset } from '../../data/questionImageAssets';
 import { useTranslation } from '../../i18n/useTranslation';
 import { BubbleReveal } from './ResultWidgets';
 import styles from '../styles/ResultScreen.styles';
-
-const TIMEOUT_PILLS_ICON = require('../../../assets/animations/pharmacology/sleeping_pills_12082332.png');
 
 function getBoostLabel(boostId, t) {
   if (boostId === 'joker_5050') {
@@ -164,10 +163,11 @@ export default function ResultReviewList({
                   {selectedAnswer}
                 </Text>
                 {item.timedOut ? (
-                  <Image
-                    source={TIMEOUT_PILLS_ICON}
+                  <Ionicons
+                    name="time-outline"
+                    size={22}
+                    color="#F4C95D"
                     style={styles.reviewAnswerTimeoutIcon}
-                    resizeMode="contain"
                   />
                 ) : null}
               </View>

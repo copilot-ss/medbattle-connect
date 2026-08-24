@@ -5,7 +5,6 @@ import {
   Text,
   Pressable,
   ScrollView,
-  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -51,8 +50,6 @@ import styles, {
   getLargeGlowStyle,
   getPrimaryButtonStyle,
 } from './styles/ResultScreen.styles';
-
-const ZERO_GHOST_ANIMATION = require('../../assets/animations/score/zero.gif');
 
 function getFeedbackState({
   isMultiplayer,
@@ -579,10 +576,11 @@ export default function ResultScreen({ route, navigation }) {
 
       {showZeroGhostOverlay ? (
         <View style={styles.zeroGhostOverlay} pointerEvents="none">
-          <Image
-            source={ZERO_GHOST_ANIMATION}
+          <Ionicons
+            name="sad-outline"
+            size={132}
+            color="rgba(255, 255, 255, 0.2)"
             style={styles.zeroGhostOverlayImage}
-            resizeMode="cover"
           />
         </View>
       ) : null}

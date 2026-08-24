@@ -4,7 +4,7 @@ Stand: `2026-08-15`
 
 ## Zweck
 
-Dieses Runbook beschreibt den reproduzierbaren Android-Release von der lokalen Prüfung bis zum Closed-Test-Rollout. Der konkrete Kandidat und seine Prüfsumme stehen ausschließlich in `RELEASE_STATUS.md`.
+Dieses Runbook beschreibt den reproduzierbaren Android-Release von der lokalen Prüfung bis zum Produktionsupdate. Der konkrete Kandidat und seine Prüfsumme stehen ausschließlich in `RELEASE_STATUS.md`.
 
 ## Voraussetzungen
 
@@ -13,7 +13,7 @@ Dieses Runbook beschreibt den reproduzierbaren Android-Release von der lokalen P
 - `EXPO_PUBLIC_ADMOB_USE_TEST_IDS=false` ist für den Release gesetzt.
 - Einzelne Testgeräte dürfen ausschließlich über `EXPO_PUBLIC_ADMOB_TEST_DEVICE_IDS_ANDROID` als Testgeräte markiert werden.
 - Lokales Upload-Keystore und `android/keystore.properties` sind vorhanden oder die Signing-Variablen sind gesetzt.
-- Play Console, Closed-Test-Track und bei EAS Submit der Play-Service-Account sind eingerichtet.
+- Play Console, Produktionszugriff und bei EAS Submit der Play-Service-Account sind eingerichtet.
 
 ## Lokales Signing
 
@@ -119,7 +119,7 @@ Zusätzlich vor Upload prüfen:
 
 ### Manuell in der Play Console
 
-Für ein lokal gebautes und verifiziertes AAB ist der manuelle Upload in den Closed-Test-Track der direkteste Weg. Vor dem Speichern noch einmal Dateipfad, Version und Prüfsumme abgleichen.
+Für ein lokal gebautes und verifiziertes AAB ist der manuelle Upload als neues Produktionsupdate der direkteste Weg. Vor dem Speichern noch einmal Dateipfad, Version und Prüfsumme abgleichen.
 
 ### EAS Submit mit lokalem AAB
 
@@ -137,13 +137,13 @@ npx eas submit --platform android --path android/app/build/outputs/bundle/releas
 
 `--latest` darf nur verwendet werden, wenn ein bestimmter EAS-Production-Build zuvor anhand von Version und Artefakt-ID geprüft wurde. Es reicht nicht das lokal gebaute AAB ein und ist deshalb für den aktuellen lokalen Kandidaten ungeeignet.
 
-## Closed-Test-Rollout
+## Produktions-Rollout
 
 1. Release Notes und Zieltrack kontrollieren.
 2. AAB hochladen und Play-Prüfungen abwarten.
-3. Den Closed-Test-Rollout starten.
-4. Kontoabhängige Tester- und Laufzeitanforderungen direkt in der aktuellen Play Console prüfen; keine alten Zahlen aus historischen Notizen übernehmen.
-5. Build über den Opt-in-Link aus Google Play installieren, nicht per lokaler APK ersetzen.
+3. Das Produktionsupdate zur Play-Prüfung einreichen und nach Freigabe ausrollen.
+4. Kontoabhängige Prüf- und Veröffentlichungsanforderungen direkt in der aktuellen Play Console prüfen.
+5. Build über den öffentlichen Google-Play-Eintrag installieren, nicht per lokaler APK ersetzen.
 6. Die Matrix in `RELEASE_TESTS.md` auf Emulator und Realgerät abarbeiten.
 
 ## Play-Console-Pflichtfelder
@@ -160,4 +160,4 @@ npx eas submit --platform android --path android/app/build/outputs/bundle/releas
 - Tatsächlich ausgerollten Build und Status in `RELEASE_STATUS.md` aktualisieren.
 - Nur aktuelle offene Arbeit in `../../TASKS.md` führen.
 - Bei einem neuen Artefakt Hash, Datum und Versionsstand ersetzen; nie alte Artefaktdaten als aktuellen Nachweis stehen lassen.
-- Ein technisch valides Closed-Test-AAB ist keine Produktionsfreigabe. Die Secret-, Servervalidierungs- und Lizenzblocker in `RELEASE_STATUS.md` müssen vor Produktion separat abgeschlossen sein.
+- Ein technisch valides AAB ersetzt nicht die Play-Prüfung. Die Secret-, Servervalidierungs- und Lizenzblocker in `RELEASE_STATUS.md` müssen vor dem Rollout abgeschlossen sein.

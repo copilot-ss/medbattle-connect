@@ -1,6 +1,6 @@
 # MedQuiz Store Listing und Assets
 
-Stand: `2026-08-15`
+Stand: `2026-08-24`
 
 ## Kanonische öffentliche Links
 
@@ -16,24 +16,31 @@ Die veröffentlichten Legal-Seiten unter `legal-static/` sind kanonisch. Die Del
 
 ## Deutscher Store-Eintrag
 
+App-Name:
+
+`MedQuiz: Medizin Quizduelle`
+
 Kurze Beschreibung:
 
-`MedQuiz – Quizduelle zu Medizin und Allgemeinwissen.`
+`Teste Medizin- und Allgemeinwissen in Quizrunden und Duellen mit Freunden.`
 
 Vollständige Beschreibung:
 
-MedQuiz ist ein schnelles Quizspiel für Medizinwissen und abwechslungsreiche Allgemeinwissenskategorien. Spiele kurze Solo-Runden, wähle eine Kategorie oder tritt mit Freunden in Multiplayer-Lobbys an.
+MedQuiz ist dein Medizin-Quiz und Allgemeinwissen-Quiz für kurze Solo-Runden und Quizduelle mit Freunden. Beantworte sechs Fragen pro Runde, sammle Punkte und finde heraus, wie gut du dich wirklich auskennst.
 
-Sammle Punkte, entwickle dein Profil weiter und verbessere dich in fokussierten Runden. Neben Medizin erwarten dich unter anderem Geschichte, Sachkunde, Politik, Geografie und Survival.
+Wähle aus Medizin, Geschichte, Geografie, Politik, Sachkunde, Survival und weiteren Wissenskategorien. Im Quick Play startest du direkt; im Kategorienmodus trainierst du gezielt. Erstelle eine Multiplayer-Lobby oder tritt per Code bei, um gemeinsam mit Freunden zu spielen.
 
-Highlights:
+Warum MedQuiz?
 
-- Kurze Quizrunden mit sechs Fragen
-- Solo-, Quick-Play- und Kategorienmodus
-- Multiplayer-Lobbys mit Freunden
-- Ranglisten, Fortschritt und Profilfunktionen
+- Medizinwissen und Allgemeinwissen in einer Quiz-App
+- Kurze Quizrunden mit jeweils sechs Fragen
+- Solo-Quiz, Quick Play und Kategorienmodus
+- Quizduelle und Multiplayer-Lobbys mit Freunden
+- Ranglisten, Profil, Fortschritt und Belohnungen
 - Offline-Quick-Play mit lokalem Fragenpool
-- Deutsch und Englisch entsprechend der Systemsprache
+- Deutsche und englische Benutzeroberfläche
+
+Egal, ob du medizinisches Wissen testen, dein Allgemeinwissen verbessern oder Freunde zu einer schnellen Quizrunde herausfordern möchtest: MedQuiz verbindet Lernen, Wissen und Wettbewerb in einem kompakten Quizspiel.
 
 Wichtiger Hinweis:
 
@@ -41,28 +48,46 @@ MedQuiz dient ausschließlich Lern- und Quiz-Zwecken. Die App ist kein Medizinpr
 
 ## Englischer Store-Eintrag
 
+App name:
+
+`MedQuiz: Medical Trivia Duels`
+
 Short description:
 
-`MedQuiz: quiz battles across medicine and general knowledge.`
+`Test medical and general knowledge in quick quizzes and multiplayer duels.`
 
 Full description:
 
-MedQuiz is a fast-paced quiz game covering medicine and a varied range of general-knowledge categories. Play short solo rounds, choose a category, or challenge friends in multiplayer lobbies.
+MedQuiz is a medical trivia and general knowledge quiz game for fast solo rounds and quiz duels with friends. Answer six questions per round, collect points, and discover how much you really know.
 
-Build your profile, collect points, and improve through focused six-question rounds. Categories include medicine, history, general knowledge, politics, geography, survival, and more.
+Choose from medicine, history, geography, politics, general knowledge, survival, and more. Jump straight into Quick Play, focus on a topic in category mode, or create a multiplayer lobby and invite friends with a code.
 
-Core features:
+Why play MedQuiz?
 
-- Fast six-question quiz rounds
-- Solo, quick-play, and category modes
-- Multiplayer lobbies with friends
-- Leaderboards, progression, and profile features
+- Medical trivia and general knowledge in one quiz app
+- Fast quiz rounds with six questions each
+- Solo quiz, Quick Play, and category modes
+- Quiz battles and multiplayer lobbies with friends
+- Leaderboards, profiles, progression, and rewards
 - Offline quick play with a local question pool
-- German and English based on the device language
+- German and English interface
+
+Whether you want to test your medical knowledge, improve your general knowledge, or challenge friends to a quick trivia round, MedQuiz combines learning, knowledge, and competition in one compact quiz game.
 
 Important notice:
 
 MedQuiz is for learning and quiz purposes only. It is not a medical device, does not provide diagnosis or treatment, and does not replace professional medical advice. If you need diagnosis or treatment, consult a qualified healthcare professional.
+
+## Play-Console-Umsetzung
+
+Der öffentliche Eintrag zeigte am `2026-08-24` noch den generischen englischen Titel `Trivia Quiz – Knowledge Duels`. Dieser Titel enthält die Marke `MedQuiz` nicht und soll vollständig durch die oben dokumentierten lokalisierten Einträge ersetzt werden.
+
+- Unter `Store-Präsenz > Haupt-Store-Eintrag` den deutschen Eintrag mit App-Name, Kurzbeschreibung und vollständiger Beschreibung pflegen.
+- Unter `Übersetzungen verwalten` einen eigenen englischen Eintrag mit den oben dokumentierten englischen Feldern pflegen.
+- Deutsch für Deutschland und Englisch für die englischsprachige Auslieferung verwenden; keine automatische Übersetzung als Ersatz für diese beiden Einträge nutzen.
+- Die Kategorie `Quiz und Denkspiele > Quiz` beibehalten.
+- Nach Freigabe beide öffentlichen Varianten mit `hl=de&gl=DE` und `hl=en&gl=US` kontrollieren.
+- Die Play-Suche kann Metadatenänderungen zeitversetzt übernehmen. Paketname und direkter Store-Link ändern sich dadurch nicht.
 
 ## Aktuelle Play-Assets
 
@@ -80,19 +105,19 @@ MedQuiz is for learning and quiz purposes only. It is not a medical device, does
 
 Nicht aufgeführte historische oder doppelte Assets sind keine Upload-Quelle.
 
-## Release Notes `1.0.2`
+## Release Notes `1.0.4`
 
 Deutsch:
 
-`Neues MedQuiz-Design mit überarbeitetem Home-, Quiz- und Shop-Erlebnis, neuem App-Logo und besserer Darstellung auf unterschiedlichen Bildschirmgrößen. Außerdem haben wir Navigation, Offline- und Multiplayer-Abläufe verfeinert sowie Stabilität und Barrierefreiheit verbessert.`
+`Dieses Update verbessert Sicherheit, Stabilität und die serverseitige Prüfung von Quiz-, Match- und Belohnungsdaten.`
 
 English:
 
-`A refreshed MedQuiz design across Home, Quiz, and Shop, a new app icon, and better layouts across screen sizes. We also refined navigation, offline and multiplayer flows, and improved stability and accessibility.`
+`This update improves security, stability, and server-side validation for quiz, match, and reward data.`
 
 ## Asset-Erzeugung
 
-- Kanonische Logoquelle: `assets/branding/quiz-app-icon-source.png`
+- Kanonische Logoquelle für alle App-, Android-, Web- und Splash-Varianten: `store_assets/play_store_icon_512.png`
 - Deutsche Ausgangsgrafik: `assets/branding/store-feature-source-de.png`
 - App- und Store-Icons: `scripts/assets/generate-app-icons.ps1`
 - Tablet-Screenshots: `scripts/assets/generate-play-tablet-screenshots.ps1`

@@ -2,35 +2,34 @@
 
 ## Aktueller Stand
 
-- Datum: `2026-08-15`
-- Der finale Closed-Test-Kandidat wurde erfolgreich als `1.0.2` / `versionCode 54` gebaut und verifiziert.
+- Datum: `2026-08-24`
+- Der finale Produktionsupdate-Kandidat wurde erfolgreich als `1.0.4` / `versionCode 58` gebaut und verifiziert.
 - Vollständiger Store-, Runtime-, AAB- und Hash-Stand wird in `docs/release/RELEASE_STATUS.md` geführt.
 
 ## Jetzt offen
 
-- [ ] Den aus der zuvor getrackten `.vscode/settings.json` kompromittierten Supabase-`service_role`-Key sofort rotieren, den alten Key auf Ungültigkeit prüfen und abhängige Server-/Deployment-Secrets aktualisieren.
-- [ ] Bewerten, ob der kompromittierte Key aus der Git-Historie entfernt werden muss; History-Rewrite nur geplant und koordiniert durchführen.
-- [ ] Den finalen Kandidaten in Google Play Closed Testing hochladen.
+- [ ] Den öffentlichen Google-Play-Haupteintrag auf die deutschen und englischen SEO-Texte aus `docs/play/STORE_LISTING.md` umstellen; der Live-Titel lautet noch `Trivia Quiz – Knowledge Duels`.
+- [ ] Den finalen Kandidaten als Update in Google Play Produktion hochladen.
 - [ ] Den von Google Play ausgelieferten Kandidaten auf Emulator und Realgerät installieren und die Artefaktversion verifizieren.
 - [ ] OAuth-Roundtrips für Google, Discord, E-Mail-Bestätigung und Passwort-Reset end-to-end testen.
 - [ ] Offline-Start, Offline-Quick-Play und späteren Online-Sync im Store-Build testen.
 - [ ] Multiplayer Create, Join, Resume, Abbruch und Rematch mit mindestens zwei Konten testen.
-- [ ] Rewarded Ad, Energiefluss, Coin-IAP und Premium im Store-Build testen.
+- [ ] Rewarded Ad, Energiefluss und Premium im Store-Build testen; ausgeblendete Echtgeld-Coinpacks bestätigen.
 - [ ] Play Console: Content Rating, Data Safety und Health Apps Declaration finalisieren.
 - [ ] In Google Play die Developer-Website `https://medquiz-web.vercel.app/` setzen und AdMob-Verifikation für `https://medquiz-web.vercel.app/app-ads.txt` erneut anstoßen.
 - [ ] Play-Submit-Service-Account in EAS hinterlegen, falls EAS Submit verwendet werden soll.
 
 ## Produktionsblocker: Sicherheit und Lizenzen
 
-- [ ] Änderungen an Coins, XP, Scores, Boosts und Belohnungen vollständig serverseitig und idempotent validieren.
-- [ ] Match-Antworten, Fortschritt und Punkte vollständig serverseitig prüfen und direkte sensible Match-Updates sperren.
-- [ ] Google-Play-Kauftoken serverseitig und idempotent verifizieren; Consumables erst nach dauerhafter Gutschrift verbrauchen.
-- [ ] Herkunft und Lizenz aller verbleibenden Dateien unter `assets/animations/` nachweisen oder ungeklärte Assets ersetzen; `LICENSES.md` danach auf Produktions-GO aktualisieren.
-- [ ] Drei transitive Advisory-Ketten in Expo-/Metro-/Xcode-Buildwerkzeugen beobachten (`image-size`, `uuid`): aktuell `17` Root-Meldungen (`10 high`, `7 moderate`), keine Expo-55-kompatible Fixversion; kein `npm audit fix --force` und kein Downgrade auf Expo 53 / React Native 0.72.
+- [x] Änderungen an Coins, XP, Scores, Boosts und Belohnungen serverseitig und idempotent validiert.
+- [x] Match-Antworten, Fortschritt und Punkte serverseitig geprüft und direkte sensible Match-Updates gesperrt.
+- [x] Unverifizierten Google-Play-Consumable-Flow aus dem Release entfernt; Reaktivierung erst mit serverseitiger Tokenprüfung und Gutschrift-vor-Consume.
+- [x] Ungeklärte Dateien unter `assets/animations/` entfernt und `LICENSES.md` auf Produktions-`GO` aktualisiert.
+- [x] Transitive `image-size`-/`uuid`-Advisories kompatibel behoben; Root-`npm audit` meldet `0` Findings.
 
 ## Release-Gates
 
-- [x] Finales AAB `1.0.2` / `versionCode 54` gebaut.
+- [x] Finales AAB `1.0.4` / `versionCode 58` gebaut.
 - [x] SHA-256, Größe, Signatur, Upload-Zertifikat, Bundle, targetSdk 36, ABIs und 16-KB-Ausrichtung des finalen AAB geprüft.
 - [x] `npm run release:check`, TypeScript, Expo Doctor, Dependency-Check und Web-Build gegen den finalen Code-Stand bestätigt.
 - [x] Premium-UI, neue Logos und responsive Home-/Shop-/Quiz-Layouts auf Emulatorgrößen `1080x2400` und `1080x1920` geprüft.
@@ -39,11 +38,15 @@
 - [x] `tools/admin-api` Lockfile mit `npm audit` ohne Findings geprüft.
 - [ ] Store-ausgelieferten finalen Kandidaten vollständig smoke-testen.
 - [ ] Alle Play-Console-Pflichtfelder final speichern und prüfen.
-- [ ] Produktion erst freigeben, wenn Secret-Rotation, serverseitige Validierung und Animationslizenzprüfung abgeschlossen sind.
+- [x] Secret-Rotation, serverseitige Validierung und Animationslizenzprüfung abgeschlossen.
 
 ## Jüngste Abschlüsse
 
-- [x] Finales Closed-Test-AAB `1.0.2` / `versionCode 54` gebaut und mit Bundletool, Signatur sowie 16-KB-Ausrichtung verifiziert (`2026-08-15`).
+- [x] Play-Store-Icon als kanonische Quelle eingerichtet, Adaptive-/Launcher-/Splash-/Web-Icons vereinheitlicht und finalen AAB-58-Homescreen auf Android API 36 geprüft (`2026-08-24`).
+- [x] Supabase-Legacy-Keys deaktiviert, neue Publishable-/Secret-Keys deployed und alte Keys live als ungültig bestätigt (`2026-08-24`).
+- [x] Serverseitige, idempotente Quiz-/Match-/Shop-/Reward-Validierung deployed und mit authentifizierten Angriffs- und Replaytests bestätigt (`2026-08-24`).
+- [x] Ungeklärte Animationsassets ersetzt, Dependency-Audit auf `0` Findings gebracht und AAB `1.0.4` / `versionCode 58` verifiziert (`2026-08-24`).
+- [x] Expo-55-Patchstände aktualisiert, inkompatiblen Ads-Dependency-Sprung durch exaktes Pinning verhindert und alle automatisierten Release-Checks bestätigt (`2026-08-24`).
 - [x] Dokumentation auf eine aktuelle Release-Quelle konsolidiert, Dateinamen case-sensitiv vereinheitlicht und alte Snapshot-Historie entfernt (`2026-08-15`).
 - [x] App-weites Premium-UI mit zentraler Navy-/Violett-Spieloptik, wiederverwendbaren Hintergründen, Reward-Chips und Tab-Icons umgesetzt (`2026-08-15`).
 - [x] Home-Abstände und das App-Logo-System vereinheitlicht; altes blaues Logo in App-, Android-, Web- und Store-Flächen ersetzt (`2026-08-15`).

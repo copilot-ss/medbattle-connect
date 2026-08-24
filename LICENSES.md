@@ -1,6 +1,6 @@
 # LICENSES.md - Third-Party Licenses & Asset Attribution
 
-Stand: 2026-08-15
+Stand: 2026-08-24
 
 ## Ziel
 Diese Datei dokumentiert die aktuell verwendeten Drittanbieter-Lizenzen und den Status fuer den Store-Release.
@@ -10,6 +10,7 @@ Diese Datei dokumentiert die aktuell verwendeten Drittanbieter-Lizenzen und den 
 - Zwei Flaticon-Sticker fuer Profil-Avatare sind lokal eingebunden und in dieser Datei mit Quelle + Nennungspflicht dokumentiert.
 - Brainrot-Quizbilder nutzen nur CC0/Public-Domain-Quellen ohne Attribution-Pflicht; keine echten Meme-Screenshots, Figuren- oder Markenassets.
 - Weitere Foto-Bildfragen nutzen nur Public-Domain-/CC0-Quellen und werden remote ueber Supabase-Bild-URLs referenziert.
+- Alle zuvor ungeklärten Dateien unter `assets/animations/` wurden entfernt und durch Ionicons aus der dokumentierten Icon-Library ersetzt.
 
 ## Verwendete Drittanbieter-Lizenzen
 
@@ -114,9 +115,8 @@ Diese Datei dokumentiert die aktuell verwendeten Drittanbieter-Lizenzen und den 
   - Wenn keine Nennung erfolgen soll, auf Premium-Lizenz wechseln oder Assets ersetzen.
 
 ## Rest-Risiko vor Release
-- Fuer die verbleibenden Dateien unter `assets/animations/` muss intern weiterhin eine eigene Erstellung oder eine passende externe Lizenz belegbar sein.
-- Wenn fuer eine Datei kein klarer Herkunftsnachweis vorliegt: vor dem Produktions-Rollout Quelle + Lizenztyp ergaenzen oder das Asset ersetzen.
+- Keine ungeklärten lokalen Animationsassets verbleiben im Release-Bundle.
 
 ## Copyright Go/No-Go
 - Avatar-Sticker: `GO` mit der derzeit sichtbaren Flaticon-Attribution.
-- Gesamt-Copyright: `NO-GO` fuer den Produktions-Rollout, solange Herkunft/Lizenz der verbleibenden Animationsassets nicht intern verifiziert ist.
+- Gesamt-Copyright: `GO` fuer den Produktions-Rollout auf Basis der hier dokumentierten Assets und Attributionen.
