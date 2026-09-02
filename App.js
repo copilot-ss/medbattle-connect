@@ -2,9 +2,10 @@
 import 'react-native-gesture-handler';
 import './src/i18n';
 import * as WebBrowser from 'expo-web-browser';
+import { Image as ExpoImage } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { registerRootComponent } from 'expo';
-import { DevSettings, Platform } from 'react-native';
+import { AppState, DevSettings, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AppNavigator from './src/AppNavigator';
 import GlobalErrorBoundary from './src/components/GlobalErrorBoundary';
@@ -67,6 +68,16 @@ function App() {
     initializeAds();
     const unregisterSupabaseAuthAppState = registerSupabaseAuthAppState();
     const unregisterUpdates = registerUpdates();
+    const imageMemorySubscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState !== 'background') {
+        return;
+      }
+      ExpoImage.clearMemoryCache().catch((err) => {
+        if (__DEV__) {
+          console.warn('Image memory cache cleanup failed:', err);
+        }
+      });
+    });
     let idleHandle = null;
     let timeoutId = null;
     if (typeof requestIdleCallback === 'function') {
@@ -87,6 +98,7 @@ function App() {
       if (unregisterSupabaseAuthAppState) {
         unregisterSupabaseAuthAppState();
       }
+      imageMemorySubscription.remove();
       if (idleHandle !== null && typeof cancelIdleCallback === 'function') {
         cancelIdleCallback(idleHandle);
       }

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
-import { Image } from 'react-native';
 import {
   addFriend,
   fetchFriends,
@@ -20,20 +19,6 @@ const SUPABASE_URL_HINT = process.env.EXPO_PUBLIC_SUPABASE_URL;
 
 function isRemoteAvatarUrl(value) {
   return typeof value === 'string' && /^https?:\/\//i.test(value.trim());
-}
-
-async function prefetchFriendAvatars(friends = []) {
-  const urls = Array.from(
-    new Set(
-      (Array.isArray(friends) ? friends : [])
-        .map((entry) => (isRemoteAvatarUrl(entry?.avatarUrl) ? entry.avatarUrl.trim() : null))
-        .filter(Boolean)
-    )
-  );
-  if (!urls.length) {
-    return;
-  }
-  await Promise.allSettled(urls.map((url) => Image.prefetch(url)));
 }
 
 function mergeFriendsList(nextFriends = [], prevFriends = []) {
@@ -158,7 +143,6 @@ export default function useSettingsFriends({
           suppressTimeoutWarning: silent,
         });
         const normalized = filterBlockedEntries(Array.isArray(list) ? list : []);
-        await prefetchFriendAvatars(normalized);
         setFriends((previous) => mergeFriendsList(normalized, previous));
         hasLoadedFriendsRef.current = true;
       } catch (err) {
@@ -193,7 +177,6 @@ export default function useSettingsFriends({
           suppressTimeoutWarning: silent,
         });
         const normalized = filterBlockedEntries(Array.isArray(list) ? list : []);
-        await prefetchFriendAvatars(normalized);
         setFriendRequests(normalized);
       } catch (err) {
         setFriendsFeedback(

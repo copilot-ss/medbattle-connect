@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { View, Text, Image, Pressable } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AppImage from '../../components/media/AppImage';
 import { getQuestionImageAsset } from '../../data/questionImageAssets';
 import { useTranslation } from '../../i18n/useTranslation';
 import { BubbleReveal } from './ResultWidgets';
@@ -146,10 +147,10 @@ export default function ResultReviewList({
               <Text style={[styles.reviewStatus, statusStyle]}>{statusLabel}</Text>
             </View>
             {imageSource ? (
-              <Image
+              <AppImage
                 source={imageSource}
                 style={styles.reviewImage}
-                resizeMode="contain"
+                contentFit="contain"
                 accessibilityLabel={imageAlt}
               />
             ) : null}

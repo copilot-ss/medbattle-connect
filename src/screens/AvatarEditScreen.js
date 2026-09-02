@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import AppImage from '../components/media/AppImage';
 
 import AvatarView from '../components/avatar/AvatarView';
 import GameBackground from '../components/game/GameBackground';
@@ -326,10 +326,10 @@ export default function AvatarEditScreen({ navigation }) {
               accessibilityLabel={t('Foto aus Galerie')}
             >
               {avatarUri ? (
-                <Image
+                <AppImage
                   source={{ uri: avatarUri }}
                   style={styles.avatarTileImage}
-                  resizeMode="cover"
+                  contentFit="cover"
                 />
               ) : (
                 <View style={styles.avatarTilePlaceholder}>
@@ -374,10 +374,10 @@ export default function AvatarEditScreen({ navigation }) {
                   ]}
                 >
                   {item.source ? (
-                    <Image
+                    <AppImage
                       source={item.source}
                       style={styles.avatarTileImage}
-                      resizeMode="cover"
+                      contentFit="cover"
                     />
                   ) : (
                     <View style={styles.avatarTileIconWrap}>

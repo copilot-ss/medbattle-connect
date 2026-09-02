@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.sjigalin.medbattle",
-      "versionCode": 59,
+      "versionCode": 60,
       "adaptiveIcon": {
         "foregroundImage": "./assets/branding/adaptive-icon-foreground.png",
         "monochromeImage": "./assets/branding/adaptive-icon-monochrome.png",
@@ -34,9 +34,11 @@
       "checkAutomatically": "ON_LOAD",
       "fallbackToCacheTimeout": 0
     },
-    "runtimeVersion": "55.0.0-ui-1.0.4-20260824",
+    "runtimeVersion": "55.0.0-quality-1.0.4-20260902",
     "plugins": [
       "expo-font",
+      "expo-asset",
+      "expo-image",
       [
         "expo-splash-screen",
         {

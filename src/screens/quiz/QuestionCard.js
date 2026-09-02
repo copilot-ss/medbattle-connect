@@ -1,5 +1,6 @@
 import { memo } from 'react';
-import { Image, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import AppImage from '../../components/media/AppImage';
 import { getQuestionImageAsset } from '../../data/questionImageAssets';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../styles/QuizScreen.styles';
@@ -55,13 +56,13 @@ function QuestionCard({
         </Text>
       ) : null}
       {resolvedImageSource ? (
-        <Image
+        <AppImage
           source={resolvedImageSource}
           style={[
             styles.questionImage,
             imageOnly ? styles.questionImageOnly : null,
           ]}
-          resizeMode="contain"
+          contentFit="contain"
           accessibilityLabel={
             typeof imageAlt === 'string' && imageAlt.trim() ? imageAlt.trim() : visibleQuestion
           }

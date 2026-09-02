@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ImageBackground, View } from 'react-native';
+import { View } from 'react-native';
 
 import {
   deriveMatchRole,
@@ -40,6 +40,7 @@ import { useTranslation } from '../i18n/useTranslation';
 import PublicProfileSheet from '../components/PublicProfileSheet';
 import usePublicProfileSheet from '../hooks/usePublicProfileSheet';
 import LobbyStartCountdownOverlay from './multiplayer/LobbyStartCountdownOverlay';
+import AppImage from '../components/media/AppImage';
 
 const lobbyBackgroundImage = require('../../assets/images/multiplayer-lobby-bg-mobile.jpg');
 
@@ -410,16 +411,12 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
   });
 
   return (
-    <ImageBackground
-      source={lobbyBackgroundImage}
-      defaultSource={lobbyBackgroundImage}
-      style={styles.container}
-      imageStyle={styles.backgroundImage}
-      resizeMode="cover"
-      resizeMethod="resize"
-      progressiveRenderingEnabled
-      fadeDuration={0}
-    >
+    <View style={styles.container}>
+      <AppImage
+        source={lobbyBackgroundImage}
+        style={styles.backgroundImage}
+        contentFit="cover"
+      />
       <View style={styles.backgroundOverlay}>
         <View style={styles.backgroundGlowTop} pointerEvents="none" />
         <View style={styles.backgroundGlowBottom} pointerEvents="none" />
@@ -513,7 +510,7 @@ export default function MultiplayerLobbyScreen({ navigation, route }) {
           countdownValue={startCountdownValue}
         />
       </View>
-    </ImageBackground>
+    </View>
   );
 }
 

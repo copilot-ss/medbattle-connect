@@ -1,5 +1,6 @@
-import { Image, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AppImage from '../media/AppImage';
 
 export default function AvatarView({
   uri = null,
@@ -25,7 +26,7 @@ export default function AvatarView({
   const imageSource = resolvedUri ? { uri: resolvedUri } : source;
 
   const content = imageSource ? (
-    <Image source={imageSource} style={imageStyle} resizeMode="cover" />
+    <AppImage source={imageSource} style={imageStyle} contentFit="cover" />
   ) : resolvedIcon ? (
     <Ionicons
       name={resolvedIcon}
